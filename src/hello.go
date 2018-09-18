@@ -448,7 +448,7 @@ func main() {
 		if (i%10 == 0) && (i <= 990) {
 			//fmt.Println(superNodeType)
 			//fmt.Println(superNodeVariation)
-			//scheduler.addRoutePoint(Coord{nil, rangeInt(0, maxX), rangeInt(0, maxY), 0, 0, 0, 0})
+			//scheduler.addRoutePoint(Coord{nil, rangeInt(0, maxX), ranpositionPrintgeInt(0, maxY), 0, 0, 0, 0})
 		}
 
 		//Loop over every square in the grid once again
@@ -518,7 +518,7 @@ func main() {
 	positionFile.Seek(0, 0)
 	fmt.Fprintln(positionFile, "Width:", maxX)
 	fmt.Fprintln(positionFile, "Height:", maxY)
-	fmt.Fprintf(positionFile, "Amount:%-8v\n", i)
+	fmt.Fprintf(positionFile, "Amount: %-8v\n", i)
 
 	for i := range boolGrid {
 		fmt.Fprintln(boolFile, boolGrid[i])
