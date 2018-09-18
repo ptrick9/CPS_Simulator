@@ -20,7 +20,7 @@ Upon receiving the data from the node, the server will place the readings into a
 # User Input
 The simulator is designed with the philosophy of being as reconfigurable as possible. While this leads to a lengthy configuration string required for a launch, it provides the greatest ability for customization and reconfiguration as new ideas or parameters come to light. 
 
-## Arena Map {##Arena-Map}
+## Arena Map 
 The arena map is an input file which specifies multiple parameters for the simulator. Notably, the file provides 6 values at the top of the file
 
 ```
@@ -90,7 +90,7 @@ The format of the entries is as follows
 
 ----
 
-## Energy Models {##Energy-Models}
+## Energy Models 
 The energy model has many different parameters that control it's main function. To be most efficient, the GPS, sensor, and server are all sampled at different times and adaptively based upon movement speed, battery level, and number of stored samples waiting to be transmitted. The command line arguments that control the battery model are listed and described below:
 
 * naturalLoss
@@ -132,7 +132,7 @@ The energy model has many different parameters that control it's main function. 
 
 ----
 
-## Super Node Types {##Super-Node-Types}
+## Super Node Types
 
 There are 7 types of supernodes currently available. Supernodes have 2 major parameters, whether they can be optimized or not, and whether they require a square area to work correctly. 
 
@@ -235,11 +235,15 @@ Super nodes of type 7 are exactly the same as super nodes of type 6 except intea
 
 ----
 
-## Sensor Drifting Parameters {##Sensor-Drifting-Parameters}
+## Sensor Drifting Parameters 
 
 Sensor drifting is handled by the following equations:
 
  $$ Concentration = \frac{1000}{\sqrt[3]{\frac{Distance}{.2}}} $$
+
+
+<center>
+ <a href="https://www.codecogs.com/eqnedit.php?latex=$$&space;Concentration&space;=&space;\frac{1000}{\sqrt[3]{\frac{Distance}{.2}}}&space;$$\\" target="_blank"><img src="https://latex.codecogs.com/png.latex?$$&space;Concentration&space;=&space;\frac{1000}{\sqrt[3]{\frac{Distance}{.2}}}&space;$$\\" title="$$ Concentration = \frac{1000}{\sqrt[3]{\frac{Distance}{.2}}} $$\\" /></a></center>
 
  $$ Sensitivity = (S0+E0) + (S1+E1)e^{\frac{-t(i)}{\tau1 + ET1}} + (S2+E2)e^{\frac{-t(i)}{\tau2 + ET2}} $$
 
@@ -266,7 +270,7 @@ Recalibration is triggered by two conditions. In the first case, when the sensit
 
 ----
 
-## Node Sampling Parameters {##Node-Sampling-Parameters}
+## Node Sampling Parameters 
 
 Node sampling is handled mainly by the energy models as described in [Energy Models](##Energy-Models). Once data is sampled it is stored in a few places.
 
@@ -296,7 +300,7 @@ There are a number of parameters that can be set from the command line in order 
 
 ----
 
-## Logging Parameters {##Logging-Parameters}
+## Logging Parameters 
 
 Logging for each run of the simulator is controlled by command line parameters. Logging can be extremely verbose or limited to just important statistics such as detections.
 
@@ -310,6 +314,10 @@ Logging for each run of the simulator is controlled by command line parameters. 
 
 * nodesPrint
     * Print node readings and averages after every update cycle.
+    * true or false
+
+* gridPrint
+    * Print grid readings and averages after every update cycle
     * true or false
 
 * outputFileName
