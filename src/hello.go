@@ -518,7 +518,7 @@ func main() {
 	positionFile.Seek(0, 0)
 	fmt.Fprintln(positionFile, "Width:", maxX)
 	fmt.Fprintln(positionFile, "Height:", maxY)
-	fmt.Fprintf(positionFile, "Amount: %-8v\n", i)
+	fmt.Fprintf(positionFile, "Amount:%-8v\n", i)
 
 	for i := range boolGrid {
 		fmt.Fprintln(boolFile, boolGrid[i])
