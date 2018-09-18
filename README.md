@@ -2,12 +2,12 @@
 The bomb simulator is a program designed to simulate the detection of a bomb utilizing cheap chemical sensors carried by every member of the event. Specifically, the simulator attempts to emulate realistic detector equations for sensor drifting, energy usage, and communication overheads. The simulator utilizes a general flow which will be listed and described below.
 ## Flow
 1. Parse User Input
-   * [Arena Map](##Arena-Map)
-   * [Energy Models](##Energy-Models)
-   * [Super Node Types](##Super-Node-Types)
-   * [Sensor Drifting Parameters](##Sensor-Drifting-Parameters)
-   * [Node Sampling Parameters](##Node-Sampling-Parameters)
-   * [Logging Parameters](##Logging-Parameters)
+   * [Arena Map](#arena-map)
+   * [Energy Models](#energy-models)
+   * [Super Node Types](#super-node-types)
+   * [Sensor Drifting Parameters](#sensor-drifting-parameters)
+   * [Node Sampling Parameters](#node-sampling-parameters)
+   * [Logging Parameters](#logging-parameters)
 2. Build and Populate Arena for simulation
 3. Execute Simulator with given parameters
 4. Output Log Files with Details and Results of Simulation
@@ -242,16 +242,36 @@ Sensor drifting is handled by the following equations:
  $$ Concentration = \frac{1000}{\sqrt[3]{\frac{Distance}{.2}}} $$
 
 
-<center>
- <a href="https://www.codecogs.com/eqnedit.php?latex=$$&space;Concentration&space;=&space;\frac{1000}{\sqrt[3]{\frac{Distance}{.2}}}&space;$$\\" target="_blank"><img src="https://latex.codecogs.com/png.latex?$$&space;Concentration&space;=&space;\frac{1000}{\sqrt[3]{\frac{Distance}{.2}}}&space;$$\\" title="$$ Concentration = \frac{1000}{\sqrt[3]{\frac{Distance}{.2}}} $$\\" /></a></center>
+<p align="center"> 
+ <a href="https://www.codecogs.com/eqnedit.php?latex=$$&space;Concentration&space;=&space;\frac{1000}{\sqrt[3]{\frac{Distance}{.2}}}&space;$$\\" target="_blank"><img src="https://latex.codecogs.com/png.latex?$$&space;Concentration&space;=&space;\frac{1000}{\sqrt[3]{\frac{Distance}{.2}}}&space;$$\\" title="$$ Concentration = \frac{1000}{\sqrt[3]{\frac{Distance}{.2}}} $$\\" /></a>
+ </p>
 
  $$ Sensitivity = (S0+E0) + (S1+E1)e^{\frac{-t(i)}{\tau1 + ET1}} + (S2+E2)e^{\frac{-t(i)}{\tau2 + ET2}} $$
 
+
+<p align="center"> 
+<a href="https://www.codecogs.com/eqnedit.php?latex=$$&space;Sensitivity&space;=&space;(S0&plus;E0)&space;&plus;&space;(S1&plus;E1)e^{\frac{-t(i)}{\tau1&space;&plus;&space;ET1}}&space;&plus;&space;(S2&plus;E2)e^{\frac{-t(i)}{\tau2&space;&plus;&space;ET2}}&space;$$" target="_blank"><img src="https://latex.codecogs.com/png.latex?$$&space;Sensitivity&space;=&space;(S0&plus;E0)&space;&plus;&space;(S1&plus;E1)e^{\frac{-t(i)}{\tau1&space;&plus;&space;ET1}}&space;&plus;&space;(S2&plus;E2)e^{\frac{-t(i)}{\tau2&space;&plus;&space;ET2}}&space;$$" title="$$ Sensitivity = (S0+E0) + (S1+E1)e^{\frac{-t(i)}{\tau1 + ET1}} + (S2+E2)e^{\frac{-t(i)}{\tau2 + ET2}} $$" /></a>
+</p>
  $$ SensitivityEstimate = S0 + S1e^{\frac{-t(i)}{\tau1}} + S2e^{\frac{-t(i)}{\tau2}} $$
+
+
+<p align="center"> 
+<a href="https://www.codecogs.com/eqnedit.php?latex=$$&space;SensitivityEstimate&space;=&space;S0&space;&plus;&space;S1e^{\frac{-t(i)}{\tau1}}&space;&plus;&space;S2e^{\frac{-t(i)}{\tau2}}&space;$$" target="_blank"><img src="https://latex.codecogs.com/png.latex?$$&space;SensitivityEstimate&space;=&space;S0&space;&plus;&space;S1e^{\frac{-t(i)}{\tau1}}&space;&plus;&space;S2e^{\frac{-t(i)}{\tau2}}&space;$$" title="$$ SensitivityEstimate = S0 + S1e^{\frac{-t(i)}{\tau1}} + S2e^{\frac{-t(i)}{\tau2}} $$" /></a>
+</p>
 
  $$ MeasurementNoise = gaussian*0.5 + Concentration*Sensitivity $$
 
+
+<p align="center"> 
+<a href="https://www.codecogs.com/eqnedit.php?latex=$$&space;MeasurementNoise&space;=&space;gaussian*0.5&space;&plus;&space;Concentration*Sensitivity&space;$$" target="_blank"><img src="https://latex.codecogs.com/png.latex?$$&space;MeasurementNoise&space;=&space;gaussian*0.5&space;&plus;&space;Concentration*Sensitivity&space;$$" title="$$ MeasurementNoise = gaussian*0.5 + Concentration*Sensitivity $$" /></a>
+</p>
+
  $$ MeasurementExtimation = \frac{MeasurementNoise}{SensitivityEstimate} $$
+
+
+<p align="center"> 
+<a href="https://www.codecogs.com/eqnedit.php?latex=$$&space;MeasurementExtimation&space;=&space;\frac{MeasurementNoise}{SensitivityEstimate}&space;$$" target="_blank"><img src="https://latex.codecogs.com/png.latex?$$&space;MeasurementExtimation&space;=&space;\frac{MeasurementNoise}{SensitivityEstimate}&space;$$" title="$$ MeasurementExtimation = \frac{MeasurementNoise}{SensitivityEstimate} $$" /></a>
+</p>
 
  Currently, $\tau1=10$ and $\tau2=500$. S0, S1, S2 are all sensor specific and randomly chosen from a random distribution such that $rand()*0.2+0.1$. E0, E1, E2 are chosen as
  
