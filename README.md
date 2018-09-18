@@ -303,7 +303,7 @@ Recalibration is triggered by two conditions. In the first case, when the sensit
 
 ## Node Sampling Parameters 
 
-Node sampling is handled mainly by the energy models as described in [Energy Models](##Energy-Models). Once data is sampled it is stored in a few places.
+Node sampling is handled mainly by the energy models as described in [Energy Models](#energy-models). Once data is sampled it is stored in a few places.
 
 Each node keeps a running average of its own readings. This value is implemented as a weighted moving average in which readings are rated equally if a node is sitting still, or more heavily as a node begins to move. This average value is utilized for debugging and diagnostics.
 
@@ -335,19 +335,19 @@ There are a number of parameters that can be set from the command line in order 
 
 Logging for each run of the simulator is controlled by command line parameters. Logging can be extremely verbose or limited to just important statistics such as detections.
 
-* positionPrint
+* logPosition
     * Determines whether to print each nodes position at every update cycle. This can be utilized for viewing with the included BombDetection.jar allowing for viewing of crowd movement over time.
     * true or false
 
-* energyPrint
+* logEnergy
     * Prints energy usage for each node after every update cycle. Useful for debugging energy models.
     * true or false
 
-* nodesPrint
+* logNodes
     * Print node readings and averages after every update cycle.
     * true or false
 
-* gridPrint
+* logGrid
     * Print grid readings and averages after every update cycle
     * true or false
 
@@ -377,4 +377,4 @@ The most important information is printed in the drift file. This file contains 
     * The sensor has drifted far enough that it wouldn't have detected the bomb that was in range, and the energy model didn't allow the sensor to sample, meaning that even if the node had sampled it still wouldn't have detected the bomb.
 
 * Drifting False Positive
-    * 
+    * The sensor has drifted far enought that it has incorrectly detected a bomb reading. The sensor must not be in range of the bomb for this to occur.
