@@ -239,50 +239,61 @@ Super nodes of type 7 are exactly the same as super nodes of type 6 except intea
 
 Sensor drifting is handled by the following equations:
 
- $$ Concentration = \frac{1000}{\sqrt[3]{\frac{Distance}{.2}}} $$
 
 
 <p align="center"> 
  <a href="https://www.codecogs.com/eqnedit.php?latex=$$&space;Concentration&space;=&space;\frac{1000}{\sqrt[3]{\frac{Distance}{.2}}}&space;$$\\" target="_blank"><img src="https://latex.codecogs.com/png.latex?$$&space;Concentration&space;=&space;\frac{1000}{\sqrt[3]{\frac{Distance}{.2}}}&space;$$\\" title="$$ Concentration = \frac{1000}{\sqrt[3]{\frac{Distance}{.2}}} $$\\" /></a>
  </p>
 
- $$ Sensitivity = (S0+E0) + (S1+E1)e^{\frac{-t(i)}{\tau1 + ET1}} + (S2+E2)e^{\frac{-t(i)}{\tau2 + ET2}} $$
 
 
 <p align="center"> 
 <a href="https://www.codecogs.com/eqnedit.php?latex=$$&space;Sensitivity&space;=&space;(S0&plus;E0)&space;&plus;&space;(S1&plus;E1)e^{\frac{-t(i)}{\tau1&space;&plus;&space;ET1}}&space;&plus;&space;(S2&plus;E2)e^{\frac{-t(i)}{\tau2&space;&plus;&space;ET2}}&space;$$" target="_blank"><img src="https://latex.codecogs.com/png.latex?$$&space;Sensitivity&space;=&space;(S0&plus;E0)&space;&plus;&space;(S1&plus;E1)e^{\frac{-t(i)}{\tau1&space;&plus;&space;ET1}}&space;&plus;&space;(S2&plus;E2)e^{\frac{-t(i)}{\tau2&space;&plus;&space;ET2}}&space;$$" title="$$ Sensitivity = (S0+E0) + (S1+E1)e^{\frac{-t(i)}{\tau1 + ET1}} + (S2+E2)e^{\frac{-t(i)}{\tau2 + ET2}} $$" /></a>
 </p>
- $$ SensitivityEstimate = S0 + S1e^{\frac{-t(i)}{\tau1}} + S2e^{\frac{-t(i)}{\tau2}} $$
-
+ 
 
 <p align="center"> 
 <a href="https://www.codecogs.com/eqnedit.php?latex=$$&space;SensitivityEstimate&space;=&space;S0&space;&plus;&space;S1e^{\frac{-t(i)}{\tau1}}&space;&plus;&space;S2e^{\frac{-t(i)}{\tau2}}&space;$$" target="_blank"><img src="https://latex.codecogs.com/png.latex?$$&space;SensitivityEstimate&space;=&space;S0&space;&plus;&space;S1e^{\frac{-t(i)}{\tau1}}&space;&plus;&space;S2e^{\frac{-t(i)}{\tau2}}&space;$$" title="$$ SensitivityEstimate = S0 + S1e^{\frac{-t(i)}{\tau1}} + S2e^{\frac{-t(i)}{\tau2}} $$" /></a>
 </p>
-
- $$ MeasurementNoise = gaussian*0.5 + Concentration*Sensitivity $$
 
 
 <p align="center"> 
 <a href="https://www.codecogs.com/eqnedit.php?latex=$$&space;MeasurementNoise&space;=&space;gaussian*0.5&space;&plus;&space;Concentration*Sensitivity&space;$$" target="_blank"><img src="https://latex.codecogs.com/png.latex?$$&space;MeasurementNoise&space;=&space;gaussian*0.5&space;&plus;&space;Concentration*Sensitivity&space;$$" title="$$ MeasurementNoise = gaussian*0.5 + Concentration*Sensitivity $$" /></a>
 </p>
 
- $$ MeasurementExtimation = \frac{MeasurementNoise}{SensitivityEstimate} $$
-
 
 <p align="center"> 
 <a href="https://www.codecogs.com/eqnedit.php?latex=$$&space;MeasurementExtimation&space;=&space;\frac{MeasurementNoise}{SensitivityEstimate}&space;$$" target="_blank"><img src="https://latex.codecogs.com/png.latex?$$&space;MeasurementExtimation&space;=&space;\frac{MeasurementNoise}{SensitivityEstimate}&space;$$" title="$$ MeasurementExtimation = \frac{MeasurementNoise}{SensitivityEstimate} $$" /></a>
 </p>
 
- Currently, $\tau1=10$ and $\tau2=500$. S0, S1, S2 are all sensor specific and randomly chosen from a random distribution such that $rand()*0.2+0.1$. E0, E1, E2 are chosen as
+ Currently, <a href="https://www.codecogs.com/eqnedit.php?latex=\inline&space;$\tau1=10$" target="_blank"><img src="https://latex.codecogs.com/png.latex?\inline&space;$\tau1=10$" title="$\tau1=10$" /></a> and <a href="https://www.codecogs.com/eqnedit.php?latex=\inline&space;$\tau2=500$" target="_blank"><img src="https://latex.codecogs.com/png.latex?\inline&space;$\tau2=500$" title="$\tau2=500$" /></a>. S0, S1, S2 are all sensor specific and randomly chosen from a random distribution such that $rand()*0.2+0.1$. E0, E1, E2 are chosen as
  
- $$ E0 = rand()*0.1*S0 $$
- $$ E1 = rand()*0.1*S1 $$
- $$ E2 = rand()*0.1*S2 $$
+
+<p align="center"> 
+<a href="https://www.codecogs.com/eqnedit.php?latex=$$&space;E0&space;=&space;rand()*0.1*S0&space;$$" target="_blank"><img src="https://latex.codecogs.com/png.latex?$$&space;E0&space;=&space;rand()*0.1*S0&space;$$" title="$$ E0 = rand()*0.1*S0 $$" /></a>
+</p>
+
+
+
+ <p align="center"> 
+<a href="https://www.codecogs.com/eqnedit.php?latex=$$&space;E1&space;=&space;rand()*0.1*S1&space;$$" target="_blank"><img src="https://latex.codecogs.com/png.latex?$$&space;E1&space;=&space;rand()*0.1*S1&space;$$" title="$$ E1 = rand()*0.1*S1 $$" /></a>
+</p>
+ 
+
+<p align="center"> 
+<a href="https://www.codecogs.com/eqnedit.php?latex=$$&space;E1&space;=&space;rand()*0.1*S1&space;$$" target="_blank"><img src="https://latex.codecogs.com/png.latex?$$&space;E2&space;=&space;rand()*0.1*S2&space;$$" title="$$ E2 = rand()*0.1*S2 $$" /></a>
+</p>
 
  and ET1 and ET2 are chosen as
 
- $$ ET1 = \tau1*rand()*0.05 $$
- $$ ET2 = \tau2*rand()*0.05 $$
+
+ <p align="center"> 
+<a href="https://www.codecogs.com/eqnedit.php?latex=$$&space;ET1&space;=&space;\tau1*rand()*0.05&space;$$" target="_blank"><img src="https://latex.codecogs.com/png.latex?$$&space;ET1&space;=&space;\tau1*rand()*0.05&space;$$" title="$$ ET1 = \tau1*rand()*0.05 $$" /></a>
+</p>
+
+ <p align="center"> 
+<a href="https://www.codecogs.com/eqnedit.php?latex=$$&space;ET2&space;=&space;\tau2*rand()*0.05&space;$$" target="_blank"><img src="https://latex.codecogs.com/png.latex?$$&space;ET2&space;=&space;\tau2*rand()*0.05&space;$$" title="$$ ET2 = \tau2*rand()*0.05 $$" /></a>
+</p>
 
 In all cases, each value is chosen and remembered per node, meaning that each node has a slightly different set of parameters and error values that are inherent to it. Time is kept track of per node, with time 0 being when the node is initialized and whenever the node is recalibrated. Currently, none of these parameters are exposed via the command line as they were specified as unchanging. 
 
