@@ -1,2 +1,22 @@
 
-run_here/
+run_here/boardMap\.txt
+
+run_here/result\.txt
+
+run_here/src
+
+run_here/testing-attraction\.txt
+
+run_here/testing-bool\.txt
+
+run_here/testing-drift\.txt
+
+run_here/testing-energy\.txt
+
+run_here/testing-grid\.txt
+
+run_here/testing-nodes\.txt
+
+run_here/testing-positions\.txt
+
+run_here/testing-routing\.txt
