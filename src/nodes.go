@@ -210,7 +210,9 @@ func (n rn) String() string {
 } 		// end extra extra string statements
 
 func (n NodeImpl) String () string{
-	return fmt.Sprintf("x: %v y: %v id: %v battery: %v sensor checked: %v sensor checks: %v GPS checked: %v GPS checks: %v server checked: %v server checks: %v buffer: %v ", n.x, n.y, n.id, n.battery, n.hasCheckedSensor, n.totalChecksSensor, n.hasCheckedGPS, n.totalChecksGPS, n.hasCheckedServer, n.totalChecksServer,n.bufferI)
+	//return fmt.Sprintf("x: %v y: %v id: %v battery: %v sensor checked: %v sensor checks: %v GPS checked: %v GPS checks: %v server checked: %v server checks: %v buffer: %v ", n.x, n.y, n.id, n.battery, n.hasCheckedSensor, n.totalChecksSensor, n.hasCheckedGPS, n.totalChecksGPS, n.hasCheckedServer, n.totalChecksServer,n.bufferI)
+	return fmt.Sprintf("battery: %v sensor checked: %v GPS checked: %v ", int(n.battery), n.hasCheckedSensor, n.hasCheckedGPS)
+
 }
 
 func (c Coord) String() string {
@@ -1065,12 +1067,14 @@ func (curNode *NodeImpl) getReadings() {
 	}
 
 	//printing statements to log files, only if the sensor was pinged this iteration
-	if curNode.hasCheckedSensor && nodesPrint{
+	//if curNode.hasCheckedSensor && nodesPrint{
+	if nodesPrint{
 		if recalibrate {
 			fmt.Fprintln(nodeFile,"ID:",curNode.getID(),"Average:",curNode.getAvg(),"Reading:",newDist,"Error Reading:",errorDist,"Recalibrated")
 		} else {
 			fmt.Fprintln(nodeFile,"ID:",curNode.getID(),"Average:",curNode.getAvg(),"Reading:",newDist,"Error Reading:",errorDist)
 		}
+		//fmt.Fprintln(nodeFile, "battery:", int(curNode.battery),)
 	}
 
 	if positionPrint {

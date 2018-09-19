@@ -1,16 +1,14 @@
 numNodes-100
 superNodeType-0
-maxX-500
-maxY-500
-bombX-425
-bombY-425
+maxX-100
+maxY-100
+bombX-85
+bombY-85
 N: 0
 W: 0
 S: 0
 P: 0
-POIS: 5
-x:50, y:50, ti:0, to:2000
-x:450, y:450, ti:0, to:2000
-x:250, y:250, ti:2000, to:4000
-x:50, y:50, ti:4000, to:5000
-x:450, y:450, ti:4000, to:5000
+POIS: 2
+x:95, y:95, ti:0, to:2000
+x:5, y:5, ti:0, to:2000
+

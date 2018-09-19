@@ -7,7 +7,7 @@ import (
 	"os"
 	"regexp"
 	"strconv"
-	"time"
+	//"time"
 )
 
 var (
@@ -124,9 +124,9 @@ func getListedInput() {
 	} else {
 		b2 = b
 	}
-	fmt.Println(w)
+	//fmt.Println(w)
 	fillInts(w, 0)
-	fmt.Println(npos)
+	//fmt.Println(npos)
 
 	r = regexp.MustCompile("W: [0-9]+")
 	w = r.FindAllString(string(b2), 10)
@@ -142,9 +142,9 @@ func getListedInput() {
 	} else {
 		b3 = b2
 	}
-	fmt.Println(w)
+	//fmt.Println(w)
 	fillInts(w, 1)
-	fmt.Println(wpos)
+	//fmt.Println(wpos)
 
 	r = regexp.MustCompile("S: [0-9]+")
 	w = r.FindAllString(string(b3), 10)
@@ -160,9 +160,9 @@ func getListedInput() {
 	} else {
 		b4 = b3
 	}
-	fmt.Println(w)
+	//fmt.Println(w)
 	fillInts(w, 2)
-	fmt.Println(spos)
+	//fmt.Println(spos)
 
 	/*r = regexp.MustCompile("P: [0-9]+")
 	w = r.FindAllString(string(b4), 10)
@@ -198,9 +198,9 @@ func getListedInput() {
 	} else {
 		b6 = b5
 	}
-	fmt.Println(w)
+	//fmt.Println(w)
 	fillInts(w, 5)
-	fmt.Println(poispos)
+	//fmt.Println(poispos)
 
 	numNodeNodes = len(npos)
 	numWallNodes = len(wpos)
@@ -416,7 +416,7 @@ func fillInBufferCurrent() {
 	for i := 0; i < len(poispos); i++ {
 		if iterations_used >= poispos[i][2] && iterations_used < poispos[i][3] {
 			bufferCurrent = append(bufferCurrent, []int{poispos[i][1], poispos[i][0]})
-			fmt.Println("1ho- ", iterations_used, "2ho", bufferCurrent)
+			//fmt.Println("1ho- ", iterations_used, "2ho", bufferCurrent)
 		}
 	}
 }
@@ -424,19 +424,19 @@ func fillInBufferCurrent() {
 // Fills the points of interest to the board
 func fillPointsToBoard() {
 	for i := 0; i < len(bufferCurrent); i++ {
-		fmt.Println(bufferCurrent)
+		//fmt.Println(bufferCurrent)
 		boardMap[bufferCurrent[i][0]][bufferCurrent[i][1]] = starter
 	}
 }
 
 // Fills in board map with the path finding values
 func fillInMap1() {
-	start := time.Now()
+	/*start := time.Now()
 
 	defer func() {
 		elapsed := time.Since(start)
-		fmt.Println("Board Map took", elapsed)
-	}()
+		//fmt.Println("Board Map took", elapsed)
+	}()*/
 
 	for len(bufferFuture) > 0 {
 		bufferFuture = [][]int{}
@@ -517,12 +517,12 @@ func checkDown(i int) {
 }
 
 func fillInMap() {
-	start := time.Now()
+	/*start := time.Now()
 
 	defer func() {
 		elapsed := time.Since(start)
-		fmt.Println("Board Map took", elapsed)
-	}()
+		//fmt.Println("Board Map took", elapsed)
+	}()*/
 
 	for len(bufferFuture) > 0 {
 		bufferFuture = [][]int{}
@@ -589,11 +589,11 @@ var fileBoard, errBoard = os.Create("boardMap.txt")
 
 // This prints board Map to a txt file.
 func writeBordMapToFile2() {
-	start := time.Now()
+	/*start := time.Now()
 	defer func() {
 		elapsed := time.Since(start)
 		fmt.Println("Printing Board Map took", elapsed)
-	}()
+	}()*/
 	check(errBoard)
 	var s = ""
 	s = s + "\nt=" + strconv.Itoa(iterations_used) + "\n\n"
@@ -610,7 +610,7 @@ func writeBordMapToFile2() {
 }
 
 func writeBordMapToFile() {
-	start := time.Now()
+	//start := time.Now()
 	check(errBoard)
 	w := bufio.NewWriter(fileBoard)
 	w.WriteString("\nt=" + strconv.Itoa(iterations_used) + "\n\n")
@@ -621,6 +621,6 @@ func writeBordMapToFile() {
 		w.WriteString("\n")
 	}
 	w.Flush()
-	elapsed := time.Since(start)
-	fmt.Println("Printing Board Map took", elapsed)
+	//elapsed := time.Since(start)
+	//fmt.Println("Printing Board Map took", elapsed)
 }

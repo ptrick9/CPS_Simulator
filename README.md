@@ -390,7 +390,10 @@ The most important information is printed in the drift file. This file contains 
 
 The simulator project comes with a bash script that builds and runs a test project. In order for everything to compile correctly, some dependencies are required:
 
-* [Golang](https://golang.org/doc/install) must be installed 
-* Java w/ JavaFX (normally included, unless on Linux) must be installed
-* Python3 with numpy, pandas, matplotlib, and jupyter must be installed if you want to use the included statistics processing. 
+* [Golang](https://golang.org/dl/) must be installed 
+    * Choose most recent version for your system, install, and restart any terminal
+* [Java](http://www.oracle.com/technetwork/java/javase/downloads/jdk10-downloads-4416644.html) w/ JDK must be installed in order to run viewer. Accept agreement and install
+    * If on LINUX, run ``` sudo apt-get install openjdk openjfx ``` which will install the required packages. If you are running Ubuntu 18.04, this does not seem to work. 
+* [Python3](https://www.python.org/downloads/) with numpy, pandas, matplotlib, and jupyter must be installed if you want to use the included statistics processing. 
+    * 
 

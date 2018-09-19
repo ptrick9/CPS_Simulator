@@ -2,4 +2,4 @@
 
 cd run_here
 go build ../src/
-./src -inputFileName=../testScenario/Scenario_4.txt -logPosition=true -logGrid=true -logEnergy=true -logNodes=true -outputFileName=testing
+./src -inputFileName=../testScenario/Scenario_4.txt -logPosition=true -logGrid=true -logEnergy=true -logNodes=true -outputFileName=testing -squareRow=20 -squareCol=20

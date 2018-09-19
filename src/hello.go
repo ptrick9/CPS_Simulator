@@ -200,19 +200,19 @@ func main() {
 	}
 	defer gridFile.Close()
 
-	nodeFile, err = os.Create(outputFileNameCM + "-nodes.txt")
+	nodeFile, err = os.Create(outputFileNameCM + "-node_reading.txt")
 	if err != nil {
 		log.Fatal("Cannot create file", err)
 	}
 	defer nodeFile.Close()
 
-	energyFile, err := os.Create(outputFileNameCM + "-energy.txt")
+	energyFile, err := os.Create(outputFileNameCM + "-node.txt")
 	if err != nil {
 		log.Fatal("Cannot create file", err)
 	}
 	defer energyFile.Close()
 
-	routingFile, err := os.Create(outputFileNameCM + "-routing.txt")
+	routingFile, err := os.Create(outputFileNameCM + "-path.txt")
 	if err != nil {
 		log.Fatal("Cannot create file", err)
 	}
@@ -247,9 +247,12 @@ func main() {
 	center.y = maxY / 2
 
 	//Printing important information to the grid log file
-	fmt.Fprintln(gridFile, "Grid:", squareRow, "x", squareCol)
-	fmt.Fprintln(gridFile, "Total Number of Nodes:", (numNodes + numSuperNodes))
-	fmt.Fprintln(gridFile, "Runs:", iterations_of_event)
+	//fmt.Fprintln(gridFile, "Grid:", squareRow, "x", squareCol)
+	//fmt.Fprintln(gridFile, "Total Number of Nodes:", (numNodes + numSuperNodes))
+	//fmt.Fprintln(gridFile, "Runs:", iterations_of_event)
+
+	fmt.Fprintln(gridFile,"Width:", squareCol)
+	fmt.Fprintln(gridFile,"Height:", squareRow)
 
 	//Printing parameters to driftFile
 	fmt.Fprintln(driftFile, "Number of Nodes:", numNodes)
@@ -319,17 +322,20 @@ func main() {
 		}
 	}
 
-	fmt.Println("superNodeType", superNodeType)
-	fmt.Println("maxX", maxX)
+	fmt.Println("Super Node Type", superNodeType)
+	fmt.Println("Dimensions: ", maxX, "x", maxY)
 
 	//This function initializes the super nodes in the scheduler's sNodeList
 	scheduler.makeSuperNodes()
+
+	fmt.Printf("Running Simulator iteration %d\\%v",0, iterations_of_event)
+
 	i := 0
 	for i = 0; i < iterations_of_event && !foundBomb; i++ {
 
 		makeNodes()
-		fmt.Println(iterations_used)
-
+		//fmt.Println(iterations_used)
+		fmt.Printf("\rRunning Simulator iteration %d\\%v",i, iterations_of_event)
 		if positionPrint {
 			fmt.Fprintln(positionFile, "t= ", iterations_used, " amount= ", len(nodeList))
 		}
@@ -363,6 +369,7 @@ func main() {
 		nodeFile.Sync()
 		positionFile.Sync()
 
+		fmt.Fprintln(energyFile, "Amount:", len(nodeList))
 		for j := 0; j < len(nodeList); j++ {
 
 			oldX, oldY := nodeList[j].getLoc()
@@ -505,7 +512,7 @@ func main() {
 		}
 		fmt.Fprint(driftFile, "----------------\n")
 		if energyPrint {
-			fmt.Fprint(energyFile, "----------------\n")
+			//fmt.Fprint(energyFile, "----------------\n")
 		}
 		fmt.Fprint(gridFile, "----------------\n")
 		if nodesPrint {
@@ -520,9 +527,17 @@ func main() {
 	fmt.Fprintln(positionFile, "Height:", maxY)
 	fmt.Fprintf(positionFile, "Amount: %-8v\n", i)
 
+	if (i < iterations_of_event - 1) {
+		fmt.Printf("\nFound bomb at iteration: %v \nSimulation Complete\n", i)
+	} else {
+		fmt.Println("\nSimulation Complete")
+	}
+
 	for i := range boolGrid {
 		fmt.Fprintln(boolFile, boolGrid[i])
 	}
+
+
 }
 
 func makeNodes() {
@@ -788,7 +803,7 @@ func getFlags() {
 	fmt.Println("Number of Node Stored Samples:", numStoredSamplesCM)
 	fmt.Println("Number of Grid Stored Samples:", gridStoredSamplesCM)
 	fmt.Println("Detection Threshold:", detectionThresholdCM)
-	fmt.Println("tail:", flag.Args())
+	//fmt.Println("tail:", flag.Args())
 }
 
 func rangeInt(min, max int) int { //returns a random number between max and min
