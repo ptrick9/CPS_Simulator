@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.input.*?>
+<?import javafx.collections.*?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.chart.*?>
+<?import javafx.scene.control.*?>
+<?import java.lang.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.collections.FXCollections?>
+
+<VBox fx:id="root" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="500.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="edu.udel.ntsee.bombdetection.statistics.StatisticsController">
+   <children>
+      <MenuBar>
+        <menus>
+          <Menu mnemonicParsing="false" text="File">
+            <items>
+              <MenuItem mnemonicParsing="false" onAction="#onMenuItemOpen" text="Open...">
+                     <accelerator>
+                        <KeyCodeCombination alt="UP" code="O" control="DOWN" meta="UP" shift="UP" shortcut="UP" />
+                     </accelerator></MenuItem>
+            </items>
+          </Menu>
+            <Menu mnemonicParsing="false" text="Export">
+              <items>
+                <MenuItem mnemonicParsing="false" onAction="#onMenuItemCopy" text="Copy to Clipboard">
+                     <accelerator>
+                        <KeyCodeCombination alt="UP" code="C" control="DOWN" meta="UP" shift="UP" shortcut="UP" />
+                     </accelerator>
+                  </MenuItem>
+                  <MenuItem mnemonicParsing="false" onAction="#onMenuItemSave" text="Save Graph...">
+                     <accelerator>
+                        <KeyCodeCombination alt="UP" code="S" control="DOWN" meta="UP" shift="DOWN" shortcut="UP" />
+                     </accelerator>
+                  </MenuItem>
+              </items>
+            </Menu>
+          <Menu mnemonicParsing="false" text="Tools">
+            <items>
+              <MenuItem mnemonicParsing="false" onAction="#onMenuItemSimulator" text="Simulator" />
+                  <MenuItem mnemonicParsing="false" onAction="#onMenuItemBuilder" text="Builder" />
+            </items>
+          </Menu>
+        </menus>
+      </MenuBar>
+      <HBox prefHeight="100.0" prefWidth="200.0" VBox.vgrow="ALWAYS">
+         <children>
+            <VBox prefHeight="200.0" prefWidth="100.0" spacing="10.0">
+               <children>
+                  <Label text="Input File" />
+                  <ComboBox fx:id="comboBoxInputFile" minWidth="-Infinity" prefWidth="250.0">
+                    <items>
+                      <FXCollections fx:factory="observableArrayList">
+                        <String fx:value="Input File" />
+                      </FXCollections>
+                    </items>
+                  </ComboBox>
+                  <Label text="X Axis" />
+                  <ComboBox fx:id="comboBoxXAxis" minWidth="-Infinity" prefWidth="250.0">
+                    <items>
+                      <FXCollections fx:factory="observableArrayList">
+                        <String fx:value="Detection Threshold" />
+                        <String fx:value="Samples Stored by Node" />
+                        <String fx:value="Samples Stored by Grid" />
+                        <String fx:value="Square Dimensions" />
+                      </FXCollections>
+                    </items>
+                  </ComboBox>
+                  <Label text="Y Axis" />
+                  <ComboBox fx:id="comboBoxCategory" minWidth="-Infinity" prefWidth="250.0">
+                      <items>
+                          <FXCollections fx:factory="observableArrayList">
+                              <String fx:value="True Positive" />
+                              <String fx:value="False Positive" />
+                              <String fx:value="True Negative" />
+                              <String fx:value="False Negative" />
+                          </FXCollections>
+                      </items>
+                  </ComboBox>
+                  <Label text="Reason" />
+                  <ComboBox fx:id="comboBoxReason" minWidth="-Infinity" prefWidth="250.0">
+                      <items>
+                          <FXCollections fx:factory="observableArrayList">
+                              <String fx:value="Grid" />
+                              <String fx:value="Node (Energy)" />
+                              <String fx:value="Node (Drifting)" />
+                              <String fx:value="Node (Both)" />
+                          </FXCollections>
+                      </items>
+                  </ComboBox>
+               </children>
+               <padding>
+                  <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+               </padding>
+            </VBox>
+            <Separator orientation="VERTICAL" prefHeight="200.0" />
+            <LineChart fx:id="chart" legendVisible="false" HBox.hgrow="ALWAYS">
+              <xAxis>
+                <CategoryAxis side="BOTTOM" fx:id="xAxis" />
+              </xAxis>
+              <yAxis>
+                <NumberAxis fx:id="yAxis" side="LEFT" />
+              </yAxis>
+            </LineChart>
+         </children>
+      </HBox>
+   </children>
+</VBox>
