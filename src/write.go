@@ -1,7 +1,7 @@
 package main
 
 import (
-	"bufio"
+	//"bufio"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -585,15 +585,15 @@ func fillInMap() {
 //	}
 //}
 
-var fileBoard, errBoard = os.Create("boardMap.txt")
-
+//var fileBoard, errBoard = os.Create("boardMap.txt")
+/*
 // This prints board Map to a txt file.
 func writeBordMapToFile2() {
-	/*start := time.Now()
+	start := time.Now()
 	defer func() {
 		elapsed := time.Since(start)
 		fmt.Println("Printing Board Map took", elapsed)
-	}()*/
+	}()
 	check(errBoard)
 	var s = ""
 	s = s + "\nt=" + strconv.Itoa(iterations_used) + "\n\n"
@@ -623,4 +623,4 @@ func writeBordMapToFile() {
 	w.Flush()
 	//elapsed := time.Since(start)
 	//fmt.Println("Printing Board Map took", elapsed)
-}
+}*/

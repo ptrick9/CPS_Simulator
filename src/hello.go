@@ -136,11 +136,11 @@ func main() {
 	bombY = getDashedInput("bombY")
 	//numAtt = getDashedInput("numAtt")
 
-	resultFile, err := os.Create("result.txt")
+	/*resultFile, err := os.Create("result.txt")
 	if err != nil {
 		log.Fatal("Cannot create file", err)
 	}
-	defer resultFile.Close()
+	defer resultFile.Close()*/
 
 	numStoredSamples = numStoredSamplesCM
 	numGridSamples = gridStoredSamplesCM
@@ -182,7 +182,7 @@ func main() {
 	batteryLossesCheckingServerScalar = getLinearBatteryLossConstant(len(npos), float32(serverSamplingLossCM))
 	attractions = make([]*attraction, numAtt)
 
-	positionFile, err = os.Create(outputFileNameCM + "-positions.txt")
+	positionFile, err := os.Create(outputFileNameCM + "-positions.txt")
 	if err != nil {
 		log.Fatal("Cannot create file", err)
 	}
@@ -349,7 +349,7 @@ func main() {
 				fillInBufferCurrent()
 				fillPointsToBoard()
 				fillInMap()
-				writeBordMapToFile()
+				//writeBordMapToFile()
 				i = len(poispos)
 			}
 		}
