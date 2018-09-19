@@ -1,3 +1,5 @@
+
+
 # General Description
 The bomb simulator is a program designed to simulate the detection of a bomb utilizing cheap chemical sensors carried by every member of the event. Specifically, the simulator attempts to emulate realistic detector equations for sensor drifting, energy usage, and communication overheads. The simulator utilizes a general flow which will be listed and described below.
 ## Flow
@@ -11,6 +13,9 @@ The bomb simulator is a program designed to simulate the detection of a bomb uti
 2. Build and Populate Arena for simulation
 3. Execute Simulator with given parameters
 4. Output Log Files with Details and Results of Simulation
+
+### [Quick Link To Tutorial](#tutorial)
+
 
 ## General Detection
 The simulator runs with the given parameters until it detects a bomb. In order to detect a bomb, a few things must happen. A node (person) must walk near enough to a bomb for it to create a high reading on the node's sensor. The node's individual energy model must also decide to take a sample within the time period that the node is within the detection radius of the bomb. At some point in the future, again, as determined by the energy model, the node will send its data to the server. 
@@ -378,3 +383,14 @@ The most important information is printed in the drift file. This file contains 
 
 * Drifting False Positive
     * The sensor has drifted far enought that it has incorrectly detected a bomb reading. The sensor must not be in range of the bomb for this to occur.
+
+----
+
+# Tutorial
+
+The simulator project comes with a bash script that builds and runs a test project. In order for everything to compile correctly, some dependencies are required:
+
+* [Golang](https://golang.org/doc/install) must be installed 
+* Java w/ JavaFX (normally included, unless on Linux) must be installed
+* Python3 with numpy, pandas, matplotlib, and jupyter must be installed if you want to use the included statistics processing. 
+
