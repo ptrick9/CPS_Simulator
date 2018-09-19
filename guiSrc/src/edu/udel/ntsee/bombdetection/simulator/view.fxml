@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import javafx.scene.text.*?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.input.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox fx:id="root" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="edu.udel.ntsee.bombdetection.simulator.SimulatorController">
+   <children>
+      <MenuBar>
+         <menus>
+            <Menu mnemonicParsing="false" text="File">
+               <items>
+                  <MenuItem fx:id="menuItemOpen" mnemonicParsing="false" onAction="#onMenuItemOpen" text="Open...">
+                     <accelerator>
+                        <KeyCodeCombination alt="UP" code="O" control="DOWN" meta="UP" shift="UP" shortcut="UP" />
+                     </accelerator>
+                  </MenuItem>
+                  <MenuItem fx:id="menuItemClose" disable="true" mnemonicParsing="false" onAction="#onMenuItemClose" text="Close" />
+               </items>
+            </Menu>
+            <Menu mnemonicParsing="false" text="View">
+               <items>
+                  <CheckMenuItem fx:id="checkMenuGridLines" mnemonicParsing="false" text="Grid Lines" />
+                  <CheckMenuItem fx:id="checkMenuQuadrants" mnemonicParsing="false" text="Quadrants" />
+                  <Menu mnemonicParsing="false" text="Nodes">
+                     <items>
+                        <CheckMenuItem fx:id="checkMenuSensorCoverage" mnemonicParsing="false" text="Sensor Coverage" />
+                        <SeparatorMenuItem mnemonicParsing="false" />
+                        <RadioMenuItem fx:id="radioMenuGPSReading" mnemonicParsing="false" selected="true" text="GPS Reading">
+                           <toggleGroup>
+                              <ToggleGroup fx:id="toggleGroupNodeColor" />
+                           </toggleGroup>
+                        </RadioMenuItem>
+                        <RadioMenuItem fx:id="radioMenuBatteryLevel" mnemonicParsing="false" text="Battery Level" toggleGroup="$toggleGroupNodeColor" />
+                     </items>
+                  </Menu>
+                  <Menu mnemonicParsing="false" text="Extras">
+                     <items>
+                        <RadioMenuItem fx:id="radioMenuNone" mnemonicParsing="false" selected="true" text="None">
+                           <toggleGroup>
+                              <ToggleGroup fx:id="toggleGroupExtras" />
+                           </toggleGroup>
+                        </RadioMenuItem>
+                        <RadioMenuItem fx:id="radioMenuSensorReading" mnemonicParsing="false" text="Sensor Reading" toggleGroup="$toggleGroupExtras" />
+                        <RadioMenuItem fx:id="radioMenuNodePathing" mnemonicParsing="false" text="Node Pathing" toggleGroup="$toggleGroupExtras" />
+                     </items>
+                  </Menu>
+                  <SeparatorMenuItem mnemonicParsing="false" />
+                  <MenuItem fx:id="menuItemZoomIn" mnemonicParsing="false" onAction="#onMenuItemZoomIn" text="Zoom In">
+                     <accelerator>
+                        <KeyCodeCombination alt="UP" code="PAGE_UP" control="DOWN" meta="UP" shift="UP" shortcut="UP" />
+                     </accelerator>
+                  </MenuItem>
+                  <MenuItem fx:id="menuItemZoomOut" mnemonicParsing="false" onAction="#onMenuItemZoomOut" text="Zoom Out">
+                     <accelerator>
+                        <KeyCodeCombination alt="UP" code="PAGE_DOWN" control="DOWN" meta="UP" shift="UP" shortcut="UP" />
+                     </accelerator>
+                  </MenuItem>
+                  <MenuItem fx:id="menuItemZoomFit" mnemonicParsing="false" onAction="#onMenuItemZoomFit" text="Fit to Screen" />
+                  <SeparatorMenuItem mnemonicParsing="false" />
+                  <MenuItem fx:id="menuItemFullscreen" mnemonicParsing="false" onAction="#onMenuItemFullscreen" text="Fullscreen">
+                     <accelerator>
+                        <KeyCodeCombination alt="UP" code="F11" control="UP" meta="UP" shift="UP" shortcut="ANY" />
+                     </accelerator>
+                  </MenuItem>
+               </items>
+            </Menu>
+            <Menu mnemonicParsing="false" text="Tools">
+               <items>
+                  <MenuItem fx:id="menuItemToolBuilder" mnemonicParsing="false" onAction="#onMenuItemToolBuilder" text="Builder" />
+                  <MenuItem mnemonicParsing="false" onAction="#onMenuItemStatistics" text="Statistics" />
+               </items>
+            </Menu>
+         </menus>
+      </MenuBar>
+      <StackPane VBox.vgrow="ALWAYS">
+         <children>
+            <Text fx:id="textNotLoaded" strokeType="OUTSIDE" strokeWidth="0.0" text="No Log Loaded" />
+            <Pane fx:id="containerCanvas" minHeight="-Infinity" minWidth="-Infinity" prefHeight="450.0" prefWidth="600.0" VBox.vgrow="ALWAYS" />
+         </children>
+      </StackPane>
+      <Separator prefWidth="200.0" VBox.vgrow="NEVER" />
+      <HBox alignment="CENTER" maxWidth="1.7976931348623157E308" minWidth="-Infinity" VBox.vgrow="NEVER">
+         <children>
+            <ToggleButton fx:id="buttonPlay" contentDisplay="CENTER" mnemonicParsing="false" selected="true" text="Play" HBox.hgrow="NEVER">
+               <toggleGroup>
+                  <ToggleGroup fx:id="toggleGroupProgress" />
+               </toggleGroup>
+               <HBox.margin>
+                  <Insets />
+               </HBox.margin>
+            </ToggleButton>
+            <Button mnemonicParsing="false" onAction="#onButtonBack" text="&lt;-" />
+            <StackPane HBox.hgrow="ALWAYS" VBox.vgrow="ALWAYS">
+               <children>
+                  <ProgressBar fx:id="progressBarSimulation" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" onMouseClicked="#onClickProgressBar" onMouseDragged="#onClickProgressBar" prefWidth="220.0" progress="0.0" StackPane.alignment="CENTER">
+                     <StackPane.margin>
+                        <Insets />
+                     </StackPane.margin>
+                  </ProgressBar>
+                  <Text fx:id="textProgress" strokeType="OUTSIDE" strokeWidth="0.0" text="0 / 0" StackPane.alignment="CENTER" />
+               </children>
+               <VBox.margin>
+                  <Insets />
+               </VBox.margin>
+            </StackPane>
+            <Button mnemonicParsing="false" onAction="#onButtonForward" text="-&gt;" HBox.hgrow="NEVER">
+               <HBox.margin>
+                  <Insets />
+               </HBox.margin>
+            </Button>
+         </children>
+         <padding>
+            <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+         </padding>
+      </HBox>
+   </children>
+</VBox>
