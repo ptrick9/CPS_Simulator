@@ -235,7 +235,7 @@ func main() {
 
 	fmt.Fprintln(positionFile, "Width:", maxX)
 	fmt.Fprintln(positionFile, "Height:", maxY)
-	fmt.Fprintf(positionFile, "Amount:%-8v\n", iterations_of_event)
+	fmt.Fprintf(positionFile, "Amount: %-8v\n", iterations_of_event)
 
 	//The capacity for a square should be equal to the area of the square
 	//So we take the side length (xDiv) and square it
@@ -518,7 +518,7 @@ func main() {
 	positionFile.Seek(0, 0)
 	fmt.Fprintln(positionFile, "Width:", maxX)
 	fmt.Fprintln(positionFile, "Height:", maxY)
-	fmt.Fprintf(positionFile, "Amount:%-8v\n", i)
+	fmt.Fprintf(positionFile, "Amount: %-8v\n", i)
 
 	for i := range boolGrid {
 		fmt.Fprintln(boolFile, boolGrid[i])
