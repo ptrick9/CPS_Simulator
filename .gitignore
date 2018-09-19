@@ -20,3 +20,11 @@ run_here/testing-nodes\.txt
 run_here/testing-positions\.txt
 
 run_here/testing-routing\.txt
+
+\.idea/CPS_Simulator\.iml
+
+\.idea/modules\.xml
+
+\.idea/vcs\.xml
+
+\.idea/workspace\.xml
