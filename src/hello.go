@@ -273,7 +273,7 @@ func main() {
 	fmt.Fprintln(driftFile, "Sensor Loss:", sensorSamplingLossCM, "GPS Loss:", GPSSamplingLossCM, "Server Loss:", serverSamplingLossCM)
 	fmt.Fprintln(driftFile, "Printing Position:", positionPrint, "Printing Energy:", energyPrint, "Printing Nodes:", nodesPrint)
 	fmt.Fprintln(driftFile, "Super Nodes:", numSuperNodes, "Super Node Type:", superNodeType, "Super Node Speed:", superNodeSpeed, "Super Node Radius:", superNodeRadius)
-
+	fmt.Fprintln(driftFile, "--------------------")
 	//Initializing the size of the boolean field representing coordinates
 	boolGrid = make([][]bool, maxY)
 	for i := range boolGrid {

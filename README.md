@@ -1,7 +1,7 @@
 
 
 # General Description
-The bomb simulator is a program designed to simulate the detection of a bomb utilizing cheap chemical sensors carried by every member of the event. Specifically, the simulator attempts to emulate realistic detector equations for sensor drifting, energy usage, and communication overheads. The simulator utilizes a general flow which will be listed and described below.
+The open area CPS simulator is a program designed to simulate the detection of a bomb utilizing cheap chemical sensors carried by every member of the event. Specifically, the simulator attempts to emulate realistic detector equations for sensor drifting, energy usage, and communication overheads. The simulator utilizes a general flow which will be listed and described below.
 ## Flow
 1. Parse User Input
    * [Arena Map](#arena-map)
@@ -395,5 +395,11 @@ The simulator project comes with a bash script that builds and runs a test proje
 * [Java](http://www.oracle.com/technetwork/java/javase/downloads/jdk10-downloads-4416644.html) w/ JDK must be installed in order to run viewer. Accept agreement and install
     * If on LINUX, run ``` sudo apt-get install openjdk openjfx ``` which will install the required packages. If you are running Ubuntu 18.04, this does not seem to work. 
 * [Python3](https://www.python.org/downloads/) with numpy, pandas, matplotlib, and jupyter must be installed if you want to use the included statistics processing. 
-    * 
+    * Ensure that python is on the path (checkbox on first page of installer)
+    * Once python is installed, we need to install the libraries, this varies by system
+        * Windows
+            * Python defaults to C:\Users\\--username--\AppData\Local\Programs\Python\Python**__Number__**, so open a shell and get to that directory.
+            * `cd Scripts`
+            * `./pip3 install numpy pandas matplotlib jupyter` 
+        * Mac
 
