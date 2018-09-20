@@ -107,6 +107,7 @@ var (
 	nodeFile     *os.File
 	positionFile *os.File
 	foundBomb    bool
+	err 		 error
 
 	// End the command line variables.
 )
@@ -182,7 +183,7 @@ func main() {
 	batteryLossesCheckingServerScalar = getLinearBatteryLossConstant(len(npos), float32(serverSamplingLossCM))
 	attractions = make([]*attraction, numAtt)
 
-	positionFile, err := os.Create(outputFileNameCM + "-positions.txt")
+	positionFile, err = os.Create(outputFileNameCM + "-positions.txt")
 	if err != nil {
 		log.Fatal("Cannot create file", err)
 	}
