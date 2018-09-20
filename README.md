@@ -461,6 +461,13 @@ on Toolbar: View.
   to transparent, while higher sensor readings will make this square appear
   more solid.
 
+
+  
+  
+
+  Before Detection             |  Detected and Supernode Routed
+:-------------------------:|:-------------------------:
+ ![Pre Detection](https://i.imgur.com/jQerHVi.png) |  ![Detected](https://i.imgur.com/Sas5XaO.png)
 # Data Processing
 Data processing is handled in a jupyter notebook. This is a preliminary setup and can/will be improved on in the future. 
 Due to the large element of randomness in the simulator, meaningful data can only really be gathered by hundreds of runs. This can take a long time for big simulations, and to save you this time, we've included 600 log files in the folder `test_data` as well as a rudimentary script which reads, aggregates, and lets you explore these statistics. 
