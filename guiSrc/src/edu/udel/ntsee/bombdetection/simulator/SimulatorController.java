@@ -21,9 +21,12 @@ import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
+import javax.swing.*;
+import javax.swing.filechooser.FileFilter;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.jar.JarFile;
 
 public class SimulatorController implements Drawable {
 
@@ -84,6 +87,12 @@ public class SimulatorController implements Drawable {
         });
 
         this.fileChooser = new FileChooser();
+        this.fileChooser.setInitialDirectory(new File("../tutorial_output"));
+        //Create filter to ease readability
+        FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter("PositionFiles (*-simulatorOutput.txt)", "*-simulatorOutput.txt");
+        this.fileChooser.getExtensionFilters().add(extFilter);
+
+
     }
 
     @Override

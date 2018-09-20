@@ -183,7 +183,7 @@ func main() {
 	batteryLossesCheckingServerScalar = getLinearBatteryLossConstant(len(npos), float32(serverSamplingLossCM))
 	attractions = make([]*attraction, numAtt)
 
-	positionFile, err = os.Create(outputFileNameCM + "-positions.txt")
+	positionFile, err = os.Create(outputFileNameCM + "-simulatorOutput.txt")
 	if err != nil {
 		log.Fatal("Cannot create file", err)
 	}

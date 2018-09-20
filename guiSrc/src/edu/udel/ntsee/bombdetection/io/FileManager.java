@@ -34,11 +34,11 @@ public class FileManager {
         }
 
         try {
-            BufferedReader reader = new BufferedReader(new FileReader(base + "-positions.txt"));
+            BufferedReader reader = new BufferedReader(new FileReader(base + "-simulatorOutput.txt"));
             properties[0] = Util.parseAmount(reader.readLine());
             properties[1] = Util.parseAmount(reader.readLine());
             properties[2] = Util.parseAmount(reader.readLine());
-            this.positions = new PositionFile(base + "-positions.txt");
+            this.positions = new PositionFile(base + "-simulatorOutput.txt");
 
         } catch (IOException e) {
             return;
