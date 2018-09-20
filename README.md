@@ -471,4 +471,6 @@ Due to the large element of randomness in the simulator, meaningful data can onl
 4. Here you will be able to see our python code. In each cell on the page you can either press `ctrl+Enter` or click the run button at the top of the page. 
     - Jupyter allows for us to run cells in order and pause the python interpreter, so if we ingest all of our data (sometimes a long process) in one cell and make a mistake trying to process it in another, we don't need to reingest our data, we can simply fix our processing step and rerun. 
 5. In the third to last cell, you can see all of our data as it was read in
-6. In the final cell, we filter the data, average similar runs, and then graph them. You can see, we end up with a graph showing that as we increase our detection threshold, we get fewer true positives, a reasonable conclusion as a higher detection threshold requires more nodes to be closer to the bomb. ![Graph of Detection Threshold](https://i.imgur.com/v7j5PnS.png)
+6. In the final cell, we filter the data, average similar runs, and then graph them. You can see, we end up with a graph showing that as we increase our detection threshold, we get fewer true positives, a reasonable conclusion as a higher detection threshold requires more nodes to be closer to the bomb. 
+
+![Graph of Detection Threshold](https://i.imgur.com/v7j5PnS.png)
