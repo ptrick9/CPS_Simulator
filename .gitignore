@@ -100,3 +100,5 @@ guiSrc/output/production/guiSrc/edu/udel/ntsee/bombdetection/ui/IntegerField\.cl
 guiSrc/output/production/guiSrc/edu/udel/ntsee/bombdetection/Util\.class
 
 guiSrc/output/production/guiSrc/META-INF/MANIFEST\.MF
+
+\.ipynb_checkpoints/

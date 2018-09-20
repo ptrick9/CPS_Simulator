@@ -15,7 +15,8 @@ The open area CPS simulator is a program designed to simulate the detection of a
 4. Output Log Files with Details and Results of Simulation
 
 ### [Quick Link To Tutorial](#tutorial)
-### [Simulator](#simulator)
+### [Simulator Instructions](#simulator)
+### [Data Processing Instructions](#data-processing)
 
 
 ## General Detection
@@ -459,3 +460,15 @@ on Toolbar: View.
   with a subgrid of red squares. Low sensor readings will make a square closer
   to transparent, while higher sensor readings will make this square appear
   more solid.
+
+# Data Processing
+Data processing is handled in a jupyter notebook. This is a preliminary setup and can/will be improved on in the future. 
+Due to the large element of randomness in the simulator, meaningful data can only really be gathered by hundreds of runs. This can take a long time for big simulations, and to save you this time, we've included 600 log files in the folder `test_data` as well as a rudimentary script which reads, aggregates, and lets you explore these statistics. 
+
+1. To get started, open either Powershell or Terminal and navigate to the `CPS_Simulator` directory. Then type: `jupyter notebook`. This will start a jupyter session and should open a web browser. If not, navigate your browser to the url given by the output of your `juptyer notebook` command. 
+2. In your web browser, click the `DataProcessory.ipynb` file
+3. This should open a new tab to the data processor
+4. Here you will be able to see our python code. In each cell on the page you can either press `ctrl+Enter` or click the run button at the top of the page. 
+    - Jupyter allows for us to run cells in order and pause the python interpreter, so if we ingest all of our data (sometimes a long process) in one cell and make a mistake trying to process it in another, we don't need to reingest our data, we can simply fix our processing step and rerun. 
+5. In the third to last cell, you can see all of our data as it was read in
+6. In the final cell, we filter the data, average similar runs, and then graph them. You can see, we end up with a graph showing that as we increase our detection threshold, we get fewer true positives, a reasonable conclusion as a higher detection threshold requires more nodes to be closer to the bomb. ![Graph of Detection Threshold](https://i.imgur.com/v7j5PnS.png)
