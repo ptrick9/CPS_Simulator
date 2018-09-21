@@ -20,12 +20,9 @@ public class PositionFile extends LogFile<Node> {
 
         this.lastRun = -1;
         this.lnr = new LineNumberReader(new FileReader(new File(path)));
-        this.lnr.readLine();
-        this.lnr.readLine();
-        this.lnr.readLine();
 
         this.offsets = new HashMap<>();
-        this.offsets.put(0, 3);
+        this.offsets.put(0, 5);
     }
 
 
