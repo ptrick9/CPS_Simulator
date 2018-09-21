@@ -92,7 +92,6 @@ public class SimulatorController implements Drawable {
         FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter("PositionFiles (*-simulatorOutput.txt)", "*-simulatorOutput.txt");
         this.fileChooser.getExtensionFilters().add(extFilter);
 
-
     }
 
     @Override
@@ -138,10 +137,15 @@ public class SimulatorController implements Drawable {
                 Node node = nodes.get(i);
                 Sample sample = samples.get(i);
                 if (sample.isSensorChecked()) {
-                    canvas.drawCircle(Color.YELLOW, node.getX(), node.getY());
+                    canvas.drawCircle(Color.YELLOW,(2.34 / .5) * canvas.getCamera().getBlockSize(),
+                            node.getX(), node.getY());
                 }
             }
         }
+
+        // Bomb
+        canvas.drawCircle(Color.RED, canvas.getCamera().getBlockSize(),
+                room.getBomb().getX(), room.getBomb().getY());
 
         // Nodes
         for (int i = 0; i < nodes.size(); i++) {
@@ -156,6 +160,7 @@ public class SimulatorController implements Drawable {
 
             canvas.drawBlock(color, true, node.getX(), node.getY());
         }
+
     }
 
     public void drawSuperNodes(List<SuperNode> superNodes) {

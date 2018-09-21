@@ -2,6 +2,7 @@ package edu.udel.ntsee.bombdetection.io;
 
 import edu.udel.ntsee.bombdetection.Util;
 import edu.udel.ntsee.bombdetection.data.Grid;
+import edu.udel.ntsee.bombdetection.data.Node;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -16,6 +17,7 @@ public class FileManager {
 
     private static final Pattern TIME_REGEX = Pattern.compile("^t=(\\d+)$");
 
+    private Node bomb;
     private int[] properties;
     private PositionFile positions;
     private SamplesFile samples;
@@ -38,6 +40,9 @@ public class FileManager {
             properties[0] = Util.parseAmount(reader.readLine());
             properties[1] = Util.parseAmount(reader.readLine());
             properties[2] = Util.parseAmount(reader.readLine());
+            int x = Util.parseAmount(reader.readLine());
+            int y = Util.parseAmount(reader.readLine());
+            this.bomb = new Node(x, y);
             this.positions = new PositionFile(base + "-simulatorOutput.txt");
 
         } catch (IOException e) {
@@ -117,6 +122,10 @@ public class FileManager {
                 nodePath.put(time, new Grid(data));
             }
         }
+    }
+
+    public Node getBomb() {
+        return bomb;
     }
 
 }

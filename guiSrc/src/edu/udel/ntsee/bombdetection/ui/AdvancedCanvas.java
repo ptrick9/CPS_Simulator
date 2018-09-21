@@ -201,7 +201,7 @@ public class AdvancedCanvas extends Canvas {
         gc.restore();
     }
 
-    public void drawCircle(Color color, int x, int y) {
+    public void drawCircle(Color color, double diameter, int x, int y) {
 
         if (x < getStartColumn() || x >= getEndColumn() || y < getStartRow() || y >= getEndRow())
             return;
@@ -209,7 +209,6 @@ public class AdvancedCanvas extends Canvas {
         GraphicsContext gc = getGraphicsContext2D();
         gc.setFill(color);
 
-        double diameter = (2.34 / .5) * camera.getBlockSize();
         double pixelX = -camera.getOffsetX() + ((x - getStartColumn()) * camera.getBlockSize() - diameter  / 2 + camera.getBlockSize() / 2);
         double pixelY = -camera.getOffsetY() + ((y - getStartRow()) * camera.getBlockSize() - diameter / 2 + camera.getBlockSize() / 2);
         gc.fillOval(pixelX, pixelY, diameter, diameter);
