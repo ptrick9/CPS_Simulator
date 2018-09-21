@@ -331,10 +331,12 @@ There are a number of parameters that can be set from the command line in order 
     * 1 <= detectionThreshold <= 1000
 
 * squareRow
-    * Utilized as a divisor for the Y coordinate size and dictates the number rows that the entire arena will be divided into. Linked closely with squareCol, which determines the number of columns in the arena. Individual square dimensions can be calculated as $\frac{maxX}{squareCol}$ x $\frac{maxX}{squareRow}$
+    * Utilized as a divisor for the Y coordinate size and dictates the number rows that the entire arena will be divided into. Linked closely with squareCol, which determines the number of columns in the arena. Individual square dimensions can be calculated as 
+<a href="https://www.codecogs.com/eqnedit.php?latex=\frac{maxX}{squareCol}$&space;x&space;$\frac{maxX}{squareRow}" target="_blank"><img src="https://latex.codecogs.com/gif.latex?\frac{maxX}{squareCol}$&space;x&space;$\frac{maxX}{squareRow}" title="\frac{maxX}{squareCol}$ x $\frac{maxX}{squareRow}" /></a>
 
 * squareCol
-    * Utilized as a divisor for the X coordinate size and dictates the number columns that the entire arena will be divided into. Linked closely with squareRow, which determines the number of rows in the arena. Individual square dimensions can be calculated as $\frac{maxX}{squareCol}$ x $\frac{maxX}{squareRow}$
+    * Utilized as a divisor for the X coordinate size and dictates the number columns that the entire arena will be divided into. Linked closely with squareRow, which determines the number of rows in the arena. Individual square dimensions can be calculated as 
+<a href="https://www.codecogs.com/eqnedit.php?latex=\frac{maxX}{squareCol}$&space;x&space;$\frac{maxX}{squareRow}" target="_blank"><img src="https://latex.codecogs.com/gif.latex?\frac{maxX}{squareCol}$&space;x&space;$\frac{maxX}{squareRow}" title="\frac{maxX}{squareCol}$ x $\frac{maxX}{squareRow}" /></a>
 
 ----
 
