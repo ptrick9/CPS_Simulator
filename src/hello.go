@@ -239,6 +239,8 @@ func main() {
 	fmt.Fprintln(positionFile, "Width:", maxX)
 	fmt.Fprintln(positionFile, "Height:", maxY)
 	fmt.Fprintf(positionFile, "Amount: %-8v\n", iterations_of_event)
+	fmt.Fprintf(positionFile, "Bomb x: %v\n", bombX)
+	fmt.Fprintf(positionFile, "Bomb y: %v\n", bombY)
 
 	//The capacity for a square should be equal to the area of the square
 	//So we take the side length (xDiv) and square it

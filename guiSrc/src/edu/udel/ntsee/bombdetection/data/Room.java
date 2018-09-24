@@ -23,6 +23,7 @@ public class Room {
     private int height;
     private int runs;
 
+    private Node bomb;
     private List<Node> positions;
     private List<Sample> samples;
     private List<SuperNode> superNodes;
@@ -37,6 +38,7 @@ public class Room {
         room.width = room.fileManager.getProperties()[0];
         room.height = room.fileManager.getProperties()[1];
         room.runs = room.fileManager.getProperties()[2];
+        room.bomb = room.fileManager.getBomb();
         reader.close();
         return room;
     }
@@ -129,5 +131,9 @@ public class Room {
         if (fileManager.getSensorReadings() != null) {
             fileManager.getSensorReadings().close();
         }
+    }
+
+    public Node getBomb() {
+        return bomb;
     }
 }
