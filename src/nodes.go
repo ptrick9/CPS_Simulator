@@ -996,7 +996,7 @@ func (curNode *NodeImpl) getReadings() {
 	S0,S1,S2,E0,E1,E2,ET1,ET2 := curNode.getParams()
 	sError := (S0 + E0) + (S1 + E1)*math.Exp(-float64(curNode.nodeTime)/(Tau1+ET1)) + (S2 + E2)*math.Exp(-float64(curNode.nodeTime)/(Tau2+ET2))
 	curNode.sensitivity = S0 + (S1)*math.Exp(-float64(curNode.nodeTime)/Tau1) + (S2)*math.Exp(-float64(curNode.nodeTime)/Tau2)
-	sNoise := rand.NormFloat64()*0.5 + float64(newDist)*sError
+	sNoise := rand.NormFloat64()*0.5*errorModifierCM + float64(newDist)*sError
 
 	errorDist := sNoise/curNode.sensitivity //this is the node's actual reading with error
 

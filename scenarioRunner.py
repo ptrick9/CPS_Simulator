@@ -28,9 +28,6 @@ if __name__ == '__main__':
     
     x = 0
     for r in runs:
-        #paramsInter = [rotateFrequnecy, rotationFactorInter]
-        #interRuns = (list(itertools.product(*paramsInter)))
-        #interRunsDone = []
         for i in range(50):
             v = [r[0], r[1], "-outputFileName=big_data/Log_%d" % x, "-squareRow=100 -squareCol=100 -noEnergy=true"]
             q.put(v)
