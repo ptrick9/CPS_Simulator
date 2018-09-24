@@ -18,7 +18,7 @@ if __name__ == '__main__':
     q = m.JoinableQueue()
 
     #detect_threshold = ["-detectionThreshold=%f" % float(20.0+0.5*i) for i in range(0, 20, 1)]
-    scenarios = ["-inputFileName=%s" % s for s in ['Scenario_Random_100.txt', 'Scenario_Random_200.txt', 
+    scenarios = ["-inputFileName=testScenario/%s" % s for s in ['Scenario_Random_100.txt', 'Scenario_Random_200.txt', 
      'Scenario_Random_500.txt', 'Scenario_Random_1000.txt', 
      'Scenario_Random_2000.txt', 'Scenario_Random_5000.txt', 'Scenario_Random_10000.txt']]
 
@@ -26,17 +26,17 @@ if __name__ == '__main__':
 
     runs = (list(itertools.product(*[error_mult, scenarios])))
     
-    x = 200
+    x = 0
     for r in runs:
         #paramsInter = [rotateFrequnecy, rotationFactorInter]
         #interRuns = (list(itertools.product(*paramsInter)))
         #interRunsDone = []
-        for i in range(5):
-            v = [r[0], r[1], "-outputFileName=big_data/Log_%d" % x, "-squareRow=40 -squareCol=40"]
+        for i in range(50):
+            v = [r[0], r[1], "-outputFileName=big_data/Log_%d" % x, "-squareRow=40 -squareCol=40 -noEnergy=true"]
             q.put(v)
             x+= 1
 
        
-    p = multiprocessing.Pool(15, runner, (q,))
+    p = multiprocessing.Pool(40, runner, (q,))
 
     q.join()
