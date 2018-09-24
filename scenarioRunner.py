@@ -32,7 +32,7 @@ if __name__ == '__main__':
         #interRuns = (list(itertools.product(*paramsInter)))
         #interRunsDone = []
         for i in range(5):
-            v = [r[0], r[1], "-outputFileName=Log_%d" % x, "-squareRow=40 -squareCol=40"]
+            v = [r[0], r[1], "-outputFileName=big_data/Log_%d" % x, "-squareRow=40 -squareCol=40"]
             q.put(v)
             x+= 1
 
