@@ -108,3 +108,21 @@ desktop\.ini
 *.exe
 
 big_data/*.txt
+
+big_data/old/
+
+Log-attraction\.txt
+
+Log-bool\.txt
+
+Log-drift\.txt
+
+Log-grid\.txt
+
+Log-node_reading\.txt
+
+Log-node\.txt
+
+Log-path\.txt
+
+Log-simulatorOutput\.txt
