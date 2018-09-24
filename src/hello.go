@@ -275,9 +275,10 @@ func main() {
 	fmt.Fprintln(driftFile, "Input File Name:", inputFileNameCM)
 	fmt.Fprintln(driftFile, "Output File Name:", outputFileNameCM)
 	fmt.Fprintln(driftFile, "Battery Natural Loss:", naturalLossCM)
-	fmt.Fprintln(driftFile, "Sensor Loss:", sensorSamplingLossCM, "GPS Loss:", GPSSamplingLossCM, "Server Loss:", serverSamplingLossCM)
-	fmt.Fprintln(driftFile, "Printing Position:", positionPrint, "Printing Energy:", energyPrint, "Printing Nodes:", nodesPrint)
-	fmt.Fprintln(driftFile, "Super Nodes:", numSuperNodes, "Super Node Type:", superNodeType, "Super Node Speed:", superNodeSpeed, "Super Node Radius:", superNodeRadius)
+	fmt.Fprintln(driftFile, "Sensor Loss:", sensorSamplingLossCM, "\nGPS Loss:", GPSSamplingLossCM, "\nServer Loss:", serverSamplingLossCM)
+	fmt.Fprintln(driftFile, "Printing Position:", positionPrint, "\nPrinting Energy:", energyPrint, "\nPrinting Nodes:", nodesPrint)
+	fmt.Fprintln(driftFile, "Super Nodes:", numSuperNodes, "\nSuper Node Type:", superNodeType, "\nSuper Node Speed:", superNodeSpeed, "\nSuper Node Radius:", superNodeRadius)
+	fmt.Fprintln(driftFile, "Error Multiplier:", errorModifierCM)
 	fmt.Fprintln(driftFile, "--------------------")
 	//Initializing the size of the boolean field representing coordinates
 	boolGrid = make([][]bool, maxY)
@@ -817,6 +818,7 @@ func getFlags() {
 	fmt.Println("Number of Node Stored Samples:", numStoredSamplesCM)
 	fmt.Println("Number of Grid Stored Samples:", gridStoredSamplesCM)
 	fmt.Println("Detection Threshold:", detectionThresholdCM)
+
 	//fmt.Println("tail:", flag.Args())
 }
 
