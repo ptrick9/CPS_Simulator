@@ -62,6 +62,7 @@ var (
 	negativeSittingStopThresholdCM int     // This is a negative number for the sitting to be set to when map is reset
 	sittingStopThresholdCM         int     // This is the threshold for the longest time a node can sit before no longer moving
 	gridCapacityPercentageCM       float64 // This is the percent of a subgrid that can be filled with nodes, between 0.0 and 1.0
+	errorModifierCM				   float64 // Multiplier for error model
 	outputFileNameCM               string  // This is the prefix of the output text file
 	inputFileNameCM                string  // This must be the name of the input text file with ".txt"
 	naturalLossCM                  float64 // This can be any number n: 0 < n < .1
@@ -74,6 +75,7 @@ var (
 	movementSamplingPeriodCM       int     // This can be any int number n: 1 <= n <= 100
 	maxBufferCapacityCM            int     // This can be aby int number n: 10 <= n <= 100
 	energyModelCM                  string  // This can be "custom", "2StageServer", or other string will result in dynamic
+	noEnergyModelCM				   bool    // If set to true, all energy model values ignored
 	sensorSamplingPeriodCM         int     // This can be any int n: 1 <= n <= 100
 	GPSSamplingPeriodCM            int     // This can be any int n: 1 <= n < sensorSamplingPeriodCM <=  100
 	serverSamplingPeriodCM         int     // This can be any int n: 1 <= n < GPSSamplingPeriodCM <= 100
@@ -170,7 +172,7 @@ func main() {
 	}
 
 	rand.Seed(time.Now().UnixNano()) //sets random to work properly by tying to to clock
-	threshHoldBatteryToHave = 30.0   //This is the treshhold battery to have for all phones
+	threshHoldBatteryToHave = 30.0   //This is the threshhold battery to have for all phones
 	totalPercentBatteryToUse = float32(thresholdBatteryToUseCM)
 
 	iterations_used = 0
@@ -361,7 +363,12 @@ func main() {
 		for i := 0; i < len(nodeList); i++ {
 			go func(i int) {
 				defer wg.Done()
-				nodeList[i].batteryLossMostDynamic()
+				if !noEnergyModelCM {
+					nodeList[i].batteryLossMostDynamic()
+				} else {
+					nodeList[i].hasCheckedSensor = true
+					nodeList[i].sitting = 0
+				}
 				nodeList[i].getReadings()
 			}(i)
 		}
@@ -564,12 +571,12 @@ func makeNodes() {
 			curNode.setS2(rand.Float64()*0.2 + 0.1)
 			//values to determine error in coefficients
 			s0, s1, s2 := curNode.getCoefficients()
-			curNode.setE0(rand.Float64() * 0.1 * s0)
-			curNode.setE1(rand.Float64() * 0.1 * s1)
-			curNode.setE2(rand.Float64() * 0.1 * s2)
+			curNode.setE0(rand.Float64() * 0.1 * errorModifierCM * s0)
+			curNode.setE1(rand.Float64() * 0.1 * errorModifierCM * s1)
+			curNode.setE2(rand.Float64() * 0.1 * errorModifierCM * s2)
 			//Values to determine error in exponents
-			curNode.setET1(Tau1 * rand.Float64() * 0.05)
-			curNode.setET2(Tau1 * rand.Float64() * 0.05)
+			curNode.setET1(Tau1 * rand.Float64() * errorModifierCM * 0.05)
+			curNode.setET2(Tau1 * rand.Float64() * errorModifierCM * 0.05)
 
 			//set node time and initial sensitivity
 			curNode.nodeTime = 0
@@ -730,6 +737,8 @@ func getFlags() {
 		"maximum capacity for the buffer before it sends data to the server")
 	flag.StringVar(&energyModelCM, "energyModel", "variable",
 		"this determines the energy loss model that will be used")
+	flag.BoolVar(&noEnergyModelCM, "noEnergy", false,
+		"Whether or not to ignore energy model for simulation")
 	flag.IntVar(&sensorSamplingPeriodCM, "sensorSamplingPeriod", 1000,
 		"rate of the sensor sampling period when custom energy model is chosen")
 	flag.IntVar(&GPSSamplingPeriodCM, "GPSSamplingPeriod", 1000,
@@ -742,6 +751,8 @@ func getFlags() {
 		"number of samples stored by grid squares for averaging")
 	flag.Float64Var(&detectionThresholdCM, "detectionThreshold", 25.0,
 		"Value where if a node gets this reading or higher, it will trigger a detection")
+	flag.Float64Var(&errorModifierCM, "errorMultiplier", 1.0,
+		"Multiplier for error values in system")
 	//Range 1, 2, or 4
 	//Currently works for only a few numbers, can be easily expanded but is not currently dynamic
 	flag.IntVar(&numSuperNodes, "numSuperNodes", 4, "the number of super nodes in the simulator")
