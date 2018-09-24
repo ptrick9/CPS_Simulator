@@ -176,7 +176,7 @@ func main() {
 	totalPercentBatteryToUse = float32(thresholdBatteryToUseCM)
 
 	iterations_used = 0
-	iterations_of_event = 1000
+	iterations_of_event = 5000
 	estimatedPingsNeeded = 10200
 	batteryCharges = getLinearBatteryValues(len(npos))
 	batteryLosses = getLinearBatteryLossConstant(len(npos), float32(naturalLossCM))
