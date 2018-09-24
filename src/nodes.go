@@ -192,7 +192,8 @@ func (n *NodeImpl) distance(b bomb) float32 {
 	if dist == 0 {
 		return 1000
 	} else {
-		return float32(1000 / (math.Pow((float64(dist)/0.2)*0.25,1.5)))
+		//return float32(1000 / (math.Pow((float64(dist)/0.2)*0.25,1.5)))
+		return float32(math.Pow(1000/float64(dist), 1.5))
 	}
 }
 
@@ -1015,14 +1016,14 @@ func (curNode *NodeImpl) getReadings() {
 			fmt.Fprintln(driftFile,"Node False Negative (drifting) ID:",curNode.id,"True Reading:",newDist,"Drifted Reading:",
 				errorDist,"S0:",curNode.S0,"S1:",curNode.S1,"S2:",curNode.S2, "E0:",curNode.E0,"E1:",curNode.E1,
 				"E2:",curNode.E2,"ET1:",curNode.ET1,"ET2:",curNode.ET2,"time since calibration:",curNode.nodeTime,
-				"Current Time (Iter):",iterations_used,"Energy Level:",curNode.battery,"Distance from bomb:",math.Sqrt(float64(curNode.geoDist(*b))) / 2,
+				"Current Time (Iter):",iterations_used,"Energy Level:",curNode.battery,"Distance from bomb:",math.Sqrt(float64(curNode.geoDist(*b))),
 				"x:",curNode.x,"y:",curNode.y)
 		} else {
 			//both drifting and energy
 			fmt.Fprintln(driftFile,"Node False Negative (both) ID:",curNode.id,"True Reading:",newDist,"Drifted Reading:",
 				errorDist,"S0:",curNode.S0,"S1:",curNode.S1,"S2:",curNode.S2, "E0:",curNode.E0,"E1:",curNode.E1,
 				"E2:",curNode.E2,"ET1:",curNode.ET1,"ET2:",curNode.ET2,"time since calibration:",curNode.nodeTime,
-				"Current Time (Iter):",iterations_used,"Energy Level:",curNode.battery,"Distance from bomb:",math.Sqrt(float64(curNode.geoDist(*b))) / 2,
+				"Current Time (Iter):",iterations_used,"Energy Level:",curNode.battery,"Distance from bomb:",math.Sqrt(float64(curNode.geoDist(*b))),
 				"x:",curNode.x,"y:",curNode.y)
 		}
 	}
@@ -1032,7 +1033,7 @@ func (curNode *NodeImpl) getReadings() {
 		fmt.Fprintln(driftFile,"Node False Negative (energy) ID:",curNode.id,"True Reading:",newDist,"Drifted Reading:",
 			errorDist,"S0:",curNode.S0,"S1:",curNode.S1,"S2:",curNode.S2, "E0:",curNode.E0,"E1:",curNode.E1,
 			"E2:",curNode.E2,"ET1:",curNode.ET1,"ET2:",curNode.ET2,"time since calibration:",curNode.nodeTime,
-			"Current Time (Iter):",iterations_used,"Energy Level:",curNode.battery,"Distance from bomb:",math.Sqrt(float64(curNode.geoDist(*b))) / 2,
+			"Current Time (Iter):",iterations_used,"Energy Level:",curNode.battery,"Distance from bomb:",math.Sqrt(float64(curNode.geoDist(*b))),
 			"x:",curNode.x,"y:",curNode.y)
 	}
 
@@ -1042,7 +1043,7 @@ func (curNode *NodeImpl) getReadings() {
 		fmt.Fprintln(driftFile,"Node False Positive (drifting) ID:",curNode.id,"True Reading:",newDist,"Drifted Reading:",
 			errorDist,"S0:",curNode.S0,"S1:",curNode.S1,"S2:",curNode.S2, "E0:",curNode.E0,"E1:",curNode.E1,
 			"E2:",curNode.E2,"ET1:",curNode.ET1,"ET2:",curNode.ET2,"time since calibration:",curNode.nodeTime,
-			"Current Time (Iter):",iterations_used,"Energy Level:",curNode.battery,"Distance from bomb:",math.Sqrt(float64(curNode.geoDist(*b))) / 2,
+			"Current Time (Iter):",iterations_used,"Energy Level:",curNode.battery,"Distance from bomb:",math.Sqrt(float64(curNode.geoDist(*b))),
 			"x:",curNode.x,"y:",curNode.y)
 	}
 
@@ -1050,7 +1051,7 @@ func (curNode *NodeImpl) getReadings() {
 		fmt.Fprintln(driftFile,"Node True Positive ID:",curNode.id,"True Reading:",newDist,"Drifted Reading:",
 			errorDist,"S0:",curNode.S0,"S1:",curNode.S1,"S2:",curNode.S2, "E0:",curNode.E0,"E1:",curNode.E1,
 			"E2:",curNode.E2,"ET1:",curNode.ET1,"ET2:",curNode.ET2,"time since calibration:",curNode.nodeTime,
-			"Current Time (Iter):",iterations_used,"Energy Level:",curNode.battery,"Distance from bomb:",math.Sqrt(float64(curNode.geoDist(*b))) / 2,
+			"Current Time (Iter):",iterations_used,"Energy Level:",curNode.battery,"Distance from bomb:",math.Sqrt(float64(curNode.geoDist(*b))),
 			"x:",curNode.x,"y:",curNode.y)
 	}
 

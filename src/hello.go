@@ -752,7 +752,7 @@ func getFlags() {
 		"number of samples stored by individual nodes for averaging")
 	flag.IntVar(&gridStoredSamplesCM, "gridStoredSamples", 10,
 		"number of samples stored by grid squares for averaging")
-	flag.Float64Var(&detectionThresholdCM, "detectionThreshold", 25.0,
+	flag.Float64Var(&detectionThresholdCM, "detectionThreshold", 11180.0,
 		"Value where if a node gets this reading or higher, it will trigger a detection")
 	flag.Float64Var(&errorModifierCM, "errorMultiplier", 1.0,
 		"Multiplier for error values in system")
