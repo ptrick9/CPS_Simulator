@@ -763,7 +763,7 @@ func getFlags() {
 	//Range: 0-2
 	//0: default routing algorithm, points added onto the end of the path and routed to in that order
 	//flag.IntVar(&superNodeType, "superNodeType", 0, "the type of super node used in the simulator")
-
+	//better descriptions incoming
 	//Range: 0-6
 	//	0: default routing algorithm, points added onto the end of the path and routed to in that order
 	//	1: sophisticated routing algorithm, begin in center, routed anywhere
