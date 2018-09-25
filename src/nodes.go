@@ -968,6 +968,7 @@ func (n *NodeImpl) server() {
 
 //Returns node distance to the bomb
 func (n *NodeImpl) geoDist(b bomb) float32 {
+	//this needs to be changed
 	return float32(math.Pow(float64(math.Abs(float64(n.x)-float64(b.x))),2) + math.Pow(float64(math.Abs(float64(n.y)-float64(b.y))),2))
 }
 
