@@ -987,7 +987,7 @@ func (curNode *NodeImpl) getReadings() {
 	//driftFile.Sync()
 	//nodeFile.Sync()
 	//positionFile.Sync()
-
+	//test change
 	newX,newY := curNode.getLoc()
 
 	newDist := curNode.distance(*b) //this is the node's reported value without error
