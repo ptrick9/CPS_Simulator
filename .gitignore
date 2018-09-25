@@ -126,3 +126,9 @@ Log-node\.txt
 Log-path\.txt
 
 Log-simulatorOutput\.txt
+
+*.tar
+
+big_data/old2/
+
+*.png
