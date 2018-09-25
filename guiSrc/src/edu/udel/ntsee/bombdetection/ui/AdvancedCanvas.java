@@ -4,10 +4,15 @@ import edu.udel.ntsee.bombdetection.data.Node;
 import javafx.beans.property.*;
 import javafx.event.Event;
 import javafx.event.EventHandler;
+import javafx.geometry.VPos;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
+import javafx.scene.text.TextAlignment;
+
+import java.awt.*;
 
 public class AdvancedCanvas extends Canvas {
 
@@ -19,6 +24,37 @@ public class AdvancedCanvas extends Canvas {
     private BooleanProperty allowPanning;
     private int columns, rows;
     private double clickX, clickY;
+
+    // to do:
+    // copied positioning code from draw block
+    // should extract into a function
+    public void drawNumber(double number, int x, int y, int squares) {
+
+        GraphicsContext gc = getGraphicsContext2D();
+        gc.setTextAlign(TextAlignment.CENTER);
+        gc.setTextBaseline(VPos.CENTER);
+        gc.setFont(new Font(gc.getFont().getName(), camera.getBlockSize()));
+
+        double worldX = x * squares - getStartColumn();
+        double width = squares;
+        if (worldX < 0) {
+            worldX = 0;
+            width = squares + (x * squares - getStartColumn());
+        }
+
+        double worldY = y * squares - getStartRow();
+        double height = squares;
+        if (worldY < 0) {
+            worldY = 0;
+            height = squares + (y * squares - getStartRow());
+        }
+
+        double pixelX = -camera.getOffsetX() + worldX * camera.getBlockSize() + (camera.getBlockSize() * width / 2);
+        double pixelY = -camera.getOffsetY() + worldY * camera.getBlockSize() + (camera.getBlockSize() * height / 2);
+        gc.strokeText(String.valueOf(number), pixelX, pixelY, width * camera.getBlockSize());
+    }
+
+
 
     public Node getMouse() {
         return mouseProperty.get();
@@ -245,7 +281,9 @@ public class AdvancedCanvas extends Canvas {
         double pixelX = -camera.getOffsetX() + worldX * camera.getBlockSize();
         double pixelY = -camera.getOffsetY() + worldY * camera.getBlockSize();
         gc.fillRect(pixelX, pixelY, width * camera.getBlockSize(), height * camera.getBlockSize());
-        if (outline) gc.strokeRect(pixelX, pixelY, width * camera.getBlockSize(), height * camera.getBlockSize());
+        if (outline){
+            gc.strokeRect(pixelX, pixelY, width * camera.getBlockSize(), height * camera.getBlockSize());
+        }
     }
 
     public int getStartColumn() {

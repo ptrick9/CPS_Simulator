@@ -119,6 +119,10 @@ public class SimulatorController implements Drawable {
             canvas.drawQuadrants();
         }
 
+        if (radioMenuSensorReading.isSelected()) {
+            drawSensorNumbers(room.getSensorReadings());
+        }
+
         canvas.outline();
     }
 
@@ -213,6 +217,30 @@ public class SimulatorController implements Drawable {
         canvas.getGraphicsContext2D().restore();
     }
 
+    public void drawSensorNumbers(Grid grid) {
+
+        if (grid == null) {
+            radioMenuSensorReading.setSelected(false);
+            radioMenuNone.setSelected(true);
+            Main.showErrorDialog(new LogFormatException("Sensor Reading log is unavailable."));
+            return;
+        }
+        canvas.getGraphicsContext2D().save();
+        int squares = room.getWidth() / grid.getValues().length;
+        int yStart = canvas.getStartRow()/squares;
+        int yEnd = (int)Math.ceil((double)canvas.getEndRow() / squares);
+        yEnd = Math.min(yEnd, grid.getValues().length - 1);
+        for(int y=yStart; y<=yEnd; y++) {
+            int xStart = canvas.getStartColumn()/squares;
+            int xEnd = (int)Math.ceil((double)canvas.getEndColumn() / squares);
+            xEnd = Math.min(xEnd, grid.getValues()[y].length - 1);
+            for(int x=xStart; x<=xEnd; x++) {
+                canvas.drawNumber(grid.getValues()[y][x], x, y, squares);
+            }
+        }
+
+        canvas.getGraphicsContext2D().restore();
+    }
     private void drawNodePathing(Grid grid) {
 
         if (grid == null) {
