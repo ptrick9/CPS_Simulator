@@ -48,6 +48,7 @@ public class SimulatorController implements Drawable {
     @FXML private RadioMenuItem radioMenuNone;
     @FXML private RadioMenuItem radioMenuSensorReading;
     @FXML private RadioMenuItem radioMenuNodePathing;
+    @FXML private RadioMenuItem radioMenuRoad;
 
     // Main
     private AdvancedCanvas canvas;
@@ -102,10 +103,10 @@ public class SimulatorController implements Drawable {
 
         if (radioMenuSensorReading.isSelected()) {
             drawSensorGrid(room.getSensorReadings());
-        }
-
-        if (radioMenuNodePathing.isSelected()) {
+        } else if (radioMenuNodePathing.isSelected()) {
             drawNodePathing(room.getNodePath());
+        } else if (radioMenuRoad.isSelected()) {
+            drawRoad(room.getRoad());
         }
 
         drawNodes(room.getPositions(), room.getSamples());
@@ -275,6 +276,14 @@ public class SimulatorController implements Drawable {
         }
 
         canvas.getGraphicsContext2D().restore();
+    }
+
+    public void drawRoad(Road road) {
+
+        for(TimedNode node : road.getNodes()) {
+            Color color = Util.gradient(Color.GREEN, Color.RED, (double)node.getTime() / road.getMax());
+            canvas.drawBlock(color, true, node.getX(), node.getY());
+        }
     }
 
     private void onRoomLoaded() {
