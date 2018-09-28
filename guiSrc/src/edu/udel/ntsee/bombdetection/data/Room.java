@@ -28,6 +28,7 @@ public class Room {
     private List<Sample> samples;
     private List<SuperNode> superNodes;
     private Grid sensorReadings;
+    private Road road;
 
     public static Room fromFile(File file) throws IOException {
 
@@ -39,6 +40,7 @@ public class Room {
         room.height = room.fileManager.getProperties()[1];
         room.runs = room.fileManager.getProperties()[2];
         room.bomb = room.fileManager.getBomb();
+        room.road = Road.fromFile(new File(file.getParent() + "\\roadLog.txt"));
         reader.close();
         return room;
     }
@@ -135,5 +137,9 @@ public class Room {
 
     public Node getBomb() {
         return bomb;
+    }
+
+    public Road getRoad() {
+        return road;
     }
 }
