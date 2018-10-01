@@ -1,0 +1,3 @@
+[submodule "pedsim"]
+	path = pedsim
+	url = https://github.com/ptrick9/pedsim.git
