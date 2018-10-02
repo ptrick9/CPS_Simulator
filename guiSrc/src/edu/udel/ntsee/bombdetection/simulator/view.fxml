@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.scene.canvas.*?>
 <?import java.lang.*?>
 <?import javafx.scene.text.*?>
 <?import javafx.geometry.*?>
@@ -46,7 +47,7 @@
                         </RadioMenuItem>
                         <RadioMenuItem fx:id="radioMenuSensorReading" mnemonicParsing="false" text="Sensor Reading" toggleGroup="$toggleGroupExtras" />
                         <RadioMenuItem fx:id="radioMenuNodePathing" mnemonicParsing="false" text="Node Pathing" toggleGroup="$toggleGroupExtras" />
-                        <RadioMenuItem fx:id="radioMenuRoad" mnemonicParsing="false" text="Road" toggleGroup="$toggleGroupExtras" />
+                        <RadioMenuItem fx:id="radioMenuRoad" mnemonicParsing="false" text="Node Pathing" toggleGroup="$toggleGroupExtras" />
                      </items>
                   </Menu>
                   <SeparatorMenuItem mnemonicParsing="false" />
@@ -69,6 +70,15 @@
                   </MenuItem>
                </items>
             </Menu>
+            <Menu mnemonicParsing="false" text="Legend">
+               <items>
+                  <CheckMenuItem fx:id="checkMenuLegendEnabled" mnemonicParsing="false" selected="true" text="Enabled" />
+                  <CheckMenuItem fx:id="checkMenuLegendNode" mnemonicParsing="false" selected="true" text="Node" />
+                  <CheckMenuItem fx:id="checkMenuLegendSuperNode" mnemonicParsing="false" selected="true" text="Super Node" />
+                  <CheckMenuItem fx:id="checkMenuLegendBattery" mnemonicParsing="false" selected="true" text="Battery" />
+                  <CheckMenuItem fx:id="checkMenuLegendSensorGrid" mnemonicParsing="false" selected="true" text="Sensor Grid" />
+               </items>
+            </Menu>
             <Menu mnemonicParsing="false" text="Tools">
                <items>
                   <MenuItem fx:id="menuItemToolBuilder" mnemonicParsing="false" onAction="#onMenuItemToolBuilder" text="Builder" />
@@ -77,46 +87,63 @@
             </Menu>
          </menus>
       </MenuBar>
-      <StackPane VBox.vgrow="ALWAYS">
+      <HBox maxWidth="1.7976931348623157E308" VBox.vgrow="ALWAYS">
          <children>
-            <Text fx:id="textNotLoaded" strokeType="OUTSIDE" strokeWidth="0.0" text="No Log Loaded" />
-            <Pane fx:id="containerCanvas" minHeight="-Infinity" minWidth="-Infinity" prefHeight="450.0" prefWidth="600.0" VBox.vgrow="ALWAYS" />
-         </children>
-      </StackPane>
-      <Separator prefWidth="200.0" VBox.vgrow="NEVER" />
-      <HBox alignment="CENTER" maxWidth="1.7976931348623157E308" minWidth="-Infinity" VBox.vgrow="NEVER">
-         <children>
-            <ToggleButton fx:id="buttonPlay" contentDisplay="CENTER" mnemonicParsing="false" selected="true" text="Play" HBox.hgrow="NEVER">
-               <toggleGroup>
-                  <ToggleGroup fx:id="toggleGroupProgress" />
-               </toggleGroup>
-               <HBox.margin>
-                  <Insets />
-               </HBox.margin>
-            </ToggleButton>
-            <Button mnemonicParsing="false" onAction="#onButtonBack" text="&lt;-" />
-            <StackPane HBox.hgrow="ALWAYS" VBox.vgrow="ALWAYS">
+            <VBox HBox.hgrow="ALWAYS" VBox.vgrow="ALWAYS">
                <children>
-                  <ProgressBar fx:id="progressBarSimulation" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" onMouseClicked="#onClickProgressBar" onMouseDragged="#onClickProgressBar" prefWidth="220.0" progress="0.0" StackPane.alignment="CENTER">
-                     <StackPane.margin>
-                        <Insets />
-                     </StackPane.margin>
-                  </ProgressBar>
-                  <Text fx:id="textProgress" strokeType="OUTSIDE" strokeWidth="0.0" text="0 / 0" StackPane.alignment="CENTER" />
+                  <StackPane VBox.vgrow="ALWAYS">
+                     <children>
+                        <Text fx:id="textNotLoaded" strokeType="OUTSIDE" strokeWidth="0.0" text="No Log Loaded" />
+                        <Pane fx:id="containerCanvas" minHeight="-Infinity" minWidth="-Infinity" prefHeight="450.0" prefWidth="600.0" VBox.vgrow="ALWAYS" />
+                     </children>
+                  </StackPane>
+                  <Separator prefWidth="200.0" />
+                  <HBox alignment="CENTER" maxWidth="1.7976931348623157E308" minWidth="-Infinity">
+                     <children>
+                        <ToggleButton fx:id="buttonPlay" contentDisplay="CENTER" mnemonicParsing="false" selected="true" text="Play" HBox.hgrow="NEVER">
+                           <toggleGroup>
+                              <ToggleGroup fx:id="toggleGroupProgress" />
+                           </toggleGroup>
+                           <HBox.margin>
+                              <Insets />
+                           </HBox.margin>
+                        </ToggleButton>
+                        <Button mnemonicParsing="false" onAction="#onButtonBack" text="&lt;-" />
+                        <StackPane HBox.hgrow="ALWAYS" VBox.vgrow="ALWAYS">
+                           <children>
+                              <ProgressBar fx:id="progressBarSimulation" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" onMouseClicked="#onClickProgressBar" onMouseDragged="#onClickProgressBar" prefWidth="220.0" progress="0.0" StackPane.alignment="CENTER">
+                                 <StackPane.margin>
+                                    <Insets />
+                                 </StackPane.margin>
+                              </ProgressBar>
+                              <Text fx:id="textProgress" strokeType="OUTSIDE" strokeWidth="0.0" text="0 / 0" StackPane.alignment="CENTER" />
+                           </children>
+                           <VBox.margin>
+                              <Insets />
+                           </VBox.margin>
+                        </StackPane>
+                        <Button mnemonicParsing="false" onAction="#onButtonForward" text="-&gt;" HBox.hgrow="NEVER">
+                           <HBox.margin>
+                              <Insets />
+                           </HBox.margin>
+                        </Button>
+                     </children>
+                     <padding>
+                        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                     </padding>
+                  </HBox>
                </children>
-               <VBox.margin>
-                  <Insets />
-               </VBox.margin>
-            </StackPane>
-            <Button mnemonicParsing="false" onAction="#onButtonForward" text="-&gt;" HBox.hgrow="NEVER">
-               <HBox.margin>
-                  <Insets />
-               </HBox.margin>
-            </Button>
+            </VBox>
+            <Separator fx:id="legendSeparator" orientation="VERTICAL" prefHeight="200.0" />
+            <VBox fx:id="legendContainer" spacing="5.0">
+               <padding>
+                  <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+               </padding>
+               <children>
+                  <Label text="Legend" underline="true" />
+               </children>
+            </VBox>
          </children>
-         <padding>
-            <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-         </padding>
       </HBox>
    </children>
 </VBox>
