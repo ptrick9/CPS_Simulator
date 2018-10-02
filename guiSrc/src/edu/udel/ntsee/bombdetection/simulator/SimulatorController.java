@@ -4,9 +4,7 @@ import edu.udel.ntsee.bombdetection.Main;
 import edu.udel.ntsee.bombdetection.Util;
 import edu.udel.ntsee.bombdetection.data.*;
 import edu.udel.ntsee.bombdetection.exceptions.LogFormatException;
-import edu.udel.ntsee.bombdetection.exceptions.RoomLoadException;
-import edu.udel.ntsee.bombdetection.ui.AdvancedCanvas;
-import edu.udel.ntsee.bombdetection.ui.Drawable;
+import edu.udel.ntsee.bombdetection.ui.*;
 import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
@@ -21,12 +19,9 @@ import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
-import javax.swing.*;
-import javax.swing.filechooser.FileFilter;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
-import java.util.jar.JarFile;
 
 public class SimulatorController implements Drawable {
 
@@ -44,6 +39,8 @@ public class SimulatorController implements Drawable {
     @FXML private RadioMenuItem radioMenuGPSReading;
     @FXML private RadioMenuItem radioMenuBatteryLevel;
 
+    @FXML private CheckMenuItem checkMenuLegendEnabled;
+
     @FXML private ToggleGroup toggleGroupExtras;
     @FXML private RadioMenuItem radioMenuNone;
     @FXML private RadioMenuItem radioMenuSensorReading;
@@ -60,10 +57,23 @@ public class SimulatorController implements Drawable {
     @FXML private ProgressBar progressBarSimulation;
     @FXML private ToggleButton buttonPlay;
 
+    // Legend
+    @FXML private VBox legendContainer;
+    @FXML private Separator legendSeparator;
+    @FXML private CheckMenuItem checkMenuLegendNode;
+    @FXML private CheckMenuItem checkMenuLegendSuperNode;
+    @FXML private CheckMenuItem checkMenuLegendBattery;
+    @FXML private CheckMenuItem checkMenuLegendSensorGrid;
+    private SolidLegendKey nodeLegend;
+    private SolidLegendKey superNodeLegend;
+    private GradientLegendKey batteryLegend;
+    private OpaqueLegendKey sensorGridLegend;
+
     // Extras
     private FileChooser fileChooser;
 
     public void initialize() {
+
 
         this.checkMenuGridLines.selectedProperty().addListener(event -> draw());
         this.checkMenuQuadrants.selectedProperty().addListener(event -> draw());
@@ -87,6 +97,8 @@ public class SimulatorController implements Drawable {
             else { timeline.stop(); }
         });
 
+        this.initializeLegend();
+
         this.fileChooser = new FileChooser();
         this.fileChooser.setInitialDirectory(new File("../tutorial_output"));
         //Create filter to ease readability
@@ -95,6 +107,31 @@ public class SimulatorController implements Drawable {
 
     }
 
+    private void initializeLegend() {
+
+        this.legendSeparator.visibleProperty().bind(checkMenuLegendEnabled.selectedProperty());
+        this.legendSeparator.managedProperty().bind(checkMenuLegendEnabled.selectedProperty());
+        this.legendContainer.visibleProperty().bind(checkMenuLegendEnabled.selectedProperty());
+        this.legendContainer.managedProperty().bind(checkMenuLegendEnabled.selectedProperty());
+
+        this.nodeLegend = new SolidLegendKey("Node", Color.BLUE);
+        this.nodeLegend.visibleProperty().bind(checkMenuLegendNode.selectedProperty());
+        this.nodeLegend.managedProperty().bind(checkMenuLegendNode.selectedProperty());
+
+        this.superNodeLegend = new SolidLegendKey("Super Node", Color.PLUM);
+        this.superNodeLegend.visibleProperty().bind(checkMenuLegendSuperNode.selectedProperty());
+        this.superNodeLegend.managedProperty().bind(checkMenuLegendSuperNode.selectedProperty());
+
+        this.batteryLegend = new GradientLegendKey("Battery", Color.RED, Color.GREEN, 0, 100);
+        this.batteryLegend.visibleProperty().bind(checkMenuLegendBattery.selectedProperty());
+        this.batteryLegend.managedProperty().bind(checkMenuLegendBattery.selectedProperty());
+
+        this.sensorGridLegend = new OpaqueLegendKey("Sensor Grid", Color.RED, 0, 0);
+        this.sensorGridLegend.visibleProperty().bind(checkMenuLegendSensorGrid.selectedProperty());
+        this.sensorGridLegend.managedProperty().bind(checkMenuLegendSensorGrid.selectedProperty());
+
+        this.legendContainer.getChildren().addAll(nodeLegend, superNodeLegend, batteryLegend, sensorGridLegend);
+    }
     @Override
     public void draw() {
 
@@ -199,6 +236,7 @@ public class SimulatorController implements Drawable {
             Main.showErrorDialog(new LogFormatException("Sensor Reading log is unavailable."));
             return;
         }
+
         canvas.getGraphicsContext2D().save();
         int squares = room.getWidth() / grid.getValues().length;
         int yStart = canvas.getStartRow()/squares;
@@ -216,6 +254,9 @@ public class SimulatorController implements Drawable {
         }
 
         canvas.getGraphicsContext2D().restore();
+
+        // update legend
+        sensorGridLegend.setMax(grid.getMaxValue());
     }
 
     public void drawSensorNumbers(Grid grid) {
@@ -280,6 +321,7 @@ public class SimulatorController implements Drawable {
 
     public void drawRoad(Road road) {
 
+        if (road == null) return;
         for(TimedNode node : road.getNodes()) {
             Color color = Util.gradient(Color.GREEN, Color.RED, (double)node.getTime() / road.getMax());
             canvas.drawBlock(color, true, node.getX(), node.getY());
@@ -355,18 +397,12 @@ public class SimulatorController implements Drawable {
     private void onMenuItemZoomIn() {
         canvas.getCamera().zoomIn();
         draw();
-        int nodes = (canvas.getEndColumn() - canvas.getStartColumn())
-                * (canvas.getEndRow() - canvas.getStartRow());
-        System.out.println("Draw: - " + nodes);
     }
 
     @FXML
     private void onMenuItemZoomOut() {
         canvas.getCamera().zoomOut();
         draw();
-        int nodes = (canvas.getEndColumn() - canvas.getStartColumn())
-                * (canvas.getEndRow() - canvas.getStartRow());
-        System.out.println("Draw: - " + nodes);
     }
 
     @FXML

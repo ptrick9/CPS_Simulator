@@ -40,7 +40,8 @@ public class Room {
         room.height = room.fileManager.getProperties()[1];
         room.runs = room.fileManager.getProperties()[2];
         room.bomb = room.fileManager.getBomb();
-        room.road = Road.fromFile(new File(file.getParent() + "\\roadLog.txt"));
+        File f = new File(file.getParent() + "\\roadLog.txt");
+        if (f.exists()) room.road = Road.fromFile(f);
         reader.close();
         return room;
     }
