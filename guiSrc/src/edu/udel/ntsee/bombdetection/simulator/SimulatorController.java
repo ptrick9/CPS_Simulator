@@ -323,8 +323,15 @@ public class SimulatorController implements Drawable {
 
         if (road == null) return;
         for(TimedNode node : road.getNodes()) {
-            Color color = Util.gradient(Color.GREEN, Color.RED, (double)node.getTime() / road.getMax());
-            canvas.drawBlock(color, true, node.getX(), node.getY());
+            if (node.getTime() == 0) {
+
+            } else if (node.getTime() == -1) {
+                Color color = Color.BLACK;//Util.gradient(Color.GREEN, Color.RED, (double)node.getTime() / road.getMax());
+                canvas.drawBlock(color, true, node.getX(), node.getY());
+            } else {
+                Color color = Util.gradient(Color.GREEN, Color.RED, (double)node.getTime() / road.getMax());
+                canvas.drawBlock(color, true, node.getX(), node.getY());
+            }
         }
     }
 

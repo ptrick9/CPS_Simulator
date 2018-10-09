@@ -23,7 +23,7 @@ public class Road {
     public static Road fromFile(File file) throws IOException {
 
         Pattern maxRegex = Pattern.compile(".*max (\\d+).*");
-        Pattern dataRegex = Pattern.compile(".*(\\d+) (\\d+) (\\d+).*");
+        Pattern dataRegex = Pattern.compile("(\\d+) (\\d+) (\\d+).*");
 
         int max = 0;
         List<TimedNode> nodes = new ArrayList<>();
