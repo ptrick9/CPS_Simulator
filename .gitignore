@@ -132,3 +132,7 @@ Log-simulatorOutput\.txt
 big_data/old2/
 
 *.png
+
+-simulatorOutput\.txt
+
+\.idea/
