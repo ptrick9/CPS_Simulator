@@ -47,7 +47,7 @@
                         </RadioMenuItem>
                         <RadioMenuItem fx:id="radioMenuSensorReading" mnemonicParsing="false" text="Sensor Reading" toggleGroup="$toggleGroupExtras" />
                         <RadioMenuItem fx:id="radioMenuNodePathing" mnemonicParsing="false" text="Node Pathing" toggleGroup="$toggleGroupExtras" />
-                        <RadioMenuItem fx:id="radioMenuRoad" mnemonicParsing="false" text="Node Pathing" toggleGroup="$toggleGroupExtras" />
+                        <RadioMenuItem fx:id="radioMenuRoad" mnemonicParsing="false" text="Road" toggleGroup="$toggleGroupExtras" />
                      </items>
                   </Menu>
                   <SeparatorMenuItem mnemonicParsing="false" />
