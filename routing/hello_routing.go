@@ -7,6 +7,10 @@ import (
 	"os"
 	"time"
 	"log"
+	"io/ioutil"
+	"path/filepath"
+	"strings"
+	"strconv"
 )
 
 var (
@@ -94,9 +98,8 @@ func main() {
 	rand.Seed(time.Now().UTC().UnixNano())
 
 	getFlags()
-
-	maxX = 200
-	maxY = 200
+	maxX = 100
+	maxY = 100
 	squareRow = squareRowCM
 	squareCol = squareColCM
 
@@ -117,6 +120,21 @@ func main() {
 	}
 	defer positionFile.Close()
 
+	absPath, _ := filepath.Abs("../CPS_Simulator/Walls/out_initial_wall 90p 1.txt")
+	wallData, err := ioutil.ReadFile(absPath)
+	wallsWithHeader := string(wallData)
+
+	walls := strings.Split(wallsWithHeader, "\n")
+
+	walls = walls[3:len(walls)-1]
+	for i:=0; i < len(walls); i++ {
+		line := strings.Split(walls[i], " ")
+		x, _ := strconv.Atoi(line[1])
+		y, _ := strconv.Atoi(line[3][:len(line[3])-1])
+
+		boardMap[x][y] = -1
+	}
+
 	fmt.Fprintln(positionFile, "Width:", maxX)
 	fmt.Fprintln(positionFile, "Height:", maxY)
 	fmt.Fprintf(positionFile, "Amount: %-8v\n", 0)
@@ -127,7 +145,6 @@ func main() {
 	max := 0
 
 	aStarIterations := 100
-
 
 	fmt.Printf("Running ASTAR iteration %d\\%v",0, aStarIterations)
 	for i:= 0; i < aStarIterations; i++{
@@ -155,7 +172,11 @@ func main() {
 	for i := 0; i < maxX; i++ {
 		for j := 0; j < maxY; j++ {
 			fmt.Println("Outputting to roadLog: Coord", j, i)
-			fmt.Fprintln(roadFile, i, j, roadMap[Tuple{j,i}])
+			if boardMap[i][j] == -1 {
+				fmt.Fprintln(roadFile, i, j, -1)
+			}else{
+				fmt.Fprintln(roadFile, i, j, roadMap[Tuple{j,i}])
+			}
 		}
 	}
 
