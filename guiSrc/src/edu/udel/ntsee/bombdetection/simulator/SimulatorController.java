@@ -46,6 +46,7 @@ public class SimulatorController implements Drawable {
     @FXML private RadioMenuItem radioMenuSensorReading;
     @FXML private RadioMenuItem radioMenuNodePathing;
     @FXML private RadioMenuItem radioMenuRoad;
+    @FXML private CheckMenuItem checkMenuItemShowText;
 
     // Main
     private AdvancedCanvas canvas;
@@ -80,6 +81,7 @@ public class SimulatorController implements Drawable {
         this.checkMenuSensorCoverage.selectedProperty().addListener(event -> draw());
         this.toggleGroupNodeColor.selectedToggleProperty().addListener(event -> draw());
         this.toggleGroupExtras.selectedToggleProperty().addListener(event -> draw());
+        this.checkMenuItemShowText.selectedProperty().addListener(event-> draw());
 
         this.canvas = new AdvancedCanvas(this);
         this.canvas.widthProperty().bind(containerCanvas.widthProperty());
@@ -104,7 +106,6 @@ public class SimulatorController implements Drawable {
         //Create filter to ease readability
         FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter("PositionFiles (*-simulatorOutput.txt)", "*-simulatorOutput.txt");
         this.fileChooser.getExtensionFilters().add(extFilter);
-
     }
 
     private void initializeLegend() {
@@ -157,7 +158,7 @@ public class SimulatorController implements Drawable {
             canvas.drawQuadrants();
         }
 
-        if (radioMenuSensorReading.isSelected()) {
+        if (radioMenuSensorReading.isSelected() && checkMenuItemShowText.isSelected()) {
             drawSensorNumbers(room.getSensorReadings());
         }
 

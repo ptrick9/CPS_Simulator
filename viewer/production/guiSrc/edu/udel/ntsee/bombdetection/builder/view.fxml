@@ -1,0 +1,259 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.text.*?>
+<?import edu.udel.ntsee.bombdetection.ui.*?>
+<?import javafx.scene.control.cell.*?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.canvas.*?>
+<?import javafx.scene.input.*?>
+<?import javafx.scene.control.*?>
+<?import java.lang.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.cell.PropertyValueFactory?>
+<?import edu.udel.ntsee.bombdetection.ui.IntegerField?>
+
+<VBox fx:id="root" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="450.0" prefWidth="820.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="edu.udel.ntsee.bombdetection.builder.BuilderController">
+   <children>
+      <MenuBar>
+        <menus>
+          <Menu mnemonicParsing="false" text="File">
+            <items>
+              <MenuItem mnemonicParsing="false" onAction="#onMenuItemNew" text="New...">
+                     <accelerator>
+                        <KeyCodeCombination alt="UP" code="N" control="DOWN" meta="UP" shift="UP" shortcut="UP" />
+                     </accelerator>
+                  </MenuItem>
+                  <MenuItem mnemonicParsing="false" onAction="#onMenuItemOpen" text="Open...">
+                     <accelerator>
+                        <KeyCodeCombination alt="UP" code="O" control="DOWN" meta="UP" shift="UP" shortcut="UP" />
+                     </accelerator>
+                  </MenuItem>
+                  <MenuItem mnemonicParsing="false" onAction="#onMenuItemSaveAs" text="Save As...">
+                     <accelerator>
+                        <KeyCodeCombination alt="UP" code="S" control="DOWN" meta="UP" shift="DOWN" shortcut="UP" />
+                     </accelerator>
+                  </MenuItem>
+            </items>
+          </Menu>
+          <Menu mnemonicParsing="false" text="View">
+               <items>
+                  <CheckMenuItem fx:id="checkMenuGridLines" mnemonicParsing="false" text="Grid Lines" />
+                  <CheckMenuItem fx:id="checkMenuQuadrants" mnemonicParsing="false" text="Quadrants" />
+                  <SeparatorMenuItem mnemonicParsing="false" />
+                  <CheckMenuItem fx:id="checkMenuBombs" mnemonicParsing="false" selected="true" text="Bomb" />
+                  <CheckMenuItem fx:id="checkMenuWalls" mnemonicParsing="false" selected="true" text="Walls" />
+                  <CheckMenuItem fx:id="checkMenuNodes" mnemonicParsing="false" selected="true" text="Nodes" />
+                  <CheckMenuItem fx:id="checkMenuSuperNodes" mnemonicParsing="false" selected="true" text="Super Nodes" />
+                  <CheckMenuItem fx:id="checkMenuAttractions" mnemonicParsing="false" selected="true" text="Attractions" />
+                  <SeparatorMenuItem mnemonicParsing="false" />
+                  <MenuItem mnemonicParsing="false" onAction="#onMenuItemZoomIn" text="Zoom In" />
+                  <MenuItem mnemonicParsing="false" onAction="#onMenuItemZoomOut" text="Zoom Out" />
+                  <MenuItem mnemonicParsing="false" onAction="#onMenuItemZoomFit" text="Fit to Window" />
+                  <SeparatorMenuItem mnemonicParsing="false" />
+                  <MenuItem mnemonicParsing="false" onAction="#onMenuItemFullscreen" text="Fullscreen">
+                     <accelerator>
+                        <KeyCodeCombination alt="UP" code="F11" control="UP" meta="UP" shift="UP" shortcut="ANY" />
+                     </accelerator>
+                  </MenuItem>
+               </items>
+          </Menu>
+          <Menu mnemonicParsing="false" text="Tools">
+            <items>
+              <MenuItem mnemonicParsing="false" onAction="#onMenuItemSimulator" text="Simulator" />
+                  <MenuItem mnemonicParsing="false" onAction="#onMenuItemStatistics" text="Statistics" />
+            </items>
+          </Menu>
+        </menus>
+      </MenuBar>
+      <HBox prefHeight="100.0" prefWidth="200.0" BorderPane.alignment="CENTER" VBox.vgrow="ALWAYS">
+         <children>
+            <VBox minWidth="135.0">
+               <children>
+                  <Label text="Controls" underline="true">
+                     <VBox.margin>
+                        <Insets left="10.0" top="10.0" />
+                     </VBox.margin>
+                  </Label>
+                  <ToggleButton fx:id="toggleButtonCamera" mnemonicParsing="false" prefWidth="135.0" selected="true" text="Move Camera">
+                     <toggleGroup>
+                        <ToggleGroup fx:id="toggleGroupControls" />
+                     </toggleGroup>
+                     <VBox.margin>
+                        <Insets left="10.0" right="10.0" />
+                     </VBox.margin>
+                  </ToggleButton>
+                  <ToggleButton fx:id="toggleButtonBomb" mnemonicParsing="false" prefWidth="135.0" text="Bomb" toggleGroup="$toggleGroupControls">
+                     <VBox.margin>
+                        <Insets left="10.0" right="10.0" />
+                     </VBox.margin></ToggleButton>
+                  <ToggleButton fx:id="toggleButtonWalls" mnemonicParsing="false" prefWidth="135.0" text="Walls" toggleGroup="$toggleGroupControls">
+                     <VBox.margin>
+                        <Insets left="10.0" right="10.0" />
+                     </VBox.margin></ToggleButton>
+                  <ToggleButton fx:id="toggleButtonNodes" mnemonicParsing="false" prefWidth="135.0" text="Nodes" toggleGroup="$toggleGroupControls">
+                     <VBox.margin>
+                        <Insets left="10.0" right="10.0" />
+                     </VBox.margin></ToggleButton>
+                  <ToggleButton fx:id="toggleButtonAttractions" mnemonicParsing="false" prefWidth="135.0" text="Attractions" toggleGroup="$toggleGroupControls">
+                     <VBox.margin>
+                        <Insets left="10.0" right="10.0" />
+                     </VBox.margin></ToggleButton>
+                  <ToggleButton fx:id="toggleButtonDelete" mnemonicParsing="false" prefWidth="135.0" text="Delete" toggleGroup="$toggleGroupControls">
+                     <VBox.margin>
+                        <Insets left="10.0" right="10.0" />
+                     </VBox.margin></ToggleButton>
+                  <Label text="Mouse" underline="true">
+                     <VBox.margin>
+                        <Insets left="10.0" top="10.0" />
+                     </VBox.margin>
+                  </Label>
+                  <Text fx:id="textMousePosition" strokeType="OUTSIDE" strokeWidth="0.0" text="(0, 0)">
+                     <VBox.margin>
+                        <Insets left="10.0" />
+                     </VBox.margin>
+                  </Text>
+               </children>
+            </VBox>
+            <Separator orientation="VERTICAL" prefHeight="200.0" />
+            <Pane fx:id="canvasContainer" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="400.0" HBox.hgrow="ALWAYS" />
+            <Separator orientation="VERTICAL" prefHeight="200.0" />
+            <Accordion maxWidth="-Infinity" prefWidth="254.0">
+              <panes>
+                  <TitledPane animated="false" text="Properties">
+                     <content>
+                        <ScrollPane fitToWidth="true" prefViewportHeight="215.0" prefViewportWidth="252.0">
+                           <content>
+                              <VBox spacing="10.0">
+                                 <children>
+                                    <Label text="Width" />
+                                    <IntegerField fx:id="integerFieldWidth" text="0" />
+                                    <Label text="Height" />
+                                    <IntegerField fx:id="integerFieldHeight" text="0" />
+                                    <Label text="Total Runs" />
+                                    <IntegerField fx:id="integerFieldTotalRuns" text="0" />
+                                    <Label text="Square Columns" />
+                                    <IntegerField fx:id="integerFieldSquareCols" text="0" />
+                                    <Label text="Square Rows" />
+                                    <IntegerField fx:id="integerFieldSquareRows" text="0" />
+                                    <Label text="Super Node Type" />
+                                    <IntegerField fx:id="integerFieldSuperNodeType" text="1" />
+                                 </children>
+                                 <padding>
+                                    <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+                                 </padding>
+                              </VBox>
+                           </content>
+                        </ScrollPane>
+                     </content>
+                  </TitledPane>
+                <TitledPane animated="false" text="Bomb">
+                     <content>
+                        <VBox prefHeight="200.0" prefWidth="100.0" spacing="10.0">
+                           <children>
+                              <Label text="X">
+                                 <VBox.margin>
+                                    <Insets left="10.0" />
+                                 </VBox.margin>
+                              </Label>
+                              <IntegerField fx:id="integerFieldBombX" text="0" />
+                              <Label text="Y">
+                                 <VBox.margin>
+                                    <Insets left="10.0" />
+                                 </VBox.margin>
+                              </Label>
+                              <IntegerField fx:id="integerFieldBombY" text="0" />
+                           </children>
+                           <padding>
+                              <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+                           </padding>
+                        </VBox>
+                     </content>
+                </TitledPane>
+                <TitledPane animated="false" text="Walls">
+                     <content>
+                        <TableView fx:id="tableViewWalls" editable="true" prefHeight="200.0" prefWidth="200.0">
+                          <columns>
+                            <TableColumn fx:id="colWallX" prefWidth="126.0" text="X">
+                              <cellValueFactory>
+                                <PropertyValueFactory property="x" />
+                              </cellValueFactory>
+                            </TableColumn>
+                            <TableColumn fx:id="colWallY" prefWidth="126.0" text="Y">
+                              <cellValueFactory>
+                                <PropertyValueFactory property="y" />
+                              </cellValueFactory>
+                            </TableColumn>
+                          </columns>
+                        </TableView>
+                     </content>
+                </TitledPane>
+                <TitledPane animated="false" text="Nodes">
+                     <content>
+                        <VBox>
+                           <children>
+                              <Label text="Total Random Nodes" />
+                              <IntegerField fx:id="integerFieldNodes">
+                                 <VBox.margin>
+                                    <Insets bottom="10.0" />
+                                 </VBox.margin>
+                              </IntegerField>
+                              <TableView fx:id="tableViewNodes" editable="true" maxWidth="1.7976931348623157E308" prefHeight="200.0" prefWidth="200.0">
+                                <columns>
+                                  <TableColumn fx:id="colNodeX" prefWidth="75.0" text="X">
+                                    <cellValueFactory>
+                                      <PropertyValueFactory property="x" />
+                                    </cellValueFactory>
+                                  </TableColumn>
+                                  <TableColumn fx:id="colNodeY" prefWidth="75.0" text="Y">
+                                    <cellValueFactory>
+                                      <PropertyValueFactory property="y" />
+                                    </cellValueFactory>
+                                  </TableColumn>
+                                  <TableColumn fx:id="colNodeTime" prefWidth="75.0" text="Time">
+                                    <cellValueFactory>
+                                      <PropertyValueFactory property="time" />
+                                    </cellValueFactory>
+                                  </TableColumn>
+                                </columns>
+                              </TableView>
+                           </children>
+                        </VBox>
+                     </content>
+                </TitledPane>
+                  <TitledPane animated="false" text="Attractions">
+                     <content>
+                        <TableView fx:id="tableViewAttractions" editable="true" prefHeight="200.0" prefWidth="200.0">
+                          <columns>
+                            <TableColumn fx:id="colAttractionX" prefWidth="63.0" text="X">
+                              <cellValueFactory>
+                                <PropertyValueFactory property="x" />
+                              </cellValueFactory>
+                            </TableColumn>
+                            <TableColumn fx:id="colAttractionY" prefWidth="63.0" text="Y">
+                              <cellValueFactory>
+                                <PropertyValueFactory property="y" />
+                              </cellValueFactory>
+                            </TableColumn>
+                            <TableColumn fx:id="colAttractionStart" prefWidth="63.0" text="Start">
+                              <cellValueFactory>
+                                <PropertyValueFactory property="start" />
+                              </cellValueFactory>
+                            </TableColumn>
+                            <TableColumn fx:id="colAttractionEnd" prefWidth="63.0" text="End">
+                              <cellValueFactory>
+                                <PropertyValueFactory property="end" />
+                              </cellValueFactory>
+                            </TableColumn>
+                          </columns>
+                        </TableView>
+                     </content>
+                  </TitledPane>
+              </panes>
+               <HBox.margin>
+                  <Insets left="10.0" right="10.0" />
+               </HBox.margin>
+            </Accordion>
+         </children>
+      </HBox>
+   </children>
+</VBox>
