@@ -1,5 +1,7 @@
 package main
 
+import "fmt"
+
 //Super node of type 1
 //The super node with the minimum distance routing algorithm
 type sn_zero struct {
@@ -30,7 +32,9 @@ func (n* sn_zero) updatePath(){
 
 		//Adds the points of the path to the routePath list using the
 		//	route function
-		n.routePath = append(n.routePath, aStar(n.routePoints[i], n.routePoints[i+1])...)
+		fmt.Println("calling aStar")
+		newPath := aStar(n.routePoints[i], n.routePoints[i+1])
+		n.routePath = append(n.routePath, newPath...)
 
 		//Once a point of interest's path is added to the routePath
 		//	the number of destination can be increased

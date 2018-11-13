@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"strings"
 	"strconv"
+	"bytes"
 )
 
 var (
@@ -98,6 +99,7 @@ func main() {
 	rand.Seed(time.Now().UTC().UnixNano())
 
 	getFlags()
+
 	maxX = 100
 	maxY = 100
 	squareRow = squareRowCM
@@ -120,37 +122,135 @@ func main() {
 	}
 	defer positionFile.Close()
 
-	absPath, _ := filepath.Abs("../CPS_Simulator/Walls/out_initial_wall 90p 1.txt")
-	wallData, err := ioutil.ReadFile(absPath)
-	wallsWithHeader := string(wallData)
-
-	walls := strings.Split(wallsWithHeader, "\n")
-
-	walls = walls[3:len(walls)-1]
-	for i:=0; i < len(walls); i++ {
-		line := strings.Split(walls[i], " ")
-		x, _ := strconv.Atoi(line[1])
-		y, _ := strconv.Atoi(line[3][:len(line[3])-1])
-
-		boardMap[x][y] = -1
-	}
-
 	fmt.Fprintln(positionFile, "Width:", maxX)
 	fmt.Fprintln(positionFile, "Height:", maxY)
-	fmt.Fprintf(positionFile, "Amount: %-8v\n", 0)
+	fmt.Fprintf(positionFile, "Amount: %v\n", 0)
 	fmt.Fprintf(positionFile, "Bomb x: %v\n", 0)
 	fmt.Fprintf(positionFile, "Bomb y: %v\n", 0)
 
+	doWalls := true
+	if (doWalls) {
+
+		//wallString := strconv.Itoa(49)
+		routingName := "Testing Walls Output/Log-path-wall-maze.txt"
+		wallName := "../CPS_Simulator/Testing Walls/out_initial_wall_maze.txt"
+
+		absPath, _ := filepath.Abs(wallName)
+		wallData, err := ioutil.ReadFile(absPath)
+		if err != nil {
+			log.Fatal("Cannot create file", err)
+		}
+		wallsWithHeader := string(wallData)
+
+		walls := strings.Split(wallsWithHeader, "\n")
+
+		walls = walls[3 : len(walls)-1]
+		for i := 0; i < len(walls); i++ {
+			line := strings.Split(walls[i], " ")
+			x, _ := strconv.Atoi(line[1])
+			y, _ := strconv.Atoi(line[3][:len(line[3])-1])
+
+			boardMap[y][x] = -1
+		}
+
+		routingFile, err := os.Create(routingName)
+		if err != nil {
+			log.Fatal("Cannot create file", err)
+		}
+		defer routingFile.Close()
+
+		//The scheduler determines which supernode should pursue a point of interest
+		scheduler := &Scheduler{}
+
+		//List of all the supernodes on the grid
+		scheduler.sNodeList = make([]SuperNodeParent, numSuperNodes)
+
+		for i := 0; i < numSuperNodes; i++ {
+			snode_points := make([]Coord, 1)
+			snode_path := make([]Coord, 0)
+			all_points := make([]Coord, 0)
+
+			//Defining the starting x and y values for the super node
+			//This super node starts at the middle of the grid
+			nodeCenter := Coord{x: 2, y: 2}
+			x_val, y_val := nodeCenter.x, nodeCenter.y
+
+			scheduler.sNodeList[i] = &sn_zero{&supern{&NodeImpl{x: x_val, y: y_val, id: i}, 1,
+				1, superNodeRadius, superNodeRadius, 0, snode_points, snode_path,
+				nodeCenter, 0, 0, 0, 0, 0, all_points}}
+
+			//The super node's current location is always the first element in the routePoints list
+			scheduler.sNodeList[i].updateLoc()
+		}
+		maxLength := -1
+
+		for _, s := range scheduler.sNodeList {
+			s.addRoutePoint(Coord{x: maxX - 3, y: 2})
+
+			s.tick()
+
+			//Writes the super node information to a file
+			fmt.Fprint(routingFile, s)
+			p := printPoints(s)
+			fmt.Fprint(routingFile, " UnvisitedPoints: ")
+			fmt.Fprintln(routingFile, p.String())
+
+			routeLength := len(s.getRoutePath())
+			if routeLength > maxLength {
+				maxLength = routeLength
+			}
+		}
+
+		fmt.Printf("Iteration %d/%v", 0, maxLength)
+		for i := 0; i < (maxLength + 1); i++ {
+			fmt.Printf("\rIteration %d/%v", i, maxLength)
+			for _, s := range scheduler.sNodeList {
+				s.tick()
+
+				//Writes the super node information to a file
+				fmt.Fprint(routingFile, s)
+				p := printPoints(s)
+				fmt.Fprint(routingFile, " UnvisitedPoints: ")
+				fmt.Fprintln(routingFile, p.String())
+			}
+		}
+	}
+}
+
+//This function allows the simulator to create a roadMap of the grid
+//Every Coord in the grid is given an integer value corresponding to the
+//	number of times the Coord is used by all paths
+//The function first generates two random Coords on each half of the grid
+//It then finds the path between those Coords
+//It then increments the integer value of each Coord in the path by one
+//This is done an amount of time to generate a conclusive distribution of paths
+//	across the gird
+//THe resulting roadMap is outputted to the file, first with the max number
+//	if times a Coord is visited and then each Coord's integer value
+func makeRoads(roadFile *os.File){
+	//This map has Tuples as keys and integers as values
+	//The Tuples represent the Coord in the grid and the integer represents
+	//	the amount of times the Coord is visited by all paths
 	roadMap := make(map[Tuple]int)
+
+	//The max is kept track of the be outputted at the beginning of the
+	//road output file
+	//This is used to determine the gradient of color by the Viewer when
+	//	displaying the roads
 	max := 0
 
 	aStarIterations := 100
 
-	fmt.Printf("Running ASTAR iteration %d\\%v",0, aStarIterations)
+	fmt.Printf("Running ASTAR iteration %d/%v",0, aStarIterations)
 	for i:= 0; i < aStarIterations; i++{
+		//Two Coords are randomly generated
 		a := Coord{nil, rangeInt(0, maxX), rangeInt(0, maxY), 0, 0, 0, 0}
 		b := Coord{nil, rangeInt(0, maxX), rangeInt(0, maxY), 0, 0, 0, 0}
 
+		//The Coords' x and y positions are randomly updated to be on either the
+		//	left and right side, or top and bottom of the grid
+		//This is done to ensure the paths between these Coords crosses a large
+		//	section of the grid
 		if i %2 == 0{
 			a.x = rangeInt(0, maxX/2)
 			b.x = rangeInt(maxX/2, maxX)
@@ -158,7 +258,10 @@ func main() {
 			a.y = rangeInt(0, maxY/2)
 			b.y = rangeInt(maxY/2, maxY)
 		}
-		fmt.Printf("\rRunning ASTAR iteration %d\\%v",i, aStarIterations)
+		fmt.Printf("\rRunning ASTAR iteration %d/%v",i, aStarIterations)
+		//The aStar path between these two Coords is created
+		//Each Coord in this path is looped through and the integer value corresponding
+		//	to that Coord is incremented by one
 		for _, r := range aStar(a, b) {
 			pos := Tuple{r.x, r.y}
 			roadMap[pos]++
@@ -169,9 +272,11 @@ func main() {
 	}
 	fmt.Fprintln(roadFile, "max", max)
 
+	//This loops through the roadMap and outputs the integer value for every Coord
+	//	in the grid
 	for i := 0; i < maxX; i++ {
 		for j := 0; j < maxY; j++ {
-			fmt.Println("Outputting to roadLog: Coord", j, i)
+			fmt.Println("\rOutputting to roadLog: Coord", j, i)
 			if boardMap[i][j] == -1 {
 				fmt.Fprintln(roadFile, i, j, -1)
 			}else{
@@ -179,9 +284,24 @@ func main() {
 			}
 		}
 	}
-
-
 }
+
+//Saves the Coords in the allPoints list into a buffer to
+//	print to the file
+func printPoints(s SuperNodeParent) bytes.Buffer {
+	var buffer bytes.Buffer
+	buffer.WriteString((fmt.Sprintf("[")))
+	for ind, i := range s.getAllPoints() {
+		buffer.WriteString(i.String())
+
+		if ind != len(s.getAllPoints())-1 {
+			buffer.WriteString(" ")
+		}
+	}
+	buffer.WriteString((fmt.Sprintf("]")))
+	return buffer
+}
+
 func getFlags() {
 	//fmt.Println(os.Args[1:], "\nhmmm? \n ") //C:\Users\Nick\Desktop\comand line experiments\src
 	flag.IntVar(&negativeSittingStopThresholdCM, "negativeSittingStopThreshold", -10,
@@ -232,7 +352,7 @@ func getFlags() {
 		"Multiplier for error values in system")
 	//Range 1, 2, or 4
 	//Currently works for only a few numbers, can be easily expanded but is not currently dynamic
-	flag.IntVar(&numSuperNodes, "numSuperNodes", 4, "the number of super nodes in the simulator")
+	flag.IntVar(&numSuperNodes, "numSuperNodes", 1, "the number of super nodes in the simulator")
 
 	//Range: 0-2
 	//0: default routing algorithm, points added onto the end of the path and routed to in that order
@@ -252,7 +372,7 @@ func getFlags() {
 	//Range: 0-...
 	//Theoretically could be as high as possible
 	//Realistically should remain around 10
-	flag.IntVar(&superNodeSpeed, "superNodeSpeed", 3, "the speed of the super node")
+	flag.IntVar(&superNodeSpeed, "superNodeSpeed", 1, "the speed of the super node")
 
 	//Range: true/false
 	//Tells the simulator whether or not to optimize the path of all the super nodes

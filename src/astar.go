@@ -44,7 +44,7 @@ func aStar(a Coord, b Coord) []Coord {
 
 		//adjacent is a Coord list of all the Coords that are adjacent to
 		//	the current Coord
-		//Walls and previously travelled Coords will not appear in this list
+		//Random Walls and previously travelled Coords will not appear in this list
 		adjacent := curr.getWalkable(b, closedList)
 
 		//This loops through all the adjacent Coords to the current Coord

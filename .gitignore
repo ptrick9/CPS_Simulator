@@ -136,3 +136,15 @@ big_data/old2/
 -simulatorOutput\.txt
 
 \.idea/
+
+Random Walls/
+
+roadLog\.txt
+
+Testing Walls/
+
+Walls/
+
+Testing Walls Output/
+
+*.txt
