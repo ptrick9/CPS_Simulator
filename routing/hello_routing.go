@@ -1,17 +1,19 @@
 package main
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
+	"image"
+	"image/png"
+	"io/ioutil"
+	"log"
 	"math/rand"
 	"os"
-	"time"
-	"log"
-	"io/ioutil"
 	"path/filepath"
-	"strings"
 	"strconv"
-	"bytes"
+	"strings"
+	"time"
 )
 
 var (
@@ -42,7 +44,7 @@ var (
 	negativeSittingStopThresholdCM int     // This is a negative number for the sitting to be set to when map is reset
 	sittingStopThresholdCM         int     // This is the threshold for the longest time a node can sit before no longer moving
 	gridCapacityPercentageCM       float64 // This is the percent of a subgrid that can be filled with nodes, between 0.0 and 1.0
-	errorModifierCM				   float64 // Multiplier for error model
+	errorModifierCM                float64 // Multiplier for error model
 	outputFileNameCM               string  // This is the prefix of the output text file
 	inputFileNameCM                string  // This must be the name of the input text file with ".txt"
 	naturalLossCM                  float64 // This can be any number n: 0 < n < .1
@@ -55,7 +57,7 @@ var (
 	movementSamplingPeriodCM       int     // This can be any int number n: 1 <= n <= 100
 	maxBufferCapacityCM            int     // This can be aby int number n: 10 <= n <= 100
 	energyModelCM                  string  // This can be "custom", "2StageServer", or other string will result in dynamic
-	noEnergyModelCM				   bool    // If set to true, all energy model values ignored
+	noEnergyModelCM                bool    // If set to true, all energy model values ignored
 	sensorSamplingPeriodCM         int     // This can be any int n: 1 <= n <= 100
 	GPSSamplingPeriodCM            int     // This can be any int n: 1 <= n < sensorSamplingPeriodCM <=  100
 	serverSamplingPeriodCM         int     // This can be any int n: 1 <= n < GPSSamplingPeriodCM <= 100
@@ -81,17 +83,39 @@ var (
 	positionPrint bool
 	nodesPrint    bool
 
+	regionRouting bool
+
 	driftFile    *os.File
 	nodeFile     *os.File
 	positionFile *os.File
 
+	point_list []Tuple
+
+	point_list2 [][]bool
+
+	point_dict map[Tuple]bool
+
+	square_list []RoutingSquare
+
+	border_dict map[int][]int
+
+	node_tables []map[Tuple]float64
+
+	possible_paths [][]int
+
+	prnt bool = false
+
 	// End the command line variables.
 )
+
+func init() {
+	image.RegisterFormat("png", "png", png.Decode, png.DecodeConfig)
+}
 
 const Tau1 = 10
 const Tau2 = 500
 
-type Tuple struct{
+type Tuple struct {
 	x, y int
 }
 
@@ -128,8 +152,313 @@ func main() {
 	fmt.Fprintf(positionFile, "Bomb x: %v\n", 0)
 	fmt.Fprintf(positionFile, "Bomb y: %v\n", 0)
 
-	doWalls := true
-	if (doWalls) {
+	point_list = make([]Tuple, 0)
+
+	point_list2 = make([][]bool, 0)
+
+	point_dict = make(map[Tuple]bool)
+
+	square_list = make([]RoutingSquare, 0)
+
+	border_dict = make(map[int][]int)
+
+	//New routing initialization
+	if regionRouting {
+
+		imgfile, err := os.Open("circle_justWalls_x4.png")
+
+		if err != nil {
+			fmt.Println("file not found!")
+			os.Exit(1)
+		}
+
+		defer imgfile.Close()
+
+		imgCfg, _, err := image.DecodeConfig(imgfile)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+
+		width := imgCfg.Width
+		height := imgCfg.Height
+
+		fmt.Println("Width : ", width)
+		fmt.Println("Height : ", height)
+
+		imgfile.Seek(0, 0)
+
+		img, _, err := image.Decode(imgfile)
+
+		for x := 0; x < width; x++ {
+			point_list2 = append(point_list2, make([]bool, height))
+			for y := 0; y < height; y++ {
+				r, _, _, _ := img.At(x, y).RGBA()
+				if r != 0 {
+					point_list = append(point_list, Tuple{x, y})
+					point_list2[x][y] = true
+					point_dict[Tuple{x, y}] = true
+					if prnt {
+						fmt.Printf("X: %d, Y: %d\n", x, y)
+					}
+
+				} else {
+					point_dict[Tuple{x, y}] = false
+				}
+			}
+		}
+
+		id_counter := 0
+		done := false
+		//for len(point_list) != 0 {
+		for !done {
+			top_left := Tuple{-1, -1}
+			fmt.Println("starting")
+			for x := 0; x < width; x++ {
+				for y := 0; y < height; y++ {
+					//fmt.Printf("X: %d, Y: %d, v: %d", x, y, point_list2[x][y])
+					if point_list2[x][y] {
+						top_left = Tuple{x, y}
+						break
+					}
+				}
+				if (top_left != Tuple{-1, -1}) {
+					break
+				}
+			}
+			fmt.Printf("working %d %d\n", top_left.x, top_left.y)
+			if (top_left == Tuple{-1, -1}) {
+				done = true
+				break
+			}
+			//top_left := point_list[0]
+			temp := Tuple{top_left.x, top_left.y}
+
+			for point_dict[Tuple{temp.x + 1, temp.y}] {
+				temp.x += 1
+			}
+
+			collide := false
+			y_test := Tuple{top_left.x, top_left.y}
+
+			for !collide {
+				y_test.y += 1
+				if prnt {
+					fmt.Println(y_test.y)
+				}
+
+				for x_val := top_left.x; x_val < temp.x; x_val++ {
+					if !point_dict[Tuple{x_val, y_test.y}] {
+						collide = true
+					}
+				}
+			}
+
+			bottom_right := Tuple{temp.x, y_test.y - 1}
+
+			fmt.Println(top_left.x, bottom_right.x, top_left.y, bottom_right.y)
+
+			new_square := RoutingSquare{top_left.x, bottom_right.x, top_left.y, bottom_right.y, true, id_counter, make([]Tuple, 0)}
+			id_counter++
+			fmt.Println("start_r_square")
+			removeRoutingSquare(new_square)
+			fmt.Println("end_r_square")
+			square_list = append(square_list, new_square)
+		}
+
+		length := len(square_list)
+		for y, _ := range square_list {
+			square := square_list[y]
+			square_list[y].routers = make([]Tuple, length)
+
+			for z := y + 1; z < len(square_list); z++ {
+				new_square := square_list[z]
+
+				if new_square.x1 >= square.x1 && new_square.x2 <= square.x2 {
+					if new_square.y1 == square.y2+1 {
+						border_dict[y] = append(border_dict[y], z)
+						border_dict[z] = append(border_dict[z], y)
+
+					} else if new_square.y2 == square.y1-1 {
+						border_dict[y] = append(border_dict[y], z)
+						border_dict[z] = append(border_dict[z], y)
+					}
+				} else if new_square.y1 >= square.y1 && new_square.y2 <= square.y2 {
+					if new_square.x1 == square.x2+1 {
+						border_dict[y] = append(border_dict[y], z)
+						border_dict[z] = append(border_dict[z], y)
+
+					} else if new_square.x2 == square.x1-1 {
+						border_dict[y] = append(border_dict[y], z)
+						border_dict[z] = append(border_dict[z], y)
+					}
+				}
+				if square.x1 >= new_square.x1 && square.x2 <= new_square.x2 {
+					if square.y1 == new_square.y2+1 {
+						border_dict[y] = append(border_dict[y], z)
+						border_dict[z] = append(border_dict[z], y)
+
+					} else if square.y2 == new_square.y1-1 {
+						border_dict[y] = append(border_dict[y], z)
+						border_dict[z] = append(border_dict[z], y)
+					}
+				} else if square.y1 >= new_square.y1 && square.y2 <= new_square.y2 {
+					if square.x1 == new_square.x2+1 {
+						border_dict[y] = append(border_dict[y], z)
+						border_dict[z] = append(border_dict[z], y)
+
+					} else if square.x2 == new_square.x1-1 {
+						border_dict[y] = append(border_dict[y], z)
+						border_dict[z] = append(border_dict[z], y)
+					}
+				}
+			}
+		}
+		fmt.Println(border_dict)
+
+		for true {
+			rebuilt := false
+
+			for i := 0; i < len(square_list) && !rebuilt; i++ {
+
+				for _, n := range border_dict[i] {
+
+					s_rat := side_ratio(square_list[i], square_list[n])
+					if s_rat > 0.6 {
+						new_squares := single_cut(square_list[i], square_list[n])
+
+						s1 := square_list[n]
+						s2 := square_list[i]
+
+						square_list_remove(s1)
+						square_list_remove(s2)
+
+						square_list = append(square_list, new_squares...)
+
+						rebuild(square_list)
+
+						rebuilt = true
+
+						break
+					}
+
+					a_rat := area_ratio(square_list[i], square_list[n])
+					if a_rat > 0.6 {
+						new_squares := single_cut(square_list[i], square_list[n])
+
+						s1 := square_list[n]
+						s2 := square_list[i]
+
+						square_list_remove(s1)
+						square_list_remove(s2)
+
+						new_squares[2].id_num = len(square_list)
+
+						square_list = append(square_list, new_squares...)
+
+						rebuild(square_list)
+
+						rebuilt = true
+
+						break
+					}
+				}
+			}
+
+			if !rebuilt {
+				break
+			}
+		}
+
+		node_tables = make([]map[Tuple]float64, len(square_list))
+
+		for key, values := range border_dict {
+			if key < len(square_list) {
+				node_tables[key] = make(map[Tuple]float64)
+				if len(values) > 1 {
+					for n := 0; n < len(values); n++ {
+						next := n + 1
+						for next < len(values) {
+							node_a := border_dict[key][n]
+							node_b := border_dict[key][next]
+
+							p1 := square_list[key].routers[node_a]
+							p2 := square_list[key].routers[node_b]
+
+							node_tables[key][Tuple{node_a, node_b}] = dist(p1, p2)
+							node_tables[key][Tuple{node_b, node_a}] = dist(p1, p2)
+
+							next += 1
+						}
+					}
+				}
+			}
+		}
+
+		routingName := "newRoutingTest.txt"
+
+		routingFile, err := os.Create(routingName)
+		if err != nil {
+			log.Fatal("Cannot create file", err)
+		}
+		defer routingFile.Close()
+
+		//The scheduler determines which supernode should pursue a point of interest
+		scheduler := &Scheduler{}
+
+		//List of all the supernodes on the grid
+		scheduler.sNodeList = make([]SuperNodeParent, numSuperNodes)
+
+		for i := 0; i < numSuperNodes; i++ {
+			snode_points := make([]Coord, 1)
+			snode_path := make([]Coord, 0)
+			all_points := make([]Coord, 0)
+
+			//Defining the starting x and y values for the super node
+			//This super node starts at the middle of the grid
+			nodeCenter := Coord{x: 20, y: 20}
+			x_val, y_val := nodeCenter.x, nodeCenter.y
+
+			scheduler.sNodeList[i] = &sn_zero{&supern{&NodeImpl{x: x_val, y: y_val, id: i}, 1,
+				1, superNodeRadius, superNodeRadius, 0, snode_points, snode_path,
+				nodeCenter, 0, 0, 0, 0, 0, all_points}}
+
+			//The super node's current location is always the first element in the routePoints list
+			scheduler.sNodeList[i].updateLoc()
+		}
+
+		fmt.Printf("Iteration %d/%v", 0, iterations_of_event)
+		for i := 0; i < iterations_of_event; i++ {
+			fmt.Printf("\rIteration %d/%v", i, iterations_of_event)
+			for _, s := range scheduler.sNodeList {
+
+				if len(s.getRoutePoints()) <= 1 {
+					for true {
+						x_val := rangeInt(0, height)
+						y_val := rangeInt(0, width)
+
+						r, _, _, _ := img.At(x_val, y_val).RGBA()
+						if r != 0 {
+							s.addRoutePoint(Coord{x: x_val, y: y_val})
+							break
+						}
+					}
+				}
+
+				s.tick()
+
+				//Writes the super node information to a file
+				fmt.Fprint(routingFile, s)
+				p := printPoints(s)
+				fmt.Fprint(routingFile, " UnvisitedPoints: ")
+				fmt.Fprintln(routingFile, p.String())
+			}
+		}
+	}
+	//End new routing initialization
+
+	doWalls := false
+	if doWalls {
 
 		//wallString := strconv.Itoa(49)
 		routingName := "Testing Walls Output/Log-path-wall-maze.txt"
@@ -172,7 +501,7 @@ func main() {
 
 			//Defining the starting x and y values for the super node
 			//This super node starts at the middle of the grid
-			nodeCenter := Coord{x: 2, y: 2}
+			nodeCenter := Coord{x: 20, y: 20}
 			x_val, y_val := nodeCenter.x, nodeCenter.y
 
 			scheduler.sNodeList[i] = &sn_zero{&supern{&NodeImpl{x: x_val, y: y_val, id: i}, 1,
@@ -227,7 +556,7 @@ func main() {
 //	across the gird
 //THe resulting roadMap is outputted to the file, first with the max number
 //	if times a Coord is visited and then each Coord's integer value
-func makeRoads(roadFile *os.File){
+func makeRoads(roadFile *os.File) {
 	//This map has Tuples as keys and integers as values
 	//The Tuples represent the Coord in the grid and the integer represents
 	//	the amount of times the Coord is visited by all paths
@@ -241,8 +570,8 @@ func makeRoads(roadFile *os.File){
 
 	aStarIterations := 100
 
-	fmt.Printf("Running ASTAR iteration %d/%v",0, aStarIterations)
-	for i:= 0; i < aStarIterations; i++{
+	fmt.Printf("Running ASTAR iteration %d/%v", 0, aStarIterations)
+	for i := 0; i < aStarIterations; i++ {
 		//Two Coords are randomly generated
 		a := Coord{nil, rangeInt(0, maxX), rangeInt(0, maxY), 0, 0, 0, 0}
 		b := Coord{nil, rangeInt(0, maxX), rangeInt(0, maxY), 0, 0, 0, 0}
@@ -251,14 +580,14 @@ func makeRoads(roadFile *os.File){
 		//	left and right side, or top and bottom of the grid
 		//This is done to ensure the paths between these Coords crosses a large
 		//	section of the grid
-		if i %2 == 0{
+		if i%2 == 0 {
 			a.x = rangeInt(0, maxX/2)
 			b.x = rangeInt(maxX/2, maxX)
-		}else{
+		} else {
 			a.y = rangeInt(0, maxY/2)
 			b.y = rangeInt(maxY/2, maxY)
 		}
-		fmt.Printf("\rRunning ASTAR iteration %d/%v",i, aStarIterations)
+		fmt.Printf("\rRunning ASTAR iteration %d/%v", i, aStarIterations)
 		//The aStar path between these two Coords is created
 		//Each Coord in this path is looped through and the integer value corresponding
 		//	to that Coord is incremented by one
@@ -279,8 +608,8 @@ func makeRoads(roadFile *os.File){
 			fmt.Println("\rOutputting to roadLog: Coord", j, i)
 			if boardMap[i][j] == -1 {
 				fmt.Fprintln(roadFile, i, j, -1)
-			}else{
-				fmt.Fprintln(roadFile, i, j, roadMap[Tuple{j,i}])
+			} else {
+				fmt.Fprintln(roadFile, i, j, roadMap[Tuple{j, i}])
 			}
 		}
 	}
@@ -303,6 +632,8 @@ func printPoints(s SuperNodeParent) bytes.Buffer {
 }
 
 func getFlags() {
+	flag.IntVar(&iterations_of_event, "iterations_of_event", 1000, "how many times the simulation will run")
+
 	//fmt.Println(os.Args[1:], "\nhmmm? \n ") //C:\Users\Nick\Desktop\comand line experiments\src
 	flag.IntVar(&negativeSittingStopThresholdCM, "negativeSittingStopThreshold", -10,
 		"Negative number sitting is set to when board map is reset")
@@ -367,7 +698,7 @@ func getFlags() {
 	//	5: sophisticated routing algorithm, begin inside regions, only routed inside region
 	//	6: regional return trip routing algorithm, routed inside region based on most points
 	//	7: regional return trip routing algorithm, routed inside region based on oldest point
-	flag.IntVar(&superNodeType, "superNodeType", 6, "the type of super node used in the simulator")
+	flag.IntVar(&superNodeType, "superNodeType", 0, "the type of super node used in the simulator")
 
 	//Range: 0-...
 	//Theoretically could be as high as possible
@@ -394,6 +725,8 @@ func getFlags() {
 	flag.BoolVar(&nodesPrintCM, "logNodes", false, "Whether you want to write node readings to a log file")
 	flag.IntVar(&squareRowCM, "squareRow", 100, "Number of rows of grid squares, 1 through maxX")
 	flag.IntVar(&squareColCM, "squareCol", 100, "Number of columns of grid squares, 1 through maxY")
+
+	flag.BoolVar(&regionRouting, "regionRouting", false, "True if you want to use the new routing algorithm with regions and cutting")
 
 	flag.Parse()
 }
