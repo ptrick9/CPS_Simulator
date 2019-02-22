@@ -84,6 +84,9 @@ var (
 	nodesPrint    bool
 
 	regionRouting bool
+	imageFileNameCM                string  // This must be the name of the wall image file with ".png"
+	stimFileNameCM                string  // This must be the name of the stim file with ".txt"
+	outRoutingNameCM                string  // This is the name of the output routing file with ".txt"
 
 	driftFile    *os.File
 	nodeFile     *os.File
@@ -126,8 +129,8 @@ func main() {
 
 	getFlags()
 
-	maxX = 100
-	maxY = 100
+	maxX = 408
+	maxY = 408
 	squareRow = squareRowCM
 	squareCol = squareColCM
 
@@ -164,10 +167,33 @@ func main() {
 
 	border_dict = make(map[int][]int)
 
+
+	stimName := stimFileNameCM
+	absPath, _ := filepath.Abs(stimName)
+	stimData, err := ioutil.ReadFile(absPath)
+	if err != nil {
+		log.Fatal("Cannot create file", err)
+	}
+
+	stim_line := strings.Split(string(stimData), "\r\n")
+	stim_list = make(map[int]Tuple)
+	for i := 0; i < len(stim_line)-1; i++ {
+		line := strings.Split(stim_line[i], ", ")
+		x, _ := strconv.Atoi(line[0])
+		y, _ := strconv.Atoi(line[1])
+		t, _ := strconv.Atoi(line[2])
+		fmt.Printf("%d %d %d %s\n", x, y, t, line)
+		stim_list[t] = Tuple{x, y}
+		//x, _ := strconv.Atoi(line[1])
+		//y, _ := strconv.Atoi(line[3][:len(line[3])-1])
+
+		//boardMap[y][x] = -1
+	}
+
 	//New routing initialization
 	if regionRouting {
 
-		imgfile, err := os.Open("routing/circle_justWalls_x4.png")
+		imgfile, err := os.Open(imageFileNameCM)
 		if err != nil {
 			fmt.Println("file not found!")
 			os.Exit(1)
@@ -197,9 +223,9 @@ func main() {
 
 		for x := 0; x < height; x++ {
 			for y := 0; y < width; y++ {
-				r, _, _, _ := img.At(y, x).RGBA()
+				r, _, _, _ := img.At(x, y).RGBA()
 				if r != 0 {
-					point_list = append(point_list, Tuple{y, x})
+					//point_list = append(point_list, Tuple{y, x})
 					point_list2[x][y] = true
 					point_dict[Tuple{x, y}] = true
 					if prnt {
@@ -211,6 +237,7 @@ func main() {
 				}
 			}
 		}
+		/*
 		for x := 0; x < 200; x ++ {
 			for y := 0; y < 200; y++ {
 				if point_dict[Tuple{x, y}] {
@@ -221,7 +248,7 @@ func main() {
 			}
 			fmt.Println()
 		}
-		fmt.Println(img.At(203, 26).RGBA())
+		fmt.Println(img.At(203, 26).RGBA())*/
 
 		id_counter := 0
 		done := false
@@ -229,8 +256,8 @@ func main() {
 		for !done {
 			top_left := Tuple{-1, -1}
 			fmt.Println("starting")
-			for x := 0; x < width; x++ {
-				for y := 0; y < height; y++ {
+			for x := 0; x < height; x++ {
+				for y := 0; y < width; y++ {
 					//fmt.Printf("X: %d, Y: %d, v: %d", x, y, point_list2[x][y])
 					if point_list2[x][y] {
 						top_left = Tuple{x, y}
@@ -385,6 +412,44 @@ func main() {
 			}
 		}
 
+		/*
+		type Changeable interface {
+			Set(x, y int, c color.Color)
+		}
+
+		if cimg, ok := img.(Changeable); ok {
+
+			for x := 0; x < len(square_list); x++ {
+				r := uint8(rand.Intn(255))
+				g := uint8(rand.Intn(255))
+				b := uint8(rand.Intn(255))
+
+				fmt.Println(square_list[x], r, g, b)
+				for xx := square_list[x].x1; xx <= square_list[x].x2; xx++ {
+					for yy := square_list[x].y1; yy <= square_list[x].y2; yy++ {
+						cimg.Set(xx, yy, color.RGBA{r, g, b, 255})
+					}
+				}
+			}
+			cimg.Set(199, 14, color.RGBA{255, 255, 255, 255})
+			cimg.Set(200, 14, color.RGBA{255, 255, 255, 255})
+			//cimg.Set(193, 341, color.RGBA{255, 255, 255, 255})
+			//cimg.Set(341, 193, color.RGBA{255, 255, 255, 255})
+
+			ff, err := os.Create("img.png")
+			if err != nil {
+				panic(err)
+			}
+			defer ff.Close()
+			png.Encode(ff, img)
+			
+		} else {
+			fmt.Println("can't edit image :(")
+		}
+		*/
+
+
+
 		node_tables = make([]map[Tuple]float64, len(square_list))
 
 		for key, values := range border_dict {
@@ -410,9 +475,9 @@ func main() {
 			}
 		}
 
-		routingName := "newRoutingTest.txt"
+		//routingName := "newRoutingTest.txt"
 
-		routingFile, err := os.Create(routingName)
+		routingFile, err := os.Create(outRoutingNameCM)
 		if err != nil {
 			log.Fatal("Cannot create file", err)
 		}
@@ -442,57 +507,8 @@ func main() {
 			scheduler.sNodeList[i].updateLoc()
 		}
 
-		stimName := "routing/circle_2.txt"
-		absPath, _ := filepath.Abs(stimName)
-		stimData, err := ioutil.ReadFile(absPath)
-		if err != nil {
-			log.Fatal("Cannot create file", err)
-		}
 
-		stim_line := strings.Split(string(stimData), "\n")
-		stim_list = make(map[int]Tuple)
-		for i := 0; i < len(stim_line)-1; i++ {
-			line := strings.Split(stim_line[i], ", ")
-			x, _ := strconv.Atoi(line[0])
-			y, _ := strconv.Atoi(line[1])
-			t, _ := strconv.Atoi(line[2])
-			fmt.Printf("%d %d %d %s\n", x, y, t, line)
-			stim_list[t] = Tuple{x, y}
-			//x, _ := strconv.Atoi(line[1])
-			//y, _ := strconv.Atoi(line[3][:len(line[3])-1])
 
-			//boardMap[y][x] = -1
-		}
-
-		fmt.Println(stim_list[0])
-
-		/*fmt.Printf("Iteration %d/%v", 0, iterations_of_event)
-		for i := 0; i < iterations_of_event; i++ {
-			fmt.Printf("\rIteration %d/%v", i, iterations_of_event)
-			for _, s := range scheduler.sNodeList {
-
-				if len(s.getRoutePoints()) <= 1 {
-					for true {
-						x_val := rangeInt(0, height)
-						y_val := rangeInt(0, width)
-
-						r, _, _, _ := img.At(x_val, y_val).RGBA()
-						if r != 0 {
-							s.addRoutePoint(Coord{x: x_val, y: y_val})
-							break
-						}
-					}
-				}
-
-				s.tick()
-
-				//Writes the super node information to a file
-				fmt.Fprint(routingFile, s)
-				p := printPoints(s)
-				fmt.Fprint(routingFile, " UnvisitedPoints: ")
-				fmt.Fprintln(routingFile, p.String())
-			}
-		}*/
 
 		fmt.Printf("Iteration %d/%v", 0, iterations_of_event)
 		for i := 0; i < iterations_of_event; i++ {
@@ -787,6 +803,10 @@ func getFlags() {
 	flag.IntVar(&squareColCM, "squareCol", 100, "Number of columns of grid squares, 1 through maxY")
 
 	flag.BoolVar(&regionRouting, "regionRouting", false, "True if you want to use the new routing algorithm with regions and cutting")
+
+	flag.StringVar(&imageFileNameCM, "imageFileName", "routing/circle_justWalls_x4.png","Name of the input text file")
+	flag.StringVar(&stimFileNameCM, "stimFileName", "routing/circle_0.txt","Name of the stimulus text file")
+	flag.StringVar(&outRoutingNameCM, "outRoutingName", "log.txt","Name of the stimulus text file")
 
 	flag.Parse()
 }
