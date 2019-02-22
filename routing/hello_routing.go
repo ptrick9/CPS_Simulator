@@ -103,6 +103,8 @@ var (
 
 	possible_paths [][]int
 
+	stim_list map[int]Tuple
+
 	prnt bool = false
 
 	// End the command line variables.
@@ -165,8 +167,7 @@ func main() {
 	//New routing initialization
 	if regionRouting {
 
-		imgfile, err := os.Open("circle_justWalls_x4.png")
-
+		imgfile, err := os.Open("routing/circle_justWalls_x4.png")
 		if err != nil {
 			fmt.Println("file not found!")
 			os.Exit(1)
@@ -207,6 +208,14 @@ func main() {
 				}
 			}
 		}
+		fmt.Println(point_dict[Tuple{200, 26}])
+		fmt.Println(point_dict[Tuple{201, 26}])
+		fmt.Println(point_dict[Tuple{202, 26}])
+		fmt.Println(point_dict[Tuple{203, 26}])
+		fmt.Println(point_dict[Tuple{204, 26}])
+		fmt.Println(point_dict[Tuple{205, 26}])
+		fmt.Println(point_dict[Tuple{206, 26}])
+		fmt.Println(img.At(203, 26).RGBA())
 
 		id_counter := 0
 		done := false
@@ -427,7 +436,31 @@ func main() {
 			scheduler.sNodeList[i].updateLoc()
 		}
 
-		fmt.Printf("Iteration %d/%v", 0, iterations_of_event)
+		stimName := "routing/circle_2.txt"
+		absPath, _ := filepath.Abs(stimName)
+		stimData, err := ioutil.ReadFile(absPath)
+		if err != nil {
+			log.Fatal("Cannot create file", err)
+		}
+
+		stim_line := strings.Split(string(stimData), "\n")
+		stim_list = make(map[int]Tuple)
+		for i := 0; i < len(stim_line)-1; i++ {
+			line := strings.Split(stim_line[i], ", ")
+			x, _ := strconv.Atoi(line[0])
+			y, _ := strconv.Atoi(line[1])
+			t, _ := strconv.Atoi(line[2])
+			fmt.Printf("%d %d %d %s\n", x, y, t, line)
+			stim_list[t] = Tuple{x, y}
+			//x, _ := strconv.Atoi(line[1])
+			//y, _ := strconv.Atoi(line[3][:len(line[3])-1])
+
+			//boardMap[y][x] = -1
+		}
+
+		fmt.Println(stim_list[0])
+
+		/*fmt.Printf("Iteration %d/%v", 0, iterations_of_event)
 		for i := 0; i < iterations_of_event; i++ {
 			fmt.Printf("\rIteration %d/%v", i, iterations_of_event)
 			for _, s := range scheduler.sNodeList {
@@ -448,6 +481,27 @@ func main() {
 				s.tick()
 
 				//Writes the super node information to a file
+				fmt.Fprint(routingFile, s)
+				p := printPoints(s)
+				fmt.Fprint(routingFile, " UnvisitedPoints: ")
+				fmt.Fprintln(routingFile, p.String())
+			}
+		}*/
+
+		fmt.Printf("Iteration %d/%v", 0, iterations_of_event)
+		for i := 0; i < iterations_of_event; i++ {
+			fmt.Printf("\rIteration %d/%v", i, iterations_of_event)
+
+			if t, ok := stim_list[i]; ok {
+				scheduler.addRoutePoint(Coord{x: t.x, y: t.y})
+				fmt.Printf("\nAdding %d %d %d\n", i, t.x, t.y)
+			}
+
+
+
+			for _, s := range scheduler.sNodeList {
+				s.tick()
+
 				fmt.Fprint(routingFile, s)
 				p := printPoints(s)
 				fmt.Fprint(routingFile, " UnvisitedPoints: ")

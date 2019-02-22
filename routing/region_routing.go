@@ -66,6 +66,7 @@ func search(prev_region, curr_region, end_region int, curr_path []int) {
 func possPaths(p1, p2 Tuple) {
 	start_region := regionContaining(p1)
 	end_region := regionContaining(p2)
+	fmt.Println(p1, p2, start_region, end_region)
 
 	possible_paths = make([][]int, 0)
 
