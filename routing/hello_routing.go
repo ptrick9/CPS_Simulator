@@ -191,12 +191,15 @@ func main() {
 
 		img, _, err := image.Decode(imgfile)
 
-		for x := 0; x < width; x++ {
-			point_list2 = append(point_list2, make([]bool, height))
-			for y := 0; y < height; y++ {
-				r, _, _, _ := img.At(x, y).RGBA()
+		for x := 0; x < height; x++ {
+			point_list2 = append(point_list2, make([]bool, width))
+		}
+
+		for x := 0; x < height; x++ {
+			for y := 0; y < width; y++ {
+				r, _, _, _ := img.At(y, x).RGBA()
 				if r != 0 {
-					point_list = append(point_list, Tuple{x, y})
+					point_list = append(point_list, Tuple{y, x})
 					point_list2[x][y] = true
 					point_dict[Tuple{x, y}] = true
 					if prnt {
@@ -208,13 +211,16 @@ func main() {
 				}
 			}
 		}
-		fmt.Println(point_dict[Tuple{200, 26}])
-		fmt.Println(point_dict[Tuple{201, 26}])
-		fmt.Println(point_dict[Tuple{202, 26}])
-		fmt.Println(point_dict[Tuple{203, 26}])
-		fmt.Println(point_dict[Tuple{204, 26}])
-		fmt.Println(point_dict[Tuple{205, 26}])
-		fmt.Println(point_dict[Tuple{206, 26}])
+		for x := 0; x < 200; x ++ {
+			for y := 0; y < 200; y++ {
+				if point_dict[Tuple{x, y}] {
+					fmt.Print("_")
+				} else {
+					fmt.Print("X")
+				}
+			}
+			fmt.Println()
+		}
 		fmt.Println(img.At(203, 26).RGBA())
 
 		id_counter := 0
@@ -353,7 +359,7 @@ func main() {
 
 					a_rat := area_ratio(square_list[i], square_list[n])
 					if a_rat > 0.6 {
-						new_squares := single_cut(square_list[i], square_list[n])
+						new_squares := double_cut(square_list[i], square_list[n])
 
 						s1 := square_list[n]
 						s2 := square_list[i]
