@@ -117,7 +117,6 @@ func (n *supern) pathMove() {
 	//Loops through the routePath at the points to be removed
 	//If one of those points is a point of interest in the routePoints list it is removed
 	for i := 0; i < removal_index; i++ {
-		fmt.Println("HAVE WE LOST ONE:", len(n.routePoints))
 		if len(n.routePoints) > 1 {
 			if (n.routePoints[1].x == n.routePath[i].x) && (n.routePoints[1].y == n.routePath[i].y) {
 				//Increases the number of points visited by the super node
@@ -125,8 +124,6 @@ func (n *supern) pathMove() {
 				n.pointsVisited++
 				n.totResponseTime += n.routePoints[1].time
 				n.avgResponseTime = float64(n.totResponseTime / n.pointsVisited)
-
-				fmt.Fprint(statsFile, "Resp Time: ", n.routePoints[1].time)
 
 				//If a super node of type 2 is moving towards its center than the squares it
 				//	moves should not count towards it total

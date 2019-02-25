@@ -227,7 +227,6 @@ func main() {
 		for y := 0; y < width; y++ {
 			r, _, _, _ := img.At(x, y).RGBA()
 			if r != 0 {
-				//point_list = append(point_list, Tuple{y, x})
 				point_list2[x][y] = true
 				point_dict[Tuple{x, y}] = true
 				if prnt {
@@ -240,6 +239,51 @@ func main() {
 			}
 		}
 	}
+
+	top_left_corner := Coord{x: 0, y: 0}
+	top_right_corner := Coord{x: 0, y: 0}
+	bot_left_corner := Coord{x: 0, y: 0}
+	bot_right_corner := Coord{x: 0, y: 0}
+
+	tl_min := height + width
+	tr_max := -1
+	bl_max := -1
+	br_max := -1
+
+	for x := 0; x < height; x++ {
+		for y := 0; y < width; y++ {
+			if point_dict[Tuple{x, y}] {
+				if x+y < tl_min {
+					tl_min = x + y
+					top_left_corner.x = x
+					top_left_corner.y = y
+				}
+				if y-x > tr_max {
+					tr_max = y - x
+					top_right_corner.x = x
+					top_right_corner.y = y
+				}
+				if x-y > bl_max {
+					bl_max = x - y
+					bot_left_corner.x = x
+					bot_left_corner.y = y
+				}
+				if x+y > br_max {
+					br_max = x + y
+					bot_right_corner.x = x
+					bot_right_corner.y = y
+				}
+			}
+		}
+	}
+
+	fmt.Printf("TL: %v, TR %v, BL %v, BR %v\n", top_left_corner, top_right_corner, bot_left_corner, bot_right_corner)
+
+	starting_locs := make([]Coord, 4)
+	starting_locs[0] = top_left_corner
+	starting_locs[1] = top_right_corner
+	starting_locs[2] = bot_left_corner
+	starting_locs[3] = bot_right_corner
 
 	statsFile, err := os.Create(outRoutingStatsNameCM)
 	if err != nil {
@@ -508,8 +552,7 @@ func main() {
 
 			//Defining the starting x and y values for the super node
 			//This super node starts at the middle of the grid
-			nodeCenter := Coord{x: 20, y: 20}
-			x_val, y_val := nodeCenter.x, nodeCenter.y
+			x_val, y_val := starting_locs[i].x, starting_locs[i].y
 
 			scheduler.sNodeList[i] = &sn_zero{&supern{&NodeImpl{x: x_val, y: y_val, id: i}, 1,
 				1, superNodeRadius, superNodeRadius, 0, snode_points, snode_path,
@@ -528,13 +571,23 @@ func main() {
 				scheduler.addRoutePoint(Coord{x: t.x, y: t.y})
 				elapsed := time.Since(start)
 
-				fmt.Fprint(statsFile, "Region Routing Elapsed", elapsed)
+				fmt.Fprint(statsFile, "Region Routing Elapsed: ", elapsed, "\n")
 
 				fmt.Printf("\nAdding %d %d %d\n", i, t.x, t.y)
 			}
 
 			for _, s := range scheduler.sNodeList {
+				points_len := len(s.getRoutePoints())
+				response_time := -1
+				if points_len > 1 {
+					response_time = s.getRoutePoints()[1].time
+				}
+
 				s.tick()
+
+				if points_len > len(s.getRoutePoints()) {
+					fmt.Fprint(statsFile, "Response Time: ", response_time, "\n")
+				}
 
 				fmt.Fprint(routingFile, s)
 				p := printPoints(s)
@@ -546,8 +599,8 @@ func main() {
 			fmt.Println("\nSQUARES MOVED", s.getSquaresMoved())
 			fmt.Println("\nPOINTS VISITED", s.getPointsVisited())
 
-			fmt.Fprintf(statsFile, "Squares Moved: %d %d", s.getId(), s.getSquaresMoved())
-			fmt.Fprintf(statsFile, "Points Visited: %d %d", s.getId(), s.getPointsVisited())
+			fmt.Fprintf(statsFile, "Squares Moved: %d %d\n", s.getId(), s.getSquaresMoved())
+			fmt.Fprintf(statsFile, "Points Visited: %d %d\n", s.getId(), s.getPointsVisited())
 		}
 
 	}
@@ -579,8 +632,7 @@ func main() {
 
 			//Defining the starting x and y values for the super node
 			//This super node starts at the middle of the grid
-			nodeCenter := Coord{x: 20, y: 20}
-			x_val, y_val := nodeCenter.x, nodeCenter.y
+			x_val, y_val := starting_locs[i].x, starting_locs[i].y
 
 			scheduler.sNodeList[i] = &sn_zero{&supern{&NodeImpl{x: x_val, y: y_val, id: i}, 1,
 				1, superNodeRadius, superNodeRadius, 0, snode_points, snode_path,
@@ -589,6 +641,8 @@ func main() {
 			//The super node's current location is always the first element in the routePoints list
 			scheduler.sNodeList[i].updateLoc()
 		}
+
+		fmt.Print("POINTS", scheduler.sNodeList[0].getPointsVisited())
 
 		fmt.Printf("Iteration %d/%v", 0, iterations_of_event)
 		for i := 0; i < iterations_of_event; i++ {
@@ -600,7 +654,7 @@ func main() {
 				scheduler.addRoutePoint(Coord{x: t.x, y: t.y})
 				elapsed := time.Since(start)
 
-				fmt.Fprint(statsFile, "aStar Routing Elapsed", elapsed)
+				fmt.Fprint(statsFile, "aStar Routing Elapsed ", elapsed, "\n")
 
 				fmt.Printf("\nAdding %d %d %d\n", i, t.x, t.y)
 			}
@@ -618,8 +672,8 @@ func main() {
 			fmt.Println("\nSQUARES MOVED", s.getSquaresMoved())
 			fmt.Println("\nPOINTS VISITED", s.getPointsVisited())
 
-			fmt.Fprintf(statsFile, "Squares Moved: %d %d", s.getId(), s.getSquaresMoved())
-			fmt.Fprintf(statsFile, "Points Visited: %d %d", s.getId(), s.getPointsVisited())
+			fmt.Fprintf(statsFile, "Distance Traveled: %d %d\n", s.getId(), s.getSquaresMoved())
+			fmt.Fprintf(statsFile, "Points Visited: %d %d\n", s.getId(), s.getPointsVisited())
 		}
 	}
 }
