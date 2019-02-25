@@ -149,6 +149,6 @@ Testing Walls Output/
 
 *.txt
 
-routing/log.txt
-
 !routing/*
+
+routing/log.txt
