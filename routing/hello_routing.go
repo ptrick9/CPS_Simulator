@@ -84,13 +84,17 @@ var (
 	nodesPrint    bool
 
 	regionRouting bool
-	imageFileNameCM                string  // This must be the name of the wall image file with ".png"
-	stimFileNameCM                string  // This must be the name of the stim file with ".txt"
-	outRoutingNameCM                string  // This is the name of the output routing file with ".txt"
+	aStarRouting  bool
+
+	imageFileNameCM       string // This must be the name of the wall image file with ".png"
+	stimFileNameCM        string // This must be the name of the stim file with ".txt"
+	outRoutingNameCM      string // This is the name of the output routing file with ".txt"
+	outRoutingStatsNameCM string // This is the name of the output stats file with ".txt"
 
 	driftFile    *os.File
 	nodeFile     *os.File
 	positionFile *os.File
+	statsFile    *os.File
 
 	point_list []Tuple
 
@@ -167,7 +171,6 @@ func main() {
 
 	border_dict = make(map[int][]int)
 
-
 	stimName := stimFileNameCM
 	absPath, _ := filepath.Abs(stimName)
 	stimData, err := ioutil.ReadFile(absPath)
@@ -175,8 +178,10 @@ func main() {
 		log.Fatal("Cannot create file", err)
 	}
 
-	stim_line := strings.Split(string(stimData), "\r\n")
+	stim_line := strings.Split(string(stimData), "\n")
 	stim_list = make(map[int]Tuple)
+	fmt.Println("STIM_FILE LOOP")
+	fmt.Println(len(stim_line))
 	for i := 0; i < len(stim_line)-1; i++ {
 		line := strings.Split(stim_line[i], ", ")
 		x, _ := strconv.Atoi(line[0])
@@ -190,65 +195,75 @@ func main() {
 		//boardMap[y][x] = -1
 	}
 
+	imgfile, err := os.Open(imageFileNameCM)
+	if err != nil {
+		fmt.Println("file not found!")
+		os.Exit(1)
+	}
+
+	defer imgfile.Close()
+
+	imgCfg, _, err := image.DecodeConfig(imgfile)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	width := imgCfg.Width
+	height := imgCfg.Height
+
+	fmt.Println("Width : ", width)
+	fmt.Println("Height : ", height)
+
+	imgfile.Seek(0, 0)
+
+	img, _, err := image.Decode(imgfile)
+
+	for x := 0; x < height; x++ {
+		point_list2 = append(point_list2, make([]bool, width))
+	}
+
+	for x := 0; x < height; x++ {
+		for y := 0; y < width; y++ {
+			r, _, _, _ := img.At(x, y).RGBA()
+			if r != 0 {
+				//point_list = append(point_list, Tuple{y, x})
+				point_list2[x][y] = true
+				point_dict[Tuple{x, y}] = true
+				if prnt {
+					fmt.Printf("X: %d, Y: %d\n", x, y)
+				}
+
+			} else {
+				point_dict[Tuple{x, y}] = false
+				boardMap[y][x] = -1
+			}
+		}
+	}
+
+	statsFile, err := os.Create(outRoutingStatsNameCM)
+	if err != nil {
+		log.Fatal("Cannot create file", err)
+	}
+	defer statsFile.Close()
+
 	//New routing initialization
 	if regionRouting {
 
-		imgfile, err := os.Open(imageFileNameCM)
-		if err != nil {
-			fmt.Println("file not found!")
-			os.Exit(1)
-		}
+		fmt.Println("Beginning Region Routing")
 
-		defer imgfile.Close()
-
-		imgCfg, _, err := image.DecodeConfig(imgfile)
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-
-		width := imgCfg.Width
-		height := imgCfg.Height
-
-		fmt.Println("Width : ", width)
-		fmt.Println("Height : ", height)
-
-		imgfile.Seek(0, 0)
-
-		img, _, err := image.Decode(imgfile)
-
-		for x := 0; x < height; x++ {
-			point_list2 = append(point_list2, make([]bool, width))
-		}
-
-		for x := 0; x < height; x++ {
-			for y := 0; y < width; y++ {
-				r, _, _, _ := img.At(x, y).RGBA()
-				if r != 0 {
-					//point_list = append(point_list, Tuple{y, x})
-					point_list2[x][y] = true
-					point_dict[Tuple{x, y}] = true
-					if prnt {
-						fmt.Printf("X: %d, Y: %d\n", x, y)
-					}
-
-				} else {
-					point_dict[Tuple{x, y}] = false
-				}
-			}
-		}
 		/*
-		for x := 0; x < 200; x ++ {
-			for y := 0; y < 200; y++ {
-				if point_dict[Tuple{x, y}] {
-					fmt.Print("_")
-				} else {
-					fmt.Print("X")
+			for x := 0; x < 200; x ++ {
+				for y := 0; y < 200; y++ {
+					if point_dict[Tuple{x, y}] {
+						fmt.Print("_")
+					} else {
+						fmt.Print("X")
+					}
 				}
+				fmt.Println()
 			}
-			fmt.Println()
-		}
-		fmt.Println(img.At(203, 26).RGBA())*/
+			fmt.Println(img.At(203, 26).RGBA())*/
 
 		id_counter := 0
 		done := false
@@ -358,6 +373,7 @@ func main() {
 		}
 		fmt.Println(border_dict)
 
+		//Cutting takes place in this loop
 		for true {
 			rebuilt := false
 
@@ -413,42 +429,40 @@ func main() {
 		}
 
 		/*
-		type Changeable interface {
-			Set(x, y int, c color.Color)
-		}
+			type Changeable interface {
+				Set(x, y int, c color.Color)
+			}
 
-		if cimg, ok := img.(Changeable); ok {
+			if cimg, ok := img.(Changeable); ok {
 
-			for x := 0; x < len(square_list); x++ {
-				r := uint8(rand.Intn(255))
-				g := uint8(rand.Intn(255))
-				b := uint8(rand.Intn(255))
+				for x := 0; x < len(square_list); x++ {
+					r := uint8(rand.Intn(255))
+					g := uint8(rand.Intn(255))
+					b := uint8(rand.Intn(255))
 
-				fmt.Println(square_list[x], r, g, b)
-				for xx := square_list[x].x1; xx <= square_list[x].x2; xx++ {
-					for yy := square_list[x].y1; yy <= square_list[x].y2; yy++ {
-						cimg.Set(xx, yy, color.RGBA{r, g, b, 255})
+					fmt.Println(square_list[x], r, g, b)
+					for xx := square_list[x].x1; xx <= square_list[x].x2; xx++ {
+						for yy := square_list[x].y1; yy <= square_list[x].y2; yy++ {
+							cimg.Set(xx, yy, color.RGBA{r, g, b, 255})
+						}
 					}
 				}
-			}
-			cimg.Set(199, 14, color.RGBA{255, 255, 255, 255})
-			cimg.Set(200, 14, color.RGBA{255, 255, 255, 255})
-			//cimg.Set(193, 341, color.RGBA{255, 255, 255, 255})
-			//cimg.Set(341, 193, color.RGBA{255, 255, 255, 255})
+				cimg.Set(199, 14, color.RGBA{255, 255, 255, 255})
+				cimg.Set(200, 14, color.RGBA{255, 255, 255, 255})
+				//cimg.Set(193, 341, color.RGBA{255, 255, 255, 255})
+				//cimg.Set(341, 193, color.RGBA{255, 255, 255, 255})
 
-			ff, err := os.Create("img.png")
-			if err != nil {
-				panic(err)
+				ff, err := os.Create("img.png")
+				if err != nil {
+					panic(err)
+				}
+				defer ff.Close()
+				png.Encode(ff, img)
+
+			} else {
+				fmt.Println("can't edit image :(")
 			}
-			defer ff.Close()
-			png.Encode(ff, img)
-			
-		} else {
-			fmt.Println("can't edit image :(")
-		}
 		*/
-
-
 
 		node_tables = make([]map[Tuple]float64, len(square_list))
 
@@ -474,8 +488,6 @@ func main() {
 				}
 			}
 		}
-
-		//routingName := "newRoutingTest.txt"
 
 		routingFile, err := os.Create(outRoutingNameCM)
 		if err != nil {
@@ -507,19 +519,19 @@ func main() {
 			scheduler.sNodeList[i].updateLoc()
 		}
 
-
-
-
 		fmt.Printf("Iteration %d/%v", 0, iterations_of_event)
 		for i := 0; i < iterations_of_event; i++ {
 			fmt.Printf("\rIteration %d/%v", i, iterations_of_event)
 
 			if t, ok := stim_list[i]; ok {
+				start := time.Now()
 				scheduler.addRoutePoint(Coord{x: t.x, y: t.y})
+				elapsed := time.Since(start)
+
+				fmt.Fprint(statsFile, "Region Routing Elapsed", elapsed)
+
 				fmt.Printf("\nAdding %d %d %d\n", i, t.x, t.y)
 			}
-
-
 
 			for _, s := range scheduler.sNodeList {
 				s.tick()
@@ -530,33 +542,23 @@ func main() {
 				fmt.Fprintln(routingFile, p.String())
 			}
 		}
+		for _, s := range scheduler.sNodeList {
+			fmt.Println("\nSQUARES MOVED", s.getSquaresMoved())
+			fmt.Println("\nPOINTS VISITED", s.getPointsVisited())
+
+			fmt.Fprintf(statsFile, "Squares Moved: %d %d", s.getId(), s.getSquaresMoved())
+			fmt.Fprintf(statsFile, "Points Visited: %d %d", s.getId(), s.getPointsVisited())
+		}
+
 	}
 	//End new routing initialization
 
-	doWalls := false
-	if doWalls {
+	//aStar routing
+	if aStarRouting {
 
-		//wallString := strconv.Itoa(49)
+		fmt.Println("Beginning aStar Routing")
+
 		routingName := "Testing Walls Output/Log-path-wall-maze.txt"
-		wallName := "../CPS_Simulator/Testing Walls/out_initial_wall_maze.txt"
-
-		absPath, _ := filepath.Abs(wallName)
-		wallData, err := ioutil.ReadFile(absPath)
-		if err != nil {
-			log.Fatal("Cannot create file", err)
-		}
-		wallsWithHeader := string(wallData)
-
-		walls := strings.Split(wallsWithHeader, "\n")
-
-		walls = walls[3 : len(walls)-1]
-		for i := 0; i < len(walls); i++ {
-			line := strings.Split(walls[i], " ")
-			x, _ := strconv.Atoi(line[1])
-			y, _ := strconv.Atoi(line[3][:len(line[3])-1])
-
-			boardMap[y][x] = -1
-		}
 
 		routingFile, err := os.Create(routingName)
 		if err != nil {
@@ -587,37 +589,37 @@ func main() {
 			//The super node's current location is always the first element in the routePoints list
 			scheduler.sNodeList[i].updateLoc()
 		}
-		maxLength := -1
 
-		for _, s := range scheduler.sNodeList {
-			s.addRoutePoint(Coord{x: maxX - 3, y: 2})
+		fmt.Printf("Iteration %d/%v", 0, iterations_of_event)
+		for i := 0; i < iterations_of_event; i++ {
+			fmt.Printf("\rIteration %d/%v", i, iterations_of_event)
 
-			s.tick()
+			if t, ok := stim_list[i]; ok {
+				scheduler.addRoutePoint(Coord{x: t.x, y: t.y})
+				start := time.Now()
+				scheduler.addRoutePoint(Coord{x: t.x, y: t.y})
+				elapsed := time.Since(start)
 
-			//Writes the super node information to a file
-			fmt.Fprint(routingFile, s)
-			p := printPoints(s)
-			fmt.Fprint(routingFile, " UnvisitedPoints: ")
-			fmt.Fprintln(routingFile, p.String())
+				fmt.Fprint(statsFile, "aStar Routing Elapsed", elapsed)
 
-			routeLength := len(s.getRoutePath())
-			if routeLength > maxLength {
-				maxLength = routeLength
+				fmt.Printf("\nAdding %d %d %d\n", i, t.x, t.y)
 			}
-		}
 
-		fmt.Printf("Iteration %d/%v", 0, maxLength)
-		for i := 0; i < (maxLength + 1); i++ {
-			fmt.Printf("\rIteration %d/%v", i, maxLength)
 			for _, s := range scheduler.sNodeList {
 				s.tick()
 
-				//Writes the super node information to a file
 				fmt.Fprint(routingFile, s)
 				p := printPoints(s)
 				fmt.Fprint(routingFile, " UnvisitedPoints: ")
 				fmt.Fprintln(routingFile, p.String())
 			}
+		}
+		for _, s := range scheduler.sNodeList {
+			fmt.Println("\nSQUARES MOVED", s.getSquaresMoved())
+			fmt.Println("\nPOINTS VISITED", s.getPointsVisited())
+
+			fmt.Fprintf(statsFile, "Squares Moved: %d %d", s.getId(), s.getSquaresMoved())
+			fmt.Fprintf(statsFile, "Points Visited: %d %d", s.getId(), s.getPointsVisited())
 		}
 	}
 }
@@ -803,10 +805,12 @@ func getFlags() {
 	flag.IntVar(&squareColCM, "squareCol", 100, "Number of columns of grid squares, 1 through maxY")
 
 	flag.BoolVar(&regionRouting, "regionRouting", false, "True if you want to use the new routing algorithm with regions and cutting")
+	flag.BoolVar(&aStarRouting, "aStarRouting", false, "True if you want to use the old routing algorithm with aStar")
 
-	flag.StringVar(&imageFileNameCM, "imageFileName", "routing/circle_justWalls_x4.png","Name of the input text file")
-	flag.StringVar(&stimFileNameCM, "stimFileName", "routing/circle_0.txt","Name of the stimulus text file")
-	flag.StringVar(&outRoutingNameCM, "outRoutingName", "log.txt","Name of the stimulus text file")
+	flag.StringVar(&imageFileNameCM, "imageFileName", "circle_justWalls_x4.png", "Name of the input text file")
+	flag.StringVar(&stimFileNameCM, "stimFileName", "circle_0.txt", "Name of the stimulus text file")
+	flag.StringVar(&outRoutingNameCM, "outRoutingName", "log.txt", "Name of the stimulus text file")
+	flag.StringVar(&outRoutingStatsNameCM, "outRoutingStatsName", "routingStats.txt", "Name of the output file for stats")
 
 	flag.Parse()
 }

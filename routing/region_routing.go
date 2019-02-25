@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"math"
 )
 
@@ -66,7 +65,6 @@ func search(prev_region, curr_region, end_region int, curr_path []int) {
 func possPaths(p1, p2 Tuple) {
 	start_region := regionContaining(p1)
 	end_region := regionContaining(p2)
-	fmt.Println(p1, p2, start_region, end_region)
 
 	possible_paths = make([][]int, 0)
 
@@ -100,7 +98,6 @@ func inRegionRouting(p1, p2 Tuple) []Coord {
 }
 
 func getPath(c1, c2 Coord) []Coord {
-	fmt.Println("HEY")
 	p1 := Tuple{c1.x, c1.y}
 	p2 := Tuple{c2.x, c2.y}
 
