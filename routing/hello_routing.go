@@ -553,6 +553,7 @@ func main() {
 			//Defining the starting x and y values for the super node
 			//This super node starts at the middle of the grid
 			x_val, y_val := starting_locs[i].x, starting_locs[i].y
+			nodeCenter = Coord{x: x_val, y: y_val}
 
 			scheduler.sNodeList[i] = &sn_zero{&supern{&NodeImpl{x: x_val, y: y_val, id: i}, 1,
 				1, superNodeRadius, superNodeRadius, 0, snode_points, snode_path,
@@ -633,6 +634,7 @@ func main() {
 			//Defining the starting x and y values for the super node
 			//This super node starts at the middle of the grid
 			x_val, y_val := starting_locs[i].x, starting_locs[i].y
+			nodeCenter = Coord{x: x_val, y: y_val}
 
 			scheduler.sNodeList[i] = &sn_zero{&supern{&NodeImpl{x: x_val, y: y_val, id: i}, 1,
 				1, superNodeRadius, superNodeRadius, 0, snode_points, snode_path,
