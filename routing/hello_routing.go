@@ -612,9 +612,7 @@ func main() {
 
 		fmt.Println("Beginning aStar Routing")
 
-		routingName := "Testing Walls Output/Log-path-wall-maze.txt"
-
-		routingFile, err := os.Create(routingName)
+		routingFile, err := os.Create(outRoutingNameCM)
 		if err != nil {
 			log.Fatal("Cannot create file", err)
 		}
