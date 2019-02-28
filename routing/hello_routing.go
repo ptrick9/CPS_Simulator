@@ -178,7 +178,7 @@ func main() {
 		log.Fatal("Cannot create file", err)
 	}
 
-	stim_line := strings.Split(string(stimData), "\n")
+	stim_line := strings.Split(string(stimData), "\r\n")
 	stim_list = make(map[int]Tuple)
 	fmt.Println("STIM_FILE LOOP")
 	fmt.Println(len(stim_line))
@@ -612,9 +612,7 @@ func main() {
 
 		fmt.Println("Beginning aStar Routing")
 
-		routingName := "Testing Walls Output/Log-path-wall-maze.txt"
-
-		routingFile, err := os.Create(routingName)
+		routingFile, err := os.Create(outRoutingNameCM)
 		if err != nil {
 			log.Fatal("Cannot create file", err)
 		}
