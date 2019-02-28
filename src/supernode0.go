@@ -14,9 +14,9 @@ type sn_zero struct {
 func (n *sn_zero) tick() {
 	//If there are new points that are not currently destinations the route
 	//	needs to be updated
-	if len(n.getRoutePoints()) > n.getNumDest() {
+	/*if len(n.getRoutePoints()) > n.getNumDest() {
 		n.updatePath()
-	}
+	}*/
 	//If there are points left in the route the super node must move
 	//	along the path
 	if len(n.getRoutePath()) > 0 {
@@ -62,4 +62,5 @@ func (n *sn_zero) updatePath() {
 //Adds a routePoint to the super node's routePoints
 func (n *sn_zero) addRoutePoint(c Coord) {
 	n.routePoints = append(n.routePoints, c)
+	n.updatePath()
 }
