@@ -48,7 +48,7 @@ func (n *sn_zero) updatePath() {
 
 			//Adds the points of the path to the routePath list using the
 			//	route function
-			fmt.Println("calling aStar")
+			fmt.Println("\ncalling aStar")
 			newPath := aStar(n.routePoints[i], n.routePoints[i+1])
 			n.routePath = append(n.routePath, newPath...)
 

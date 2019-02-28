@@ -649,7 +649,7 @@ func main() {
 			fmt.Printf("\rIteration %d/%v", i, iterations_of_event)
 
 			if t, ok := stim_list[i]; ok {
-				scheduler.addRoutePoint(Coord{x: t.x, y: t.y})
+				//scheduler.addRoutePoint(Coord{x: t.x, y: t.y})
 				start := time.Now()
 				scheduler.addRoutePoint(Coord{x: t.x, y: t.y})
 				elapsed := time.Since(start)
