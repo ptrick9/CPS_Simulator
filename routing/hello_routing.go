@@ -178,7 +178,7 @@ func main() {
 		log.Fatal("Cannot create file", err)
 	}
 
-	stim_line := strings.Split(string(stimData), "\r\n")
+	stim_line := strings.Split(string(stimData), "\n")
 	stim_list = make(map[int]Tuple)
 	fmt.Println("STIM_FILE LOOP")
 	fmt.Println(len(stim_line))
