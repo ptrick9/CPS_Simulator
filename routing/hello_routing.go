@@ -572,7 +572,7 @@ func main() {
 				scheduler.addRoutePoint(Coord{x: t.x, y: t.y})
 				elapsed := time.Since(start)
 
-				fmt.Fprint(statsFile, "Region Routing Elapsed: ", elapsed.Nanoseconds(), "\n")
+				fmt.Fprint(statsFile, "Region Routing Elapsed: ", elapsed, "\n")
 
 				fmt.Printf("\nAdding %d %d %d\n", i, t.x, t.y)
 			}
