@@ -197,7 +197,8 @@ func main() {
 
 	imgfile, err := os.Open(imageFileNameCM)
 	if err != nil {
-		fmt.Println("file not found!")
+		fmt.Println("image file not found!")
+		fmt.Println(imageFileNameCM)
 		os.Exit(1)
 	}
 

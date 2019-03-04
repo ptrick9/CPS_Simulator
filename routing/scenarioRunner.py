@@ -10,15 +10,20 @@ import time
 def runner(queue):
     while True:
         job = queue.get()
-        command = "./src "+' '.join(job)
+        command = "./routing "+job
         #print(command)
         s = time.time()
-        FNULL = open(os.devnull, 'w')
-        job.insert(0, "./routing")
-        child = sp.Popen(job, stdout=FNULL, stderr=sp.PIPE)
-        child.wait()
+        #FNULL = open(os.devnull, 'w')
+        #print(job)
+        #job = list(job)
+        #job.insert(0, "./routing")
+        #print(job)
+        os.system(command)
+        #child = sp.call(job, shell=True)
+        #child.wait()
+        #os.run(job)
         e = time.time()
-        FNULL.close()
+        #FNULL.close()
         print("%f for %s" % (e-s, command))
         queue.task_done()
 
@@ -34,29 +39,36 @@ if __name__ == '__main__':
     runMeat = []
     for s in scenario:
       for i in range(1, 40):
-        runMeat.append("-imageFileName=%s.png -stimFileName=routing-test-traces/%s_%d.txt -outRoutingStatsName=stats/%s_%d_stats.txt" % (s, s, i, s, i))
+        for n in [1, 2, 4]:
+          for r in [1, 0]:
+            if r == 1:  
+              runMeat.append("-numSuperNodes=%d -regionRouting -imageFileName=%s.png -stimFileName=routing-test-traces/%s_%d.txt -outRoutingStatsName=./stats/%s_%d_%d_%s_stats.txt" % (n, s, s, i, s, i, n, 'region'))
+            else:
+              runMeat.append("-numSuperNodes=%d -aStarRouting -imageFileName=%s.png -stimFileName=routing-test-traces/%s_%d.txt -outRoutingStatsName=./stats/%s_%d_%d_%s_stats.txt" % (n, s, s, i, s, i, n, 'astar'))
     
     routeType = ["-regionRouting", "-aStarRouting"]
 
-    vals = list(itertools.product(*[num_nodes, runMeat, routeType]))
-    print(vals)
-    
+    #vals = list(itertools.product(*[num_nodes, runMeat, routeType]))
+    #print(len(vals))
+    #print(vals)
+
 
 
     
     #print(runs)
     
     x = 0
-    for r in runs:
+    for v in runMeat:
         #paramsInter = [rotateFrequnecy, rotationFactorInter]
         #interRuns = (list(itertools.product(*paramsInter)))
         #interRunsDone = []
-        for i in range(10):
+        #for i in range(10):
             #v = list(itertools.chain(r, ["-deadlineOutputFile=Log_%d" % x]))
-            q.put(v)
-            x+= 1
+        #v = list(itertools.chain(v))
+        q.put(v)
+        x+= 1
     
         
-    p = multiprocessing.Pool(24, runner, (q,))
+    p = multiprocessing.Pool(28, runner, (q,))
 
     q.join()

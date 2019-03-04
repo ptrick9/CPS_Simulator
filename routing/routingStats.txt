@@ -1,5 +1,0 @@
-Region Routing Elapsed: 3.299µs
-Region Routing Elapsed: 5.843µs
-Region Routing Elapsed: 1.978µs
-Region Routing Elapsed: 4.919µs
-Region Routing Elapsed: 3.716µs
