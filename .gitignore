@@ -158,3 +158,5 @@ routing/stats/
 routing/routing-test-traces2/
 
 routing/stats2/
+
+routing/log.txt
