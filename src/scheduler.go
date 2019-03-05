@@ -63,17 +63,28 @@ func (s *Scheduler) addRoutePoint(c Coord) {
 
 //Adds a point of interest to a super node of type 0
 //Since super node 0 operates on the default scheduling algorithm the
-//	scheduler adds the new point of interest to the super node that is
-//	currently closest to the point
+//	scheduler adds the new point of interest to the super node who's
+//	final destination is closest to the point
 func (s *Scheduler) addRoutePoint0(c Coord) {
-	dist := 1000.0
+	dist := 100000.0
+	nodeDist := 100000.0
 	closestNode := -1
 
 	//Finds the super node closest to the newly added point
 	for n, _ := range s.sNodeList {
-		nodeDist := math.Sqrt(math.
-			Pow(float64(s.sNodeList[n].getRoutePoints()[0].x-c.x), 2.0) + math.
-			Pow(float64(s.sNodeList[n].getRoutePoints()[0].y-c.y), 2.0))
+		length := len(s.sNodeList[n].getRoutePath())
+
+		if length != 0 {
+			nodeDist = math.Sqrt(math.
+				Pow(float64(s.sNodeList[n].getRoutePath()[length-1].x-c.x), 2.0) + math.
+				Pow(float64(s.sNodeList[n].getRoutePath()[length-1].y-c.y), 2.0))
+
+			nodeDist += float64(length)
+		} else {
+			nodeDist = math.Sqrt(math.
+				Pow(float64(s.sNodeList[n].getX()-c.x), 2.0) + math.
+				Pow(float64(s.sNodeList[n].getY()-c.y), 2.0))
+		}
 		if nodeDist < dist {
 			dist = nodeDist
 			closestNode = n

@@ -28,6 +28,7 @@ type SuperNodeParent interface {
 	getNumDest() int
 	getCenter() Coord
 	getSquaresMoved() int
+	getPointsVisited() int
 	getId() int
 	getAvgResponseTime() float64
 	getAllPoints() []Coord
@@ -466,6 +467,9 @@ func (n *supern) getCenter() Coord {
 }
 func (n *supern) getSquaresMoved() int {
 	return n.squaresMoved
+}
+func (n *supern) getPointsVisited() int {
+	return n.pointsVisited
 }
 func (n *supern) getId() int {
 	return n.id

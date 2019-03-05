@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"math"
 )
 
@@ -99,7 +98,6 @@ func inRegionRouting(p1, p2 Tuple) []Coord {
 }
 
 func getPath(c1, c2 Coord) []Coord {
-	fmt.Println("HEY")
 	p1 := Tuple{c1.x, c1.y}
 	p2 := Tuple{c2.x, c2.y}
 
