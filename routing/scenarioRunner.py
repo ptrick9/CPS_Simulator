@@ -38,13 +38,13 @@ if __name__ == '__main__':
 
     runMeat = []
     for s in scenario:
-      for i in range(1, 40):
+      for i in range(1, 200):
         for n in [1, 2, 4]:
           for r in [1, 0]:
             if r == 1:  
-              runMeat.append("-numSuperNodes=%d -regionRouting -imageFileName=%s.png -stimFileName=routing-test-traces/%s_%d.txt -outRoutingStatsName=./stats/%s_%d_%d_%s_stats.txt" % (n, s, s, i, s, i, n, 'region'))
+              runMeat.append("-numSuperNodes=%d -regionRouting -imageFileName=%s.png -stimFileName=routing-test-traces2/%s_%d.txt -outRoutingStatsName=./stats2/%s_%d_%d_%s_stats.txt" % (n, s, s, i, s, i, n, 'region'))
             else:
-              runMeat.append("-numSuperNodes=%d -aStarRouting -imageFileName=%s.png -stimFileName=routing-test-traces/%s_%d.txt -outRoutingStatsName=./stats/%s_%d_%d_%s_stats.txt" % (n, s, s, i, s, i, n, 'astar'))
+              runMeat.append("-numSuperNodes=%d -aStarRouting -imageFileName=%s.png -stimFileName=routing-test-traces2/%s_%d.txt -outRoutingStatsName=./stats2/%s_%d_%d_%s_stats.txt" % (n, s, s, i, s, i, n, 'astar'))
     
     routeType = ["-regionRouting", "-aStarRouting"]
 

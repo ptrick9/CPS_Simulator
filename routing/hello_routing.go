@@ -661,7 +661,17 @@ func main() {
 			}
 
 			for _, s := range scheduler.sNodeList {
+				points_len := len(s.getRoutePoints())
+				response_time := -1
+				if points_len > 1 {
+					response_time = s.getRoutePoints()[1].time
+				}
+
 				s.tick()
+
+				if points_len > len(s.getRoutePoints()) {
+					fmt.Fprint(statsFile, "Response Time: ", response_time, "\n")
+				}
 
 				fmt.Fprint(routingFile, s)
 				p := printPoints(s)
@@ -765,7 +775,7 @@ func printPoints(s SuperNodeParent) bytes.Buffer {
 }
 
 func getFlags() {
-	flag.IntVar(&iterations_of_event, "iterations_of_event", 1000, "how many times the simulation will run")
+	flag.IntVar(&iterations_of_event, "iterations_of_event", 10000, "how many times the simulation will run")
 
 	//fmt.Println(os.Args[1:], "\nhmmm? \n ") //C:\Users\Nick\Desktop\comand line experiments\src
 	flag.IntVar(&negativeSittingStopThresholdCM, "negativeSittingStopThreshold", -10,

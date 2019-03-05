@@ -154,3 +154,7 @@ Testing Walls Output/
 routing/log.txt
 
 routing/stats/
+
+routing/routing-test-traces2/
+
+routing/stats2/
