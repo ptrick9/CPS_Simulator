@@ -1,33 +1,33 @@
 package main
 
 import (
-	"math"
 	"fmt"
-	"sort"
+	"math"
 	"math/rand"
+	"sort"
 )
 
 //Global variables used in battery loss dynamics
 var (
-	naturalLoss 	float32
+	naturalLoss float32
 )
 
 //The NodeParent interface is inherited by all node types
 type NodeParent interface {
-	distance (b bomb) float32 //distance to bomb in the form of the node's reading
-	row (div int) int //Row of node
-	col (div int) int //Column of node
-	getSpeed() []float32 //History of accelerometer based speeds of node
-	batteryLossDynamic() //Battery loss based of ratios of battery usage
-	batteryLossDynamic1() //2 stage buffer battery loss
+	distance(b bomb) float32        //distance to bomb in the form of the node's reading
+	row(div int) int                //Row of node
+	col(div int) int                //Column of node
+	getSpeed() []float32            //History of accelerometer based speeds of node
+	batteryLossDynamic()            //Battery loss based of ratios of battery usage
+	batteryLossDynamic1()           //2 stage buffer battery loss
 	updateHistory(newValue float32) //updates history of node's samples
-	incrementTotalSamples() //increments total number of samples node has taken
-	getAvg() float32 //returns average of node's past samples
-	incrementNumResets() //increments the number of times a node has been reset
-	setConcentration(conc float64) //sets the concentration of a node
-	geoDist(b bomb) float32//returns distance from bomb (rather than reading of node)
-	getID() int //returns ID of node
-	getLoc() (x,y int) //returns x and y values of node
+	incrementTotalSamples()         //increments total number of samples node has taken
+	getAvg() float32                //returns average of node's past samples
+	incrementNumResets()            //increments the number of times a node has been reset
+	setConcentration(conc float64)  //sets the concentration of a node
+	geoDist(b bomb) float32         //returns distance from bomb (rather than reading of node)
+	getID() int                     //returns ID of node
+	getLoc() (x, y int)             //returns x and y values of node
 	//following functions set drifting parameters of nodes
 	setS0(s0 float64)
 	setS1(s1 float64)
@@ -37,81 +37,81 @@ type NodeParent interface {
 	setE2(e2 float64)
 	setET1(et1 float64)
 	setET2(et2 float64)
-	getParams() (float64,float64,float64,float64,float64,float64,float64,float64) //returns all of the above parameters
-	getCoefficients() (float64,float64,float64) //returns some of the above parameters
-	getX() int //returns x position of node
-	getY() int //returns y position of node
+	getParams() (float64, float64, float64, float64, float64, float64, float64, float64) //returns all of the above parameters
+	getCoefficients() (float64, float64, float64)                                        //returns some of the above parameters
+	getX() int                                                                           //returns x position of node
+	getY() int                                                                           //returns y position of node
 }
 
 //NodeImpl is a struct that implements all the methods listed
 //	above in NodeParent
 type NodeImpl struct {
-	id int //id of node
-	oldX int // for movement
-	oldY int // for movement
-	sitting int // for movement
-	x int //x pos of node
-	y int //y pos of node
-	battery float32 //battery of node
-	batteryLossScalar float32 //natural incremental battery loss of node
-	batteryLossCheckingSensorScalar float32 //sensor based battery loss of node
-	batteryLossGPSScalar float32 //GPS based battery loss of node
-	batteryLossCheckingServerScalar float32 //server communication based battery loss of node
-	toggleCheckIterator int //node's personal iterator mostly for cascading pings
-	hasCheckedSensor bool //did the node just ping the sensor?
-	totalChecksSensor int //total sensor pings of node
-	hasCheckedGPS bool //did the node just ping the GPS?
-	totalChecksGPS int //total GPS pings of node
-	hasCheckedServer bool //did the node just communicate with the server?
-	totalChecksServer int //how many times did the node communicate with the server?
-	pingPeriod float32 //This is the aggregate ping period used in some ping rate determining algorithms
-	sensorPingPeriod float32 //This is the ping period for the sensor
-	GPSPingPeriod float32 //This is the ping period for the GPS
-	serverPingPeriod float32 //This is the ping period for the server
-	pings float32 //This is an aggregate pings used in some ping rate determining algorithms
-	sensorPings float32 //This is the total sensor pings to be made
-	GPSPings float32 //This is the total GPS pings to be made
-	serverPings float32 //This is the total server pings to be made
-	cascade int //This cascades the pings of the nodes
-	bufferI int //This is to keep track of the node's buffer size
-	xPos [100]int //x pos buffer of node
-	yPos [100]int //y pos buffer of node
-	value [100]int //value buffer of node
-	accelerometerSpeedServer [100]int //Accelerometer speed history of node
-	time [100]int //This keeps track of when specific pings are made
+	id                              int      //id of node
+	oldX                            int      // for movement
+	oldY                            int      // for movement
+	sitting                         int      // for movement
+	x                               int      //x pos of node
+	y                               int      //y pos of node
+	battery                         float32  //battery of node
+	batteryLossScalar               float32  //natural incremental battery loss of node
+	batteryLossCheckingSensorScalar float32  //sensor based battery loss of node
+	batteryLossGPSScalar            float32  //GPS based battery loss of node
+	batteryLossCheckingServerScalar float32  //server communication based battery loss of node
+	toggleCheckIterator             int      //node's personal iterator mostly for cascading pings
+	hasCheckedSensor                bool     //did the node just ping the sensor?
+	totalChecksSensor               int      //total sensor pings of node
+	hasCheckedGPS                   bool     //did the node just ping the GPS?
+	totalChecksGPS                  int      //total GPS pings of node
+	hasCheckedServer                bool     //did the node just communicate with the server?
+	totalChecksServer               int      //how many times did the node communicate with the server?
+	pingPeriod                      float32  //This is the aggregate ping period used in some ping rate determining algorithms
+	sensorPingPeriod                float32  //This is the ping period for the sensor
+	GPSPingPeriod                   float32  //This is the ping period for the GPS
+	serverPingPeriod                float32  //This is the ping period for the server
+	pings                           float32  //This is an aggregate pings used in some ping rate determining algorithms
+	sensorPings                     float32  //This is the total sensor pings to be made
+	GPSPings                        float32  //This is the total GPS pings to be made
+	serverPings                     float32  //This is the total server pings to be made
+	cascade                         int      //This cascades the pings of the nodes
+	bufferI                         int      //This is to keep track of the node's buffer size
+	xPos                            [100]int //x pos buffer of node
+	yPos                            [100]int //y pos buffer of node
+	value                           [100]int //value buffer of node
+	accelerometerSpeedServer        [100]int //Accelerometer speed history of node
+	time                            [100]int //This keeps track of when specific pings are made
 	//speedGPSPeriod int //This is a special period for speed based GPS pings but it is not used and may never be
 	accelerometerPosition [2][3]int //This is the accelerometer model of node
-	accelerometerSpeed []float32 //History of accelerometer speeds recorded
-	inverseSensor float32 //Algorithm place holder declared here for speed
-	inverseGPS float32 //Algorithm place holder declared here for speed
-	inverseServer float32 //Algorithm place holder declared here for speed
-	sampleHistory []float32 //a history of the node's readings
-	avg float32 //weighted average of the node's most recent readings
-	totalSamples int //total number of samples taken by a node
-	speedWeight float32 //weight given to averaging of node's samples, based on node's speed
-	numResets int //number of times a node has had to reset due to drifting
-	concentration float64 //used to determine reading of node
-	speedGPSPeriod int
+	accelerometerSpeed    []float32 //History of accelerometer speeds recorded
+	inverseSensor         float32   //Algorithm place holder declared here for speed
+	inverseGPS            float32   //Algorithm place holder declared here for speed
+	inverseServer         float32   //Algorithm place holder declared here for speed
+	sampleHistory         []float32 //a history of the node's readings
+	avg                   float32   //weighted average of the node's most recent readings
+	totalSamples          int       //total number of samples taken by a node
+	speedWeight           float32   //weight given to averaging of node's samples, based on node's speed
+	numResets             int       //number of times a node has had to reset due to drifting
+	concentration         float64   //used to determine reading of node
+	speedGPSPeriod        int
 
-	current int
+	current  int
 	previous int
-	diffx int
-	diffy int
-	speed float32
+	diffx    int
+	diffy    int
+	speed    float32
 
 	//The following values are all various drifting parameters of the node
-	newX int
-	newY int
-	S0 float64
-	S1 float64
-	S2 float64
-	E0 float64
-	E1 float64
-	E2 float64
-	ET1 float64
-	ET2 float64
-	nodeTime int
-	sensitivity float64
+	newX               int
+	newY               int
+	S0                 float64
+	S1                 float64
+	S2                 float64
+	E0                 float64
+	E1                 float64
+	E2                 float64
+	ET1                float64
+	ET2                float64
+	nodeTime           int
+	sensitivity        float64
 	initialSensitivity float64
 }
 
@@ -123,13 +123,11 @@ type NodeMovement interface {
 	move()
 }
 
-
 //Bouncing nodes bound around the grid
 type bn struct {
 	*NodeImpl
 	x_speed int
 	y_speed int
-
 }
 
 //Wall nodes go in a straight line from top/bottom or
@@ -137,7 +135,7 @@ type bn struct {
 type wn struct {
 	*NodeImpl
 	speed int
-	dir int
+	dir   int
 }
 
 //Random nodes get assigned a random x, y velocity every
@@ -145,7 +143,6 @@ type wn struct {
 type rn struct {
 	*NodeImpl
 }
-
 
 type wallNodes struct {
 	node *NodeImpl
@@ -156,9 +153,9 @@ type wallNodes struct {
 //This struct is used by the super node type to create its
 //	route through the grid
 type Coord struct {
-	parent *Coord
-	x, y int
-	time int
+	parent      *Coord
+	x, y        int
+	time        int
 	g, h, score int
 }
 
@@ -168,26 +165,26 @@ type Coord struct {
 //	points of interest on the grid during super node route
 //	scheduling
 type Path struct {
-	x,y int
+	x, y int
 	dist float64
 }
 
 //Returns the x index of the square in which the specific
 //	node currently resides
 func (n *NodeImpl) row(div int) int {
-	return n.y/div
+	return n.y / div
 }
 
 //Returns the y index of the square in which the specific
 //	node currently resides
-func (n *NodeImpl) col (div int) int {
+func (n *NodeImpl) col(div int) int {
 	return n.x / div
 }
 
 //Returns a float representing the detection of the bomb
 //	by the specific node depending on distance
 func (n *NodeImpl) distance(b bomb) float32 {
-	dist := float32(math.Pow(float64(math.Abs(float64(n.x)-float64(b.x))),2) + math.Pow(float64(math.Abs(float64(n.y)-float64(b.y))),2))
+	dist := float32(math.Pow(float64(math.Abs(float64(n.x)-float64(b.x))), 2) + math.Pow(float64(math.Abs(float64(n.y)-float64(b.y))), 2))
 
 	if dist == 0 {
 		return 1000
@@ -198,19 +195,19 @@ func (n *NodeImpl) distance(b bomb) float32 {
 }
 
 // These are the toString methods for battery levels
-func (n bn) String() string {// extra extra string statements
-	return fmt.Sprintf("x: %v y: %v Xspeed: %v Yspeed: %v id: %v battery: %v sensor checked: %v sensor checks: %v GPS checked: %v GPS checks: %v server checked: %v server checks: %v buffer: %v ", n.x, n.y, n.x_speed, n.y_speed, n.id, n.battery, n.hasCheckedSensor, n.totalChecksSensor, n.hasCheckedGPS, n.totalChecksGPS, n.hasCheckedServer, n.totalChecksServer,n.bufferI)
+func (n bn) String() string { // extra extra string statements
+	return fmt.Sprintf("x: %v y: %v Xspeed: %v Yspeed: %v id: %v battery: %v sensor checked: %v sensor checks: %v GPS checked: %v GPS checks: %v server checked: %v server checks: %v buffer: %v ", n.x, n.y, n.x_speed, n.y_speed, n.id, n.battery, n.hasCheckedSensor, n.totalChecksSensor, n.hasCheckedGPS, n.totalChecksGPS, n.hasCheckedServer, n.totalChecksServer, n.bufferI)
 }
 
 func (n wn) String() string {
-	return fmt.Sprintf("x: %v y: %v speed: %v dir: %v id: %v battery: %v sensor checked: %v sensor checks: %v GPS checked: %v GPS checks: %v server checked: %v server checks: %v buffer: %v ", n.x, n.y, n.speed, n.dir, n.id, n.battery, n.hasCheckedSensor, n.totalChecksSensor, n.hasCheckedGPS, n.totalChecksGPS, n.hasCheckedServer, n.totalChecksServer,n.bufferI)
+	return fmt.Sprintf("x: %v y: %v speed: %v dir: %v id: %v battery: %v sensor checked: %v sensor checks: %v GPS checked: %v GPS checks: %v server checked: %v server checks: %v buffer: %v ", n.x, n.y, n.speed, n.dir, n.id, n.battery, n.hasCheckedSensor, n.totalChecksSensor, n.hasCheckedGPS, n.totalChecksGPS, n.hasCheckedServer, n.totalChecksServer, n.bufferI)
 }
 
 func (n rn) String() string {
-	return fmt.Sprintf("x: %v y: %v id: %v battery: %v sensor checked: %v sensor checks: %v GPS checked: %v GPS checks: %v server checked: %v server checks: %v buffer: %v ", n.x, n.y, n.id, n.battery, n.hasCheckedSensor, n.totalChecksSensor, n.hasCheckedGPS, n.totalChecksGPS, n.hasCheckedServer, n.totalChecksServer,n.bufferI)
-} 		// end extra extra string statements
+	return fmt.Sprintf("x: %v y: %v id: %v battery: %v sensor checked: %v sensor checks: %v GPS checked: %v GPS checks: %v server checked: %v server checks: %v buffer: %v ", n.x, n.y, n.id, n.battery, n.hasCheckedSensor, n.totalChecksSensor, n.hasCheckedGPS, n.totalChecksGPS, n.hasCheckedServer, n.totalChecksServer, n.bufferI)
+} // end extra extra string statements
 
-func (n NodeImpl) String () string{
+func (n NodeImpl) String() string {
 	//return fmt.Sprintf("x: %v y: %v id: %v battery: %v sensor checked: %v sensor checks: %v GPS checked: %v GPS checks: %v server checked: %v server checks: %v buffer: %v ", n.x, n.y, n.id, n.battery, n.hasCheckedSensor, n.totalChecksSensor, n.hasCheckedGPS, n.totalChecksGPS, n.hasCheckedServer, n.totalChecksServer,n.bufferI)
 	return fmt.Sprintf("battery: %v sensor checked: %v GPS checked: %v ", int(n.battery), n.hasCheckedSensor, n.hasCheckedGPS)
 
@@ -218,6 +215,10 @@ func (n NodeImpl) String () string{
 
 func (c Coord) String() string {
 	return fmt.Sprintf("{%v %v %v}", c.x, c.y, c.time)
+}
+
+func (c Coord) isEqual(c2 *Coord) bool {
+	return c.x == c2.x && c.y == c2.y
 }
 
 func (n *NodeImpl) move() {
@@ -310,22 +311,22 @@ func (n *NodeImpl) recalibrate() {
 //Moves the bouncing node
 func (n *bn) move() {
 	//Boundary conditions
-	if n.x + n.x_speed < maxX && n.x + n.x_speed >= 0 {
+	if n.x+n.x_speed < maxX && n.x+n.x_speed >= 0 {
 		n.x = n.x + n.x_speed
 	} else {
-		if n.x + n.x_speed >= maxX {
-			n.x = n.x - (n.x_speed - (maxX-1-n.x))
+		if n.x+n.x_speed >= maxX {
+			n.x = n.x - (n.x_speed - (maxX - 1 - n.x))
 			n.x_speed = n.x_speed * -1
 		} else {
 			n.x = (n.x_speed + n.x) * -1
 			n.x_speed = n.x_speed * -1
 		}
 	}
-	if n.y + n.y_speed < maxY && n.y + n.y_speed >= 0 {
+	if n.y+n.y_speed < maxY && n.y+n.y_speed >= 0 {
 		n.y = n.y + n.y_speed
 	} else {
-		if n.y + n.y_speed >= maxY {
-			n.y = n.y - (n.y_speed - (maxY-1-n.y))
+		if n.y+n.y_speed >= maxY {
+			n.y = n.y - (n.y_speed - (maxY - 1 - n.y))
 			n.y_speed = n.y_speed * -1
 		} else {
 			n.y = (n.y_speed + n.y) * -1
@@ -338,11 +339,11 @@ func (n *bn) move() {
 func (n *wn) move() {
 	if n.dir == 0 { //x-axis
 		//Boundary conditions
-		if n.x + n.speed < maxX && n.x + n.speed >= 0 {
+		if n.x+n.speed < maxX && n.x+n.speed >= 0 {
 			n.x = n.x + n.speed
 		} else {
-			if n.x + n.speed >= maxX {
-				n.x = n.x - (n.speed - (maxX-1-n.x))
+			if n.x+n.speed >= maxX {
+				n.x = n.x - (n.speed - (maxX - 1 - n.x))
 				n.speed = n.speed * -1
 			} else {
 				n.x = (n.speed + n.x) * -1
@@ -350,11 +351,11 @@ func (n *wn) move() {
 			}
 		}
 	} else { //y-axis
-		if n.y + n.speed < maxY && n.y + n.speed >= 0 {
+		if n.y+n.speed < maxY && n.y+n.speed >= 0 {
 			n.y = n.y + n.speed
 		} else {
-			if n.y + n.speed >= maxY {
-				n.y = n.y - (n.speed - (maxY-1-n.y))
+			if n.y+n.speed >= maxY {
+				n.y = n.y - (n.speed - (maxY - 1 - n.y))
 				n.speed = n.speed * -1
 			} else {
 				n.y = (n.speed + n.y) * -1
@@ -365,25 +366,25 @@ func (n *wn) move() {
 }
 
 //Moves the random nodes
-func (n* rn) move() {
-	x_speed := rangeInt(-3,3)
-	y_speed := rangeInt(-3,3)
+func (n *rn) move() {
+	x_speed := rangeInt(-3, 3)
+	y_speed := rangeInt(-3, 3)
 
 	//Boundary conditions
-	if n.x + x_speed < maxX && n.x + x_speed >= 0 {
-		n.x = n.x+ x_speed
+	if n.x+x_speed < maxX && n.x+x_speed >= 0 {
+		n.x = n.x + x_speed
 	} else {
-		if n.x + x_speed >= maxX {
-			n.x = n.x - (x_speed - (maxX-1-n.x))
+		if n.x+x_speed >= maxX {
+			n.x = n.x - (x_speed - (maxX - 1 - n.x))
 		} else {
 			n.x = (x_speed + n.x) * -1
 		}
 	}
-	if n.y + y_speed < maxY && n.y + y_speed >= 0 {
+	if n.y+y_speed < maxY && n.y+y_speed >= 0 {
 		n.y = n.y + y_speed
 	} else {
-		if n.y + y_speed >= maxY {
-			n.y = n.y - (y_speed - (maxY-1-n.y))
+		if n.y+y_speed >= maxY {
+			n.y = n.y - (y_speed - (maxY - 1 - n.y))
 		} else {
 			n.y = (y_speed + n.y) * -1
 		}
@@ -392,7 +393,7 @@ func (n* rn) move() {
 
 //Returns the arr with the element at index n removed
 func remove_index(arr []Path, n int) []Path {
-	return arr[:n+copy(arr[n:],arr[n+1:])]
+	return arr[:n+copy(arr[n:], arr[n+1:])]
 }
 
 //Returns the array with the range of elements from index
@@ -407,7 +408,7 @@ func remove_range(arr []Coord, a, b int) []Coord {
 		if b+1 >= len(arr) {
 			return arr[:a]
 		} else {
-			return append(arr[:a],arr[b+1:]...)
+			return append(arr[:a], arr[b+1:]...)
 		}
 	} else {
 		new_arr := make([]Coord, 0)
@@ -421,7 +422,7 @@ func insert_array(arr1 []Coord, arr2 []Coord, n int) []Coord {
 	if len(arr1) == 0 {
 		return arr2
 	} else {
-		return append(arr1[:n],append(arr2,arr1[n:]...)...)
+		return append(arr1[:n], append(arr2, arr1[n:]...)...)
 	}
 }
 
@@ -430,14 +431,13 @@ func insert_array(arr1 []Coord, arr2 []Coord, n int) []Coord {
 func remove_and_insert(arr []Coord, ind1, ind2 int) []Coord {
 	arr1 := make([]Coord, 0)
 	c := arr[ind1]
-	arr = arr[:ind1+copy(arr[ind1:],arr[ind1+1:])]
-	arr1 = append(arr1,c)
-	return append(arr[:ind2],append(arr1,arr[ind2:]...)...)
+	arr = arr[:ind1+copy(arr[ind1:], arr[ind1+1:])]
+	arr1 = append(arr1, c)
+	return append(arr[:ind2], append(arr1, arr[ind2:]...)...)
 }
 
-
 // This is the battery loss function that clears the buffer at 2 different rates based on the battery percentage left
-func (n *NodeImpl) batteryLossDynamic1(){
+func (n *NodeImpl) batteryLossDynamic1() {
 	n.hasCheckedGPS = false
 	n.hasCheckedSensor = false
 	n.hasCheckedServer = false
@@ -449,8 +449,8 @@ func (n *NodeImpl) batteryLossDynamic1(){
 	// This is a generic iterator
 	n.toggleCheckIterator = n.toggleCheckIterator + 1
 	// These are the respective accelerometer positions
-	n.current = n.toggleCheckIterator%3
-	n.previous = (n.toggleCheckIterator-1)%3
+	n.current = n.toggleCheckIterator % 3
+	n.previous = (n.toggleCheckIterator - 1) % 3
 	if n.current == 0 {
 		n.accelerometerPosition[0][0] = n.x
 		n.accelerometerPosition[1][0] = n.y
@@ -464,9 +464,9 @@ func (n *NodeImpl) batteryLossDynamic1(){
 	n.diffx = n.accelerometerPosition[0][n.current] - n.accelerometerPosition[0][n.previous]
 	n.diffy = n.accelerometerPosition[1][n.current] - n.accelerometerPosition[1][n.previous]
 	// This is the accelerometer determined speed
-	n.speed = float32(math.Sqrt(float64(n.diffx*n.diffx+n.diffy*n.diffy)))
+	n.speed = float32(math.Sqrt(float64(n.diffx*n.diffx + n.diffy*n.diffy)))
 	// This is a list of the previous accelerometer determined speeds
-	n.accelerometerSpeed = append(n.accelerometerSpeed,n.speed)
+	n.accelerometerSpeed = append(n.accelerometerSpeed, n.speed)
 	//threshHoldBatteryToHave = thres
 	// This is the natural loss of the battery
 	if n.battery > 0 {
@@ -502,7 +502,7 @@ func (n *NodeImpl) batteryLossDynamic1(){
 		if n.GPSPingPeriod < 1 {
 			n.GPSPingPeriod = 1
 		}
-		if ((n.toggleCheckIterator-n.cascade)%int(n.GPSPingPeriod) == 0 && n.battery > 1) || (n.speed > float32(movementSamplingSpeedCM) && n.toggleCheckIterator%movementSamplingPeriodCM == 0){ // && n.toggleCheckIterator%n.speedGPSPeriod == 0
+		if ((n.toggleCheckIterator-n.cascade)%int(n.GPSPingPeriod) == 0 && n.battery > 1) || (n.speed > float32(movementSamplingSpeedCM) && n.toggleCheckIterator%movementSamplingPeriodCM == 0) { // && n.toggleCheckIterator%n.speedGPSPeriod == 0
 			n.battery = n.battery - n.batteryLossGPSScalar
 			n.totalChecksGPS = n.totalChecksGPS + 1
 			n.hasCheckedGPS = true
@@ -512,7 +512,7 @@ func (n *NodeImpl) batteryLossDynamic1(){
 		}
 
 		// This is the 2 stage buffer based on battery percentages
-		if n.battery >= 75{ //100 - 75 percent
+		if n.battery >= 75 { //100 - 75 percent
 			if (n.toggleCheckIterator-n.cascade)%14 == 0 && n.battery > 1 { // 1000/70 = 14
 				n.battery = n.battery - n.batteryLossCheckingServerScalar
 				n.totalChecksServer = n.totalChecksServer + 1
@@ -521,7 +521,7 @@ func (n *NodeImpl) batteryLossDynamic1(){
 			} else {
 				n.hasCheckedServer = false
 			}
-		} else if n.battery >= 30 && n.battery < 75{ //70 - 30 percent
+		} else if n.battery >= 30 && n.battery < 75 { //70 - 30 percent
 			if (n.toggleCheckIterator-n.cascade)%50 == 0 && n.battery > 1 { //1000/20 = 50
 				n.battery = n.battery - n.batteryLossCheckingServerScalar
 				n.totalChecksServer = n.totalChecksServer + 1
@@ -530,14 +530,14 @@ func (n *NodeImpl) batteryLossDynamic1(){
 			} else {
 				n.hasCheckedServer = false
 			}
-		} else{
+		} else {
 			n.hasCheckedServer = false
 		}
 	}
 }
 
 //This is the battery loss function where the server sensor and GPS are pinged separately and by their own accord
-func (n *NodeImpl) batteryLossTable(){
+func (n *NodeImpl) batteryLossTable() {
 	n.hasCheckedGPS = false
 	n.hasCheckedSensor = false
 	n.hasCheckedServer = false
@@ -549,8 +549,8 @@ func (n *NodeImpl) batteryLossTable(){
 	// This iterator is generic
 	n.toggleCheckIterator = n.toggleCheckIterator + 1
 	// These are the nodes respective accelerometer positions
-	n.current = n.toggleCheckIterator%3
-	n.previous = (n.toggleCheckIterator-1)%3
+	n.current = n.toggleCheckIterator % 3
+	n.previous = (n.toggleCheckIterator - 1) % 3
 	// this is the accelerometer's functions
 	if n.current == 0 {
 		n.accelerometerPosition[0][0] = n.x
@@ -565,9 +565,9 @@ func (n *NodeImpl) batteryLossTable(){
 	n.diffx = n.accelerometerPosition[0][n.current] - n.accelerometerPosition[0][n.previous]
 	n.diffy = n.accelerometerPosition[1][n.current] - n.accelerometerPosition[1][n.previous]
 	// Speed as determined by accelerometer
-	speed := float32(math.Sqrt(float64(n.diffx*n.diffx+n.diffy*n.diffy)))
+	speed := float32(math.Sqrt(float64(n.diffx*n.diffx + n.diffy*n.diffy)))
 	// This keeps track of the accelerometer values
-	n.accelerometerSpeed = append(n.accelerometerSpeed,speed)
+	n.accelerometerSpeed = append(n.accelerometerSpeed, speed)
 	// natural loss of the battery
 	if n.battery > 0 {
 		n.battery = n.battery - n.batteryLossScalar
@@ -577,7 +577,7 @@ func (n *NodeImpl) batteryLossTable(){
 
 	// this is the battery loss based on checking the sensor, GPS, and server.
 	if naturalLoss > threshHoldBatteryToHave {
-		if (n.toggleCheckIterator-n.cascade)% sensorSamplingPeriodCM == 0{
+		if (n.toggleCheckIterator-n.cascade)%sensorSamplingPeriodCM == 0 {
 			n.battery = n.battery - n.batteryLossCheckingSensorScalar
 			n.totalChecksSensor = n.totalChecksSensor + 1
 			n.hasCheckedSensor = true
@@ -585,7 +585,7 @@ func (n *NodeImpl) batteryLossTable(){
 		} else {
 			n.hasCheckedSensor = false
 		}
-		if (n.toggleCheckIterator-n.cascade)% GPSSamplingPeriodCM == 0 || (speed > float32(movementSamplingSpeedCM) && n.toggleCheckIterator%movementSamplingPeriodCM == 0) { // && n.toggleCheckIterator%n.speedGPSPeriod == 0
+		if (n.toggleCheckIterator-n.cascade)%GPSSamplingPeriodCM == 0 || (speed > float32(movementSamplingSpeedCM) && n.toggleCheckIterator%movementSamplingPeriodCM == 0) { // && n.toggleCheckIterator%n.speedGPSPeriod == 0
 			n.battery = n.battery - n.batteryLossGPSScalar
 			n.totalChecksGPS = n.totalChecksGPS + 1
 			n.hasCheckedGPS = true
@@ -595,7 +595,7 @@ func (n *NodeImpl) batteryLossTable(){
 		}
 
 		// Check to ping server
-		if (n.toggleCheckIterator-n.cascade)% serverSamplingPeriodCM == 0{
+		if (n.toggleCheckIterator-n.cascade)%serverSamplingPeriodCM == 0 {
 			n.battery = n.battery - n.batteryLossCheckingServerScalar
 			n.totalChecksServer = n.totalChecksServer + 1
 			n.hasCheckedServer = true
@@ -607,7 +607,7 @@ func (n *NodeImpl) batteryLossTable(){
 }
 
 //This is the battery loss function where the server sensor and GPS are pinged separately and by their own accord
-func (n *NodeImpl) batteryLossMostDynamic(){
+func (n *NodeImpl) batteryLossMostDynamic() {
 	n.hasCheckedGPS = false
 	n.hasCheckedSensor = false
 	n.hasCheckedServer = false
@@ -619,8 +619,8 @@ func (n *NodeImpl) batteryLossMostDynamic(){
 	// This iterator is generic
 	n.toggleCheckIterator = n.toggleCheckIterator + 1
 	// These are the nodes respective accelerometer positions
-	n.current = n.toggleCheckIterator%3
-	n.previous = (n.toggleCheckIterator-1)%3
+	n.current = n.toggleCheckIterator % 3
+	n.previous = (n.toggleCheckIterator - 1) % 3
 	// this is the accelerometer's functions
 	if n.current == 0 {
 		n.accelerometerPosition[0][0] = n.x
@@ -635,9 +635,9 @@ func (n *NodeImpl) batteryLossMostDynamic(){
 	n.diffx = n.accelerometerPosition[0][n.current] - n.accelerometerPosition[0][n.previous]
 	n.diffy = n.accelerometerPosition[1][n.current] - n.accelerometerPosition[1][n.previous]
 	// Speed as determined by accelerometer
-	n.speed = float32(math.Sqrt(float64(n.diffx*n.diffx+n.diffy*n.diffy)))
+	n.speed = float32(math.Sqrt(float64(n.diffx*n.diffx + n.diffy*n.diffy)))
 	// This keeps track of the accelerometer values
-	n.accelerometerSpeed = append(n.accelerometerSpeed,n.speed)
+	n.accelerometerSpeed = append(n.accelerometerSpeed, n.speed)
 	// natural loss of the battery
 	if n.battery > 0 {
 		n.battery = n.battery - n.batteryLossScalar
@@ -654,13 +654,13 @@ func (n *NodeImpl) batteryLossMostDynamic(){
 	//GPSBatteryToUse := (totalPercentBatteryToUse * (n.inverseGPS / (n.inverseServer + n.inverseGPS + n.inverseSensor)))
 	//ServerBatteryToUse := (totalPercentBatteryToUse * (n.inverseServer / (n.inverseServer + n.inverseGPS + n.inverseSensor)))
 
-	n.sensorPings = (totalPercentBatteryToUse * (n.inverseSensor / (n.inverseServer + n.inverseGPS + n.inverseSensor)))/n.batteryLossCheckingSensorScalar
-	n.GPSPings = (totalPercentBatteryToUse * (n.inverseGPS / (n.inverseServer + n.inverseGPS + n.inverseSensor)))/n.batteryLossGPSScalar
-	n.serverPings = (totalPercentBatteryToUse * (n.inverseServer / (n.inverseServer + n.inverseGPS + n.inverseSensor)))/n.batteryLossCheckingServerScalar
+	n.sensorPings = (totalPercentBatteryToUse * (n.inverseSensor / (n.inverseServer + n.inverseGPS + n.inverseSensor))) / n.batteryLossCheckingSensorScalar
+	n.GPSPings = (totalPercentBatteryToUse * (n.inverseGPS / (n.inverseServer + n.inverseGPS + n.inverseSensor))) / n.batteryLossGPSScalar
+	n.serverPings = (totalPercentBatteryToUse * (n.inverseServer / (n.inverseServer + n.inverseGPS + n.inverseSensor))) / n.batteryLossCheckingServerScalar
 
 	// this is the battery loss based on checking the sensor, GPS, and server.
 	if naturalLoss > threshHoldBatteryToHave {
-		n.sensorPingPeriod = float32(iterations_of_event) / n.sensorPings  //-iterations_used
+		n.sensorPingPeriod = float32(iterations_of_event) / n.sensorPings //-iterations_used
 		if n.sensorPingPeriod < 1 {
 			n.sensorPingPeriod = 1
 		}
@@ -673,12 +673,12 @@ func (n *NodeImpl) batteryLossMostDynamic(){
 		} else {
 			n.hasCheckedSensor = false
 		}
-		n.GPSPingPeriod = float32(iterations_of_event) / n.GPSPings		//-iterations_used
+		n.GPSPingPeriod = float32(iterations_of_event) / n.GPSPings //-iterations_used
 		if n.GPSPingPeriod < 1 {
 			n.GPSPingPeriod = 1
 		}
 		// Check to ping GPS, also note the extra pings made by a high speed.
-		if ((n.toggleCheckIterator-n.cascade)%int(n.GPSPingPeriod) == 0 && n.battery > 1) || (n.speed > float32(movementSamplingSpeedCM) && n.toggleCheckIterator%movementSamplingPeriodCM == 0){ // && n.toggleCheckIterator%n.speedGPSPeriod == 0
+		if ((n.toggleCheckIterator-n.cascade)%int(n.GPSPingPeriod) == 0 && n.battery > 1) || (n.speed > float32(movementSamplingSpeedCM) && n.toggleCheckIterator%movementSamplingPeriodCM == 0) { // && n.toggleCheckIterator%n.speedGPSPeriod == 0
 			n.battery = n.battery - n.batteryLossGPSScalar
 			n.totalChecksGPS = n.totalChecksGPS + 1
 			n.hasCheckedGPS = true
@@ -686,15 +686,15 @@ func (n *NodeImpl) batteryLossMostDynamic(){
 		} else {
 			n.hasCheckedGPS = false
 		}
-		n.serverPingPeriod = float32(iterations_of_event) / n.serverPings		//-iterations_used
+		n.serverPingPeriod = float32(iterations_of_event) / n.serverPings //-iterations_used
 		if n.serverPingPeriod < 1 {
 			n.serverPingPeriod = 1.1
-		} else if int(n.serverPingPeriod) > iterations_of_event{
+		} else if int(n.serverPingPeriod) > iterations_of_event {
 			n.serverPingPeriod = float32(iterations_of_event)
 		}
-		if n.toggleCheckIterator-n.cascade == 0{
+		if n.toggleCheckIterator-n.cascade == 0 {
 			//fmt.Println("what?")
-			n.toggleCheckIterator = n.cascade +1
+			n.toggleCheckIterator = n.cascade + 1
 		}
 		// Check to ping server
 		//fmt.Println(n.toggleCheckIterator,n.cascade,n.serverPingPeriod,n.id, n.serverPings,n.batteryLossCheckingServerScalar, iterations_of_event,float32(iterations_of_event),int(float32(iterations_of_event)))
@@ -710,7 +710,7 @@ func (n *NodeImpl) batteryLossMostDynamic(){
 }
 
 //This is the battery loss function where the server sensor and GPS are pinged separately and by their own accord
-func (n *NodeImpl) batteryLossDynamic(){
+func (n *NodeImpl) batteryLossDynamic() {
 	n.hasCheckedGPS = false
 	n.hasCheckedSensor = false
 	n.hasCheckedServer = false
@@ -722,8 +722,8 @@ func (n *NodeImpl) batteryLossDynamic(){
 	// This iterator is generic
 	n.toggleCheckIterator = n.toggleCheckIterator + 1
 	// These are the nodes respective accelerometer positions
-	current := n.toggleCheckIterator%3
-	previous := (n.toggleCheckIterator-1)%3
+	current := n.toggleCheckIterator % 3
+	previous := (n.toggleCheckIterator - 1) % 3
 	// this is the accelerometer's functions
 	if current == 0 {
 		n.accelerometerPosition[0][0] = n.x
@@ -738,9 +738,9 @@ func (n *NodeImpl) batteryLossDynamic(){
 	diffx := n.accelerometerPosition[0][current] - n.accelerometerPosition[0][previous]
 	diffy := n.accelerometerPosition[1][current] - n.accelerometerPosition[1][previous]
 	// Speed as determined by accelerometer
-	speed := float32(math.Sqrt(float64(diffx*diffx+diffy*diffy)))
+	speed := float32(math.Sqrt(float64(diffx*diffx + diffy*diffy)))
 	// This keeps track of the accelerometer values
-	n.accelerometerSpeed = append(n.accelerometerSpeed,speed)
+	n.accelerometerSpeed = append(n.accelerometerSpeed, speed)
 	// natural loss of the battery
 	if n.battery > 0 {
 		n.battery = n.battery - n.batteryLossScalar
@@ -759,7 +759,7 @@ func (n *NodeImpl) batteryLossDynamic(){
 
 	// this is the battery loss based on checking the sensor, GPS, and server.
 	if naturalLoss > threshHoldBatteryToHave {
-		n.sensorPingPeriod = float32(iterations_of_event) / n.sensorPings  //-iterations_used
+		n.sensorPingPeriod = float32(iterations_of_event) / n.sensorPings //-iterations_used
 		if n.sensorPingPeriod < 1 {
 			n.sensorPingPeriod = 1
 		}
@@ -772,12 +772,12 @@ func (n *NodeImpl) batteryLossDynamic(){
 		} else {
 			n.hasCheckedSensor = false
 		}
-		n.GPSPingPeriod = float32(iterations_of_event) / n.GPSPings		//-iterations_used
+		n.GPSPingPeriod = float32(iterations_of_event) / n.GPSPings //-iterations_used
 		if n.GPSPingPeriod < 1 {
 			n.GPSPingPeriod = 1
 		}
 		// Check to ping GPS, also note the extra pings made by a high speed.
-		if ((n.toggleCheckIterator-n.cascade)%int(n.GPSPingPeriod) == 0 && n.battery > 1) || (speed > float32(movementSamplingSpeedCM) && n.toggleCheckIterator%movementSamplingPeriodCM == 0){ // && n.toggleCheckIterator%n.speedGPSPeriod == 0
+		if ((n.toggleCheckIterator-n.cascade)%int(n.GPSPingPeriod) == 0 && n.battery > 1) || (speed > float32(movementSamplingSpeedCM) && n.toggleCheckIterator%movementSamplingPeriodCM == 0) { // && n.toggleCheckIterator%n.speedGPSPeriod == 0
 			n.battery = n.battery - n.batteryLossGPSScalar
 			n.totalChecksGPS = n.totalChecksGPS + 1
 			n.hasCheckedGPS = true
@@ -785,7 +785,7 @@ func (n *NodeImpl) batteryLossDynamic(){
 		} else {
 			n.hasCheckedGPS = false
 		}
-		n.serverPingPeriod = float32(iterations_of_event) / n.serverPings		//-iterations_used
+		n.serverPingPeriod = float32(iterations_of_event) / n.serverPings //-iterations_used
 		if n.serverPingPeriod < 1 {
 			n.serverPingPeriod = 1
 		}
@@ -804,11 +804,11 @@ func (n *NodeImpl) batteryLossDynamic(){
 /* updateHistory shifts all values in the sample history slice to the right and adds the value at the beginning
 Therefore, each time a node takes a sample in main, it also adds this sample to the beginning of the sample history.
 Each sample is only stored until ln more samples have been taken (this variable is in hello.go)
- */
+*/
 func (n *NodeImpl) updateHistory(newValue float32) {
 
 	//loop through the sample history slice in reverse order, excluding 0th index
-	for i:= len(n.sampleHistory)-1; i > 0; i-- {
+	for i := len(n.sampleHistory) - 1; i > 0; i-- {
 		n.sampleHistory[i] = n.sampleHistory[i-1] //set the current index equal to the value of the previous index
 	}
 
@@ -817,7 +817,7 @@ func (n *NodeImpl) updateHistory(newValue float32) {
 	/* Now calculate the weighted average of the sample history. Note that if a node is stationary, all values
 	averaged over are weighted equally. The faster the node is moving, the less the older values are worth when
 	calculating the average, because in that case we want the average to more closely reflect the newer values
-	 */
+	*/
 	var sum float32
 	var numSamples int //variable for number of samples to average over
 
@@ -825,15 +825,15 @@ func (n *NodeImpl) updateHistory(newValue float32) {
 
 	if n.totalSamples > len(n.sampleHistory) { //if the node has taken more than x total samples
 		numSamples = len(n.sampleHistory) //we only average over the x most recent ones
-	}else { //if it doesn't have x samples taken yet
+	} else { //if it doesn't have x samples taken yet
 		numSamples = n.totalSamples //we only average over the number of samples it's taken
 	}
 
-	for i:=0; i < numSamples; i++ {
+	for i := 0; i < numSamples; i++ {
 		if n.sampleHistory[i] != 0 {
 			//weight the values of the sampleHistory when added to the sum variable based on the speed, so older values are weighted less
 			sum += n.sampleHistory[i] - ((decreaseRatio) * float32(i))
-		}else {
+		} else {
 			sum += 0
 		}
 	}
@@ -841,7 +841,7 @@ func (n *NodeImpl) updateHistory(newValue float32) {
 }
 
 /* this function increments a node's total number of samples by 1
- it's called whenever the node takes a new sample */
+it's called whenever the node takes a new sample */
 func (n *NodeImpl) incrementTotalSamples() {
 	n.totalSamples++
 }
@@ -868,7 +868,7 @@ func (n *NodeImpl) getID() int {
 
 //getter function for x and y locations
 func (n *NodeImpl) getLoc() (int, int) {
-	return n.x,n.y
+	return n.x, n.y
 }
 
 //setter function for S0
@@ -917,7 +917,7 @@ func (n *NodeImpl) getParams() (float64, float64, float64, float64, float64, flo
 }
 
 //getter function for just S0 - S2 parameters
-func (n *NodeImpl) getCoefficients() (float64,float64,float64) {
+func (n *NodeImpl) getCoefficients() (float64, float64, float64) {
 	return n.S0, n.S1, n.S2
 }
 
@@ -969,17 +969,17 @@ func (n *NodeImpl) server() {
 //Returns node distance to the bomb
 func (n *NodeImpl) geoDist(b bomb) float32 {
 	//this needs to be changed
-	return float32(math.Pow(float64(math.Abs(float64(n.x)-float64(b.x))),2) + math.Pow(float64(math.Abs(float64(n.y)-float64(b.y))),2))
+	return float32(math.Pow(float64(math.Abs(float64(n.x)-float64(b.x))), 2) + math.Pow(float64(math.Abs(float64(n.y)-float64(b.y))), 2))
 }
 
 //Returns array of accelerometer speeds recorded for a specific node
-func (n *NodeImpl) getSpeed() ([]float32) {
+func (n *NodeImpl) getSpeed() []float32 {
 	return n.accelerometerSpeed
 }
 
 //Returns a different version of the distance to the bomb
 func (n *NodeImpl) getValue() int {
-	return int(math.Sqrt(math.Pow(float64(n.x-b.x),2)+math.Pow(float64(n.y-b.y),2)))
+	return int(math.Sqrt(math.Pow(float64(n.x-b.x), 2) + math.Pow(float64(n.y-b.y), 2)))
 }
 
 //Takes cares of taking a node's readings and printing detections and stuff
@@ -989,22 +989,22 @@ func (curNode *NodeImpl) getReadings() {
 	//nodeFile.Sync()
 	//positionFile.Sync()
 	//test change
-	newX,newY := curNode.getLoc()
+	newX, newY := curNode.getLoc()
 
 	newDist := curNode.distance(*b) //this is the node's reported value without error
 
 	//Calculate error, sensitivity, and noise, as per the matlab code
-	S0,S1,S2,E0,E1,E2,ET1,ET2 := curNode.getParams()
-	sError := (S0 + E0) + (S1 + E1)*math.Exp(-float64(curNode.nodeTime)/(Tau1+ET1)) + (S2 + E2)*math.Exp(-float64(curNode.nodeTime)/(Tau2+ET2))
+	S0, S1, S2, E0, E1, E2, ET1, ET2 := curNode.getParams()
+	sError := (S0 + E0) + (S1+E1)*math.Exp(-float64(curNode.nodeTime)/(Tau1+ET1)) + (S2+E2)*math.Exp(-float64(curNode.nodeTime)/(Tau2+ET2))
 	curNode.sensitivity = S0 + (S1)*math.Exp(-float64(curNode.nodeTime)/Tau1) + (S2)*math.Exp(-float64(curNode.nodeTime)/Tau2)
 	sNoise := rand.NormFloat64()*0.5*errorModifierCM + float64(newDist)*sError
 
-	errorDist := sNoise/curNode.sensitivity //this is the node's actual reading with error
+	errorDist := sNoise / curNode.sensitivity //this is the node's actual reading with error
 
 	//increment node time
 	curNode.nodeTime++
 
-	if (curNode.hasCheckedSensor) {
+	if curNode.hasCheckedSensor {
 		curNode.incrementTotalSamples()
 		curNode.updateHistory(float32(errorDist))
 	}
@@ -1012,48 +1012,48 @@ func (curNode *NodeImpl) getReadings() {
 	//Detection of false positives or false negatives
 	if errorDist < detectionThreshold && float64(newDist) >= detectionThreshold {
 		//this is a node false negative due to drifitng
-		if(curNode.hasCheckedSensor) {
+		if curNode.hasCheckedSensor {
 			//just drifting
-			fmt.Fprintln(driftFile,"Node False Negative (drifting) ID:",curNode.id,"True Reading:",newDist,"Drifted Reading:",
-				errorDist,"S0:",curNode.S0,"S1:",curNode.S1,"S2:",curNode.S2, "E0:",curNode.E0,"E1:",curNode.E1,
-				"E2:",curNode.E2,"ET1:",curNode.ET1,"ET2:",curNode.ET2,"time since calibration:",curNode.nodeTime,
-				"Current Time (Iter):",iterations_used,"Energy Level:",curNode.battery,"Distance from bomb:",math.Sqrt(float64(curNode.geoDist(*b))),
-				"x:",curNode.x,"y:",curNode.y)
+			fmt.Fprintln(driftFile, "Node False Negative (drifting) ID:", curNode.id, "True Reading:", newDist, "Drifted Reading:",
+				errorDist, "S0:", curNode.S0, "S1:", curNode.S1, "S2:", curNode.S2, "E0:", curNode.E0, "E1:", curNode.E1,
+				"E2:", curNode.E2, "ET1:", curNode.ET1, "ET2:", curNode.ET2, "time since calibration:", curNode.nodeTime,
+				"Current Time (Iter):", iterations_used, "Energy Level:", curNode.battery, "Distance from bomb:", math.Sqrt(float64(curNode.geoDist(*b))),
+				"x:", curNode.x, "y:", curNode.y)
 		} else {
 			//both drifting and energy
-			fmt.Fprintln(driftFile,"Node False Negative (both) ID:",curNode.id,"True Reading:",newDist,"Drifted Reading:",
-				errorDist,"S0:",curNode.S0,"S1:",curNode.S1,"S2:",curNode.S2, "E0:",curNode.E0,"E1:",curNode.E1,
-				"E2:",curNode.E2,"ET1:",curNode.ET1,"ET2:",curNode.ET2,"time since calibration:",curNode.nodeTime,
-				"Current Time (Iter):",iterations_used,"Energy Level:",curNode.battery,"Distance from bomb:",math.Sqrt(float64(curNode.geoDist(*b))),
-				"x:",curNode.x,"y:",curNode.y)
+			fmt.Fprintln(driftFile, "Node False Negative (both) ID:", curNode.id, "True Reading:", newDist, "Drifted Reading:",
+				errorDist, "S0:", curNode.S0, "S1:", curNode.S1, "S2:", curNode.S2, "E0:", curNode.E0, "E1:", curNode.E1,
+				"E2:", curNode.E2, "ET1:", curNode.ET1, "ET2:", curNode.ET2, "time since calibration:", curNode.nodeTime,
+				"Current Time (Iter):", iterations_used, "Energy Level:", curNode.battery, "Distance from bomb:", math.Sqrt(float64(curNode.geoDist(*b))),
+				"x:", curNode.x, "y:", curNode.y)
 		}
 	}
 
 	if errorDist >= detectionThreshold && float64(newDist) >= detectionThreshold && !curNode.hasCheckedSensor {
 		//false negative due solely to energy
-		fmt.Fprintln(driftFile,"Node False Negative (energy) ID:",curNode.id,"True Reading:",newDist,"Drifted Reading:",
-			errorDist,"S0:",curNode.S0,"S1:",curNode.S1,"S2:",curNode.S2, "E0:",curNode.E0,"E1:",curNode.E1,
-			"E2:",curNode.E2,"ET1:",curNode.ET1,"ET2:",curNode.ET2,"time since calibration:",curNode.nodeTime,
-			"Current Time (Iter):",iterations_used,"Energy Level:",curNode.battery,"Distance from bomb:",math.Sqrt(float64(curNode.geoDist(*b))),
-			"x:",curNode.x,"y:",curNode.y)
+		fmt.Fprintln(driftFile, "Node False Negative (energy) ID:", curNode.id, "True Reading:", newDist, "Drifted Reading:",
+			errorDist, "S0:", curNode.S0, "S1:", curNode.S1, "S2:", curNode.S2, "E0:", curNode.E0, "E1:", curNode.E1,
+			"E2:", curNode.E2, "ET1:", curNode.ET1, "ET2:", curNode.ET2, "time since calibration:", curNode.nodeTime,
+			"Current Time (Iter):", iterations_used, "Energy Level:", curNode.battery, "Distance from bomb:", math.Sqrt(float64(curNode.geoDist(*b))),
+			"x:", curNode.x, "y:", curNode.y)
 	}
 
 	if errorDist >= detectionThreshold && float64(newDist) < detectionThreshold {
 		//this if a false positive
 		//it must be due to drifting. Report relevant info to driftFile
-		fmt.Fprintln(driftFile,"Node False Positive (drifting) ID:",curNode.id,"True Reading:",newDist,"Drifted Reading:",
-			errorDist,"S0:",curNode.S0,"S1:",curNode.S1,"S2:",curNode.S2, "E0:",curNode.E0,"E1:",curNode.E1,
-			"E2:",curNode.E2,"ET1:",curNode.ET1,"ET2:",curNode.ET2,"time since calibration:",curNode.nodeTime,
-			"Current Time (Iter):",iterations_used,"Energy Level:",curNode.battery,"Distance from bomb:",math.Sqrt(float64(curNode.geoDist(*b))),
-			"x:",curNode.x,"y:",curNode.y)
+		fmt.Fprintln(driftFile, "Node False Positive (drifting) ID:", curNode.id, "True Reading:", newDist, "Drifted Reading:",
+			errorDist, "S0:", curNode.S0, "S1:", curNode.S1, "S2:", curNode.S2, "E0:", curNode.E0, "E1:", curNode.E1,
+			"E2:", curNode.E2, "ET1:", curNode.ET1, "ET2:", curNode.ET2, "time since calibration:", curNode.nodeTime,
+			"Current Time (Iter):", iterations_used, "Energy Level:", curNode.battery, "Distance from bomb:", math.Sqrt(float64(curNode.geoDist(*b))),
+			"x:", curNode.x, "y:", curNode.y)
 	}
 
 	if errorDist >= detectionThreshold && float64(newDist) >= detectionThreshold && curNode.hasCheckedSensor {
-		fmt.Fprintln(driftFile,"Node True Positive ID:",curNode.id,"True Reading:",newDist,"Drifted Reading:",
-			errorDist,"S0:",curNode.S0,"S1:",curNode.S1,"S2:",curNode.S2, "E0:",curNode.E0,"E1:",curNode.E1,
-			"E2:",curNode.E2,"ET1:",curNode.ET1,"ET2:",curNode.ET2,"time since calibration:",curNode.nodeTime,
-			"Current Time (Iter):",iterations_used,"Energy Level:",curNode.battery,"Distance from bomb:",math.Sqrt(float64(curNode.geoDist(*b))),
-			"x:",curNode.x,"y:",curNode.y)
+		fmt.Fprintln(driftFile, "Node True Positive ID:", curNode.id, "True Reading:", newDist, "Drifted Reading:",
+			errorDist, "S0:", curNode.S0, "S1:", curNode.S1, "S2:", curNode.S2, "E0:", curNode.E0, "E1:", curNode.E1,
+			"E2:", curNode.E2, "ET1:", curNode.ET1, "ET2:", curNode.ET2, "time since calibration:", curNode.nodeTime,
+			"Current Time (Iter):", iterations_used, "Energy Level:", curNode.battery, "Distance from bomb:", math.Sqrt(float64(curNode.geoDist(*b))),
+			"x:", curNode.x, "y:", curNode.y)
 	}
 
 	//If the reading is more than 2 standard deviations away from the grid average, then recalibrate
@@ -1062,7 +1062,7 @@ func (curNode *NodeImpl) getReadings() {
 
 	//New condition added: also recalibrate when the node's sensitivity is <= 1/10 of its original sensitvity
 	//New condition added: Check to make sure the sensor was pinged this iteration
-	if ((curNode.sensitivity <= (curNode.initialSensitivity / 2)) && (curNode.hasCheckedSensor)) && iterations_used != 0{
+	if ((curNode.sensitivity <= (curNode.initialSensitivity / 2)) && (curNode.hasCheckedSensor)) && iterations_used != 0 {
 		curNode.recalibrate()
 		recalibrate = true
 		curNode.incrementNumResets()
@@ -1070,17 +1070,17 @@ func (curNode *NodeImpl) getReadings() {
 
 	//printing statements to log files, only if the sensor was pinged this iteration
 	//if curNode.hasCheckedSensor && nodesPrint{
-	if nodesPrint{
+	if nodesPrint {
 		if recalibrate {
-			fmt.Fprintln(nodeFile,"ID:",curNode.getID(),"Average:",curNode.getAvg(),"Reading:",newDist,"Error Reading:",errorDist,"Recalibrated")
+			fmt.Fprintln(nodeFile, "ID:", curNode.getID(), "Average:", curNode.getAvg(), "Reading:", newDist, "Error Reading:", errorDist, "Recalibrated")
 		} else {
-			fmt.Fprintln(nodeFile,"ID:",curNode.getID(),"Average:",curNode.getAvg(),"Reading:",newDist,"Error Reading:",errorDist)
+			fmt.Fprintln(nodeFile, "ID:", curNode.getID(), "Average:", curNode.getAvg(), "Reading:", newDist, "Error Reading:", errorDist)
 		}
 		//fmt.Fprintln(nodeFile, "battery:", int(curNode.battery),)
 	}
 
 	if positionPrint {
-		fmt.Fprintln(positionFile,"ID:",curNode.getID(),"x:",newX,"y:",newY)
+		fmt.Fprintln(positionFile, "ID:", curNode.getID(), "x:", newX, "y:", newY)
 	}
 
 	recalibrate = false
@@ -1092,6 +1092,6 @@ func (curNode *NodeImpl) getReadings() {
 		grid[curNode.row(yDiv)][curNode.col(xDiv)].takeMeasurement(float32(errorDist))
 		grid[curNode.row(yDiv)][curNode.col(xDiv)].numNodes++
 		//subtract grid average from node average, square it, and add it to this variable
-		grid[curNode.row(yDiv)][curNode.col(xDiv)].squareValues += (math.Pow(float64(errorDist - float64(gridAverage)),2))
+		grid[curNode.row(yDiv)][curNode.col(xDiv)].squareValues += (math.Pow(float64(errorDist-float64(gridAverage)), 2))
 	}
 }

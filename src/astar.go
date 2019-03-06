@@ -39,7 +39,7 @@ func aStar(a Coord, b Coord) []Coord {
 
 		if contains {
 			//The destination has been reached
-			break;
+			break
 		}
 
 		//adjacent is a Coord list of all the Coords that are adjacent to
@@ -58,7 +58,7 @@ func aStar(a Coord, b Coord) []Coord {
 				inOpenList, o := adjacent[j].in(openList)
 				if !inOpenList {
 					openList = append(openList, adjacent[j])
-				}else {
+				} else {
 					if adjacent[j].score < openList[o].score {
 						openList[o].score = adjacent[j].score
 					}
@@ -85,8 +85,8 @@ func aStar(a Coord, b Coord) []Coord {
 	//	reading the list by going through each Coord's parent means the path
 	//	list is ordered from the destination to the source
 	//Therefore this needs to be reversed
-	for i := len(path)/2-1; i >= 0; i-- {
-		opp := len(path)-1-i
+	for i := len(path)/2 - 1; i >= 0; i-- {
+		opp := len(path) - 1 - i
 		path[i], path[opp] = path[opp], path[i]
 	}
 	return path
@@ -96,40 +96,40 @@ func aStar(a Coord, b Coord) []Coord {
 //	the Coord that called this function
 //It only returns Coords that can be walked to, this does not
 //	include walls and previously travelled Coords
-func (a* Coord) getWalkable(b Coord, closedList []Coord) []Coord {
+func (a *Coord) getWalkable(b Coord, closedList []Coord) []Coord {
 	walkableList := make([]Coord, 0)
 
 	//Boundary conditions that check whether AStar coordinates
 	//	are walls, previously travelled AStar coordinates or
 	//	outside the grid
-	if a.x + 1 < maxX {
+	if a.x+1 < maxX {
 		newA := Coord{a, a.x + 1, a.y, 0, 0, 0, 0}
 		inList, _ := newA.in(closedList)
-		if boardMap[a.y][a.x] != -1 && !inList {
+		if boardMap[a.y][a.x] != -1 && !inList && !newA.isEqual(a.parent) {
 			newA.setScore(b)
 			walkableList = append(walkableList, newA)
 		}
 	}
-	if a.x - 1 >= 0 {
+	if a.x-1 >= 0 {
 		newA := Coord{a, a.x - 1, a.y, 0, 0, 0, 0}
 		inList, _ := newA.in(closedList)
-		if boardMap[a.y][a.x] != -1 && !inList {
+		if boardMap[a.y][a.x] != -1 && !inList && !newA.isEqual(a.parent) {
 			newA.setScore(b)
 			walkableList = append(walkableList, newA)
 		}
 	}
-	if a.y + 1 < maxY {
+	if a.y+1 < maxY {
 		newA := Coord{a, a.x, a.y + 1, 0, 0, 0, 0}
 		inList, _ := newA.in(closedList)
-		if boardMap[a.y][a.x] != -1 && !inList {
+		if boardMap[a.y][a.x] != -1 && !inList && !newA.isEqual(a.parent) {
 			newA.setScore(b)
 			walkableList = append(walkableList, newA)
 		}
 	}
-	if a.y - 1 >= 0 {
+	if a.y-1 >= 0 {
 		newA := Coord{a, a.x, a.y - 1, 0, 0, 0, 0}
 		inList, _ := newA.in(closedList)
-		if boardMap[a.y][a.x] != -1 && !inList {
+		if boardMap[a.y][a.x] != -1 && !inList && !newA.isEqual(a.parent) {
 			newA.setScore(b)
 			walkableList = append(walkableList, newA)
 		}
@@ -139,14 +139,14 @@ func (a* Coord) getWalkable(b Coord, closedList []Coord) []Coord {
 
 //setScore takes a Coord and the destination and
 //	calculates the new score for this Coord
-func (a* Coord) setScore(b Coord) {
+func (a *Coord) setScore(b Coord) {
 	//The G value is the amount of squares travelled since the
 	//	starting point, therefore its just the parent's G value + 1
 	a.g = a.parent.g + 1
 
 	//The H value is the actual distance between the current AStar
 	//	coordinate and the destination AStar coordinate
-	h := math.Sqrt(math.Pow(float64(a.x - b.x), 2.0) + math.Pow(float64(a.y - b.y), 2.0))
+	h := math.Sqrt(math.Pow(float64(a.x-b.x), 2.0) + math.Pow(float64(a.y-b.y), 2.0))
 	a.h = int(h)
 
 	//The score is the two values summed
@@ -155,7 +155,7 @@ func (a* Coord) setScore(b Coord) {
 
 //This function returns whether or not a Coord
 //	is in a list of Coords and where in the list it is
-func (a* Coord) in(list []Coord) (bool, int) {
+func (a *Coord) in(list []Coord) (bool, int) {
 	for i, _ := range list {
 		if (list[i].x == a.x) && (list[i].y == a.y) {
 			return true, i
