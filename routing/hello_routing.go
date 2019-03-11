@@ -775,7 +775,7 @@ func printPoints(s SuperNodeParent) bytes.Buffer {
 }
 
 func getFlags() {
-	flag.IntVar(&iterations_of_event, "iterations_of_event", 10000, "how many times the simulation will run")
+	flag.IntVar(&iterations_of_event, "iterations_of_event", 1000, "how many times the simulation will run")
 
 	//fmt.Println(os.Args[1:], "\nhmmm? \n ") //C:\Users\Nick\Desktop\comand line experiments\src
 	flag.IntVar(&negativeSittingStopThresholdCM, "negativeSittingStopThreshold", -10,

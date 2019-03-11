@@ -217,7 +217,7 @@ func (c Coord) String() string {
 	return fmt.Sprintf("{%v %v %v}", c.x, c.y, c.time)
 }
 
-func (c Coord) isEqual(c2 *Coord) bool {
+func (c Coord) equals(c2 Coord) bool {
 	return c.x == c2.x && c.y == c2.y
 }
 

@@ -42,10 +42,18 @@ func aStar(a Coord, b Coord) []Coord {
 			break
 		}
 
+		//Saves the parent Coord for checking in the getWalkable function
+		//The parent Coord need not be checked since it is definitely not a viable
+		//	path for the supernode since it has already been there
+		parent_coord := Coord{x: -1, y: -1}
+		if !curr.equals(a) {
+			parent_coord = *(curr.parent)
+		}
+
 		//adjacent is a Coord list of all the Coords that are adjacent to
 		//	the current Coord
 		//Random Walls and previously travelled Coords will not appear in this list
-		adjacent := curr.getWalkable(b, closedList)
+		adjacent := curr.getWalkable(b, closedList, parent_coord)
 
 		//This loops through all the adjacent Coords to the current Coord
 		//As long as the Coords ae not in the closedList, they are added to
@@ -96,7 +104,7 @@ func aStar(a Coord, b Coord) []Coord {
 //	the Coord that called this function
 //It only returns Coords that can be walked to, this does not
 //	include walls and previously travelled Coords
-func (a *Coord) getWalkable(b Coord, closedList []Coord) []Coord {
+func (a *Coord) getWalkable(b Coord, closedList []Coord, p Coord) []Coord {
 	walkableList := make([]Coord, 0)
 
 	//Boundary conditions that check whether AStar coordinates
@@ -105,7 +113,7 @@ func (a *Coord) getWalkable(b Coord, closedList []Coord) []Coord {
 	if a.x+1 < maxX {
 		newA := Coord{a, a.x + 1, a.y, 0, 0, 0, 0}
 		inList, _ := newA.in(closedList)
-		if boardMap[a.y][a.x] != -1 && !inList && !newA.isEqual(a.parent) {
+		if boardMap[a.y][a.x] != -1 && !inList && !newA.equals(p) {
 			newA.setScore(b)
 			walkableList = append(walkableList, newA)
 		}
@@ -113,7 +121,7 @@ func (a *Coord) getWalkable(b Coord, closedList []Coord) []Coord {
 	if a.x-1 >= 0 {
 		newA := Coord{a, a.x - 1, a.y, 0, 0, 0, 0}
 		inList, _ := newA.in(closedList)
-		if boardMap[a.y][a.x] != -1 && !inList && !newA.isEqual(a.parent) {
+		if boardMap[a.y][a.x] != -1 && !inList && !newA.equals(p) {
 			newA.setScore(b)
 			walkableList = append(walkableList, newA)
 		}
@@ -121,7 +129,7 @@ func (a *Coord) getWalkable(b Coord, closedList []Coord) []Coord {
 	if a.y+1 < maxY {
 		newA := Coord{a, a.x, a.y + 1, 0, 0, 0, 0}
 		inList, _ := newA.in(closedList)
-		if boardMap[a.y][a.x] != -1 && !inList && !newA.isEqual(a.parent) {
+		if boardMap[a.y][a.x] != -1 && !inList && !newA.equals(p) {
 			newA.setScore(b)
 			walkableList = append(walkableList, newA)
 		}
@@ -129,7 +137,7 @@ func (a *Coord) getWalkable(b Coord, closedList []Coord) []Coord {
 	if a.y-1 >= 0 {
 		newA := Coord{a, a.x, a.y - 1, 0, 0, 0, 0}
 		inList, _ := newA.in(closedList)
-		if boardMap[a.y][a.x] != -1 && !inList && !newA.isEqual(a.parent) {
+		if boardMap[a.y][a.x] != -1 && !inList && !newA.equals(p) {
 			newA.setScore(b)
 			walkableList = append(walkableList, newA)
 		}
