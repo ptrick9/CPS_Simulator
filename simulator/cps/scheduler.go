@@ -22,21 +22,21 @@ func (s *Scheduler) optimize() {
 	//Loops through the super node list appending every points to the newly created points list
 	//Then removes the range of points from each super node's routePoints list
 	for sn, _ := range s.sNodeList {
-		for i := 1; i < len(s.sNodeList[sn].getRoutePoints()); i++ {
-			points = append(points, s.sNodeList[sn].getRoutePoints()[i])
+		for i := 1; i < len(s.sNodeList[sn].GetRoutePoints()); i++ {
+			points = append(points, s.sNodeList[sn].GetRoutePoints()[i])
 		}
 
 		//Removes every point from the routePoints list except the first point which represents
 		//	the location of the super node
-		s.sNodeList[sn].setRoutePoints(remove_range(s.sNodeList[sn].getRoutePoints(),
-			1, len(s.sNodeList[sn].getRoutePoints())-1))
+		s.sNodeList[sn].SetRoutePoints(Remove_range(s.sNodeList[sn].GetRoutePoints(),
+			1, len(s.sNodeList[sn].GetRoutePoints())-1))
 
 		//Resets the routePath of the super node
 		path := make([]Coord, 0)
-		s.sNodeList[sn].setRoutePath(path)
+		s.sNodeList[sn].SetRoutePath(path)
 
 		//Resets the numDestinations to 0
-		s.sNodeList[sn].setNumDest(0)
+		s.sNodeList[sn].SetNumDest(0)
 	}
 
 	//Adds the points back into the simulator
@@ -47,16 +47,16 @@ func (s *Scheduler) optimize() {
 
 //This function determines which super node adding method should be called
 
-func (s *Scheduler) addRoutePoint(c Coord) {
-	if superNodeType == 0 {
+func (s *Scheduler) addRoutePoint(c Coord, p *Params) {
+	if p.SuperNodeType == 0 {
 		s.addRoutePoint0(c)
-	} else if superNodeType == 1 {
+	} else if p.SuperNodeType == 1 {
 		s.addRoutePoint1(c)
-	} else if superNodeType == 2 || superNodeType == 3 || superNodeType == 4 {
+	} else if p.SuperNodeType == 2 || p.SuperNodeType == 3 || p.SuperNodeType == 4 {
 		s.addRoutePoint1_circle(c)
-	} else if superNodeType == 5 {
+	} else if p.SuperNodeType == 5 {
 		s.addRoutePoint1_regions(c)
-	} else if superNodeType == 6 || superNodeType == 7 {
+	} else if p.SuperNodeType == 6 || p.SuperNodeType == 7 {
 		s.addRoutePoint2(c)
 	}
 }
@@ -72,18 +72,18 @@ func (s *Scheduler) addRoutePoint0(c Coord) {
 
 	//Finds the super node closest to the newly added point
 	for n, _ := range s.sNodeList {
-		length := len(s.sNodeList[n].getRoutePath())
+		length := len(s.sNodeList[n].GetRoutePath())
 
 		if length != 0 {
 			nodeDist = math.Sqrt(math.
-				Pow(float64(s.sNodeList[n].getRoutePath()[length-1].x-c.x), 2.0) + math.
-				Pow(float64(s.sNodeList[n].getRoutePath()[length-1].y-c.y), 2.0))
+				Pow(float64(s.sNodeList[n].GetRoutePath()[length-1].X-c.X), 2.0) + math.
+				Pow(float64(s.sNodeList[n].GetRoutePath()[length-1].Y-c.Y), 2.0))
 
 			nodeDist += float64(length)
 		} else {
 			nodeDist = math.Sqrt(math.
-				Pow(float64(s.sNodeList[n].getX()-c.x), 2.0) + math.
-				Pow(float64(s.sNodeList[n].getY()-c.y), 2.0))
+				Pow(float64(s.sNodeList[n].getX()-c.X), 2.0) + math.
+				Pow(float64(s.sNodeList[n].getY()-c.Y), 2.0))
 		}
 		if nodeDist < dist {
 			dist = nodeDist
@@ -91,7 +91,7 @@ func (s *Scheduler) addRoutePoint0(c Coord) {
 		}
 	}
 	//Tells that super node to add that point
-	s.sNodeList[closestNode].addRoutePoint(c)
+	s.sNodeList[closestNode].AddRoutePoint(c)
 }
 
 //Adds a point of interest to a super node of type 1
@@ -118,17 +118,17 @@ func (s *Scheduler) addRoutePoint1(c Coord) {
 		//This finds the closest distance between a Coord on the super node's
 		//	routePath and the newly added point
 		//Otherwise the distance from the super node's current location is considered
-		if len(s.sNodeList[n].getRoutePath()) > 0 {
-			nodeDist = closestDist(c, s.sNodeList[n].getRoutePath())
+		if len(s.sNodeList[n].GetRoutePath()) > 0 {
+			nodeDist = closestDist(c, s.sNodeList[n].GetRoutePath())
 
 			//The length of the current path is added to ensure no super nodes
 			//	are forced to go to points of interest if they have an extremely
 			//	long routePath
-			nodeDist += float64(len(s.sNodeList[n].getRoutePath()))
+			nodeDist += float64(len(s.sNodeList[n].GetRoutePath()))
 		} else {
 			nodeDist = math.Sqrt(math.
-				Pow(float64(s.sNodeList[n].getRoutePoints()[0].x-c.x), 2.0) + math.
-				Pow(float64(s.sNodeList[n].getRoutePoints()[0].y-c.y), 2.0))
+				Pow(float64(s.sNodeList[n].GetRoutePoints()[0].X-c.X), 2.0) + math.
+				Pow(float64(s.sNodeList[n].GetRoutePoints()[0].Y-c.Y), 2.0))
 		}
 
 		//Saves the smallest dist value to return
@@ -138,13 +138,13 @@ func (s *Scheduler) addRoutePoint1(c Coord) {
 		}
 	}
 	//Tells that super node to add that point to the decided super node
-	s.sNodeList[closestNode].addRoutePoint(c)
+	s.sNodeList[closestNode].AddRoutePoint(c)
 }
 
 //This is a variation on the super node 1 adding function
 //This restricts the super node to a circular region that covers an area of the
 //	entire grid
-func (s *Scheduler) addRoutePoint1_circle(c Coord) {
+func (s *Scheduler) addRoutePoint1_circle(c Coord, p *Params) {
 	circleNode := -1
 
 	//Loops through the list of super nodes to find the optimal super node to visit
@@ -153,16 +153,16 @@ func (s *Scheduler) addRoutePoint1_circle(c Coord) {
 		//Calculates the distance from the newly added point to center of each super
 		//	node's circle
 		nodeDist := int(math.Sqrt(math.
-			Pow(float64(s.sNodeList[n].getCenter().x-c.x), 2.0) + math.
-			Pow(float64(s.sNodeList[n].getCenter().y-c.y), 2.0)))
+			Pow(float64(s.sNodeList[n].GetCenter().X-c.X), 2.0) + math.
+			Pow(float64(s.sNodeList[n].GetCenter().Y-c.Y), 2.0)))
 
 		//If the point of interest is inside the super node's circle it is added, unless
 		//	the point has been claimed by another super node
 		//If another super node is currently chosen to visit the newly added point the
 		//	length of the super nodes' routePaths are compared
-		if nodeDist <= superNodeRadius {
+		if nodeDist <= p.SuperNodeRadius {
 			if circleNode != -1 {
-				if closestDist(c, s.sNodeList[n].getRoutePath()) < closestDist(c, s.sNodeList[circleNode].getRoutePath()) {
+				if closestDist(c, s.sNodeList[n].GetRoutePath()) < closestDist(c, s.sNodeList[circleNode].GetRoutePath()) {
 					circleNode = n
 				}
 			} else {
@@ -171,24 +171,24 @@ func (s *Scheduler) addRoutePoint1_circle(c Coord) {
 		}
 	}
 	//Tells that super node to add that point to the decided super node
-	s.sNodeList[circleNode].addRoutePoint(c)
+	s.sNodeList[circleNode].AddRoutePoint(c)
 }
 
 //This is a variation on the super node 1 adding function
 //This restricts the super node to a quadrant of the grid that only it covers
-func (s *Scheduler) addRoutePoint1_regions(c Coord) {
+func (s *Scheduler) addRoutePoint1_regions(c Coord, p *Params) {
 	//Boundary conditions
-	if c.x < (maxX / 2) {
-		if c.y < (maxY / 2) {
-			s.sNodeList[0].addRoutePoint(c)
+	if c.X < (p.MaxX / 2) {
+		if c.Y < (p.MaxY / 2) {
+			s.sNodeList[0].AddRoutePoint(c)
 		} else {
-			s.sNodeList[2].addRoutePoint(c)
+			s.sNodeList[2].AddRoutePoint(c)
 		}
 	} else {
-		if c.y < (maxY / 2) {
-			s.sNodeList[1].addRoutePoint(c)
+		if c.Y < (p.MaxY / 2) {
+			s.sNodeList[1].AddRoutePoint(c)
 		} else {
-			s.sNodeList[3].addRoutePoint(c)
+			s.sNodeList[3].AddRoutePoint(c)
 		}
 	}
 }
@@ -203,7 +203,7 @@ func (s *Scheduler) addRoutePoint2(c Coord) {
 
 	//Finds the super node whose center is closest to the newly added point
 	for n, _ := range s.sNodeList {
-		nodeDist := math.Sqrt(math.Pow(float64(s.sNodeList[n].getCenter().x-c.x), 2.0) + math.Pow(float64(s.sNodeList[n].getCenter().y-c.y), 2.0))
+		nodeDist := math.Sqrt(math.Pow(float64(s.sNodeList[n].GetCenter().X-c.X), 2.0) + math.Pow(float64(s.sNodeList[n].GetCenter().Y-c.Y), 2.0))
 		if nodeDist < dist {
 			dist = nodeDist
 			closestNode = n
@@ -211,7 +211,7 @@ func (s *Scheduler) addRoutePoint2(c Coord) {
 	}
 
 	//Tells that super node to add that point
-	s.sNodeList[closestNode].addRoutePoint(c)
+	s.sNodeList[closestNode].AddRoutePoint(c)
 }
 
 //This function returns the distance between the specified Coord c
@@ -222,8 +222,8 @@ func closestDist(c Coord, list []Coord) float64 {
 	//Loops through the list to find the closest Coord
 	for _, p := range list {
 		newDist := math.Sqrt(math.
-			Pow(float64(p.x-c.x), 2.0) + math.
-			Pow(float64(p.y-c.y), 2.0))
+			Pow(float64(p.X-c.X), 2.0) + math.
+			Pow(float64(p.Y-c.Y), 2.0))
 
 		//Saves the value of that smallest distance to return
 		if newDist < dist {

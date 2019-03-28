@@ -4,7 +4,12 @@ import (
 	"math"
 )
 
-func point_list_remove(point Tuple) {
+type Tuple struct {
+	X, Y int
+}
+
+
+func Point_list_remove(point Tuple) {
 	index := -1
 	for i, p := range point_list {
 		if (p.x == point.x) && (p.y == point.y) {
@@ -16,7 +21,7 @@ func point_list_remove(point Tuple) {
 	}
 }
 
-func removeRoutingSquare(sq RoutingSquare) {
+func RemoveRoutingSquare(sq RoutingSquare) {
 	for i := sq.x1; i <= sq.x2; i++ {
 		for j := sq.y1; j <= sq.y2; j++ {
 			point_dict[Tuple{i, j}] = false
@@ -26,7 +31,7 @@ func removeRoutingSquare(sq RoutingSquare) {
 	}
 }
 
-func regionContaining(p Tuple) int {
+func RegionContaining(p Tuple) int {
 	for i, s := range square_list {
 		if p.x >= s.x1 && p.x <= s.x2 && p.y >= s.y1 && p.y <= s.y2 {
 			return i
@@ -35,7 +40,7 @@ func regionContaining(p Tuple) int {
 	return -1
 }
 
-func is_in(i int, list []int) bool {
+func Is_in(i int, list []int) bool {
 	for _, b := range list {
 		if b == i {
 			return true
@@ -44,7 +49,7 @@ func is_in(i int, list []int) bool {
 	return false
 }
 
-func search(prev_region, curr_region, end_region int, curr_path []int) {
+func Search(prev_region, curr_region, end_region int, curr_path []int) {
 	if curr_region == end_region {
 		curr_path = append(curr_path, curr_region)
 		possible_paths = append(possible_paths, curr_path)
@@ -62,7 +67,7 @@ func search(prev_region, curr_region, end_region int, curr_path []int) {
 	}
 }
 
-func possPaths(p1, p2 Tuple) {
+func PossPaths(p1, p2 Tuple) {
 	start_region := regionContaining(p1)
 	end_region := regionContaining(p2)
 
@@ -71,7 +76,7 @@ func possPaths(p1, p2 Tuple) {
 	search(-1, start_region, end_region, make([]int, 0))
 }
 
-func inRegionRouting(p1, p2 Tuple) []Coord {
+func InRegionRouting(p1, p2 Tuple) []Coord {
 	ret_path := make([]Coord, 0)
 	end_x := -1
 	if p1.x < p2.x {
@@ -97,7 +102,7 @@ func inRegionRouting(p1, p2 Tuple) []Coord {
 	return ret_path
 }
 
-func getPath(c1, c2 Coord) []Coord {
+func GetPath(c1, c2 Coord) []Coord {
 	p1 := Tuple{c1.x, c1.y}
 	p2 := Tuple{c2.x, c2.y}
 

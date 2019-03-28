@@ -7,7 +7,7 @@ This is the server GO file and it is a model of our server
 */
 
 //This is the server's data structure for a phone (or node)
-type phoneFile struct {
+type PhoneFile struct {
 	id int //This is the phone's unique id
 	xPos []int //These are the saved x pos of the phone
 	yPos []int //These are the saved y pos of the phone
@@ -20,16 +20,16 @@ type phoneFile struct {
 }
 
 //The server is merely al list of phone files for now
-type server struct {
+type Server struct {
 	//p [numNodes]phoneFile
-	p [200]phoneFile
+	p [200]PhoneFile
 }
 //This is for later when the server becomes more advanced
 type serverThink interface {
 }
 
 //This is the server absorbing data from the nodes and writing it to its phone files
-func getData(s *server,xPos []int, yPos []int, val []int, time []int, id int, buffer int) () {
+func GetData(s *Server,xPos []int, yPos []int, val []int, time []int, id int, buffer int) () {
 	//s.p[id].xPos = append(s.p[id].xPos,xPos ...)
 	//s.p[id].yPos = append(s.p[id].yPos,yPos...)
 	//s.p[id].val = append(s.p[id].val,val...)
@@ -38,12 +38,12 @@ func getData(s *server,xPos []int, yPos []int, val []int, time []int, id int, bu
 }
 
 //This is a debugging function to be removed later
-func (s server) String() {
+func (s Server) String() {
 	fmt.Println("Length of string",int(len(s.p))," ")
 }
 
 //This refines the phone files to fill in the gaps between where the server did not check the GPS or sensor
-func reifne( p *phoneFile) (bool) {
+func Refine( p *PhoneFile) (bool) {
 	//This fills the positions
 	if (len(p.yPos) == len(p.time)) == (len(p.yPos) == len(p.val)) {
 		inbetween := 0
