@@ -5,7 +5,6 @@ import (
 	"math"
 	"math/rand"
 	"sort"
-	"golang.org/x/tools/go/loader/testdata"
 )
 
 //Global variables used in battery loss dynamics
@@ -15,33 +14,33 @@ var (
 
 //The NodeParent interface is inherited by all node types
 type NodeParent interface {
-	distance(b Bomb) float32        //distance to bomb in the form of the node's reading
-	row(div int) int                //Row of node
-	col(div int) int                //Column of node
-	getSpeed() []float32            //History of accelerometer based speeds of node
-	batteryLossDynamic()            //Battery loss based of ratios of battery usage
-	batteryLossDynamic1()           //2 stage buffer battery loss
-	updateHistory(newValue float32) //updates history of node's samples
-	incrementTotalSamples()         //increments total number of samples node has taken
-	getAvg() float32                //returns average of node's past samples
-	incrementNumResets()            //increments the number of times a node has been reset
-	setConcentration(conc float64)  //sets the concentration of a node
-	geoDist(b Bomb) float32         //returns distance from bomb (rather than reading of node)
-	getID() int                     //returns ID of node
-	getLoc() (x, y int)             //returns x and y values of node
+	Distance(b Bomb) float32        //distance to bomb in the form of the node's reading
+	Row(div int) int                //Row of node
+	Col(div int) int                //Column of node
+	GetSpeed() []float32            //History of accelerometer based speeds of node
+	BatteryLossDynamic(p *Params)            //Battery loss based of ratios of battery usage
+	BatteryLossDynamic1(p *Params)           //2 stage buffer battery loss
+	UpdateHistory(newValue float32) //updates history of node's samples
+	IncrementTotalSamples()         //increments total number of samples node has taken
+	GetAvg() float32                //returns average of node's past samples
+	IncrementNumResets()            //increments the number of times a node has been reset
+	SetConcentration(conc float64)  //sets the concentration of a node
+	GeoDist(b Bomb) float32         //returns distance from bomb (rather than reading of node)
+	GetID() int                     //returns ID of node
+	GetLoc() (x, y int)             //returns x and y values of node
 	//following functions set drifting parameters of nodes
-	setS0(s0 float64)
-	setS1(s1 float64)
-	setS2(s2 float64)
-	setE0(e0 float64)
-	setE1(e1 float64)
-	setE2(e2 float64)
-	setET1(et1 float64)
-	setET2(et2 float64)
-	getParams() (float64, float64, float64, float64, float64, float64, float64, float64) //returns all of the above parameters
-	getCoefficients() (float64, float64, float64)                                        //returns some of the above parameters
-	getX() int                                                                           //returns x position of node
-	getY() int                                                                           //returns y position of node
+	SetS0(s0 float64)
+	SetS1(s1 float64)
+	SetS2(s2 float64)
+	SetE0(e0 float64)
+	SetE1(e1 float64)
+	SetE2(e2 float64)
+	SetET1(et1 float64)
+	SetET2(et2 float64)
+	GetParams() (float64, float64, float64, float64, float64, float64, float64, float64) //returns all of the above parameters
+	GetCoefficients() (float64, float64, float64)                                        //returns some of the above parameters
+	GetX() int                                                                           //returns x position of node
+	GetY() int                                                                           //returns y position of node
 }
 
 //NodeImpl is a struct that implements all the methods listed
@@ -121,7 +120,7 @@ type NodeImpl struct {
 //	and NodeImpl
 type NodeMovement interface {
 	NodeParent
-	Move()
+	Move(p *Params)
 }
 
 //Bouncing nodes bound around the grid
@@ -146,7 +145,7 @@ type Rn struct {
 }
 
 type WallNodes struct {
-	node *NodeImpl
+	Node *NodeImpl
 }
 
 //Coord is a struct that contains x and y coordinates of
@@ -232,50 +231,50 @@ func (n *NodeImpl) Move(p *Params) {
 		//only add the ones that are valid to move to into the list
 		if n.Y-1 >= 0 &&
 			n.X >= 0 &&
-			n.X < len(boardMap[n.Y-1]) &&
-			n.Y-1 < len(boardMap) &&
+			n.X < len(p.BoardMap[n.Y-1]) &&
+			n.Y-1 < len(p.BoardMap) &&
 
-			boardMap[n.Y-1][n.X] != -1 &&
+			p.BoardMap[n.Y-1][n.X] != -1 &&
 			p.BoolGrid[n.Y-1][n.X] == false { // &&
-			//boardMap[n.X][n.Y-1] <= boardMap[n.X][n.Y] {
+			//p.BoardMap[n.X][n.Y-1] <= p.BoardMap[n.X][n.Y] {
 
-			up := GridSpot{n.X, n.Y - 1, boardMap[n.Y-1][n.X]}
+			up := GridSpot{n.X, n.Y - 1, p.BoardMap[n.Y-1][n.X]}
 			potentialSpots = append(potentialSpots, up)
 		}
-		if n.X+1 < len(boardMap[n.Y]) &&
+		if n.X+1 < len(p.BoardMap[n.Y]) &&
 			n.X+1 >= 0 &&
-			n.Y < len(boardMap) &&
+			n.Y < len(p.BoardMap) &&
 			n.Y >= 0 &&
 
-			boardMap[n.Y][n.X+1] != -1 &&
+			p.BoardMap[n.Y][n.X+1] != -1 &&
 			p.BoolGrid[n.Y][n.X+1] == false { // &&
-			//boardMap[n.X+1][n.Y] <= boardMap[n.X][n.Y] {
+			//p.BoardMap[n.X+1][n.Y] <= p.BoardMap[n.X][n.Y] {
 
-			right := GridSpot{n.X + 1, n.Y, boardMap[n.Y][n.X+1]}
+			right := GridSpot{n.X + 1, n.Y, p.BoardMap[n.Y][n.X+1]}
 			potentialSpots = append(potentialSpots, right)
 		}
-		if n.Y+1 < len(boardMap) &&
+		if n.Y+1 < len(p.BoardMap) &&
 			n.Y+1 >= 0 &&
-			n.X < len(boardMap[n.Y+1]) &&
+			n.X < len(p.BoardMap[n.Y+1]) &&
 			n.X >= 0 &&
 
-			boardMap[n.Y+1][n.X] != -1 &&
+			p.BoardMap[n.Y+1][n.X] != -1 &&
 			p.BoolGrid[n.Y+1][n.X] == false { //&&
-			//boardMap[n.X][n.Y+1] <= boardMap[n.X][n.Y] {
+			//p.BoardMap[n.X][n.Y+1] <= p.BoardMap[n.X][n.Y] {
 
-			down := GridSpot{n.X, n.Y + 1, boardMap[n.Y+1][n.X]}
+			down := GridSpot{n.X, n.Y + 1, p.BoardMap[n.Y+1][n.X]}
 			potentialSpots = append(potentialSpots, down)
 		}
 		if n.X-1 >= 0 &&
-			n.X-1 < len(boardMap[n.Y]) &&
+			n.X-1 < len(p.BoardMap[n.Y]) &&
 			n.Y >= 0 &&
-			n.Y < len(boardMap) &&
+			n.Y < len(p.BoardMap) &&
 
-			boardMap[n.Y][n.X-1] != -1 &&
+			p.BoardMap[n.Y][n.X-1] != -1 &&
 			p.BoolGrid[n.Y][n.X-1] == false { // &&
-			//boardMap[n.X-1][n.Y] <= boardMap[n.X][n.Y] {
+			//p.BoardMap[n.X-1][n.Y] <= p.BoardMap[n.X][n.Y] {
 
-			left := GridSpot{n.X - 1, n.Y, boardMap[n.Y][n.X-1]}
+			left := GridSpot{n.X - 1, n.Y, p.BoardMap[n.Y][n.X-1]}
 			potentialSpots = append(potentialSpots, left)
 		}
 
@@ -980,7 +979,7 @@ func (n *NodeImpl) GetSpeed() []float32 {
 
 //Returns a different version of the distance to the bomb
 func (n *NodeImpl) GetValue(p *Params) int {
-	return int(math.Sqrt(math.Pow(float64(n.X-p.b.X), 2) + math.Pow(float64(n.Y-p.b.Y), 2)))
+	return int(math.Sqrt(math.Pow(float64(n.X-p.B.X), 2) + math.Pow(float64(n.Y-p.B.Y), 2)))
 }
 
 //Takes cares of taking a node's readings and printing detections and stuff
@@ -992,7 +991,7 @@ func (curNode *NodeImpl) GetReadings(p *Params) {
 	//test change
 	newX, newY := curNode.GetLoc()
 
-	newDist := curNode.Distance(*p.b) //this is the node's reported value without error
+	newDist := curNode.Distance(*p.B) //this is the node's reported value without error
 
 	//Calculate error, sensitivity, and noise, as per the matlab code
 	S0, S1, S2, E0, E1, E2, ET1, ET2 := curNode.GetParams()
@@ -1018,14 +1017,14 @@ func (curNode *NodeImpl) GetReadings(p *Params) {
 			fmt.Fprintln(p.DriftFile, "Node False Negative (drifting) ID:", curNode.Id, "True Reading:", newDist, "Drifted Reading:",
 				errorDist, "S0:", curNode.S0, "S1:", curNode.S1, "S2:", curNode.S2, "E0:", curNode.E0, "E1:", curNode.E1,
 				"E2:", curNode.E2, "ET1:", curNode.ET1, "ET2:", curNode.ET2, "time since calibration:", curNode.NodeTime,
-				"Current Time (Iter):", p.Iterations_used, "Energy Level:", curNode.Battery, "Distance from bomb:", math.Sqrt(float64(curNode.GeoDist(*p.b))),
+				"Current Time (Iter):", p.Iterations_used, "Energy Level:", curNode.Battery, "Distance from bomb:", math.Sqrt(float64(curNode.GeoDist(*p.B))),
 				"x:", curNode.X, "y:", curNode.Y)
 		} else {
 			//both drifting and energy
 			fmt.Fprintln(p.DriftFile, "Node False Negative (both) ID:", curNode.Id, "True Reading:", newDist, "Drifted Reading:",
 				errorDist, "S0:", curNode.S0, "S1:", curNode.S1, "S2:", curNode.S2, "E0:", curNode.E0, "E1:", curNode.E1,
 				"E2:", curNode.E2, "ET1:", curNode.ET1, "ET2:", curNode.ET2, "time since calibration:", curNode.NodeTime,
-				"Current Time (Iter):", p.Iterations_used, "Energy Level:", curNode.Battery, "Distance from bomb:", math.Sqrt(float64(curNode.GeoDist(*p.b))),
+				"Current Time (Iter):", p.Iterations_used, "Energy Level:", curNode.Battery, "Distance from bomb:", math.Sqrt(float64(curNode.GeoDist(*p.B))),
 				"x:", curNode.X, "y:", curNode.Y)
 		}
 	}
@@ -1035,7 +1034,7 @@ func (curNode *NodeImpl) GetReadings(p *Params) {
 		fmt.Fprintln(p.DriftFile, "Node False Negative (energy) ID:", curNode.Id, "True Reading:", newDist, "Drifted Reading:",
 			errorDist, "S0:", curNode.S0, "S1:", curNode.S1, "S2:", curNode.S2, "E0:", curNode.E0, "E1:", curNode.E1,
 			"E2:", curNode.E2, "ET1:", curNode.ET1, "ET2:", curNode.ET2, "time since calibration:", curNode.NodeTime,
-			"Current Time (Iter):", p.Iterations_used, "Energy Level:", curNode.Battery, "Distance from bomb:", math.Sqrt(float64(curNode.GeoDist(*p.b))),
+			"Current Time (Iter):", p.Iterations_used, "Energy Level:", curNode.Battery, "Distance from bomb:", math.Sqrt(float64(curNode.GeoDist(*p.B))),
 			"x:", curNode.X, "y:", curNode.Y)
 	}
 
@@ -1045,7 +1044,7 @@ func (curNode *NodeImpl) GetReadings(p *Params) {
 		fmt.Fprintln(p.DriftFile, "Node False Positive (drifting) ID:", curNode.Id, "True Reading:", newDist, "Drifted Reading:",
 			errorDist, "S0:", curNode.S0, "S1:", curNode.S1, "S2:", curNode.S2, "E0:", curNode.E0, "E1:", curNode.E1,
 			"E2:", curNode.E2, "ET1:", curNode.ET1, "ET2:", curNode.ET2, "time since calibration:", curNode.NodeTime,
-			"Current Time (Iter):", p.Iterations_used, "Energy Level:", curNode.Battery, "Distance from bomb:", math.Sqrt(float64(curNode.GeoDist(*p.b))),
+			"Current Time (Iter):", p.Iterations_used, "Energy Level:", curNode.Battery, "Distance from bomb:", math.Sqrt(float64(curNode.GeoDist(*p.B))),
 			"x:", curNode.X, "y:", curNode.Y)
 	}
 
@@ -1053,7 +1052,7 @@ func (curNode *NodeImpl) GetReadings(p *Params) {
 		fmt.Fprintln(p.DriftFile, "Node True Positive ID:", curNode.Id, "True Reading:", newDist, "Drifted Reading:",
 			errorDist, "S0:", curNode.S0, "S1:", curNode.S1, "S2:", curNode.S2, "E0:", curNode.E0, "E1:", curNode.E1,
 			"E2:", curNode.E2, "ET1:", curNode.ET1, "ET2:", curNode.ET2, "time since calibration:", curNode.NodeTime,
-			"Current Time (Iter):", p.Iterations_used, "Energy Level:", curNode.Battery, "Distance from bomb:", math.Sqrt(float64(curNode.GeoDist(*p.b))),
+			"Current Time (Iter):", p.Iterations_used, "Energy Level:", curNode.Battery, "Distance from bomb:", math.Sqrt(float64(curNode.GeoDist(*p.B))),
 			"x:", curNode.X, "y:", curNode.Y)
 	}
 

@@ -8,32 +8,51 @@ type Tuple struct {
 	X, Y int
 }
 
+type RegionParams struct {
+	Point_list []Tuple
 
-func Point_list_remove(point Tuple) {
+	Point_list2 [][]bool
+
+	Point_dict map[Tuple]bool
+
+	Square_list []RoutingSquare
+
+	Border_dict map[int][]int
+
+	Node_tables []map[Tuple]float64
+
+	Possible_paths [][]int
+
+	Stim_list map[int]Tuple
+		
+}
+
+
+func Point_list_remove(point Tuple, r *RegionParams) {
 	index := -1
-	for i, p := range point_list {
-		if (p.x == point.x) && (p.y == point.y) {
+	for i, p := range r.Point_list {
+		if (p.X == point.X) && (p.Y == point.Y) {
 			index = i
 		}
 	}
 	if index != -1 {
-		point_list = point_list[:index+copy(point_list[index:], point_list[index+1:])]
+		r.Point_list = r.Point_list[:index+copy(r.Point_list[index:], r.Point_list[index+1:])]
 	}
 }
 
-func RemoveRoutingSquare(sq RoutingSquare) {
-	for i := sq.x1; i <= sq.x2; i++ {
-		for j := sq.y1; j <= sq.y2; j++ {
-			point_dict[Tuple{i, j}] = false
-			//point_list_remove(Tuple{i, j})
-			point_list2[i][j] = false
+func RemoveRoutingSquare(sq RoutingSquare, r *RegionParams) {
+	for i := sq.X1; i <= sq.X2; i++ {
+		for j := sq.Y1; j <= sq.Y2; j++ {
+			r.Point_dict[Tuple{i, j}] = false
+			//r.Point_list_remove(Tuple{i, j})
+			r.Point_list2[i][j] = false
 		}
 	}
 }
 
-func RegionContaining(p Tuple) int {
-	for i, s := range square_list {
-		if p.x >= s.x1 && p.x <= s.x2 && p.y >= s.y1 && p.y <= s.y2 {
+func RegionContaining(p Tuple, r *RegionParams) int {
+	for i, s := range r.Square_list {
+		if p.X >= s.X1 && p.X <= s.X2 && p.Y >= s.Y1 && p.Y <= s.Y2 {
 			return i
 		}
 	}
@@ -49,80 +68,80 @@ func Is_in(i int, list []int) bool {
 	return false
 }
 
-func Search(prev_region, curr_region, end_region int, curr_path []int) {
+func Search(prev_region, curr_region, end_region int, curr_path []int, r *RegionParams) {
 	if curr_region == end_region {
 		curr_path = append(curr_path, curr_region)
-		possible_paths = append(possible_paths, curr_path)
+		r.Possible_paths = append(r.Possible_paths, curr_path)
 	} else {
-		for _, r := range border_dict[curr_region] {
-			if r == end_region {
+		for _, reg := range r.Border_dict[curr_region] {
+			if reg == end_region {
 				curr_path = append(curr_path, curr_region)
-				curr_path = append(curr_path, r)
-				possible_paths = append(possible_paths, curr_path)
-			} else if !is_in(r, curr_path) {
+				curr_path = append(curr_path, reg)
+				r.Possible_paths = append(r.Possible_paths, curr_path)
+			} else if !Is_in(reg, curr_path) {
 				next_path := append(curr_path, curr_region)
-				search(curr_region, r, end_region, next_path)
+				Search(curr_region, reg, end_region, next_path, r)
 			}
 		}
 	}
 }
 
-func PossPaths(p1, p2 Tuple) {
-	start_region := regionContaining(p1)
-	end_region := regionContaining(p2)
+func PossPaths(p1, p2 Tuple, r *RegionParams) {
+	start_region := RegionContaining(p1, r)
+	end_region := RegionContaining(p2, r)
 
-	possible_paths = make([][]int, 0)
+	r.Possible_paths = make([][]int, 0)
 
-	search(-1, start_region, end_region, make([]int, 0))
+	Search(-1, start_region, end_region, make([]int, 0), r)
 }
 
 func InRegionRouting(p1, p2 Tuple) []Coord {
 	ret_path := make([]Coord, 0)
 	end_x := -1
-	if p1.x < p2.x {
-		for val := p1.x; val <= p2.x; val++ {
-			ret_path = append(ret_path, Coord{x: val, y: p1.y})
+	if p1.X < p2.X {
+		for val := p1.X; val <= p2.X; val++ {
+			ret_path = append(ret_path, Coord{X: val, Y: p1.Y})
 		}
-		end_x = p2.x
+		end_x = p2.X
 	} else {
-		for val := p1.x; val >= p2.x; val-- {
-			ret_path = append(ret_path, Coord{x: val, y: p1.y})
+		for val := p1.X; val >= p2.X; val-- {
+			ret_path = append(ret_path, Coord{X: val, Y: p1.Y})
 		}
-		end_x = p2.x
+		end_x = p2.X
 	}
-	if p1.y < p2.y {
-		for val := p1.y; val <= p2.y; val++ {
-			ret_path = append(ret_path, Coord{x: end_x, y: val})
+	if p1.Y < p2.Y {
+		for val := p1.Y; val <= p2.Y; val++ {
+			ret_path = append(ret_path, Coord{X: end_x, Y: val})
 		}
 	} else {
-		for val := p1.y; val >= p2.y; val-- {
-			ret_path = append(ret_path, Coord{x: end_x, y: val})
+		for val := p1.Y; val >= p2.Y; val-- {
+			ret_path = append(ret_path, Coord{X: end_x, Y: val})
 		}
 	}
 	return ret_path
 }
 
-func GetPath(c1, c2 Coord) []Coord {
-	p1 := Tuple{c1.x, c1.y}
-	p2 := Tuple{c2.x, c2.y}
+func GetPath(c1, c2 Coord, r *RegionParams) []Coord {
+	p1 := Tuple{c1.X, c1.Y}
+	p2 := Tuple{c2.X, c2.Y}
 
-	possPaths(p1, p2)
+	PossPaths(p1, p2, r)
 
 	min_dist := math.Pow(100, 100)
 	index := -1
 
-	for i, path := range possible_paths {
+	for i, path := range r.Possible_paths {
 		curr_dist := 0.0
 		for j, region := range path {
 			if len(path) == 1 {
-				curr_dist += dist(p1, p2)
+				curr_dist += Dist(p1, p2)
 			} else {
 				if j == 0 {
-					curr_dist += dist(p1, square_list[region].routers[path[j+1]])
+					curr_dist += Dist(p1, r.Square_list[region].Routers[path[j+1]])
 				} else if j == len(path)-1 {
-					curr_dist += dist(p2, square_list[region].routers[path[j-1]])
+					curr_dist += Dist(p2, r.Square_list[region].Routers[path[j-1]])
 				} else {
-					curr_dist += node_tables[region][Tuple{path[j-1], path[j+1]}]
+					curr_dist += r.Node_tables[region][Tuple{path[j-1], path[j+1]}]
 				}
 			}
 		}
@@ -134,16 +153,16 @@ func GetPath(c1, c2 Coord) []Coord {
 	}
 	ret_path := make([]Coord, 0)
 
-	if len(possible_paths[index]) == 1 {
-		ret_path = append(ret_path, inRegionRouting(p1, p2)...)
+	if len(r.Possible_paths[index]) == 1 {
+		ret_path = append(ret_path, InRegionRouting(p1, p2)...)
 	} else {
-		for i, s := range possible_paths[index] {
+		for i, s := range r.Possible_paths[index] {
 			if i == 0 {
-				ret_path = append(ret_path, inRegionRouting(p1, square_list[s].routers[possible_paths[index][i+1]])...)
-			} else if i == len(possible_paths[index])-1 {
-				ret_path = append(ret_path, inRegionRouting(square_list[s].routers[possible_paths[index][i-1]], p2)...)
+				ret_path = append(ret_path, InRegionRouting(p1, r.Square_list[s].Routers[r.Possible_paths[index][i+1]])...)
+			} else if i == len(r.Possible_paths[index])-1 {
+				ret_path = append(ret_path, InRegionRouting(r.Square_list[s].Routers[r.Possible_paths[index][i-1]], p2)...)
 			} else {
-				ret_path = append(ret_path, inRegionRouting(square_list[s].routers[possible_paths[index][i-1]], square_list[s].routers[possible_paths[index][i+1]])...)
+				ret_path = append(ret_path, InRegionRouting(r.Square_list[s].Routers[r.Possible_paths[index][i-1]], r.Square_list[s].Routers[r.Possible_paths[index][i+1]])...)
 			}
 		}
 	}

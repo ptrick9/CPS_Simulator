@@ -13,14 +13,14 @@ type Sn_one struct {
 //This function is called every tick
 //It adds points to the super node's RoutePoints and RoutePath lists
 //	and moves it along the path
-func (n* Sn_one) Tick(p *Params) {
+func (n* Sn_one) Tick(p *Params, r *RegionParams) {
 	//If there are still squares to visit the super node should move along
 	//	the path
 	if len(n.GetRoutePoints()) > 1 {
 		//If a new point of interest has been added the current path needs
 		//	to be updated
 		if n.GetNumDest() < len(n.GetRoutePoints())-1 {
-			n.UpdatePath(p)
+			n.UpdatePath(p, r)
 		}
 		//The super node should then follow the current path through the grid
 		if len(n.GetRoutePath()) > 0 {
@@ -36,7 +36,7 @@ func (n* Sn_one) Tick(p *Params) {
 //This function adds points to the RoutePath list in order for
 //	for the super node to follow, it also inserts points into the
 //	RoutePath if a new point appears and qualifies for insertion
-func (n* Sn_one) UpdatePath(p *Params){
+func (n* Sn_one) UpdatePath(p *Params, r *RegionParams){
 	//If NumDestinations is 0 then there are currently no points for the super
 	//	node to visit
 	//That means that all the points in the nodePoints list can be visited without
@@ -219,6 +219,6 @@ func (n* Sn_one) UpdatePath(p *Params){
 }
 
 //Adds a RoutePoint to the super node's RoutePoints
-func (n* Sn_one) AddRoutePoint(c Coord) {
+func (n* Sn_one) AddRoutePoint(c Coord, p *Params, r *RegionParams) {
 	n.RoutePoints = append(n.RoutePoints, c)
 }

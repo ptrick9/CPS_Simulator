@@ -30,7 +30,7 @@ func AStar(a Coord, b Coord, p *Params) []Coord {
 		//The Coord with the lowest score is removed from the openList
 		//	and added to the closedList
 		curr := openList[lowInd]
-		openList = remove_coord_index(openList, lowInd)
+		openList = Remove_coord_index(openList, lowInd)
 		closedList = append(closedList, curr)
 
 		//If the destination is in the closedList, meaning the current
@@ -53,7 +53,7 @@ func AStar(a Coord, b Coord, p *Params) []Coord {
 		//adjacent is a Coord list of all the Coords that are adjacent to
 		//	the current Coord
 		//Random Walls and previously travelled Coords will not appear in this list
-		adjacent := curr.GetWalkable(b, closedList, parent_coord)
+		adjacent := curr.GetWalkable(b, closedList, parent_coord, p)
 
 		//This loops through all the adjacent Coords to the current Coord
 		//As long as the Coords ae not in the closedList, they are added to
@@ -113,7 +113,7 @@ func (a *Coord) GetWalkable(b Coord, closedList []Coord, p Coord, pp *Params) []
 	if a.X+1 < pp.MaxX {
 		newA := Coord{a, a.X + 1, a.Y, 0, 0, 0, 0}
 		inList, _ := newA.In(closedList)
-		if boardMap[a.Y][a.X] != -1 && !inList && !newA.Equals(p) {
+		if pp.BoardMap[a.Y][a.X] != -1 && !inList && !newA.Equals(p) {
 			newA.SetScore(b, pp)
 			walkableList = append(walkableList, newA)
 		}
@@ -121,7 +121,7 @@ func (a *Coord) GetWalkable(b Coord, closedList []Coord, p Coord, pp *Params) []
 	if a.X-1 >= 0 {
 		newA := Coord{a, a.X - 1, a.Y, 0, 0, 0, 0}
 		inList, _ := newA.In(closedList)
-		if boardMap[a.Y][a.X] != -1 && !inList && !newA.Equals(p) {
+		if pp.BoardMap[a.Y][a.X] != -1 && !inList && !newA.Equals(p) {
 			newA.SetScore(b, pp)
 			walkableList = append(walkableList, newA)
 		}
@@ -129,7 +129,7 @@ func (a *Coord) GetWalkable(b Coord, closedList []Coord, p Coord, pp *Params) []
 	if a.Y+1 < pp.MaxY {
 		newA := Coord{a, a.X, a.Y + 1, 0, 0, 0, 0}
 		inList, _ := newA.In(closedList)
-		if boardMap[a.Y][a.X] != -1 && !inList && !newA.Equals(p) {
+		if pp.BoardMap[a.Y][a.X] != -1 && !inList && !newA.Equals(p) {
 			newA.SetScore(b, pp)
 			walkableList = append(walkableList, newA)
 		}
@@ -137,7 +137,7 @@ func (a *Coord) GetWalkable(b Coord, closedList []Coord, p Coord, pp *Params) []
 	if a.Y-1 >= 0 {
 		newA := Coord{a, a.X, a.Y - 1, 0, 0, 0, 0}
 		inList, _ := newA.In(closedList)
-		if boardMap[a.Y][a.X] != -1 && !inList && !newA.Equals(p) {
+		if pp.BoardMap[a.Y][a.X] != -1 && !inList && !newA.Equals(p) {
 			newA.SetScore(b, pp)
 			walkableList = append(walkableList, newA)
 		}

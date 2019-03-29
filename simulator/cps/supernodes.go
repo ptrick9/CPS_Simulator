@@ -9,16 +9,16 @@ import (
 //	as well as some methods only defined for super nodes
 type SuperNodeParent interface {
 	NodeParent
-	Tick()
+	Tick(p *Params, r *RegionParams)
 
-	PathMove()
-	CentMove()
+	PathMove(p *Params)
+	CentMove(p *Params)
 
 	UpdateLoc()
 
-	AddRoutePoint(Coord)
-	UpdatePath()
-	Route([][]*Square, Coord, Coord, []Coord) []Coord
+	AddRoutePoint(Coord, *Params, *RegionParams)
+	UpdatePath(p *Params, r *RegionParams)
+	Route(grid [][]*Square, c1 Coord, c2 Coord, list[]Coord) []Coord
 
 	IncSquareMoved(int)
 	IncAllPoints()
@@ -154,14 +154,14 @@ func (n *Supern) PathMove(p *Params) {
 
 //The Route function adds Coords to the RoutePath of the specific
 //	super node
-//It recursively finds the Square with the lest number of nodes between
+//It recursively finds the Square with the least number of nodes between
 //	the two Coords
 //Once the Square with the lowest numNodes is found the Route
 //	function is called again between the beginning node/the lowest
 //	node and the lowest node/the end node
 //Eventually this adds Coords from the beginning to the end travelling
 //	along the least populated nodes along the way
-func (n Supern) Route(grid [][]*Square, c1, c2 Coord, list []Coord) []Coord {
+func (n Supern) Route(grid [][]*Square, c1 Coord, c2 Coord, list []Coord) []Coord {
 	lowNum := 100
 	lowCoord := Coord{X: -1, Y: -1}
 
@@ -229,7 +229,7 @@ func (n *Supern) CentMove(p *Params) {
 	arr = append(arr, n.Center)
 	n.RoutePath = append(n.RoutePath, arr...)
 
-	n.pathMove(p)
+	n.PathMove(p)
 }
 
 //Updates the location of the super node within the gird

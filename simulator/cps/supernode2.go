@@ -30,7 +30,7 @@ type Region struct {
 //This function is called every tick
 //It adds Points to the super nodes routePoints and routePath lists
 //	and moves it along those paths
-func (n* Sn_two) Tick(p *Params) {
+func (n* Sn_two) Tick(p *Params, r *RegionParams) {
 	//Increments the time of all the Points in the allPoints list
 	n.IncAllPoints()
 
@@ -42,7 +42,7 @@ func (n* Sn_two) Tick(p *Params) {
 		n.PathMove(p)
 	}else {
 		if (n.X == n.Center.X) && (n.Y == n.Center.Y) {
-			n.UpdatePath(p)
+			n.UpdatePath(p, r)
 		}else {
 			n.CentMove(p)
 		}
@@ -58,7 +58,7 @@ func (n* Sn_two) Tick(p *Params) {
 //	back, intercepting Points along the way
 //Once a region has been visited it will not be visited again until all of the
 //	region have been visited or all the other regions are currently empty
-func (n* Sn_two) UpdatePath(p *Params){
+func (n* Sn_two) UpdatePath(p *Params, r *RegionParams){
 
 	//If all the regions have been traversed then all regions may be looked at again
 	if len(n.RegionList) <= 0{
@@ -401,6 +401,6 @@ func Remove_coord_index(arr []Coord, n int) []Coord {
 //This function adds a point of interest to the allPoints list
 //This list is traversed and the point's regions are decided when
 // 	updating the path
-func (n *Sn_two) AddRoutePoint(c Coord) {
+func (n *Sn_two) AddRoutePoint(c Coord, p *Params, r *RegionParams) {
 	n.AllPoints = append(n.AllPoints, c)
 }

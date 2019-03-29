@@ -49,13 +49,18 @@ type Params struct{
 	NodesPrint    bool
 	GridPrint     bool
 
-	DriftFile    *os.File
-	NodeFile     *os.File
-	PositionFile *os.File
+	DriftFile    	*os.File
+	NodeFile     	*os.File
+	PositionFile 	*os.File
+	GridFile 		*os.File
+	EnergyFile 		*os.File
+	RoutingFile 		*os.File
+
 	FoundBomb    bool
 	Err 		 error
 
 
+	BoardMap  		[][]int
 
 
 	BoolGrid       [][]bool
@@ -77,11 +82,56 @@ type Params struct{
 	Iterations_of_event      int
 	EstimatedPingsNeeded     int
 
-	b              *Bomb
+	B              *Bomb
 
 	Tau1 			float64
 	Tau2 		 	float64
 
 	Recalibrate    bool
+
+	FileName 		string
+
+	RegionRouting bool
+
+
+	NumNodeNodes               int
+	NumWallNodes               int
+	NumPoints                  int
+	NumPointsOfInterestKinetic int
+	NumPointsOfInterestStatic  int
+
+	Npos    [][]int // node positions
+	Wpos    [][]int // wall positions
+	Spos    [][]int // super node positions
+	Ppos    [][]int // super node points of interest positions
+	Poikpos [][]int // points of interest kinetic
+	Poispos [][]int // points of interest static
+
+	DetectionThreshold float64
+
+	//SquareRow        int
+	//SquareCol        int
+	NumNodes         int
+	NumStoredSamples int
+	NumGridSamples   int
+
+
+
+	WallNodeList []WallNodes
+	NodeList     []NodeImpl
+
+	BatteryCharges []float32
+	BatteryLosses  []float32
+
+	BatteryLossesCheckingSensorScalar []float32
+	BatteryLossesCheckingGPSScalar    []float32
+	BatteryLossesCheckingServerScalar []float32
+
+	NumAtt         int
+	Attractions    []*Attraction
+	BombSquare     *Square
+	XLoc           int
+	YLoc           int
+
 
 }
