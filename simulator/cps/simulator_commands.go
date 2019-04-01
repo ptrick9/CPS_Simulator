@@ -33,6 +33,11 @@ type Params struct{
 	SquareRowCM                    int     //This is an int 1 through maxX representing how many rows of squares there are
 	SquareColCM                    int     //This is an int 1 through maxY representing how many columns of squares there are
 
+	StimFileNameCM 				   string
+	ImageFileNameCM 				   string
+	OutRoutingStatsNameCM			string
+	OutRoutingNameCM				string
+
 	NumSuperNodes  int
 	SuperNodeType  int
 	SuperNodeSpeed int
@@ -54,7 +59,7 @@ type Params struct{
 	PositionFile 	*os.File
 	GridFile 		*os.File
 	EnergyFile 		*os.File
-	RoutingFile 		*os.File
+	RoutingFile 	*os.File
 
 	FoundBomb    bool
 	Err 		 error
@@ -92,6 +97,7 @@ type Params struct{
 	FileName 		string
 
 	RegionRouting bool
+	AStarRouting  bool
 
 
 	NumNodeNodes               int
