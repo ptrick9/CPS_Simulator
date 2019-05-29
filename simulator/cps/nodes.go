@@ -993,6 +993,126 @@ func (curNode *NodeImpl) GetReadings(p *Params) {
 
 	newDist := curNode.Distance(*p.B) //this is the node's reported value without error
 
+	//need to get the correct time reading value from system
+	//need to verify where we read from
+
+	//Calculate error, sensitivity, and noise, as per the matlab code
+	S0, S1, S2, E0, E1, E2, ET1, ET2 := curNode.GetParams()
+	sError := (S0 + E0) + (S1+E1)*math.Exp(-float64(curNode.NodeTime)/(p.Tau1+ET1)) + (S2+E2)*math.Exp(-float64(curNode.NodeTime)/(p.Tau2+ET2))
+	curNode.Sensitivity = S0 + (S1)*math.Exp(-float64(curNode.NodeTime)/p.Tau1) + (S2)*math.Exp(-float64(curNode.NodeTime)/p.Tau2)
+	sNoise := rand.NormFloat64()*0.5*p.ErrorModifierCM + float64(newDist)*sError
+
+	errorDist := sNoise / curNode.Sensitivity //this is the node's actual reading with error
+
+	//increment node time
+	curNode.NodeTime++
+
+	if curNode.HasCheckedSensor {
+		curNode.IncrementTotalSamples()
+		curNode.UpdateHistory(float32(errorDist))
+	}
+
+	//Detection of false positives or false negatives
+	if errorDist < p.DetectionThresholdCM && float64(newDist) >= p.DetectionThresholdCM {
+		//this is a node false negative due to drifitng
+		if curNode.HasCheckedSensor {
+			//just drifting
+			fmt.Fprintln(p.DriftFile, "Node False Negative (drifting) ID:", curNode.Id, "True Reading:", newDist, "Drifted Reading:",
+				errorDist, "S0:", curNode.S0, "S1:", curNode.S1, "S2:", curNode.S2, "E0:", curNode.E0, "E1:", curNode.E1,
+				"E2:", curNode.E2, "ET1:", curNode.ET1, "ET2:", curNode.ET2, "time since calibration:", curNode.NodeTime,
+				"Current Time (Iter):", p.Iterations_used, "Energy Level:", curNode.Battery, "Distance from bomb:", math.Sqrt(float64(curNode.GeoDist(*p.B))),
+				"x:", curNode.X, "y:", curNode.Y)
+		} else {
+			//both drifting and energy
+			fmt.Fprintln(p.DriftFile, "Node False Negative (both) ID:", curNode.Id, "True Reading:", newDist, "Drifted Reading:",
+				errorDist, "S0:", curNode.S0, "S1:", curNode.S1, "S2:", curNode.S2, "E0:", curNode.E0, "E1:", curNode.E1,
+				"E2:", curNode.E2, "ET1:", curNode.ET1, "ET2:", curNode.ET2, "time since calibration:", curNode.NodeTime,
+				"Current Time (Iter):", p.Iterations_used, "Energy Level:", curNode.Battery, "Distance from bomb:", math.Sqrt(float64(curNode.GeoDist(*p.B))),
+				"x:", curNode.X, "y:", curNode.Y)
+		}
+	}
+
+	if errorDist >= p.DetectionThresholdCM && float64(newDist) >= p.DetectionThresholdCM && !curNode.HasCheckedSensor {
+		//false negative due solely to energy
+		fmt.Fprintln(p.DriftFile, "Node False Negative (energy) ID:", curNode.Id, "True Reading:", newDist, "Drifted Reading:",
+			errorDist, "S0:", curNode.S0, "S1:", curNode.S1, "S2:", curNode.S2, "E0:", curNode.E0, "E1:", curNode.E1,
+			"E2:", curNode.E2, "ET1:", curNode.ET1, "ET2:", curNode.ET2, "time since calibration:", curNode.NodeTime,
+			"Current Time (Iter):", p.Iterations_used, "Energy Level:", curNode.Battery, "Distance from bomb:", math.Sqrt(float64(curNode.GeoDist(*p.B))),
+			"x:", curNode.X, "y:", curNode.Y)
+	}
+
+	if errorDist >= p.DetectionThresholdCM && float64(newDist) < p.DetectionThresholdCM {
+		//this if a false positive
+		//it must be due to drifting. Report relevant info to driftFile
+		fmt.Fprintln(p.DriftFile, "Node False Positive (drifting) ID:", curNode.Id, "True Reading:", newDist, "Drifted Reading:",
+			errorDist, "S0:", curNode.S0, "S1:", curNode.S1, "S2:", curNode.S2, "E0:", curNode.E0, "E1:", curNode.E1,
+			"E2:", curNode.E2, "ET1:", curNode.ET1, "ET2:", curNode.ET2, "time since calibration:", curNode.NodeTime,
+			"Current Time (Iter):", p.Iterations_used, "Energy Level:", curNode.Battery, "Distance from bomb:", math.Sqrt(float64(curNode.GeoDist(*p.B))),
+			"x:", curNode.X, "y:", curNode.Y)
+	}
+
+	if errorDist >= p.DetectionThresholdCM && float64(newDist) >= p.DetectionThresholdCM && curNode.HasCheckedSensor {
+		fmt.Fprintln(p.DriftFile, "Node True Positive ID:", curNode.Id, "True Reading:", newDist, "Drifted Reading:",
+			errorDist, "S0:", curNode.S0, "S1:", curNode.S1, "S2:", curNode.S2, "E0:", curNode.E0, "E1:", curNode.E1,
+			"E2:", curNode.E2, "ET1:", curNode.ET1, "ET2:", curNode.ET2, "time since calibration:", curNode.NodeTime,
+			"Current Time (Iter):", p.Iterations_used, "Energy Level:", curNode.Battery, "Distance from bomb:", math.Sqrt(float64(curNode.GeoDist(*p.B))),
+			"x:", curNode.X, "y:", curNode.Y)
+	}
+
+	//If the reading is more than 2 standard deviations away from the grid average, then recalibrate
+	gridAverage := p.Grid[curNode.Row(p.YDiv)][curNode.Col(p.XDiv)].Avg
+	//standDev := grid[curNode.Row(yDiv)][curNode.Col(xDiv)].StdDev
+
+	//New condition added: also recalibrate when the node's sensitivity is <= 1/10 of its original sensitvity
+	//New condition added: Check to make sure the sensor was pinged this iteration
+	if ((curNode.Sensitivity <= (curNode.InitialSensitivity / 2)) && (curNode.HasCheckedSensor)) && p.Iterations_used != 0 {
+		curNode.Recalibrate()
+		p.Recalibrate = true
+		curNode.IncrementNumResets()
+	}
+
+	//printing statements to log files, only if the sensor was pinged this iteration
+	//if curNode.HasCheckedSensor && nodesPrint{
+	if p.NodesPrint {
+		if p.Recalibrate {
+			fmt.Fprintln(p.NodeFile, "ID:", curNode.GetID(), "Average:", curNode.GetAvg(), "Reading:", newDist, "Error Reading:", errorDist, "Recalibrated")
+		} else {
+			fmt.Fprintln(p.NodeFile, "ID:", curNode.GetID(), "Average:", curNode.GetAvg(), "Reading:", newDist, "Error Reading:", errorDist)
+		}
+		//fmt.Fprintln(nodeFile, "battery:", int(curNode.Battery),)
+	}
+
+	if p.PositionPrint {
+		fmt.Fprintln(p.PositionFile, "ID:", curNode.GetID(), "x:", newX, "y:", newY)
+	}
+
+	p.Recalibrate = false
+
+	//Receives the node's distance and calculates its running average
+	//for that square
+	//Only do this if the sensor was pinged this iteration
+	if curNode.HasCheckedSensor {
+		p.Grid[curNode.Row(p.YDiv)][curNode.Col(p.XDiv)].TakeMeasurement(float32(errorDist))
+		p.Grid[curNode.Row(p.YDiv)][curNode.Col(p.XDiv)].NumNodes++
+		//subtract grid average from node average, square it, and add it to this variable
+		p.Grid[curNode.Row(p.YDiv)][curNode.Col(p.XDiv)].SquareValues += (math.Pow(float64(errorDist-float64(gridAverage)), 2))
+	}
+}
+
+
+
+
+//Takes cares of taking a node's readings and printing detections and stuff
+func (curNode *NodeImpl) GetReadingsCSV(p *Params) {
+
+	//driftFile.Sync()
+	//nodeFile.Sync()
+	//positionFile.Sync()
+	//test change
+	newX, newY := curNode.GetLoc()
+
+	//newDist := curNode.Distance(*p.B) //this is the node's reported value without error
+	newDist := p.SensorReadings[newX][newY][p.CurrTime]
 	//Calculate error, sensitivity, and noise, as per the matlab code
 	S0, S1, S2, E0, E1, E2, ET1, ET2 := curNode.GetParams()
 	sError := (S0 + E0) + (S1+E1)*math.Exp(-float64(curNode.NodeTime)/(p.Tau1+ET1)) + (S2+E2)*math.Exp(-float64(curNode.NodeTime)/(p.Tau2+ET2))

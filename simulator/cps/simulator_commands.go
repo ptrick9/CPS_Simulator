@@ -60,6 +60,12 @@ type Params struct{
 	GridFile 		*os.File
 	EnergyFile 		*os.File
 	RoutingFile 	*os.File
+	AttractionFile 	*os.File
+	BoolFile 	*os.File
+
+	SensorPath string
+	SensorTimes []int
+	CurrTime int
 
 	FoundBomb    bool
 	Err 		 error
@@ -70,6 +76,9 @@ type Params struct{
 
 	BoolGrid       [][]bool
 	Grid           [][]*Square
+
+	SensorReadings [][][]float64
+
 	SquareCapacity int
 
 
@@ -138,6 +147,9 @@ type Params struct{
 	BombSquare     *Square
 	XLoc           int
 	YLoc           int
+
+	Width 			int
+	Height 			int
 
 
 }

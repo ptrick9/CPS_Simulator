@@ -1,12 +1,17 @@
 package cps
 
 import (
+	"encoding/csv"
+	"strings"
+
 	//"bufio"
 	"fmt"
 	"io/ioutil"
+	"math"
 	"os"
 	"regexp"
 	"strconv"
+	"image"
 	//"time"
 	"log"
 )
@@ -417,6 +422,8 @@ func FillInWallsToBoard(p *Params) {
 	}
 }
 
+
+
 // Fills the points of interest into the current buffer
 
 func FillInBufferCurrent(p *Params) {
@@ -557,7 +564,7 @@ func FillInMap(p *Params) {
 				p.BoardMap[bufferCurrent[i][0]+1][bufferCurrent[i][1]] = starter + 1
 				bufferFuture = append(bufferFuture, []int{bufferCurrent[i][0] + 1, bufferCurrent[i][1]})
 			}
-			// to the rite
+			// to the right
 			if bufferCurrent[i][0] < len(p.BoardMap) &&
 				bufferCurrent[i][1]+1 < len(p.BoardMap[1]) &&
 				bufferCurrent[i][0] >= 0 &&
@@ -584,6 +591,325 @@ func FillInMap(p *Params) {
 	}
 	starter = 1
 	bufferFuture = [][]int{{}}
+}
+
+
+func ReadMap(p *Params, r *RegionParams) {
+
+
+	CreateBoard(p.MaxX, p.MaxY, p)
+
+	r.Point_list = make([]Tuple, 0)
+
+	r.Point_list2 = make([][]bool, 0)
+
+	r.Point_dict = make(map[Tuple]bool)
+
+	r.Square_list = make([]RoutingSquare, 0)
+
+	r.Border_dict = make(map[int][]int)
+
+
+	imgfile, err := os.Open(p.ImageFileNameCM)
+	if err != nil {
+		fmt.Println("image file not found!")
+		fmt.Println(p.ImageFileNameCM)
+		os.Exit(1)
+	}
+
+	defer imgfile.Close()
+
+	imgCfg, _, err := image.DecodeConfig(imgfile)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	p.Width = imgCfg.Width
+	p.Height = imgCfg.Height
+
+	fmt.Println("Width : ", p.Width)
+	fmt.Println("Height : ", p.Height)
+
+	imgfile.Seek(0, 0)
+
+	img, _, err := image.Decode(imgfile)
+
+	for x := 0; x < p.Height; x++ {
+		r.Point_list2 = append(r.Point_list2, make([]bool, p.Width))
+	}
+
+	for x := 0; x < p.Height; x++ {
+		for y := 0; y < p.Width; y++ {
+			rr, _, _, _ := img.At(x, y).RGBA()
+			if rr != 0 {
+				r.Point_list2[x][y] = true
+				r.Point_dict[Tuple{x, y}] = true
+
+
+			} else {
+				r.Point_dict[Tuple{x, y}] = false
+				p.BoardMap[y][x] = -1
+				temp := make([] int, 2)
+				temp[0] = x
+				temp[1] = y
+				p.Wpos = append(p.Wpos, temp)
+				p.BoolGrid[y][x] = true
+			}
+		}
+	}
+
+	CreateBoard(p.MaxX, p.MaxY, p)
+	FillInWallsToBoard(p)
+	FillInBufferCurrent(p)
+	FillPointsToBoard(p)
+	FillInMap(p)
+
+}
+
+func SetupFiles(p *Params) {
+	dummy, err := os.Create("dummyFile.txt")
+	if err != nil {
+		log.Fatal("cannot create file", err)
+	}
+	defer dummy.Close()
+	p.PositionFile, err = os.Create(p.OutputFileNameCM + "-simulatorOutput.txt")
+	if err != nil {
+		log.Fatal("Cannot create file", err)
+	}
+	//defer p.PositionFile.Close()
+
+	//Print parameters to position file
+	fmt.Fprintln(p.PositionFile, "Width:", p.MaxX)
+	fmt.Fprintln(p.PositionFile, "Height:", p.MaxY)
+	fmt.Fprintf(p.PositionFile, "Amount: %-8v\n", p.Iterations_of_event)
+	fmt.Fprintf(p.PositionFile, "Bomb x: %v\n", p.BombX)
+	fmt.Fprintf(p.PositionFile, "Bomb y: %v\n", p.BombY)
+
+	p.DriftFile, err = os.Create(p.OutputFileNameCM + "-drift.txt")
+	if err != nil {
+		log.Fatal("Cannot create file", err)
+	}
+	//defer p.DriftFile.Close()
+
+	//Printing parameters to driftFile
+	fmt.Fprintln(p.DriftFile, "Number of Nodes:", p.NumNodes)
+	fmt.Fprintln(p.DriftFile, "Rows:", p.SquareRowCM)
+	fmt.Fprintln(p.DriftFile, "Columns:", p.SquareColCM)
+	fmt.Fprintln(p.DriftFile, "Samples Stored by Node:", p.NumStoredSamples)
+	fmt.Fprintln(p.DriftFile, "Samples Stored by Grid:", p.NumGridSamples)
+	fmt.Fprintln(p.DriftFile, "Width:", p.MaxX)
+	fmt.Fprintln(p.DriftFile, "Height:", p.MaxY)
+	fmt.Fprintln(p.DriftFile, "Bomb x:", p.BombX)
+	fmt.Fprintln(p.DriftFile, "Bomb y:", p.BombY)
+	fmt.Fprintln(p.DriftFile, "Iterations:", p.Iterations_of_event)
+	fmt.Fprintln(p.DriftFile, "Size of Square:", p.XDiv, "x", p.YDiv)
+	fmt.Fprintln(p.DriftFile, "Detection Threshold:", p.DetectionThreshold)
+	fmt.Fprintln(p.DriftFile, "Input File Name:", p.InputFileNameCM)
+	fmt.Fprintln(p.DriftFile, "Output File Name:", p.OutputFileNameCM)
+	fmt.Fprintln(p.DriftFile, "Battery Natural Loss:", p.NaturalLossCM)
+	fmt.Fprintln(p.DriftFile, "Sensor Loss:", p.SensorSamplingLossCM, "\nGPS Loss:", p.GPSSamplingLossCM, "\nServer Loss:", p.ServerSamplingLossCM)
+	fmt.Fprintln(p.DriftFile, "Printing Position:", p.PositionPrint, "\nPrinting Energy:", p.EnergyPrint, "\nPrinting Nodes:", p.NodesPrint)
+	fmt.Fprintln(p.DriftFile, "Super Nodes:", p.NumSuperNodes, "\nSuper Node Type:", p.SuperNodeType, "\nSuper Node Speed:", p.SuperNodeSpeed, "\nSuper Node Radius:", p.SuperNodeRadius)
+	fmt.Fprintln(p.DriftFile, "Error Multiplier:", p.ErrorModifierCM)
+	fmt.Fprintln(p.DriftFile, "--------------------")
+
+	p.GridFile, err = os.Create(p.OutputFileNameCM + "-Grid.txt")
+	if err != nil {
+		log.Fatal("Cannot create file", err)
+	}
+	//defer p.GridFile.Close()
+
+	//Write parameters to gridFile
+	fmt.Fprintln(p.GridFile,"Width:", p.SquareColCM)
+	fmt.Fprintln(p.GridFile,"Height:", p.SquareRowCM)
+
+	p.NodeFile, err = os.Create(p.OutputFileNameCM + "-node_reading.txt")
+	if err != nil {
+		log.Fatal("Cannot create file", err)
+	}
+	//defer p.NodeFile.Close()
+
+	p.EnergyFile, err = os.Create(p.OutputFileNameCM + "-node.txt")
+	if err != nil {
+		log.Fatal("Cannot create file", err)
+	}
+	//defer p.EnergyFile.Close()
+
+	p.RoutingFile, err = os.Create(p.OutputFileNameCM + "-path.txt")
+	if err != nil {
+		log.Fatal("Cannot create file", err)
+	}
+	//defer p.RoutingFile.Close()
+
+	p.BoolFile, err = os.Create(p.OutputFileNameCM + "-bool.txt")
+	if err != nil {
+		log.Fatal("Cannot create file", err)
+	}
+	//defer p.BoolFile.Close()
+
+	p.AttractionFile, err = os.Create(p.OutputFileNameCM + "-attraction.txt")
+	if err != nil {
+		log.Fatal("Cannot create file", err)
+	}
+	//defer p.AttractionFile.Close()
+}
+
+
+func SetupParameters(p *Params) {
+
+	p.XDiv = p.MaxX / p.SquareColCM
+	p.YDiv = p.MaxY / p.SquareRowCM
+
+	//The capacity for a square should be equal to the area of the square
+	//So we take the side length (xDiv) and square it
+	p.SquareCapacity = int(math.Pow(float64(p.XDiv), 2))
+
+	//Center of the p.Grid
+	p.Center.X = p.MaxX / 2
+	p.Center.Y = p.MaxY / 2
+
+	p.TotalPercentBatteryToUse = float32(p.ThresholdBatteryToUseCM)
+	p.BatteryCharges = GetLinearBatteryValues(len(p.Npos))
+	p.BatteryLosses = GetLinearBatteryLossConstant(len(p.Npos), float32(p.NaturalLossCM))
+	p.BatteryLossesCheckingSensorScalar = GetLinearBatteryLossConstant(len(p.Npos), float32(p.SensorSamplingLossCM))
+	p.BatteryLossesCheckingGPSScalar = GetLinearBatteryLossConstant(len(p.Npos), float32(p.GPSSamplingLossCM))
+	p.BatteryLossesCheckingServerScalar = GetLinearBatteryLossConstant(len(p.Npos), float32(p.ServerSamplingLossCM))
+	p.Attractions = make([]*Attraction, p.NumAtt)
+
+	readCSV(p)
+
+
+}
+
+
+func readCSV(p *Params) {
+
+	in, err := os.Open(p.SensorPath)
+	if err != nil {
+		println("error opening file")
+	}
+	defer in.Close()
+
+	r := csv.NewReader(in)
+	r.FieldsPerRecord = -1
+	record, err := r.ReadAll()
+
+	reg, _ := regexp.Compile("t=([0-9]+)")
+	times := (reg.FindAllStringSubmatch(strings.Join(record[8], " "), -1))
+
+	p.SensorTimes = make([]int, len(times))
+	for i := range times {
+		p.SensorTimes[i], _ = strconv.Atoi(times[i][1])
+	}
+
+	/*fmt.Println(err)
+	fmt.Println(len(record))*/
+	big := 0.0
+	topVal := 0.0
+	i := 9
+
+	numSamples := len(record[9])-2
+
+	p.SensorReadings = make([][][] float64, p.Width)
+	for i := range p.SensorReadings {
+		p.SensorReadings[i] = make([][] float64, p.Height)
+		for j := range p.SensorReadings[i] {
+			p.SensorReadings[i][j] = make([] float64, numSamples)
+			for k := range p.SensorReadings[i][j] {
+				p.SensorReadings[i][j][k] = 0
+			}
+		}
+	}
+
+	averaged := make([][][] float64, p.Width)
+	for i := range averaged {
+		averaged[i] = make([][] float64, p.Height)
+		for j := range averaged[i] {
+			averaged[i][j] = make([] float64, numSamples)
+			for k := range averaged[i][j] {
+				averaged[i][j][k] = -1
+			}
+		}
+	}
+
+	for i < len(record) {
+		//fmt.Println(record[i])
+		x, err := strconv.ParseFloat(record[i][0], 32);
+		/*if err == nil {
+			fmt.Println(Round(x, 0.5))
+		} else {
+			fmt.Println(err)
+		}*/
+		if x > big {
+			big = x
+		}
+		y, err := strconv.ParseFloat(record[i][1], 32);
+		/*if err == nil {
+			fmt.Println(Round(y, 0.5))
+		}*/
+		if y > big {
+			big = y
+		}
+		j := 2
+		/*fmt.Printf("%v %v\n", int(x*2), int(y*2))
+		fmt.Printf("%v\n", len(record[i]))*/
+		if (int(x*2) < p.Width && int(y*2) < p.Height) {
+			for j < len(record[i]) {
+				read1, _ := strconv.ParseFloat(record[i][j], 32);
+				if err == nil {
+					//fmt.Printf("%e ", read1)
+				}
+
+				//fmt.Printf("%v %v %v\n", int(x*2), int(y*2), j-2)
+				p.SensorReadings[int(x*2)][int(y*2)][j-2] = read1
+				if read1 > topVal {
+					topVal = read1
+				}
+
+				j += 1
+			}
+		}
+		//fmt.Println()
+		fmt.Printf("\r%d\\%d", i, len(record))
+		i++
+	}
+
+
+
+
+
+	fmt.Printf("\ntop: %v\n", topVal)
+
+
+	cw := 7
+	ch := 7
+	divider := 1.0/float64(cw * ch)
+	radius := cw / 2
+
+	for k := range p.SensorReadings[0][0] {
+		for i := range p.SensorReadings {
+			for j := range p.SensorReadings[i] {
+				total := 0.0
+				for ci := radius; ci >= radius * -1; ci-- {
+					for cj := radius; cj >= radius * -1; cj-- {
+						if i+ci > 0 && i + ci < p.Width && j+cj > 0 && j+cj < p.Height {
+							total += p.SensorReadings[i+ci][j+cj][k] * divider
+						}
+					}
+				}
+				averaged[i][j][k] = total
+			}
+		}
+	}
+
+	for k := range p.SensorReadings[0][0] {
+		for i := range p.SensorReadings {
+			for j := range p.SensorReadings[i] {
+				p.SensorReadings[i][j][k] = averaged[i][j][k]
+			}
+		}
+	}
 }
 
 // This prints the board map to the terminal

@@ -2,6 +2,7 @@ package cps
 
 import (
 	"math"
+	"fmt"
 )
 
 type Tuple struct {
@@ -168,4 +169,210 @@ func GetPath(c1, c2 Coord, r *RegionParams) []Coord {
 	}
 
 	return ret_path
+}
+
+func GenerateRouting(p *Params, r *RegionParams) {
+	fmt.Println("Beginning Region Routing")
+
+	/*
+		for x := 0; x < 200; x ++ {
+			for y := 0; y < 200; y++ {
+				if r.Point_dict[cps.Tuple{x, y}] {
+					fmt.Print("_")
+				} else {
+					fmt.Print("X")
+				}
+			}
+			fmt.Println()
+		}
+		fmt.Println(img.At(203, 26).RGBA())*/
+
+	id_counter := 0
+	done := false
+	//for len(r.Point_list) != 0 {
+	for !done {
+		top_left := Tuple{-1, -1}
+		for x := 0; x < p.Height; x++ {
+			for y := 0; y < p.Width; y++ {
+				//fmt.Printf("X: %d, Y: %d, v: %d", x, y, r.Point_list2[x][y])
+				if r.Point_list2[x][y] {
+					top_left = Tuple{x, y}
+					break
+				}
+			}
+			if (top_left != Tuple{-1, -1}) {
+				break
+			}
+		}
+		//fmt.Printf("working %d %d\n", top_left.X, top_left.Y)
+		if (top_left == Tuple{-1, -1}) {
+			done = true
+			break
+		}
+		//top_left := r.Point_list[0]
+		temp := Tuple{top_left.X, top_left.Y}
+
+		for r.Point_dict[Tuple{temp.X + 1, temp.Y}] {
+			temp.X += 1
+		}
+
+		collide := false
+		y_test := Tuple{top_left.X, top_left.Y}
+
+		for !collide {
+			y_test.Y += 1
+
+
+			for x_val := top_left.X; x_val < temp.X; x_val++ {
+				if !r.Point_dict[Tuple{x_val, y_test.Y}] {
+					collide = true
+				}
+			}
+		}
+
+		bottom_right := Tuple{temp.X, y_test.Y - 1}
+
+		//fmt.Println(top_left.X, bottom_right.X, top_left.Y, bottom_right.Y)
+
+		new_square := RoutingSquare{top_left.X, bottom_right.X, top_left.Y, bottom_right.Y, true, id_counter, make([]Tuple, 0)}
+		id_counter++
+		//fmt.Println("start_r_square")
+		RemoveRoutingSquare(new_square, r)
+		//fmt.Println("end_r_square")
+		r.Square_list = append(r.Square_list, new_square)
+	}
+
+	length := len(r.Square_list)
+	for y, _ := range r.Square_list {
+		square := r.Square_list[y]
+		r.Square_list[y].Routers = make([]Tuple, length)
+
+		for z := y + 1; z < len(r.Square_list); z++ {
+			new_square := r.Square_list[z]
+
+			if new_square.X1 >= square.X1 && new_square.X2 <= square.X2 {
+				if new_square.Y1 == square.Y2+1 {
+					r.Border_dict[y] = append(r.Border_dict[y], z)
+					r.Border_dict[z] = append(r.Border_dict[z], y)
+
+				} else if new_square.Y2 == square.Y1-1 {
+					r.Border_dict[y] = append(r.Border_dict[y], z)
+					r.Border_dict[z] = append(r.Border_dict[z], y)
+				}
+			} else if new_square.Y1 >= square.Y1 && new_square.Y2 <= square.Y2 {
+				if new_square.X1 == square.X2+1 {
+					r.Border_dict[y] = append(r.Border_dict[y], z)
+					r.Border_dict[z] = append(r.Border_dict[z], y)
+
+				} else if new_square.X2 == square.X1-1 {
+					r.Border_dict[y] = append(r.Border_dict[y], z)
+					r.Border_dict[z] = append(r.Border_dict[z], y)
+				}
+			}
+			if square.X1 >= new_square.X1 && square.X2 <= new_square.X2 {
+				if square.Y1 == new_square.Y2+1 {
+					r.Border_dict[y] = append(r.Border_dict[y], z)
+					r.Border_dict[z] = append(r.Border_dict[z], y)
+
+				} else if square.Y2 == new_square.Y1-1 {
+					r.Border_dict[y] = append(r.Border_dict[y], z)
+					r.Border_dict[z] = append(r.Border_dict[z], y)
+				}
+			} else if square.Y1 >= new_square.Y1 && square.Y2 <= new_square.Y2 {
+				if square.X1 == new_square.X2+1 {
+					r.Border_dict[y] = append(r.Border_dict[y], z)
+					r.Border_dict[z] = append(r.Border_dict[z], y)
+
+				} else if square.X2 == new_square.X1-1 {
+					r.Border_dict[y] = append(r.Border_dict[y], z)
+					r.Border_dict[z] = append(r.Border_dict[z], y)
+				}
+			}
+		}
+	}
+	//fmt.Println(r.Border_dict)
+
+	//Cutting takes place in this loop
+	for true {
+		rebuilt := false
+
+		for i := 0; i < len(r.Square_list) && !rebuilt; i++ {
+
+			for _, n := range r.Border_dict[i] {
+
+				s_rat := Side_ratio(r.Square_list[i], r.Square_list[n])
+				if s_rat > 0.6 {
+					new_squares := Single_cut(r.Square_list[i], r.Square_list[n])
+
+					s1 := r.Square_list[n]
+					s2 := r.Square_list[i]
+
+					Square_list_remove(s1, r)
+					Square_list_remove(s2, r)
+
+					r.Square_list = append(r.Square_list, new_squares...)
+
+					Rebuild(r.Square_list, r)
+
+					rebuilt = true
+
+					break
+				}
+
+				a_rat := Area_ratio(r.Square_list[i], r.Square_list[n])
+				if a_rat > 0.6 {
+					new_squares := Double_cut(r.Square_list[i], r.Square_list[n])
+
+					s1 := r.Square_list[n]
+					s2 := r.Square_list[i]
+
+					Square_list_remove(s1, r)
+					Square_list_remove(s2, r)
+
+					new_squares[2].Id_num = len(r.Square_list)
+
+					r.Square_list = append(r.Square_list, new_squares...)
+
+					Rebuild(r.Square_list, r)
+
+					rebuilt = true
+
+					break
+				}
+			}
+		}
+
+		if !rebuilt {
+			break
+		}
+	}
+
+
+
+	r.Node_tables = make([]map[Tuple]float64, len(r.Square_list))
+
+	for key, values := range r.Border_dict {
+		if key < len(r.Square_list) {
+			r.Node_tables[key] = make(map[Tuple]float64)
+			if len(values) > 1 {
+				for n := 0; n < len(values); n++ {
+					next := n + 1
+					for next < len(values) {
+						node_a := r.Border_dict[key][n]
+						node_b := r.Border_dict[key][next]
+
+						p1 := r.Square_list[key].Routers[node_a]
+						p2 := r.Square_list[key].Routers[node_b]
+
+						r.Node_tables[key][Tuple{node_a, node_b}] = Dist(p1, p2)
+						r.Node_tables[key][Tuple{node_b, node_a}] = Dist(p1, p2)
+
+						next += 1
+					}
+				}
+			}
+		}
+	}
+
+
 }
