@@ -57,6 +57,12 @@ type NodeImpl struct {
 	BatteryLossCheckingSensorScalar float32  //sensor based battery loss of node
 	BatteryLossGPSScalar            float32  //GPS based battery loss of node
 	BatteryLossCheckingServerScalar float32  //server communication based battery loss of node
+
+	BatteryLossBT					float32
+	BatteryLossWifi					float32
+	BatteryLoss4G					float32
+	BatteryLossAccelerometer		float32
+
 	ToggleCheckIterator             int      //node's personal iterator mostly for cascading pings
 	HasCheckedSensor                bool     //did the node just ping the sensor?
 	TotalChecksSensor               int      //total sensor pings of node

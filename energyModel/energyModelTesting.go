@@ -480,7 +480,11 @@ func makeNodes() {
 				Cascade: i, Battery: p.BatteryCharges[i], BatteryLossScalar: p.BatteryLosses[i],
 				BatteryLossCheckingSensorScalar: p.BatteryLossesSensor[i],
 				BatteryLossGPSScalar:            p.BatteryLossesGPS[i],
-				BatteryLossCheckingServerScalar: p.BatteryLossesServer[i]})
+				BatteryLossCheckingServerScalar: p.BatteryLossesServer[i],
+				BatteryLossBT:					 p.BatteryLossesBT[i],
+				BatteryLossWifi:				 p.BatteryLossesWiFi[i],
+				BatteryLoss4G:					 p.BatteryLosses4G[i],
+				BatteryLossAccelerometer:		 p.BatteryLossesAccelerometer[i]})
 
 			p.NodeList[len(p.NodeList)-1].SetConcentration(((1000) / (math.Pow((float64(p.NodeList[len(p.NodeList)-1].GeoDist(*p.B))/0.2)*0.25, 1.5))))
 
