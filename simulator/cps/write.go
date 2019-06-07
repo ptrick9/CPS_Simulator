@@ -733,7 +733,8 @@ func SetupFiles(p *Params) {
 	fmt.Fprintln(p.DriftFile, "Input File Name:", p.InputFileNameCM)
 	fmt.Fprintln(p.DriftFile, "Output File Name:", p.OutputFileNameCM)
 	fmt.Fprintln(p.DriftFile, "Battery Natural Loss:", p.NaturalLossCM)
-	fmt.Fprintln(p.DriftFile, "Sensor Loss:", p.SensorSamplingLossCM, "\nGPS Loss:", p.GPSSamplingLossCM, "\nServer Loss:", p.ServerSamplingLossCM)
+	fmt.Fprintln(p.DriftFile, "Sensor Loss:", p.SamplingLossServerCM, "\nGPS Loss:", p.SamplingLossGPSCM, "\nServer Loss:", p.SamplingLossServerCM)
+	fmt.Fprintln(p.DriftFile, "BlueTooth Loss:", p.SamplingLossBTCM, "\nWiFi Loss:", p.SamplingLossWifiCM, "\n4G Loss:", p.SamplingLoss4GCM, "\nAccelerometer Loss:", p.SamplingLossAccelCM)
 	fmt.Fprintln(p.DriftFile, "Printing Position:", p.PositionPrint, "\nPrinting Energy:", p.EnergyPrint, "\nPrinting Nodes:", p.NodesPrint)
 	fmt.Fprintln(p.DriftFile, "Super Nodes:", p.NumSuperNodes, "\nSuper Node Type:", p.SuperNodeType, "\nSuper Node Speed:", p.SuperNodeSpeed, "\nSuper Node Radius:", p.SuperNodeRadius)
 	fmt.Fprintln(p.DriftFile, "Error Multiplier:", p.ErrorModifierCM)
@@ -797,9 +798,17 @@ func SetupParameters(p *Params) {
 	p.TotalPercentBatteryToUse = float32(p.ThresholdBatteryToUseCM)
 	p.BatteryCharges = GetLinearBatteryValues(len(p.Npos))
 	p.BatteryLosses = GetLinearBatteryLossConstant(len(p.Npos), float32(p.NaturalLossCM))
-	p.BatteryLossesCheckingSensorScalar = GetLinearBatteryLossConstant(len(p.Npos), float32(p.SensorSamplingLossCM))
-	p.BatteryLossesCheckingGPSScalar = GetLinearBatteryLossConstant(len(p.Npos), float32(p.GPSSamplingLossCM))
-	p.BatteryLossesCheckingServerScalar = GetLinearBatteryLossConstant(len(p.Npos), float32(p.ServerSamplingLossCM))
+
+	//updated because of the variable renaming to BatteryLosses__ and SamplingLoss__CM
+	p.BatteryLossesSensor = GetLinearBatteryLossConstant(len(p.Npos), float32(p.SamplingLossSensorCM))
+	p.BatteryLossesGPS = GetLinearBatteryLossConstant(len(p.Npos), float32(p.SamplingLossGPSCM))
+	p.BatteryLossesServer = GetLinearBatteryLossConstant(len(p.Npos), float32(p.SamplingLossServerCM))
+	//newly added for BlueTooth, Wifi, 4G, and Accelerometer battery usage
+	p.BatteryLossesBT = GetLinearBatteryLossConstant(len(p.Npos), float32(p.SamplingLossBTCM))
+	p.BatteryLossesWiFi = GetLinearBatteryLossConstant(len(p.Npos), float32(p.SamplingLossWifiCM))
+	p.BatteryLosses4G = GetLinearBatteryLossConstant(len(p.Npos), float32(p.SamplingLoss4GCM))
+	p.BatteryLossesAccelerometer = GetLinearBatteryLossConstant(len(p.Npos), float32((p.SamplingLossAccelCM)))
+
 	p.Attractions = make([]*Attraction, p.NumAtt)
 
 	//readCSV(p)

@@ -478,9 +478,9 @@ func makeNodes() {
 
 			p.NodeList = append(p.NodeList, cps.NodeImpl{X: xx, Y: yy, Id: len(p.NodeList), SampleHistory: initHistory, Concentration: 0,
 				Cascade: i, Battery: p.BatteryCharges[i], BatteryLossScalar: p.BatteryLosses[i],
-				BatteryLossCheckingSensorScalar: p.BatteryLossesCheckingSensorScalar[i],
-				BatteryLossGPSScalar:            p.BatteryLossesCheckingGPSScalar[i],
-				BatteryLossCheckingServerScalar: p.BatteryLossesCheckingServerScalar[i]})
+				BatteryLossCheckingSensorScalar: p.BatteryLossesSensor[i],
+				BatteryLossGPSScalar:            p.BatteryLossesGPS[i],
+				BatteryLossCheckingServerScalar: p.BatteryLossesServer[i]})
 
 			p.NodeList[len(p.NodeList)-1].SetConcentration(((1000) / (math.Pow((float64(p.NodeList[len(p.NodeList)-1].GeoDist(*p.B))/0.2)*0.25, 1.5))))
 
@@ -531,12 +531,23 @@ func getFlags() {
 		"Name of the output text file prefix")
 	flag.Float64Var(&p.NaturalLossCM, "naturalLoss", .005,
 		"battery loss due to natural causes")
-	flag.Float64Var(&p.SensorSamplingLossCM, "sensorSamplingLoss", .001,
+
+	flag.Float64Var(&p.SamplingLossSensorCM, "SamplingLossSensorCM", .001,
 		"battery loss due to sensor sampling")
-	flag.Float64Var(&p.GPSSamplingLossCM, "GPSSamplingLoss", .005,
+	flag.Float64Var(&p.SamplingLossGPSCM, "SamplingLossGPSCM", .005,
 		"battery loss due to GPS sampling")
-	flag.Float64Var(&p.ServerSamplingLossCM, "serverSamplingLoss", .01,
+	flag.Float64Var(&p.SamplingLossServerCM, "SamplingLossServerCM", .01,
 		"battery loss due to server sampling")
+
+	flag.Float64Var(&p.SamplingLossBTCM, "SamplingLossBTCM", .0001,
+		"battery loss due to BlueTooth sampling")
+	flag.Float64Var(&p.SamplingLossWifiCM, "SamplingLossWifiCM", .001,
+		"battery loss due to WiFi sampling")
+	flag.Float64Var(&p.SamplingLoss4GCM, "SamplingLoss4GCM", .005,
+		"battery loss due to 4G sampling")
+	flag.Float64Var(&p.SamplingLossAccelCM, "SamplingLossAccelCM", .001,
+		"battery loss due to accelerometer sampling")
+
 	flag.IntVar(&p.ThresholdBatteryToHaveCM, "thresholdBatteryToHave", 30,
 		"Threshold battery phones should have")
 	flag.IntVar(&p.ThresholdBatteryToUseCM, "thresholdBatteryToUse", 10,
@@ -620,9 +631,15 @@ func getFlags() {
 
 	flag.Parse()
 	fmt.Println("Natural Loss: ", p.NaturalLossCM)
-	fmt.Println("Sensor Sampling Loss: ", p.SensorSamplingLossCM)
-	fmt.Println("GPS sampling loss: ", p.GPSSamplingLossCM)
-	fmt.Println("Server sampling loss", p.ServerSamplingLossCM)
+	fmt.Println("Sensor Sampling Loss: ", p.SamplingLossSensorCM)
+	fmt.Println("GPS sampling loss: ", p.SamplingLossGPSCM)
+	fmt.Println("Server sampling loss", p.SamplingLossServerCM)
+
+	fmt.Println("BlueTooth sampling loss: ", p.SamplingLossBTCM)
+	fmt.Println("WiFi sampling loss", p.SamplingLossWifiCM)
+	fmt.Println("4G sampling loss: ", p.SamplingLoss4GCM)
+	fmt.Println("Accelerometer sampling loss", p.SamplingLossAccelCM)
+
 	fmt.Println("Threshold Battery to use: ", p.ThresholdBatteryToUseCM)
 	fmt.Println("Threshold battery to have: ", p.ThresholdBatteryToHaveCM)
 	fmt.Println("Moving speed for incresed sampling: ", p.MovementSamplingSpeedCM)
