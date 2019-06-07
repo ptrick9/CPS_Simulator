@@ -312,9 +312,7 @@ func main() {
 		p.PositionFile.Sync()
 
 		fmt.Fprintln(p.EnergyFile, "Amount:", len(p.NodeList))
-
 		cps.HandleMovement(p)
-
 
 		fmt.Fprintln(p.RoutingFile, "Amount:", p.NumSuperNodes)
 
