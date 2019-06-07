@@ -194,6 +194,8 @@ func (n *NodeImpl) Distance(b Bomb) float32 {
 	}
 }
 
+
+
 // These are the toString methods for battery levels
 func (n Bn) String() string { // extra extra string statements
 	return fmt.Sprintf("x: %v y: %v Xspeed: %v Yspeed: %v id: %v battery: %v sensor checked: %v sensor checks: %v GPS checked: %v GPS checks: %v server checked: %v server checks: %v buffer: %v ", n.X, n.Y, n.X_speed, n.Y_speed, n.Id, n.Battery, n.HasCheckedSensor, n.TotalChecksSensor, n.HasCheckedGPS, n.TotalChecksGPS, n.HasCheckedServer, n.TotalChecksServer, n.BufferI)

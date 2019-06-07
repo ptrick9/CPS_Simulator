@@ -415,6 +415,31 @@ func CreateBoard(x int, y int, p *Params) {
 	}
 }
 
+func HandleMovement(p *Params) {
+	for j := 0; j < len(p.NodeList); j++ {
+
+		oldX, oldY := p.NodeList[j].GetLoc()
+		p.BoolGrid[oldY][oldX] = false //set the old spot false since the node will now move away
+
+		//move the node to its new location
+		p.NodeList[j].Move(p)
+
+		//set the new location in the boolean field to true
+		newX, newY := p.NodeList[j].GetLoc()
+		p.BoolGrid[newY][newX] = true
+
+		//writes the node information to the file
+		if p.EnergyPrint {
+			fmt.Fprintln(p.EnergyFile, p.NodeList[j])
+		}
+
+		//Add the node into its new Square's p.NumNodes
+		//If the node hasn't left the square, that Square's p.NumNodes will
+		//remain the same after these calculations
+	}
+}
+
+
 // Fills the walls into the board based on the wall positions extrapolated from the file
 func FillInWallsToBoard(p *Params) {
 	for i := 0; i < len(p.Wpos); i++ {
