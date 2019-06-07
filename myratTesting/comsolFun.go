@@ -302,8 +302,8 @@ func main() {
 					p.NodeList[i].HasCheckedSensor = true
 					p.NodeList[i].Sitting = 0
 				}
-				p.NodeList[i].GetReadingsCSV(p)
-				//p.NodeList[i].GetReadings(p)
+				//p.NodeList[i].GetReadingsCSV(p)
+				p.NodeList[i].GetReadings(p)
 			}(i)
 		}
 		wg.Wait()

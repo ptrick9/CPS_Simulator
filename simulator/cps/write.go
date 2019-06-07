@@ -777,7 +777,7 @@ func SetupParameters(p *Params) {
 	p.BatteryLossesCheckingServerScalar = GetLinearBatteryLossConstant(len(p.Npos), float32(p.ServerSamplingLossCM))
 	p.Attractions = make([]*Attraction, p.NumAtt)
 
-	readCSV(p)
+	//readCSV(p)
 
 
 }

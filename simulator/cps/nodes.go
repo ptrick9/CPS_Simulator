@@ -693,7 +693,6 @@ func (n *NodeImpl) BatteryLossMostDynamic(p *Params) {
 			n.ServerPingPeriod = float32(p.Iterations_of_event)
 		}
 		if n.ToggleCheckIterator-n.Cascade == 0 {
-			//fmt.Println("what?")
 			n.ToggleCheckIterator = n.Cascade + 1
 		}
 		// Check to ping server
