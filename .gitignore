@@ -131,7 +131,9 @@ Log-simulatorOutput\.txt
 
 big_data/old2/
 
-*.png
+big_data/*.png
+
+pedsim/**/*.png
 
 -simulatorOutput\.txt
 
