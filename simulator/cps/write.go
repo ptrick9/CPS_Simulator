@@ -59,6 +59,7 @@ var (
 	//fileName = "Log1_in.txt"
 
 	makeBoardMapFile = true
+	NodePositionMap			map[Tuple]*NodeImpl
 )
 
 //func main() {
@@ -944,6 +945,67 @@ func readCSV(p *Params) {
 			}
 		}
 	}
+	
+}
+
+//returns all of the nodes a radial distance from the current node
+func NodesInRadius(curNode * NodeImpl, p * Params, radius int)(map[Tuple]*NodeImpl) {
+	var gridMaxX = p.MaxX;
+	var gridMaxY = p.MaxY;
+
+	var nodesInRadius = map[Tuple]*NodeImpl{}
+
+	var negRadius = -1*radius;
+
+	//iterate over the Grid by row and column
+	for row := negRadius; row<=radius; row++{
+		for col := negRadius; col<=radius; col++{
+			//do not include current node in list of nodes in radius
+			if(row == 0 && col == 0){
+				continue
+			}
+
+			var testX = curNode.X + col					//test X value
+			var testY = curNode.Y + row					//test Y value
+			var testTup = Tuple{testX, testY}	//create Tuple from test X and Y values
+			if(testX < gridMaxX && testX >= 0){			//if the testX value is on the grid, continue
+				if(testY < gridMaxY && testY >= 0){		//if the testY value is on the grid, continue
+					if(NodePositionMap[testTup] != nil){	//if the test position has a Node, continue
+						nodesInRadius[testTup] = NodePositionMap[testTup]	//add the node to the nodesInRadius map
+					}
+				}
+			}
+		}
+	}
+	return nodesInRadius
+}
+
+//returns all of the nodes dist squares away from the current node
+func NodesWithinDistance(curNode * NodeImpl, p * Params, dist int)(map[Tuple]*NodeImpl){
+	var gridMaxX = p.MaxX;
+	var gridMaxY = p.MaxY;
+	var nodesWithinDist = p.Grid[curNode.Y][curNode.X].NodesInSquare //initialize to nodes in current square
+	var negDist = -1*dist;
+
+	for row := negDist; row<=dist; row++ {
+		for col := negDist; col <= dist; col++ {
+
+			var testX = p.Grid[curNode.Y][curNode.X].X + col		//X value of test Square
+			var testY = p.Grid[curNode.Y][curNode.X].Y + row		//Y value of test Square
+
+			if(testX < gridMaxX && testX >= 0){			//if the testX value is on the grid, continue
+				if(testY < gridMaxY && testY >= 0){		//if the testY value is on the grid, continue
+					var testSquare =  p.Grid[testY][testX] 			//create Square from test X and Y values
+					if(testSquare != nil){					//if the test Square is not null, continue
+						for ind,val := range testSquare.NodesInSquare{	//iterate through nodes in square map adding each to the
+							nodesWithinDist[ind] = val;					//nodes within Distance Map
+						}
+					}
+				}
+			}
+		}
+	}
+	return nodesWithinDist
 }
 
 // This prints the board map to the terminal

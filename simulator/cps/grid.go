@@ -30,26 +30,26 @@ type Square struct {
 	HasDetected  bool
 
 	CanBeTravelledTo []bool
-	NodesInSquare	 map[int]*NodeImpl;
+	NodesInSquare	 map[Tuple]*NodeImpl;
 }
 
 //Adds a node to this Square, increasing its numNodes
 func (s *Square) AddNode(n * NodeImpl) {
-	s.NodesInSquare[n.GetID()] = n;
+	s.NodesInSquare[Tuple{n.X,n.Y}] = n;
 	s.NumNodes += 1
 
 }
 
 //returns map of all nodes in the same Square (NodesInSquare)
-func (s *Square) nearbyNodes () (map[int]*NodeImpl){
+func (s *Square) nearbyNodes () (map[Tuple]*NodeImpl){
 	return s.NodesInSquare
 }
 
 //Removes a node from this Square, decreasing its numNodes
 func (s *Square) RemoveNode(n * NodeImpl) {
-	var s_temp = s.NodesInSquare[n.GetID()]
+	var s_temp = s.NodesInSquare[Tuple{n.X,n.Y}]
 	if s_temp == n{ //checks if node is in Square before deleting from square, avoids exception
-		delete(s.NodesInSquare, n.GetID());
+		delete(s.NodesInSquare, Tuple{n.X,n.Y});
 		s.NumNodes -= 1
 	}
 }
