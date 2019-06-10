@@ -983,8 +983,8 @@ func NodesInRadius(curNode * NodeImpl, p * Params, radius int)(map[Tuple]*NodeIm
 
 //returns all of the nodes a distance of "dist" squares away from the current node
 func NodesWithinDistance(curNode * NodeImpl, p * Params, dist int)(map[Tuple]*NodeImpl){
-	var gridMaxX = p.SquareRowCM;
-	var gridMaxY = p.SquareColCM;
+	var gridMaxX = p.SquareRowCM;	//set max to max Square
+	var gridMaxY = p.SquareColCM;	//set max to max Square
 	var nodesWithinDist = p.Grid[curNode.X][curNode.Y].NodesInSquare //initialize to nodes in current square, will hold
 	var negDist = -1*dist;											 //all nodes within the distance dist
 

@@ -453,8 +453,6 @@ func main() {
 	for i := range p.BoolGrid {
 		fmt.Fprintln(p.BoolFile, p.BoolGrid[i])
 	}
-
-
 }
 
 func makeNodes() {
