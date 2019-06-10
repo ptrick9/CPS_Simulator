@@ -948,7 +948,7 @@ func readCSV(p *Params) {
 	
 }
 
-//returns all of the nodes a radial distance from the current node
+//returns all of the nodes a radial distance "radius" from the current node
 func NodesInRadius(curNode * NodeImpl, p * Params, radius int)(map[Tuple]*NodeImpl) {
 	var gridMaxX = p.MaxX;
 	var gridMaxY = p.MaxY;
@@ -980,15 +980,18 @@ func NodesInRadius(curNode * NodeImpl, p * Params, radius int)(map[Tuple]*NodeIm
 	return nodesInRadius
 }
 
-//returns all of the nodes dist squares away from the current node
+//returns all of the nodes a distance of "dist" squares away from the current node
 func NodesWithinDistance(curNode * NodeImpl, p * Params, dist int)(map[Tuple]*NodeImpl){
 	var gridMaxX = p.MaxX;
 	var gridMaxY = p.MaxY;
-	var nodesWithinDist = p.Grid[curNode.Y][curNode.X].NodesInSquare //initialize to nodes in current square
-	var negDist = -1*dist;
+	var nodesWithinDist = p.Grid[curNode.Y][curNode.X].NodesInSquare //initialize to nodes in current square, will hold
+	var negDist = -1*dist;											 //all nodes within the distance dist
 
 	for row := negDist; row<=dist; row++ {
 		for col := negDist; col <= dist; col++ {
+			if(row == 0 && col == 0){ //do not need to do for current square since initialized to it
+				continue
+			}
 
 			var testX = p.Grid[curNode.Y][curNode.X].X + col		//X value of test Square
 			var testY = p.Grid[curNode.Y][curNode.X].Y + row		//Y value of test Square
