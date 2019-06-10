@@ -237,7 +237,8 @@ func main() {
 
 			p.Grid[i][j] = &cps.Square{i, j, 0.0, 0, make([]float32, p.NumGridSamples),
 				p.NumGridSamples, 0.0, 0, 0, false,
-				0.0, 0.0, false, travelList,  map[cps.Tuple]*cps.NodeImpl{}}
+				0.0, 0.0, false, travelList, make(map[cps.Tuple]*cps.NodeImpl)}
+			p.Grid[i][j].NodesInSquare = make(map[cps.Tuple]*cps.NodeImpl)
 		}
 	}
 
@@ -506,6 +507,10 @@ func makeNodes() {
 
 			p.BoolGrid[xx][yy] = true
 
+			cps.NodePositionMap[cps.Tuple{xx,yy}] = &p.NodeList[len(p.NodeList)-1]; //add Node to the position Map
+			var r = xx/p.SquareRowCM 	//scale down based off number of squares per row
+			var c = yy/p.SquareColCM	//scale down based off number of squares per column
+			p.Grid[r][c].NodesInSquare[cps.Tuple{xx,yy}] = &p.NodeList[len(p.NodeList)-1]; //add node to NodesInSquare based off 8x8 squares
 		}
 	}
 }

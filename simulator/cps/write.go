@@ -405,8 +405,9 @@ func Check(e error) {
 	}
 }
 
-// Creates p.BoardMap
+// Creates p.BoardMap, intializes NodePositionMap
 func CreateBoard(x int, y int, p *Params) {
+	NodePositionMap = make(map[Tuple]*NodeImpl)
 	p.BoardMap = [][]int{}
 	for i := 0; i < y; i++ {
 		p.BoardMap = append(p.BoardMap, []int{})
@@ -982,9 +983,9 @@ func NodesInRadius(curNode * NodeImpl, p * Params, radius int)(map[Tuple]*NodeIm
 
 //returns all of the nodes a distance of "dist" squares away from the current node
 func NodesWithinDistance(curNode * NodeImpl, p * Params, dist int)(map[Tuple]*NodeImpl){
-	var gridMaxX = p.MaxX;
-	var gridMaxY = p.MaxY;
-	var nodesWithinDist = p.Grid[curNode.Y][curNode.X].NodesInSquare //initialize to nodes in current square, will hold
+	var gridMaxX = p.SquareRowCM;
+	var gridMaxY = p.SquareColCM;
+	var nodesWithinDist = p.Grid[curNode.X][curNode.Y].NodesInSquare //initialize to nodes in current square, will hold
 	var negDist = -1*dist;											 //all nodes within the distance dist
 
 	for row := negDist; row<=dist; row++ {
@@ -993,8 +994,8 @@ func NodesWithinDistance(curNode * NodeImpl, p * Params, dist int)(map[Tuple]*No
 				continue
 			}
 
-			var testX = p.Grid[curNode.Y][curNode.X].X + col		//X value of test Square
-			var testY = p.Grid[curNode.Y][curNode.X].Y + row		//Y value of test Square
+			var testX = p.Grid[curNode.X][curNode.Y].X + col		//X value of test Square
+			var testY = p.Grid[curNode.X][curNode.Y].Y + row		//Y value of test Square
 
 			if(testX < gridMaxX && testX >= 0){			//if the testX value is on the grid, continue
 				if(testY < gridMaxY && testY >= 0){		//if the testY value is on the grid, continue
