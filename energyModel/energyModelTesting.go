@@ -505,7 +505,7 @@ func makeNodes() {
 
 			p.BoolGrid[xx][yy] = true
 
-			cps.NodePositionMap[cps.Tuple{xx,yy}] = &p.NodeList[len(p.NodeList)-1]; //add Node to the position Map
+			p.NodePositionMap[cps.Tuple{xx,yy}] = &p.NodeList[len(p.NodeList)-1]; //add Node to the position Map
 			var r = xx/p.SquareRowCM 	//scale down based off number of squares per row
 			var c = yy/p.SquareColCM	//scale down based off number of squares per column
 			p.Grid[r][c].NodesInSquare[cps.Tuple{xx,yy}] = &p.NodeList[len(p.NodeList)-1]; //add node to NodesInSquare based off 8x8 squares

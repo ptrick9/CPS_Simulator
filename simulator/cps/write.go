@@ -59,7 +59,6 @@ var (
 	//fileName = "Log1_in.txt"
 
 	makeBoardMapFile = true
-	NodePositionMap			map[Tuple]*NodeImpl
 )
 
 //func main() {
@@ -971,8 +970,8 @@ func NodesInRadius(curNode * NodeImpl, p * Params, radius int)(map[Tuple]*NodeIm
 			var testTup = Tuple{testX, testY}	//create Tuple from test X and Y values
 			if(testX < gridMaxX && testX >= 0){			//if the testX value is on the grid, continue
 				if(testY < gridMaxY && testY >= 0){		//if the testY value is on the grid, continue
-					if(NodePositionMap[testTup] != nil){	//if the test position has a Node, continue
-						nodesInRadius[testTup] = NodePositionMap[testTup]	//add the node to the nodesInRadius map
+					if(p.NodePositionMap[testTup] != nil){	//if the test position has a Node, continue
+						nodesInRadius[testTup] = p.NodePositionMap[testTup]	//add the node to the nodesInRadius map
 					}
 				}
 			}

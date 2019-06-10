@@ -163,5 +163,5 @@ type Params struct{
 	Width 			int
 	Height 			int
 
-
+	NodePositionMap			map[Tuple]*NodeImpl
 }
