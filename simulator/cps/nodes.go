@@ -248,6 +248,7 @@ func (n *NodeImpl) Move(p *Params) {
 
 			up := GridSpot{n.X, n.Y - 1, p.BoardMap[n.Y-1][n.X]}
 			potentialSpots = append(potentialSpots, up)
+
 		}
 		if n.X+1 < len(p.BoardMap[n.Y]) &&
 			n.X+1 >= 0 &&
@@ -300,8 +301,15 @@ func (n *NodeImpl) Move(p *Params) {
 		}
 
 		if n.X/p.XDiv != n.OldX || n.Y/p.YDiv != n.OldY {
+			//may be redundant with the implementation below
 			p.Grid[n.Y/p.YDiv][n.X/p.XDiv].ActualNumNodes = p.Grid[n.Y/p.YDiv][n.X/p.XDiv].ActualNumNodes + 1
 			p.Grid[n.OldY][n.OldX].ActualNumNodes = p.Grid[n.OldY][n.OldX].ActualNumNodes - 1
+
+			//New Impl: Updates NumNodes (int) and NodeinSquare (map)
+			//leaving commented out for now
+			//p.Grid[n.OldY][n.OldX].RemoveNode(n);
+			//p.Grid[n.Y/p.YDiv][n.X/p.XDiv].AddNode(n);
+
 		}
 		if n.Diffx == 0 && n.Diffy == 0 || n.Sitting < 0 {
 			n.Sitting = n.Sitting + 1

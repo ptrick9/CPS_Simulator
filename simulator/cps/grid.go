@@ -40,10 +40,18 @@ func (s *Square) AddNode(n * NodeImpl) {
 
 }
 
+//returns map of all nodes in the same Square (NodesInSquare)
+func (s *Square) nearbyNodes () (map[int]*NodeImpl){
+	return s.NodesInSquare
+}
+
 //Removes a node from this Square, decreasing its numNodes
 func (s *Square) RemoveNode(n * NodeImpl) {
-	delete(s.NodesInSquare, n.GetID());
-	s.NumNodes -= 1
+	var s_temp = s.NodesInSquare[n.GetID()]
+	if s_temp == n{ //checks if node is in Square before deleting from square, avoids exception
+		delete(s.NodesInSquare, n.GetID());
+		s.NumNodes -= 1
+	}
 }
 
 //reset the square to prevent repetitive false positives
