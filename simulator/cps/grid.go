@@ -30,15 +30,19 @@ type Square struct {
 	HasDetected  bool
 
 	CanBeTravelledTo []bool
+	NodesInSquare	 map[int]*NodeImpl;
 }
 
 //Adds a node to this Square, increasing its numNodes
-func (s *Square) AddNode() {
+func (s *Square) AddNode(n * NodeImpl) {
+	s.NodesInSquare[n.GetID()] = n;
 	s.NumNodes += 1
+
 }
 
 //Removes a node from this Square, decreasing its numNodes
-func (s *Square) RemoveNode() {
+func (s *Square) RemoveNode(n * NodeImpl) {
+	delete(s.NodesInSquare, n.GetID());
 	s.NumNodes -= 1
 }
 

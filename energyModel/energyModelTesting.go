@@ -16,21 +16,15 @@ import (
 )
 
 var (
-
-
 	p  *cps.Params
 	r  *cps.RegionParams
-
-
 	err 		 error
-
 	// End the command line variables.
 )
 
 func init() {
 	image.RegisterFormat("png", "png", png.Decode, png.DecodeConfig)
 }
-
 
 func main() {
 
@@ -243,7 +237,7 @@ func main() {
 
 			p.Grid[i][j] = &cps.Square{i, j, 0.0, 0, make([]float32, p.NumGridSamples),
 				p.NumGridSamples, 0.0, 0, 0, false,
-				0.0, 0.0, false, travelList}
+				0.0, 0.0, false, travelList,  map[int]*cps.NodeImpl{}}
 		}
 	}
 
@@ -511,12 +505,10 @@ func makeNodes() {
 			p.NodeList[len(p.NodeList)-1] = curNode
 
 			p.BoolGrid[xx][yy] = true
+
 		}
 	}
 }
-
-
-
 
 func getFlags() {
 	//p = cps.Params{}
@@ -715,4 +707,3 @@ func printPoints(s cps.SuperNodeParent) bytes.Buffer {
 	buffer.WriteString((fmt.Sprintf("]")))
 	return buffer
 }
-
