@@ -237,7 +237,7 @@ func main() {
 
 			p.Grid[i][j] = &cps.Square{i, j, 0.0, 0, make([]float32, p.NumGridSamples),
 				p.NumGridSamples, 0.0, 0, 0, false,
-				0.0, 0.0, false, travelList,  map[int]*cps.NodeImpl{}}
+				0.0, 0.0, false, travelList,  map[cps.Tuple]*cps.NodeImpl{}}
 		}
 	}
 
