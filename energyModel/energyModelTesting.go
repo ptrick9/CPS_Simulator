@@ -472,9 +472,9 @@ func makeNodes() {
 
 			p.NodeList = append(p.NodeList, cps.NodeImpl{X: xx, Y: yy, Id: len(p.NodeList), SampleHistory: initHistory, Concentration: 0,
 				Cascade: i, Battery: p.BatteryCharges[i], BatteryLossScalar: p.BatteryLosses[i],
-				BatteryLossCheckingSensorScalar: p.BatteryLossesSensor[i],
-				BatteryLossGPSScalar:            p.BatteryLossesGPS[i],
-				BatteryLossCheckingServerScalar: p.BatteryLossesServer[i],
+				BatteryLossSensor: 				 p.BatteryLossesSensor[i],
+				BatteryLossGPS:			         p.BatteryLossesGPS[i],
+				BatteryLossServer:				 p.BatteryLossesServer[i],
 				BatteryLossBT:					 p.BatteryLossesBT[i],
 				BatteryLossWifi:				 p.BatteryLossesWiFi[i],
 				BatteryLoss4G:					 p.BatteryLosses4G[i],
@@ -507,9 +507,9 @@ func makeNodes() {
 			p.BoolGrid[xx][yy] = true
 
 			p.NodePositionMap[cps.Tuple{xx,yy}] = &p.NodeList[len(p.NodeList)-1]; //add Node to the position Map
-			var r = xx/p.SquareRowCM 	//scale down based off number of squares per row
-			var c = yy/p.SquareColCM	//scale down based off number of squares per column
-			p.Grid[r][c].NodesInSquare[cps.Tuple{xx,yy}] = &p.NodeList[len(p.NodeList)-1]; //add node to NodesInSquare based off 8x8 squares
+			var row = xx/p.XDiv 	//scale down based off number of squares per row
+			var col = yy/p.YDiv	//scale down based off number of squares per column
+			p.Grid[row][col].NodesInSquare[cps.Tuple{xx,yy}] = &p.NodeList[len(p.NodeList)-1]; //add node to NodesInSquare based off 8x8 squares
 		}
 	}
 }
