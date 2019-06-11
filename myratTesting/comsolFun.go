@@ -1,3 +1,15 @@
+/*
+-inputFileName=Scenario_1.txt
+-imageFileName=circle_justWalls_400.png
+-logPosition=true
+-logGrid=true
+-logEnergy=true
+-logNodes=false
+-noEnergy=false
+ */
+
+
+
 
 package main
 

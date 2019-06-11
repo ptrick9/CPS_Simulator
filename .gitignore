@@ -153,6 +153,8 @@ Testing Walls Output/
 
 !routing/*
 
+!/Scen*
+
 routing/log.txt
 
 routing/stats/
