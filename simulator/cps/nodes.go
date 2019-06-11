@@ -54,9 +54,9 @@ type NodeImpl struct {
 	Y                               int      //y pos of node
 	Battery                         float32  //battery of node
 	BatteryLossScalar               float32  //natural incremental battery loss of node
-	BatteryLossCheckingSensorScalar float32  //sensor based battery loss of node
-	BatteryLossGPSScalar            float32  //GPS based battery loss of node
-	BatteryLossCheckingServerScalar float32  //server communication based battery loss of node
+	BatteryLossSensor				float32  //sensor based battery loss of node
+	BatteryLossGPS           		float32  //GPS based battery loss of node
+	BatteryLossServer				float32  //server communication based battery loss of node
 
 	BatteryLossBT					float32
 	BatteryLossWifi					float32
@@ -491,10 +491,10 @@ func (n *NodeImpl) BatteryLossDynamic1(p *Params) {
 	// This is the predicted natural loss to prevent overages.
 	naturalLoss = n.Battery - (float32(p.Iterations_of_event-p.Iterations_used) * n.BatteryLossScalar)
 	// This is the algorithm that determines sampling rate's ratios
-	n.Pings = n.Battery * p.TotalPercentBatteryToUse / (n.BatteryLossCheckingSensorScalar + n.BatteryLossGPSScalar + n.BatteryLossCheckingServerScalar) // set percentage for consumption here, also '50' if no minus
-	n.InverseSensor = 1 / n.BatteryLossCheckingSensorScalar
-	n.InverseGPS = 1 / n.BatteryLossGPSScalar
-	n.InverseServer = 1 / n.BatteryLossCheckingServerScalar
+	n.Pings = n.Battery * p.TotalPercentBatteryToUse / (n.BatteryLossSensor + n.BatteryLossGPS + n.BatteryLossServer) // set percentage for consumption here, also '50' if no minus
+	n.InverseSensor = 1 / n.BatteryLossSensor
+	n.InverseGPS = 1 / n.BatteryLossGPS
+	n.InverseServer = 1 / n.BatteryLossServer
 	n.SensorPings = n.Pings * (n.InverseSensor / (n.InverseServer + n.InverseGPS + n.InverseGPS))
 	n.GPSPings = n.Pings * (n.InverseGPS / (n.InverseServer + n.InverseGPS + n.InverseGPS))
 	n.ServerPings = n.Pings * (n.InverseServer / (n.InverseServer + n.InverseGPS + n.InverseGPS))
@@ -506,7 +506,7 @@ func (n *NodeImpl) BatteryLossDynamic1(p *Params) {
 		}
 		// Checks to see if sensor is pinged
 		if (n.ToggleCheckIterator-n.Cascade)%int(n.SensorPingPeriod) == 0 && n.Battery > 1 {
-			n.Battery = n.Battery - n.BatteryLossCheckingSensorScalar
+			n.Battery = n.Battery - n.BatteryLossSensor
 			n.TotalChecksSensor = n.TotalChecksSensor + 1
 			n.HasCheckedSensor = true
 			n.Sense(p)
@@ -519,7 +519,7 @@ func (n *NodeImpl) BatteryLossDynamic1(p *Params) {
 			n.GPSPingPeriod = 1
 		}
 		if ((n.ToggleCheckIterator-n.Cascade)%int(n.GPSPingPeriod) == 0 && n.Battery > 1) || (n.Speed > float32(p.MovementSamplingSpeedCM) && n.ToggleCheckIterator%p.MovementSamplingPeriodCM == 0) { // && n.ToggleCheckIterator%n.SpeedGPSPeriod == 0
-			n.Battery = n.Battery - n.BatteryLossGPSScalar
+			n.Battery = n.Battery - n.BatteryLossGPS
 			n.TotalChecksGPS = n.TotalChecksGPS + 1
 			n.HasCheckedGPS = true
 			n.GPS(p)
@@ -530,7 +530,7 @@ func (n *NodeImpl) BatteryLossDynamic1(p *Params) {
 		// This is the 2 stage buffer based on battery percentages
 		if n.Battery >= 75 { //100 - 75 percent
 			if (n.ToggleCheckIterator-n.Cascade)%14 == 0 && n.Battery > 1 { // 1000/70 = 14
-				n.Battery = n.Battery - n.BatteryLossCheckingServerScalar
+				n.Battery = n.Battery - n.BatteryLossServer
 				n.TotalChecksServer = n.TotalChecksServer + 1
 				n.HasCheckedServer = true
 				n.Server()
@@ -539,7 +539,7 @@ func (n *NodeImpl) BatteryLossDynamic1(p *Params) {
 			}
 		} else if n.Battery >= 30 && n.Battery < 75 { //70 - 30 percent
 			if (n.ToggleCheckIterator-n.Cascade)%50 == 0 && n.Battery > 1 { //1000/20 = 50
-				n.Battery = n.Battery - n.BatteryLossCheckingServerScalar
+				n.Battery = n.Battery - n.BatteryLossServer
 				n.TotalChecksServer = n.TotalChecksServer + 1
 				n.HasCheckedServer = true
 				n.Server()
@@ -594,7 +594,7 @@ func (n *NodeImpl) BatteryLossTable(p *Params) {
 	// this is the battery loss based on checking the sensor, GPS, and server.
 	if naturalLoss > p.ThreshHoldBatteryToHave {
 		if (n.ToggleCheckIterator-n.Cascade)%p.SensorSamplingPeriodCM == 0 {
-			n.Battery = n.Battery - n.BatteryLossCheckingSensorScalar
+			n.Battery = n.Battery - n.BatteryLossSensor
 			n.TotalChecksSensor = n.TotalChecksSensor + 1
 			n.HasCheckedSensor = true
 			n.Sense(p)
@@ -602,7 +602,7 @@ func (n *NodeImpl) BatteryLossTable(p *Params) {
 			n.HasCheckedSensor = false
 		}
 		if (n.ToggleCheckIterator-n.Cascade)%p.GPSSamplingPeriodCM == 0 || (speed > float32(p.MovementSamplingSpeedCM) && n.ToggleCheckIterator%p.MovementSamplingPeriodCM == 0) { // && n.ToggleCheckIterator%n.SpeedGPSPeriod == 0
-			n.Battery = n.Battery - n.BatteryLossGPSScalar
+			n.Battery = n.Battery - n.BatteryLossGPS
 			n.TotalChecksGPS = n.TotalChecksGPS + 1
 			n.HasCheckedGPS = true
 			n.GPS(p)
@@ -612,7 +612,7 @@ func (n *NodeImpl) BatteryLossTable(p *Params) {
 
 		// Check to ping server
 		if (n.ToggleCheckIterator-n.Cascade)%p.ServerSamplingPeriodCM == 0 {
-			n.Battery = n.Battery - n.BatteryLossCheckingServerScalar
+			n.Battery = n.Battery - n.BatteryLossServer
 			n.TotalChecksServer = n.TotalChecksServer + 1
 			n.HasCheckedServer = true
 			n.Server()
@@ -662,18 +662,17 @@ func (n *NodeImpl) BatteryLossMostDynamic(p *Params) {
 	naturalLoss = n.Battery - (float32(p.Iterations_of_event) * n.BatteryLossScalar)
 
 	// This is the ratio algorithm used to determine the rate of pings
-	n.InverseSensor = 1 / n.BatteryLossCheckingSensorScalar
-	n.InverseGPS = 1 / n.BatteryLossGPSScalar
-	n.InverseServer = 1 / n.BatteryLossCheckingServerScalar
+	n.InverseSensor = 1 / n.BatteryLossSensor
+	n.InverseGPS = 1 / n.BatteryLossGPS
+	n.InverseServer = 1 / n.BatteryLossServer
 
 	//SensorBatteryToUse := (totalPercentBatteryToUse * (n.InverseSensor / (n.InverseServer + n.InverseGPS + n.InverseSensor)))
 	//GPSBatteryToUse := (totalPercentBatteryToUse * (n.InverseGPS / (n.InverseServer + n.InverseGPS + n.InverseSensor)))
 	//ServerBatteryToUse := (totalPercentBatteryToUse * (n.InverseServer / (n.InverseServer + n.InverseGPS + n.InverseSensor)))
 
-	n.SensorPings = (p.TotalPercentBatteryToUse * (n.InverseSensor / (n.InverseServer + n.InverseGPS + n.InverseSensor))) / n.BatteryLossCheckingSensorScalar
-	n.GPSPings = (p.TotalPercentBatteryToUse * (n.InverseGPS / (n.InverseServer + n.InverseGPS + n.InverseSensor))) / n.BatteryLossGPSScalar
-	n.ServerPings = (p.TotalPercentBatteryToUse * (n.InverseServer / (n.InverseServer + n.InverseGPS + n.InverseSensor))) / n.BatteryLossCheckingServerScalar
-
+	n.SensorPings = (p.TotalPercentBatteryToUse * (n.InverseSensor / (n.InverseServer + n.InverseGPS + n.InverseSensor))) / n.BatteryLossSensor
+	n.GPSPings = (p.TotalPercentBatteryToUse * (n.InverseGPS / (n.InverseServer + n.InverseGPS + n.InverseSensor))) / n.BatteryLossGPS
+	n.ServerPings = (p.TotalPercentBatteryToUse * (n.InverseServer / (n.InverseServer + n.InverseGPS + n.InverseSensor))) / n.BatteryLossServer
 	// this is the battery loss based on checking the sensor, GPS, and server.
 	if naturalLoss > p.ThreshHoldBatteryToHave {
 		n.SensorPingPeriod = float32(p.Iterations_of_event) / n.SensorPings //-iterations_used
@@ -682,7 +681,7 @@ func (n *NodeImpl) BatteryLossMostDynamic(p *Params) {
 		}
 		// Check to ping sensor
 		if (n.ToggleCheckIterator-n.Cascade)%int(n.SensorPingPeriod) == 0 && n.Battery > 1 {
-			n.Battery = n.Battery - n.BatteryLossCheckingSensorScalar
+			n.Battery = n.Battery - n.BatteryLossSensor
 			n.TotalChecksSensor = n.TotalChecksSensor + 1
 			n.HasCheckedSensor = true
 			n.Sense(p)
@@ -695,7 +694,7 @@ func (n *NodeImpl) BatteryLossMostDynamic(p *Params) {
 		}
 		// Check to ping GPS, also note the extra pings made by a high speed.
 		if ((n.ToggleCheckIterator-n.Cascade)%int(n.GPSPingPeriod) == 0 && n.Battery > 1) || (n.Speed > float32(p.MovementSamplingSpeedCM) && n.ToggleCheckIterator%p.MovementSamplingPeriodCM == 0) { // && n.ToggleCheckIterator%n.SpeedGPSPeriod == 0
-			n.Battery = n.Battery - n.BatteryLossGPSScalar
+			n.Battery = n.Battery - n.BatteryLossGPS
 			n.TotalChecksGPS = n.TotalChecksGPS + 1
 			n.HasCheckedGPS = true
 			n.GPS(p)
@@ -714,7 +713,7 @@ func (n *NodeImpl) BatteryLossMostDynamic(p *Params) {
 		// Check to ping server
 		//fmt.Println(n.ToggleCheckIterator,n.Cascade,n.ServerPingPeriod,n.Id, n.ServerPings,n.BatteryLossCheckingServerScalar, iterations_of_event,float32(iterations_of_event),int(float32(iterations_of_event)))
 		if (n.ToggleCheckIterator-n.Cascade)%int(n.ServerPingPeriod) == 0 && n.Battery > 1 {
-			n.Battery = n.Battery - n.BatteryLossCheckingServerScalar
+			n.Battery = n.Battery - n.BatteryLossServer
 			n.TotalChecksServer = n.TotalChecksServer + 1
 			n.HasCheckedServer = true
 			n.Server()
@@ -764,10 +763,10 @@ func (n *NodeImpl) BatteryLossDynamic(p *Params) {
 	naturalLoss = n.Battery - (float32(p.Iterations_of_event-p.Iterations_used) * n.BatteryLossScalar)
 
 	// This is the ratio algorithm used to determine the rate of pings
-	n.Pings = n.Battery * .5 / (n.BatteryLossCheckingSensorScalar + n.BatteryLossGPSScalar + n.BatteryLossCheckingServerScalar) // set percentage for consumption here, also '50' if no minus
-	n.InverseSensor = 1 / n.BatteryLossCheckingSensorScalar
-	n.InverseGPS = 1 / n.BatteryLossGPSScalar
-	n.InverseServer = 1 / n.BatteryLossCheckingServerScalar
+	n.Pings = n.Battery * .5 / (n.BatteryLossSensor + n.BatteryLossGPS + n.BatteryLossServer) // set percentage for consumption here, also '50' if no minus
+	n.InverseSensor = 1 / n.BatteryLossSensor
+	n.InverseGPS = 1 / n.BatteryLossGPS
+	n.InverseServer = 1 / n.BatteryLossServer
 	n.SensorPings = n.Pings * (n.InverseSensor / (n.InverseServer + n.InverseGPS + n.InverseGPS))
 	n.GPSPings = n.Pings * (n.InverseGPS / (n.InverseServer + n.InverseGPS + n.InverseGPS))
 	n.ServerPings = n.Pings * (n.InverseServer / (n.InverseServer + n.InverseGPS + n.InverseGPS))
@@ -780,7 +779,7 @@ func (n *NodeImpl) BatteryLossDynamic(p *Params) {
 		}
 		// Check to ping sensor
 		if (n.ToggleCheckIterator-n.Cascade)%int(n.SensorPingPeriod) == 0 && n.Battery > 1 {
-			n.Battery = n.Battery - n.BatteryLossCheckingSensorScalar
+			n.Battery = n.Battery - n.BatteryLossSensor
 			n.TotalChecksSensor = n.TotalChecksSensor + 1
 			n.HasCheckedSensor = true
 			n.Sense(p)
@@ -793,7 +792,7 @@ func (n *NodeImpl) BatteryLossDynamic(p *Params) {
 		}
 		// Check to ping GPS, also note the extra pings made by a high speed.
 		if ((n.ToggleCheckIterator-n.Cascade)%int(n.GPSPingPeriod) == 0 && n.Battery > 1) || (speed > float32(p.MovementSamplingSpeedCM) && n.ToggleCheckIterator%p.MovementSamplingPeriodCM == 0) { // && n.ToggleCheckIterator%n.SpeedGPSPeriod == 0
-			n.Battery = n.Battery - n.BatteryLossGPSScalar
+			n.Battery = n.Battery - n.BatteryLossGPS
 			n.TotalChecksGPS = n.TotalChecksGPS + 1
 			n.HasCheckedGPS = true
 			n.GPS(p)
@@ -806,7 +805,7 @@ func (n *NodeImpl) BatteryLossDynamic(p *Params) {
 		}
 		// Check to ping server
 		if (n.ToggleCheckIterator-n.Cascade)%int(n.ServerPingPeriod) == 0 && n.Battery > 1 {
-			n.Battery = n.Battery - n.BatteryLossCheckingServerScalar
+			n.Battery = n.Battery - n.BatteryLossServer
 			n.TotalChecksServer = n.TotalChecksServer + 1
 			n.HasCheckedServer = true
 			n.Server()
@@ -817,33 +816,33 @@ func (n *NodeImpl) BatteryLossDynamic(p *Params) {
 }
 
 //decrement battery due to transmitting/receiving over BlueTooth
-func (n *NodeImpl) DecrementPowerBT(){
-	n.Battery = n.Battery - n.BatteryLossBT
+func (n *NodeImpl) DecrementPowerBT(packet int){
+	n.Battery = n.Battery - n.BatteryLossBT*n.Battery
 }
 
 //decrement battery due to transmitting/receiving over WiFi
-func (n *NodeImpl) DecrementPowerWifi(){
+func (n *NodeImpl) DecrementPowerWifi(packet int){
 	n.Battery = n.Battery - n.BatteryLossWifi
 }
 
 //decrement battery due to transmitting/receiving over 4G
-func (n *NodeImpl) DecrementPower4G(){
-	n.Battery = n.Battery - n.BatteryLoss4G
+func (n *NodeImpl) DecrementPower4G(packet int){
+	n.Battery = n.Battery - n.BatteryLoss4G*n.Battery
 }
 
 //decrement battery due to sampling Accelerometer
 func (n *NodeImpl) DecrementPowerAccel(){
-	n.Battery = n.Battery - n.BatteryLossAccelerometer
+	n.Battery = n.Battery - n.BatteryLossAccelerometer*n.Battery
 }
 
 //decrement battery due to transmitting/receiving GPS
 func (n *NodeImpl) DecrementPowerGPS(){
-	n.Battery = n.Battery - n.BatteryLossGPSScalar
+	n.Battery = n.Battery - n.BatteryLossGPS*n.Battery
 }
 
 //decrement battery due to using GPS
 func (n *NodeImpl) DecrementPowerSensor(){
-	n.Battery = n.Battery - n.BatteryLossCheckingSensorScalar
+	n.Battery = n.Battery - n.BatteryLossSensor*n.Battery
 }
 
 /* updateHistory shifts all values in the sample history slice to the right and adds the value at the beginning
