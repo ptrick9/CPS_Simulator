@@ -2,7 +2,8 @@
 package main
 
 import (
-	"./cps"
+	//"./cps"
+	"../simulator/cps"
 	"bytes"
 	"flag"
 	"fmt"

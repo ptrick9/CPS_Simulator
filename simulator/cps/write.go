@@ -406,7 +406,7 @@ func Check(e error) {
 
 // Creates p.BoardMap, intializes NodePositionMap
 func CreateBoard(x int, y int, p *Params) {
-	NodePositionMap = make(map[Tuple]*NodeImpl)
+	p.NodePositionMap = make(map[Tuple]*NodeImpl)
 	p.BoardMap = [][]int{}
 	for i := 0; i < y; i++ {
 		p.BoardMap = append(p.BoardMap, []int{})

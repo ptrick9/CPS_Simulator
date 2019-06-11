@@ -7,19 +7,19 @@ import (
 
 
 func TestDist(t *testing.T) {
-	n := &NodeImpl{x: 3, y: 3, id: 0}
-	b := bomb{1,1}
+	n := &NodeImpl{X: 3, Y: 3, Id: 0}
+	b := Bomb{1,1}
 
-	dist := n.distance(b)
-	partialDist := (float32(math.Pow(float64(math.Abs(float64(n.x)-float64(b.x))),2) + math.Pow(float64(math.Abs(float64(n.y)-float64(b.y))),2)))
+	dist := n.Distance(b)
+	partialDist := (float32(math.Pow(float64(math.Abs(float64(n.X)-float64(b.X))),2) + math.Pow(float64(math.Abs(float64(n.Y)-float64(b.Y))),2)))
 	expectedDist := float32(1000 / (math.Pow((float64(partialDist)/0.2)*0.25,1.5)))
 	if dist != expectedDist {
 		t.Errorf("Distance was incorrect, got: %f, want: %f", dist, expectedDist)
 	}
 
-	n.x = 1
-	n.y = 1
-	dist = n.distance(b)
+	n.X = 1
+	n.Y = 1
+	dist = n.Distance(b)
 	expectedDist = 1000
 	if dist != expectedDist {
 		t.Errorf("Distance was incorrect, got: %f, want %f", dist, expectedDist)
@@ -28,11 +28,11 @@ func TestDist(t *testing.T) {
 }
 
 func TestRowCol(t *testing.T) {
-	n := &NodeImpl{id:0,x:15,y:15}
-	xDiv = 5
-	yDiv = 5
-	row := n.row(yDiv)
-	col := n.col(xDiv)
+	n := &NodeImpl{Id:0,X:15,Y:15}
+	var xDiv = 5
+	var yDiv = 5
+	row := n.Row(yDiv)
+	col := n.Col(xDiv)
 	if row != 3 {
 		t.Errorf("Row was Incorrect, got: %d, want: %d",row,3)
 	}
@@ -42,28 +42,28 @@ func TestRowCol(t *testing.T) {
 }
 
 func TestUpdateHistory(t *testing.T) {
-	numStoredSamples = 4
-	n := &NodeImpl{sampleHistory:make([]float32,numStoredSamples),totalSamples:100}
-	n.updateHistory(4.0)
+	var numStoredSamples = 4
+	n := &NodeImpl{SampleHistory:make([]float32,numStoredSamples),TotalSamples:100}
+	n.UpdateHistory(4.0)
 	newHist := []float32{4.0,0.0,0.0,0.0}
 	var areEqual bool
 	areEqual = true
-	for i := range n.sampleHistory {
-		if n.sampleHistory[i] != newHist[i] {
+	for i := range n.SampleHistory {
+		if n.SampleHistory[i] != newHist[i] {
 			areEqual = false
 		}
 	}
 	if !areEqual {
-		t.Errorf("updateHistory was incorect, got: %v, wanted: %v",n.sampleHistory,
+		t.Errorf("updateHistory was incorect, got: %v, wanted: %v",n.SampleHistory,
 			newHist)
 	}
 }
 
 func TestGeoDist(t *testing.T) {
-	n := &NodeImpl{x:5,y:17}
-	b := bomb{x:30,y:12}
+	n := &NodeImpl{X:5,Y:17}
+	b := Bomb{X:30,Y:12}
 
-	dist := n.geoDist(b)
+	dist := n.GeoDist(b)
 	expectedDist := 650
 	if dist != float32(expectedDist) {
 		t.Errorf("geoDist was incorrect, got: %v, wanted:%v",dist,expectedDist)
@@ -71,49 +71,49 @@ func TestGeoDist(t *testing.T) {
 }
 
 func TestRecalibrate(t *testing.T) {
-	n := &NodeImpl{initialSensitivity:0.82,sensitivity:0.56,nodeTime:34}
-	n.recalibrate()
-	if n.sensitivity != 0.82 {
+	n := &NodeImpl{InitialSensitivity:0.82,Sensitivity:0.56,NodeTime:34}
+	n.Recalibrate()
+	if n.Sensitivity != 0.82 {
 		t.Errorf("Recalibrate didn't fix sensitivity, should be: %f, is: %f",
-			n.initialSensitivity,n.sensitivity)
+			n.InitialSensitivity,n.Sensitivity)
 	}
-	if n.nodeTime != 0.0 {
+	if n.NodeTime != 0.0 {
 		t.Errorf("Recalibrate didn't fix node time, should be: %d, is: %d",
-			0,n.nodeTime)
+			0,n.NodeTime)
 	}
 }
 
 func TestSquare(t *testing.T) {
-	s := Square{numEntry:5,maxEntry:10,tot:0,values:make([]float32,11),avg:0.0}
-	s.takeMeasurement(0.5)
-	if s.values[5] != 0.5 {
+	s := Square{NumEntry:5,MaxEntry:10,Tot:0,Values:make([]float32,11),Avg:0.0}
+	s.TakeMeasurement(0.5)
+	if s.Values[5] != 0.5 {
 		t.Errorf("Square is incorrect. (values)")
 	}
-	if s.tot != 0.5 {
+	if s.Tot != 0.5 {
 		t.Errorf("Square is incorrect. (total)")
 	}
-	if s.numEntry != 6 {
+	if s.NumEntry != 6 {
 		t.Errorf("Square is incorrect. (numEntry)")
 	}
-	if s.avg != (0.5 / 6) {
+	if s.Avg != (0.5 / 6) {
 		t.Errorf("Square is incorrect. (avg)")
 	}
 
-	s.numEntry = 11
-	s.values = make([]float32,11)
-	s.tot = 0
-	s.avg = 0.0
-	s.takeMeasurement(0.5)
-	if s.tot != 0.5 {
+	s.NumEntry = 11
+	s.Values = make([]float32,11)
+	s.Tot = 0
+	s.Avg = 0.0
+	s.TakeMeasurement(0.5)
+	if s.Tot != 0.5 {
 		t.Errorf("Square is incorrect (tot)")
 	}
-	if s.values[1] != 0.5 {
+	if s.Values[1] != 0.5 {
 		t.Errorf("Square is incorrect (values)")
 	}
-	if s.numEntry != 12 {
+	if s.NumEntry != 12 {
 		t.Errorf("Square is incorrect (numEntry)")
 	}
-	if s.avg != 0.05 {
+	if s.Avg != 0.05 {
 		t.Errorf("Square is incorrect (avg)")
 	}
 }
