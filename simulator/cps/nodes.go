@@ -816,6 +816,36 @@ func (n *NodeImpl) BatteryLossDynamic(p *Params) {
 	}
 }
 
+//decrement battery due to transmitting/receiving over BlueTooth
+func (n *NodeImpl) DecrementPowerBT(){
+	n.Battery = n.Battery - n.BatteryLossBT
+}
+
+//decrement battery due to transmitting/receiving over WiFi
+func (n *NodeImpl) DecrementPowerWifi(){
+	n.Battery = n.Battery - n.BatteryLossWifi
+}
+
+//decrement battery due to transmitting/receiving over 4G
+func (n *NodeImpl) DecrementPower4G(){
+	n.Battery = n.Battery - n.BatteryLoss4G
+}
+
+//decrement battery due to sampling Accelerometer
+func (n *NodeImpl) DecrementPowerAccel(){
+	n.Battery = n.Battery - n.BatteryLossAccelerometer
+}
+
+//decrement battery due to transmitting/receiving GPS
+func (n *NodeImpl) DecrementPowerGPS(){
+	n.Battery = n.Battery - n.BatteryLossGPSScalar
+}
+
+//decrement battery due to using GPS
+func (n *NodeImpl) DecrementPowerSensor(){
+	n.Battery = n.Battery - n.BatteryLossCheckingSensorScalar
+}
+
 /* updateHistory shifts all values in the sample history slice to the right and adds the value at the beginning
 Therefore, each time a node takes a sample in main, it also adds this sample to the beginning of the sample history.
 Each sample is only stored until ln more samples have been taken (this variable is in hello.go)
