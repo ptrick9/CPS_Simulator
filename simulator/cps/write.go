@@ -982,8 +982,6 @@ func NodesInRadius(curNode * NodeImpl, p * Params, radius int)(map[Tuple]*NodeIm
 
 //returns all of the nodes a distance of "dist" squares away from the current node
 func NodesWithinDistance(curNode * NodeImpl, p * Params, dist int)(map[Tuple]*NodeImpl){
-	var gridMaxX = p.SquareRowCM;	//set max to max Square
-	var gridMaxY = p.SquareColCM;	//set max to max Square
 	var nodesWithinDist = p.Grid[curNode.X][curNode.Y].NodesInSquare //initialize to nodes in current square, will hold
 	var negDist = -1*dist;											 //all nodes within the distance dist
 
@@ -993,11 +991,11 @@ func NodesWithinDistance(curNode * NodeImpl, p * Params, dist int)(map[Tuple]*No
 				continue
 			}
 
-			var testX = p.Grid[curNode.X][curNode.Y].X + col		//X value of test Square
-			var testY = p.Grid[curNode.X][curNode.Y].Y + row		//Y value of test Square
+			var testX = p.Grid[curNode.X/p.SquareRowCM][curNode.Y/p.SquareColCM].X + col		//X value of test Square
+			var testY = p.Grid[curNode.X/p.SquareRowCM][curNode.Y/p.SquareColCM].Y + row		//Y value of test Square
 
-			if(testX < gridMaxX && testX >= 0){			//if the testX value is on the grid, continue
-				if(testY < gridMaxY && testY >= 0){		//if the testY value is on the grid, continue
+			if(testX < p.SquareRowCM && testX >= 0){			//if the testX value is on the grid, continue
+				if(testY < p.SquareColCM && testY >= 0){		//if the testY value is on the grid, continue
 					var testSquare =  p.Grid[testY][testX] 			//create Square from test X and Y values
 					if(testSquare != nil){					//if the test Square is not null, continue
 						for ind,val := range testSquare.NodesInSquare{	//iterate through nodes in square map adding each to the
