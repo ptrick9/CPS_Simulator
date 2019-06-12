@@ -1,4 +1,62 @@
+/*
+This is the server GO file and it is a model of our server
+*/
 package cps
+
+import "fmt"
+
+var (
+	timeBuckets [1000][]float64 //2D array where each sub array is the sensor readings at one iteration
+	mean [1000]float64
+	stdDev [1000]float64
+	variance [1000]float64
+)
+
+type FusionCenter struct {
+	P *Params
+}
+
+type Reading struct {
+	sensorVal 	float64
+	xPos 		int
+	yPos 		int
+	time 		int //Time represented by iteration number
+	id 			int //Node id number
+}
+
+func (s FusionCenter) GetGridAverage() float32 {
+	return 0.0
+
+}
+
+func (s FusionCenter) Send(rd Reading) {
+	fmt.Printf("Sending to server:\nX: %v, Y: %v, Sensor Value: %v\n", rd.xPos, rd.yPos, rd.sensorVal)
+	currBucket := timeBuckets[rd.time]
+	if currBucket != nil {
+		timeBuckets[rd.time] = append(currBucket, rd.sensorVal)
+	} else {
+		timeBuckets[rd.time] = []float64{rd.sensorVal}
+	}
+}
+
+func (s FusionCenter) CalcStats() ([1000]float64, [1000]float64, [1000]float64) {
+	sum := 0.0
+	for i := 0; i < len(timeBuckets); i++ {
+		for j := 0; j < len(timeBuckets[i]); j++ {
+			//fmt.Printf("Bucket size: %v\n", len(timeBuckets[i]))
+			sum += timeBuckets[i][j]
+			fmt.Printf("Time : %v, Elements #: %v, Value: %v\n", i, j, timeBuckets[i][j])
+		}
+		mean[i] = sum / float64( len(timeBuckets[i]) )
+	}
+	//mean = []float64{1.0}
+	//stdDev = []float64{1.0}
+	//variance = []float64{1.0}
+	fmt.Printf("\nMean: %v", mean)
+	return mean, stdDev, variance
+}
+
+
 
 /*
 This is the server GO file and it is a model of our server

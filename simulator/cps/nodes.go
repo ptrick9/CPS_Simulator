@@ -28,6 +28,7 @@ type NodeParent interface {
 	GeoDist(b Bomb) float32         //returns distance from bomb (rather than reading of node)
 	GetID() int                     //returns ID of node
 	GetLoc() (x, y int)             //returns x and y values of node
+
 	//following functions set drifting parameters of nodes
 	SetS0(s0 float64)
 	SetS1(s1 float64)
@@ -293,6 +294,9 @@ func (n *NodeImpl) Move(p *Params) {
 			}
 		}
 
+		//n.X = potentialSpots[0].X
+		//n.Y = potentialSpots[0].Y
+
 		if n.X/p.XDiv != n.OldX || n.Y/p.YDiv != n.OldY {
 			p.Grid[n.Y/p.YDiv][n.X/p.XDiv].ActualNumNodes = p.Grid[n.Y/p.YDiv][n.X/p.XDiv].ActualNumNodes + 1
 			p.Grid[n.OldY][n.OldX].ActualNumNodes = p.Grid[n.OldY][n.OldX].ActualNumNodes - 1
@@ -429,7 +433,7 @@ func Insert_array(arr1 []Coord, arr2 []Coord, n int) []Coord {
 }
 
 //Returns the array with the element at ind1 moved to ind2
-//ind1 must always bef urther in the array than ind2
+//ind1 must always be further in the array than ind2
 func Remove_and_insert(arr []Coord, ind1, ind2 int) []Coord {
 	arr1 := make([]Coord, 0)
 	c := arr[ind1]
@@ -1096,8 +1100,9 @@ func (curNode *NodeImpl) GetReadings(p *Params) {
 		p.Grid[curNode.Row(p.YDiv)][curNode.Col(p.XDiv)].TakeMeasurement(float32(errorDist))
 		p.Grid[curNode.Row(p.YDiv)][curNode.Col(p.XDiv)].NumNodes++
 		//subtract grid average from node average, square it, and add it to this variable
-		p.Grid[curNode.Row(p.YDiv)][curNode.Col(p.XDiv)].SquareValues += (math.Pow(float64(errorDist-float64(gridAverage)), 2))
+		p.Grid[curNode.Row(p.YDiv)][curNode.Col(p.XDiv)].SquareValues += math.Pow(float64(errorDist-float64(gridAverage)), 2)
 	}
+	p.Server.Send(Reading{errorDist, newX, newY, p.Iterations_used, curNode.GetID()})
 }
 
 
