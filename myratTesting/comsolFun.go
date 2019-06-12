@@ -256,7 +256,7 @@ func main() {
 
 			p.Grid[i][j] = &cps.Square{i, j, 0.0, 0, make([]float32, p.NumGridSamples),
 				p.NumGridSamples, 0.0, 0, 0, false,
-				0.0, 0.0, false, travelList}
+				0.0, 0.0, false, travelList, sync.Mutex{}}
 		}
 	}
 
@@ -304,6 +304,8 @@ func main() {
 		}
 
 		//start := time.Now()
+
+		//is square thread safe
 		var wg sync.WaitGroup
 		wg.Add(len(p.NodeList))
 		for i := 0; i < len(p.NodeList); i++ {

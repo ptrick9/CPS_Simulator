@@ -3,6 +3,7 @@ package cps
 import (
 	"fmt"
 	"math"
+	"sync"
 )
 
 //Square type contains the average of the readings in the Square,
@@ -30,6 +31,8 @@ type Square struct {
 	HasDetected  bool
 
 	CanBeTravelledTo []bool
+
+	Lock sync.Mutex
 }
 
 //Adds a node to this Square, increasing its numNodes
@@ -53,6 +56,8 @@ func (s *Square) Reset() {
 //	Square and adds its value to the value list and calculates
 //	the new average
 func (s *Square) TakeMeasurement(x float32) {
+	s.Lock.Lock()
+	defer s.Lock.Unlock()
 	if s.NumEntry < s.MaxEntry {
 		s.Tot += x
 		s.Values[(s.NumEntry)%s.MaxEntry] = x
