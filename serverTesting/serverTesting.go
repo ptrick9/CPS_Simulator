@@ -47,6 +47,8 @@ func main() {
 	p = &cps.Params{}
 	r = &cps.RegionParams{}
 
+	p.Server = cps.FusionCenter{p}
+
 	p.Tau1 = 10
 	p.Tau2 = 500
 	p.FoundBomb = false
@@ -303,24 +305,16 @@ func main() {
 		//Store start and end times of parallel process
 
 		start := time.Now()
-		//var wg sync.WaitGroup
-		//wg.Add(len(p.NodeList))
 		for i := 0; i < len(p.NodeList); i++ {
-			//go func(i int)
-			//func(i int) {
-				//defer wg.Done()
 				if !p.NoEnergyModelCM {
 					p.NodeList[i].BatteryLossMostDynamic(p)
 				} else {
 					p.NodeList[i].HasCheckedSensor = true
 					p.NodeList[i].Sitting = 0
 				}
-				//p.NodeList[i].GetReadingsCSV(p)
 				p.NodeList[i].GetReadings(p)
-			//}(i)
 		}
 		runTimes[p.Iterations_used] = time.Since(start).Nanoseconds()
-		//wg.Wait()
 
 
 		p.DriftFile.Sync()
@@ -486,6 +480,7 @@ func main() {
 	for i := range p.BoolGrid {
 		fmt.Fprintln(p.BoolFile, p.BoolGrid[i])
 	}
+	p.Server.CalcStats()
 
 
 }

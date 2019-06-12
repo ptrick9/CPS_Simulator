@@ -1,6 +1,8 @@
 package cps
 
-import "os"
+import (
+	"os"
+)
 
 type Params struct {
 	NegativeSittingStopThresholdCM int     // This is a negative number for the sitting to be set to when map is reset
@@ -144,6 +146,11 @@ type Params struct {
 	XLoc        int
 	YLoc        int
 
-	Width  int
-	Height int
+	Width 			int
+	Height 			int
+	Server 			FusionCenter //Server object
+
+
+
+
 }
