@@ -481,6 +481,7 @@ func main() {
 		fmt.Fprintln(p.BoolFile, p.BoolGrid[i])
 	}
 	p.Server.CalcStats()
+	p.Server.PrintStats()
 
 
 }
