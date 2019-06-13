@@ -286,21 +286,27 @@ func (n *NodeImpl) Move(p *Params) {
 		sort.Sort(byRandom(potentialSpots))
 		sort.Sort(byValue(potentialSpots))
 
-		for i := 0; i < len(potentialSpots); i++ {
+		/*for i := 0; i < len(potentialSpots); i++ {
 			if p.Grid[potentialSpots[i].Y/p.YDiv][potentialSpots[i].X/p.XDiv].ActualNumNodes <= p.SquareCapacity {
 				n.X = potentialSpots[i].X
 				n.Y = potentialSpots[i].Y
 				break
 			}
+		}*/
+
+		//If there are no potential spots, do not move
+		if len(potentialSpots) > 0 {
+			n.X = potentialSpots[0].X
+			n.Y = potentialSpots[0].Y
 		}
 
-		//n.X = potentialSpots[0].X
-		//n.Y = potentialSpots[0].Y
-
-		if n.X/p.XDiv != n.OldX || n.Y/p.YDiv != n.OldY {
+		//Change number of nodes in square
+		/*if n.X/p.XDiv != n.OldX || n.Y/p.YDiv != n.OldY {
 			p.Grid[n.Y/p.YDiv][n.X/p.XDiv].ActualNumNodes = p.Grid[n.Y/p.YDiv][n.X/p.XDiv].ActualNumNodes + 1
 			p.Grid[n.OldY][n.OldX].ActualNumNodes = p.Grid[n.OldY][n.OldX].ActualNumNodes - 1
-		}
+		}*/
+
+		p.Server.UpdateSquareNumNodes()
 		if n.Diffx == 0 && n.Diffy == 0 || n.Sitting < 0 {
 			n.Sitting = n.Sitting + 1
 		} else {
@@ -1065,7 +1071,7 @@ func (curNode *NodeImpl) GetReadings(p *Params) {
 	}
 
 	//If the reading is more than 2 standard deviations away from the grid average, then recalibrate
-	gridAverage := p.Grid[curNode.Row(p.YDiv)][curNode.Col(p.XDiv)].Avg
+	//gridAverage := p.Grid[curNode.Row(p.YDiv)][curNode.Col(p.XDiv)].Avg
 	//standDev := grid[curNode.Row(yDiv)][curNode.Col(xDiv)].StdDev
 
 	//New condition added: also recalibrate when the node's sensitivity is <= 1/10 of its original sensitvity
@@ -1097,12 +1103,14 @@ func (curNode *NodeImpl) GetReadings(p *Params) {
 	//for that square
 	//Only do this if the sensor was pinged this iteration
 	if curNode.HasCheckedSensor {
-		p.Grid[curNode.Row(p.YDiv)][curNode.Col(p.XDiv)].TakeMeasurement(float32(errorDist))
-		p.Grid[curNode.Row(p.YDiv)][curNode.Col(p.XDiv)].NumNodes++
-		//subtract grid average from node average, square it, and add it to this variable
-		p.Grid[curNode.Row(p.YDiv)][curNode.Col(p.XDiv)].SquareValues += math.Pow(float64(errorDist-float64(gridAverage)), 2)
+		//p.Server.UpdateSquareAvg(*curNode, errorDist)
+		//p.Grid[curNode.Row(p.YDiv)][curNode.Col(p.XDiv)].TakeMeasurement(float32(errorDist))
+		//p.Grid[curNode.Row(p.YDiv)][curNode.Col(p.XDiv)].NumNodes++
+		////subtract grid average from node average, square it, and add it to this variable
+		p.Server.Send(Reading{errorDist, newX, newY, p.Iterations_used, curNode.GetID()})
+		//p.Grid[curNode.Row(p.YDiv)][curNode.Col(p.XDiv)].SquareValues += math.Pow(float64(errorDist-float64(gridAverage)), 2)
 	}
-	p.Server.Send(Reading{errorDist, newX, newY, p.Iterations_used, curNode.GetID()})
+
 }
 
 
@@ -1183,7 +1191,7 @@ func (curNode *NodeImpl) GetReadingsCSV(p *Params) {
 	}
 
 	//If the reading is more than 2 standard deviations away from the grid average, then recalibrate
-	gridAverage := p.Grid[curNode.Row(p.YDiv)][curNode.Col(p.XDiv)].Avg
+	//gridAverage := p.Grid[curNode.Row(p.YDiv)][curNode.Col(p.XDiv)].Avg
 	//standDev := grid[curNode.Row(yDiv)][curNode.Col(xDiv)].StdDev
 
 	//New condition added: also recalibrate when the node's sensitivity is <= 1/10 of its original sensitvity
@@ -1215,10 +1223,11 @@ func (curNode *NodeImpl) GetReadingsCSV(p *Params) {
 	//for that square
 	//Only do this if the sensor was pinged this iteration
 	if curNode.HasCheckedSensor {
-		p.Grid[curNode.Row(p.YDiv)][curNode.Col(p.XDiv)].TakeMeasurement(float32(errorDist))
-		p.Grid[curNode.Row(p.YDiv)][curNode.Col(p.XDiv)].NumNodes++
+		//p.Grid[curNode.Row(p.YDiv)][curNode.Col(p.XDiv)].TakeMeasurement(float32(errorDist))
+		//p.Grid[curNode.Row(p.YDiv)][curNode.Col(p.XDiv)].NumNodes++
 		//subtract grid average from node average, square it, and add it to this variable
-		p.Grid[curNode.Row(p.YDiv)][curNode.Col(p.XDiv)].SquareValues += (math.Pow(float64(errorDist-float64(gridAverage)), 2))
+		//p.Grid[curNode.Row(p.YDiv)][curNode.Col(p.XDiv)].SquareValues += (math.Pow(float64(errorDist-float64(gridAverage)), 2))
+		p.Server.Send(Reading{errorDist, newX, newY, p.Iterations_used, curNode.GetID()})
 	}
 }
 
