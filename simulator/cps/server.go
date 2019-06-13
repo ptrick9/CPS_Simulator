@@ -27,9 +27,43 @@ type Reading struct {
 	id 			int //Node id number
 }
 
-func (s FusionCenter) GetGridAverage() float32 {
-	return 0.0
+func (s FusionCenter) GetSquareAverage(tile *Square) float32 {
+	return tile.Avg
+}
 
+func (s FusionCenter) UpdateSquareAvg(rd Reading) {
+	//var curNode NodeImpl
+	tile := s.P.Grid[rd.yPos/s.P.YDiv][rd.xPos/s.P.XDiv]
+	tile.TakeMeasurement(float32(rd.sensorVal))
+
+}
+
+func (s FusionCenter) UpdateSquareNumNodes() {
+	var node NodeImpl
+
+	//Clear number of nodes for each square
+	for i:=0; i < len(s.P.Grid); i++ {
+		for j:=0; j < len(s.P.Grid[i]); j++ {
+			s.P.Grid[i][j].ActualNumNodes = 0
+		}
+	}
+
+	//Count number of nodes in each square
+	for i:=0; i < s.P.NumNodes; i++ {
+		node = s.P.NodeList[i]
+		s.P.Grid[node.Y/s.P.YDiv][node.X/s.P.XDiv].ActualNumNodes += 1
+	}
+
+	//Debugging: Check if total nodes after update is equal to 1000
+	/*totalNodes := 0
+	for i:=0; i < len(s.P.Grid); i++ {
+		for j:=0; j < len(s.P.Grid[0]); j++ {
+			totalNodes += s.P.Grid[i][j].ActualNumNodes
+		}
+	}
+	if totalNodes != s.P.NumNodes {
+		fmt.Printf("Error, number of nodes do not match! Found %v nodes out of %v\n", totalNodes, s.P.NumNodeNodes)
+	}*/
 }
 
 func (s FusionCenter) Send(rd Reading) {
@@ -40,6 +74,10 @@ func (s FusionCenter) Send(rd Reading) {
 	} else {
 		timeBuckets[rd.time] = []float64{rd.sensorVal}
 	}
+
+	s.UpdateSquareAvg(rd)
+	tile := s.P.Grid[rd.yPos/s.P.YDiv][rd.xPos/s.P.XDiv]
+	tile.SquareValues += math.Pow(float64(rd.sensorVal-float64(tile.Avg)), 2)
 }
 
 func (s FusionCenter) CalcStats() ([1000]float64, [1000]float64, [1000]float64) {
@@ -118,7 +156,7 @@ This is the server GO file and it is a model of our server
 ////This refines the phone files to fill in the gaps between where the server did not check the GPS or sensor
 //func Refine( p *PhoneFile) (bool) {
 //	//This fills the positions
-//	if (len(p.yPos) == len(p.time)) == (len(p.yPos) == len(p.val)) {
+//	if (len(s.P.yPos) == len(p.time)) == (len(p.yPos) == len(p.val)) {
 //		inbetween := 0
 //		open := false
 //		for i := 0; i < len(p.time); i++ {
