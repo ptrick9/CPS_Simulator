@@ -1,6 +1,7 @@
 package main
 
 import (
+	"./cps"
 	"bytes"
 	"flag"
 	"fmt"
@@ -10,25 +11,16 @@ import (
 	"os"
 	"sync"
 	"time"
-	"./cps"
-
 )
 
 var (
-	
+	p *cps.Params
+	r *cps.RegionParams
 
-
-
-	p  *cps.Params
-	r  *cps.RegionParams
-
-	
-	err 		 error
+	err error
 
 	// End the command line variables.
 )
-
-
 
 func main() {
 
@@ -63,7 +55,6 @@ func main() {
 	}
 	defer resultFile.Close()*/
 
-
 	p.NumStoredSamples = p.NumStoredSamplesCM
 	p.NumGridSamples = p.GridStoredSamplesCM
 	p.DetectionThreshold = p.DetectionThresholdCM
@@ -91,7 +82,7 @@ func main() {
 	}
 
 	rand.Seed(time.Now().UnixNano()) //sets random to work properly by tying to to clock
-	p.ThreshHoldBatteryToHave = 30.0   //This is the threshhold battery to have for all phones
+	p.ThreshHoldBatteryToHave = 30.0 //This is the threshhold battery to have for all phones
 	p.TotalPercentBatteryToUse = float32(p.ThresholdBatteryToUseCM)
 
 	p.Iterations_used = 0
@@ -175,8 +166,8 @@ func main() {
 	//fmt.Fprintln(p.GridFile, "Total Number of Nodes:", (p.NumNodes + numSuperNodes))
 	//fmt.Fprintln(p.GridFile, "Runs:", iterations_of_event)
 
-	fmt.Fprintln(p.GridFile,"Width:", p.SquareColCM)
-	fmt.Fprintln(p.GridFile,"Height:", p.SquareRowCM)
+	fmt.Fprintln(p.GridFile, "Width:", p.SquareColCM)
+	fmt.Fprintln(p.GridFile, "Height:", p.SquareRowCM)
 
 	//Printing parameters to driftFile
 	fmt.Fprintln(p.DriftFile, "Number of Nodes:", p.NumNodes)
@@ -253,14 +244,14 @@ func main() {
 	//This function initializes the super nodes in the scheduler's SNodeList
 	scheduler.MakeSuperNodes(p)
 
-	fmt.Printf("Running Simulator iteration %d\\%v",0, p.Iterations_of_event)
+	fmt.Printf("Running Simulator iteration %d\\%v", 0, p.Iterations_of_event)
 
 	i := 0
 	for i = 0; i < p.Iterations_of_event && !p.FoundBomb; i++ {
 
 		makeNodes()
 		//fmt.Println(iterations_used)
-		fmt.Printf("\rRunning Simulator iteration %d\\%v",i, p.Iterations_of_event)
+		fmt.Printf("\rRunning Simulator iteration %d\\%v", i, p.Iterations_of_event)
 		if p.PositionPrint {
 			fmt.Fprintln(p.PositionFile, "t= ", p.Iterations_used, " amount= ", len(p.NodeList))
 		}
@@ -457,7 +448,7 @@ func main() {
 	fmt.Fprintln(p.PositionFile, "Height:", p.MaxY)
 	fmt.Fprintf(p.PositionFile, "Amount: %-8v\n", i)
 
-	if (i < p.Iterations_of_event - 1) {
+	if i < p.Iterations_of_event-1 {
 		fmt.Printf("\nFound bomb at iteration: %v \nSimulation Complete\n", i)
 	} else {
 		fmt.Println("\nSimulation Complete")
@@ -466,7 +457,6 @@ func main() {
 	for i := range p.BoolGrid {
 		fmt.Fprintln(boolFile, p.BoolGrid[i])
 	}
-
 
 }
 
@@ -511,9 +501,6 @@ func makeNodes() {
 		}
 	}
 }
-
-
-
 
 func getFlags() {
 	//p = cps.Params{}

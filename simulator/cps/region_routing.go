@@ -1,8 +1,8 @@
 package cps
 
 import (
-	"math"
 	"fmt"
+	"math"
 )
 
 type Tuple struct {
@@ -25,9 +25,7 @@ type RegionParams struct {
 	Possible_paths [][]int
 
 	Stim_list map[int]Tuple
-		
 }
-
 
 func Point_list_remove(point Tuple, r *RegionParams) {
 	index := -1
@@ -222,7 +220,6 @@ func GenerateRouting(p *Params, r *RegionParams) {
 		for !collide {
 			y_test.Y += 1
 
-
 			for x_val := top_left.X; x_val < temp.X; x_val++ {
 				if !r.Point_dict[Tuple{x_val, y_test.Y}] {
 					collide = true
@@ -347,8 +344,6 @@ func GenerateRouting(p *Params, r *RegionParams) {
 		}
 	}
 
-
-
 	r.Node_tables = make([]map[Tuple]float64, len(r.Square_list))
 
 	for key, values := range r.Border_dict {
@@ -373,6 +368,5 @@ func GenerateRouting(p *Params, r *RegionParams) {
 			}
 		}
 	}
-
 
 }

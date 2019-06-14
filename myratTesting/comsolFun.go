@@ -6,10 +6,7 @@
 -logEnergy=true
 -logNodes=false
 -noEnergy=false
- */
-
-
-
+*/
 
 package main
 
@@ -19,8 +16,12 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
+	"log"
 	"math"
 	"math/rand"
+	"os"
+	"runtime"
+	"runtime/pprof"
 	"sync"
 	"time"
 
@@ -29,21 +30,18 @@ import (
 )
 
 var (
+	p *cps.Params
+	r *cps.RegionParams
 
-
-	p  *cps.Params
-	r  *cps.RegionParams
-
-
-	err 		 error
+	err error
 
 	// End the command line variables.
+
 )
 
 func init() {
 	image.RegisterFormat("png", "png", png.Decode, png.DecodeConfig)
 }
-
 
 func main() {
 
@@ -57,6 +55,18 @@ func main() {
 	rand.Seed(time.Now().UTC().UnixNano())
 
 	getFlags()
+
+	if p.CPUProfile != "" {
+		f, err := os.Create(p.CPUProfile)
+		if err != nil {
+			log.Fatal("could not create CPU profile: ", err)
+		}
+		defer f.Close()
+		if err := pprof.StartCPUProfile(f); err != nil {
+			log.Fatal("could not start CPU profile: ", err)
+		}
+		defer pprof.StopCPUProfile()
+	}
 
 	//fileName = p.InputFileNameCM
 	p.FileName = p.InputFileNameCM
@@ -78,7 +88,6 @@ func main() {
 	}
 	defer resultFile.Close()*/
 
-
 	p.NumStoredSamples = p.NumStoredSamplesCM
 	p.NumGridSamples = p.GridStoredSamplesCM
 	p.DetectionThreshold = p.DetectionThresholdCM
@@ -99,7 +108,6 @@ func main() {
 			p.BoolGrid[i][j] = false
 		}
 	}
-
 
 	cps.ReadMap(p, r)
 
@@ -156,12 +164,7 @@ func main() {
 	starting_locs[2] = bot_left_corner
 	starting_locs[3] = bot_right_corner
 
-
-
-
-
 	cps.GenerateRouting(p, r)
-
 
 	//This is where the text file reading ends
 	Vn := make([]float64, 1000)
@@ -178,34 +181,22 @@ func main() {
 	}
 
 	rand.Seed(time.Now().UnixNano()) //sets random to work properly by tying to to clock
-	p.ThreshHoldBatteryToHave = 30.0   //This is the threshhold battery to have for all phones
-
-
+	p.ThreshHoldBatteryToHave = 30.0 //This is the threshhold battery to have for all phones
 
 	p.Iterations_used = 0
 	p.Iterations_of_event = 1000
 	p.EstimatedPingsNeeded = 10200
 
-
-
 	cps.SetupFiles(p)
 
-
-
 	cps.SetupParameters(p)
-
-
-
 
 	//Printing important information to the p.Grid log file
 	//fmt.Fprintln(p.GridFile, "Grid:", p.SquareRowCM, "x", p.SquareColCM)
 	//fmt.Fprintln(p.GridFile, "Total Number of Nodes:", (p.NumNodes + numSuperNodes))
 	//fmt.Fprintln(p.GridFile, "Runs:", iterations_of_event)
 
-
 	fmt.Println("xDiv is ", p.XDiv, " yDiv is ", p.YDiv, " square capacity is ", p.SquareCapacity)
-
-
 
 	//The scheduler determines which supernode should pursue a point of interest
 	scheduler := &cps.Scheduler{}
@@ -267,8 +258,7 @@ func main() {
 	//This function initializes the super nodes in the scheduler's SNodeList
 	//scheduler.MakeSuperNodes(p)
 
-	fmt.Printf("Running Simulator iteration %d\\%v",0, p.Iterations_of_event)
-
+	fmt.Printf("Running Simulator iteration %d\\%v", 0, p.Iterations_of_event)
 
 	iters := 0
 	p.CurrTime = 0
@@ -281,10 +271,9 @@ func main() {
 		}
 		fmt.Printf("Current time: %d\n", p.CurrTime)
 
-
 		makeNodes()
 		//fmt.Println(iterations_used)
-		fmt.Printf("\rRunning Simulator iteration %d\\%v",iters, p.Iterations_of_event)
+		fmt.Printf("\rRunning Simulator iteration %d\\%v", iters, p.Iterations_of_event)
 		if p.PositionPrint {
 			fmt.Fprintln(p.PositionFile, "t= ", p.Iterations_used, " amount= ", len(p.NodeList))
 		}
@@ -329,7 +318,6 @@ func main() {
 		fmt.Fprintln(p.EnergyFile, "Amount:", len(p.NodeList))
 
 		cps.HandleMovement(p)
-
 
 		fmt.Fprintln(p.RoutingFile, "Amount:", p.NumSuperNodes)
 
@@ -466,7 +454,7 @@ func main() {
 	fmt.Fprintln(p.PositionFile, "Height:", p.MaxY)
 	fmt.Fprintf(p.PositionFile, "Amount: %-8v\n", iters)
 
-	if (iters < p.Iterations_of_event - 1) {
+	if iters < p.Iterations_of_event-1 {
 		fmt.Printf("\nFound bomb at iteration: %v \nSimulation Complete\n", iters)
 	} else {
 		fmt.Println("\nSimulation Complete")
@@ -476,6 +464,17 @@ func main() {
 		fmt.Fprintln(p.BoolFile, p.BoolGrid[i])
 	}
 
+	if p.MemProfile != "" {
+		f, err := os.Create(p.MemProfile)
+		if err != nil {
+			log.Fatal("could not create memory profile: ", err)
+		}
+		defer f.Close()
+		runtime.GC() // get up-to-date statistics
+		if err := pprof.WriteHeapProfile(f); err != nil {
+			log.Fatal("could not write memory profile: ", err)
+		}
+	}
 
 }
 
@@ -528,11 +527,11 @@ func makeNodes() {
 	}
 }
 
-
-
-
 func getFlags() {
 	//p = cps.Params{}
+
+	flag.StringVar(&p.CPUProfile, "cpuprofile", "", "write cpu profile to `file`")
+	flag.StringVar(&p.MemProfile, "memprofile", "", "write memory profile to `file`")
 
 	//fmt.Println(os.Args[1:], "\nhmmm? \n ") //C:\Users\Nick\Desktop\comand line experiments\src
 	flag.IntVar(&p.NegativeSittingStopThresholdCM, "negativeSittingStopThreshold", -10,
@@ -578,7 +577,7 @@ func getFlags() {
 		"number of samples stored by individual nodes for averaging")
 	flag.IntVar(&p.GridStoredSamplesCM, "p.GridStoredSamples", 10,
 		"number of samples stored by p.Grid squares for averaging")
-	flag.Float64Var(&p.DetectionThresholdCM, "detectionThreshold", 10000.0,//11180.0,
+	flag.Float64Var(&p.DetectionThresholdCM, "detectionThreshold", 10000.0, //11180.0,
 		"Value where if a node gets this reading or higher, it will trigger a detection")
 	flag.Float64Var(&p.ErrorModifierCM, "errorMultiplier", 1.0,
 		"Multiplier for error values in system")
@@ -633,7 +632,6 @@ func getFlags() {
 	flag.StringVar(&p.OutRoutingStatsNameCM, "outRoutingStatsName", "routingStats.txt", "Name of the output file for stats")
 
 	flag.BoolVar(&p.RegionRouting, "regionRouting", true, "True if you want to use the new routing algorithm with regions and cutting")
-
 
 	flag.Parse()
 	fmt.Println("Natural Loss: ", p.NaturalLossCM)
@@ -711,4 +709,3 @@ func printPoints(s cps.SuperNodeParent) bytes.Buffer {
 	buffer.WriteString((fmt.Sprintf("]")))
 	return buffer
 }
-

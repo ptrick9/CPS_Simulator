@@ -18,7 +18,7 @@ type SuperNodeParent interface {
 
 	AddRoutePoint(Coord, *Params, *RegionParams)
 	UpdatePath(p *Params, r *RegionParams)
-	Route(grid [][]*Square, c1 Coord, c2 Coord, list[]Coord) []Coord
+	Route(grid [][]*Square, c1 Coord, c2 Coord, list []Coord) []Coord
 
 	IncSquareMoved(int)
 	IncAllPoints()

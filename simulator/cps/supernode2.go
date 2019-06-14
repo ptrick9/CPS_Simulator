@@ -16,7 +16,7 @@ type SuperNode2Impl interface {
 type Sn_two struct {
 	*Supern
 
-	RegionList []Region
+	RegionList     []Region
 	UsedRegionList []Region
 }
 
@@ -24,13 +24,13 @@ type Sn_two struct {
 //	grid
 type Region struct {
 	Center, Edge Coord
-	Points []Coord
+	Points       []Coord
 }
 
 //This function is called every tick
 //It adds Points to the super nodes routePoints and routePath lists
 //	and moves it along those paths
-func (n* Sn_two) Tick(p *Params, r *RegionParams) {
+func (n *Sn_two) Tick(p *Params, r *RegionParams) {
 	//Increments the time of all the Points in the allPoints list
 	n.IncAllPoints()
 
@@ -40,10 +40,10 @@ func (n* Sn_two) Tick(p *Params, r *RegionParams) {
 	//		OR if already in the Center, plot a new path
 	if len(n.RoutePath) > 0 {
 		n.PathMove(p)
-	}else {
+	} else {
 		if (n.X == n.Center.X) && (n.Y == n.Center.Y) {
 			n.UpdatePath(p, r)
-		}else {
+		} else {
 			n.CentMove(p)
 		}
 	}
@@ -58,10 +58,10 @@ func (n* Sn_two) Tick(p *Params, r *RegionParams) {
 //	back, intercepting Points along the way
 //Once a region has been visited it will not be visited again until all of the
 //	region have been visited or all the other regions are currently empty
-func (n* Sn_two) UpdatePath(p *Params, r *RegionParams){
+func (n *Sn_two) UpdatePath(p *Params, r *RegionParams) {
 
 	//If all the regions have been traversed then all regions may be looked at again
-	if len(n.RegionList) <= 0{
+	if len(n.RegionList) <= 0 {
 		n.RegionList = n.UsedRegionList
 		n.UsedRegionList = make([]Region, 0)
 	}
@@ -78,7 +78,7 @@ func (n* Sn_two) UpdatePath(p *Params, r *RegionParams){
 
 		//Otherwise a path is created through the region found to have the greatest
 		//	number of Points of interest
-	}else {
+	} else {
 		//Adds the Points inside the Region to that Region's Points list
 		n.AddToRegion(high_ind)
 
@@ -101,7 +101,7 @@ func (n* Sn_two) UpdatePath(p *Params, r *RegionParams){
 		if len(lower_list) > len(upper_list) {
 			start_list = lower_list
 			end_list = upper_list
-		}else{
+		} else {
 			start_list = upper_list
 			end_list = lower_list
 		}
@@ -121,9 +121,9 @@ func (n* Sn_two) UpdatePath(p *Params, r *RegionParams){
 		//	Points it must visit in this part of the region
 		for len(dist_list) > 0 {
 			lowind := 0
-			lowdist := float64(p.MaxX*p.MaxY);//1000.0
+			lowdist := float64(p.MaxX * p.MaxY) //1000.0
 			for _, d := range dist_list {
-				if (d.Dist < lowdist) {
+				if d.Dist < lowdist {
 					lowdist = d.Dist
 					lowind = d.Y
 				}
@@ -143,7 +143,7 @@ func (n* Sn_two) UpdatePath(p *Params, r *RegionParams){
 			w := 0
 			for w < len(dist_list) {
 				d := dist_list[w]
-				if (d.Y == lowind) {
+				if d.Y == lowind {
 					dist_list = Remove_index(dist_list, w)
 				} else {
 					w++
@@ -155,7 +155,7 @@ func (n* Sn_two) UpdatePath(p *Params, r *RegionParams){
 
 		//If the other half of the region does not have any Points the super
 		//	node is directed back to its Center point
-		if (len(end_list) > 0) {
+		if len(end_list) > 0 {
 			dist_list = make([]Path, 0)
 
 			//Calculates the distance between each point and the Center
@@ -171,7 +171,7 @@ func (n* Sn_two) UpdatePath(p *Params, r *RegionParams){
 			longdist := -1.0
 			longind := -1
 			for _, d := range dist_list {
-				if (d.Dist > longdist) {
+				if d.Dist > longdist {
 					longdist = d.Dist
 					longind = d.Y
 				}
@@ -195,7 +195,7 @@ func (n* Sn_two) UpdatePath(p *Params, r *RegionParams){
 			w := 0
 			for w < len(dist_list) {
 				d := dist_list[w]
-				if (d.Y == longind) {
+				if d.Y == longind {
 					dist_list = Remove_index(dist_list, w)
 				} else {
 					w++
@@ -208,7 +208,7 @@ func (n* Sn_two) UpdatePath(p *Params, r *RegionParams){
 				longind := 0
 				longdist := -1.0
 				for _, d := range dist_list {
-					if (d.Dist > longdist) {
+					if d.Dist > longdist {
 						longdist = d.Dist
 						longind = d.Y
 					}
@@ -217,10 +217,9 @@ func (n* Sn_two) UpdatePath(p *Params, r *RegionParams){
 				//Adds the selected point to the routePoints list
 				n.RoutePoints = append(n.RoutePoints, end_list[longind])
 
-
 				//Finds the path to that selected point, then adds that path to the routePath
 				//	list, as well as adding the point itself
-				n.RoutePath = append(n.RoutePath,AStar(n.RoutePoints[start], n.RoutePoints[start+1], p)...)
+				n.RoutePath = append(n.RoutePath, AStar(n.RoutePoints[start], n.RoutePoints[start+1], p)...)
 
 				//Since the super node must visit this point the numDestinations is increased
 				n.NumDestinations++
@@ -230,7 +229,7 @@ func (n* Sn_two) UpdatePath(p *Params, r *RegionParams){
 				w := 0
 				for w < len(dist_list) {
 					d := dist_list[w]
-					if (d.Y == longind) {
+					if d.Y == longind {
 						dist_list = Remove_index(dist_list, w)
 					} else {
 						w++
@@ -256,10 +255,10 @@ func (n* Sn_two) UpdatePath(p *Params, r *RegionParams){
 
 //This function returns the index of the Region with the most Points of interest
 //	inside of it
-func (n* Sn_two) MostPointsRegion() int{
+func (n *Sn_two) MostPointsRegion() int {
 	high_Points := 0
 	high_ind := -1
-	for r,_ := range n.RegionList {
+	for r, _ := range n.RegionList {
 		if n.TotalInRegion(n.RegionList[r]) > high_Points {
 			high_Points = n.TotalInRegion(n.RegionList[r])
 			high_ind = r
@@ -270,13 +269,13 @@ func (n* Sn_two) MostPointsRegion() int{
 
 //This function returns the index of the Region with the oldest point of interest
 //	inside of it
-func (n* Sn_two) OldestPointRegion() int {
+func (n *Sn_two) OldestPointRegion() int {
 	point_age := -1
 	high_ind := -1
 	for r, _ := range n.RegionList {
 		if n.OldestInRegion(n.RegionList[r]) > point_age {
 			point_age = n.OldestInRegion(n.RegionList[r])
-			high_ind  = r
+			high_ind = r
 		}
 	}
 	return high_ind
@@ -296,13 +295,13 @@ func (n *Sn_two) Calc_triangle_tot(r Region, pp *Params) ([]Coord, []Coord) {
 	upper_coords := make([]Coord, 0)
 
 	//SE quadrant and NW quadrant
-	if ((r.Center.X <= r.Edge.X) && (r.Center.Y <= r.Edge.Y)) || ((r.Center.X >= r.Edge.X) && (r.Center.Y >= r.Edge.Y)){
+	if ((r.Center.X <= r.Edge.X) && (r.Center.Y <= r.Edge.Y)) || ((r.Center.X >= r.Edge.X) && (r.Center.Y >= r.Edge.Y)) {
 		//This loop determines whether the Points of interest within this Region
 		//	are in the upp triangle or the lower triangle
-		for p,_ := range r.Points {
-			if (r.Points[p].X <= r.Points[p].Y) {
+		for p, _ := range r.Points {
+			if r.Points[p].X <= r.Points[p].Y {
 				lower_coords = append(lower_coords, r.Points[p])
-			}else {
+			} else {
 				upper_coords = append(upper_coords, r.Points[p])
 			}
 		}
@@ -310,10 +309,10 @@ func (n *Sn_two) Calc_triangle_tot(r Region, pp *Params) ([]Coord, []Coord) {
 	} else {
 		//This loop determines whether the Points of interest within this Region
 		//	are in the upp triangle or the lower triangle
-		for p,_ := range r.Points {
-			if ((r.Points[p].X + r.Points[p].Y) > (pp.MaxX / 2)) {
+		for p, _ := range r.Points {
+			if (r.Points[p].X + r.Points[p].Y) > (pp.MaxX / 2) {
 				lower_coords = append(lower_coords, r.Points[p])
-			}else {
+			} else {
 				upper_coords = append(upper_coords, r.Points[p])
 			}
 		}
@@ -323,7 +322,7 @@ func (n *Sn_two) Calc_triangle_tot(r Region, pp *Params) ([]Coord, []Coord) {
 
 //This function takes a Region and returns the total number of Points
 //	of interest inside the Region
-func (n* Sn_two) TotalInRegion(reg Region) int {
+func (n *Sn_two) TotalInRegion(reg Region) int {
 	tot := 0
 	for c, _ := range n.AllPoints {
 		if n.AllPoints[c].IsWithinRegion(reg) {
@@ -335,7 +334,7 @@ func (n* Sn_two) TotalInRegion(reg Region) int {
 
 //This function takes a Region and returns the oldest point of interest
 //	inside that Region
-func (n* Sn_two) OldestInRegion(reg Region) int {
+func (n *Sn_two) OldestInRegion(reg Region) int {
 	age := 0
 	for c, _ := range n.AllPoints {
 		if n.AllPoints[c].IsWithinRegion(reg) {
@@ -354,21 +353,21 @@ func (c Coord) IsWithinRegion(reg Region) bool {
 	//Boundary conditions
 	if c.X > reg.Edge.X {
 		if reg.Center.Y > reg.Edge.Y {
-			if (c.X >= reg.Edge.X) && (c.X <=reg.Center.X) && (c.Y >= reg.Edge.Y) && (c.Y <= reg.Center.Y) {
+			if (c.X >= reg.Edge.X) && (c.X <= reg.Center.X) && (c.Y >= reg.Edge.Y) && (c.Y <= reg.Center.Y) {
 				inside = true
 			}
-		}else {
-			if (c.X >= reg.Edge.X) && (c.X <= reg.Center.X) && (c.Y <= reg.Edge.Y) && (c.Y >= reg.Center.Y){
+		} else {
+			if (c.X >= reg.Edge.X) && (c.X <= reg.Center.X) && (c.Y <= reg.Edge.Y) && (c.Y >= reg.Center.Y) {
 				inside = true
 			}
 		}
-	}else {
+	} else {
 		if reg.Center.Y > reg.Edge.Y {
-			if (c.X <= reg.Edge.X) && (c.X >=reg.Center.X) && (c.Y >= reg.Edge.Y) && (c.Y <= reg.Center.Y) {
+			if (c.X <= reg.Edge.X) && (c.X >= reg.Center.X) && (c.Y >= reg.Edge.Y) && (c.Y <= reg.Center.Y) {
 				inside = true
 			}
-		}else {
-			if (c.X <= reg.Edge.X) && (c.X >= reg.Center.X) && (c.Y <= reg.Edge.Y) && (c.Y >= reg.Center.Y){
+		} else {
+			if (c.X <= reg.Edge.X) && (c.X >= reg.Center.X) && (c.Y <= reg.Edge.Y) && (c.Y >= reg.Center.Y) {
 				inside = true
 			}
 		}

@@ -2,11 +2,11 @@ package cps
 
 import "os"
 
-type Params struct{
+type Params struct {
 	NegativeSittingStopThresholdCM int     // This is a negative number for the sitting to be set to when map is reset
 	SittingStopThresholdCM         int     // This is the threshold for the longest time a node can sit before no longer moving
 	GridCapacityPercentageCM       float64 // This is the percent of a subgrid that can be filled with nodes, between 0.0 and 1.0
-	ErrorModifierCM				   float64 // Multiplier for error model
+	ErrorModifierCM                float64 // Multiplier for error model
 	OutputFileNameCM               string  // This is the prefix of the output text file
 	InputFileNameCM                string  // This must be the name of the input text file with ".txt"
 	NaturalLossCM                  float64 // This can be any number n: 0 < n < .1
@@ -19,7 +19,7 @@ type Params struct{
 	MovementSamplingPeriodCM       int     // This can be any int number n: 1 <= n <= 100
 	MaxBufferCapacityCM            int     // This can be aby int number n: 10 <= n <= 100
 	EnergyModelCM                  string  // This can be "custom", "2StageServer", or other string will result in dynamic
-	NoEnergyModelCM				   bool    // If set to true, all energy model values ignored
+	NoEnergyModelCM                bool    // If set to true, all energy model values ignored
 	SensorSamplingPeriodCM         int     // This can be any int n: 1 <= n <= 100
 	GPSSamplingPeriodCM            int     // This can be any int n: 1 <= n < sensorSamplingPeriodCM <=  100
 	ServerSamplingPeriodCM         int     // This can be any int n: 1 <= n < GPSSamplingPeriodCM <= 100
@@ -33,10 +33,12 @@ type Params struct{
 	SquareRowCM                    int     //This is an int 1 through maxX representing how many rows of squares there are
 	SquareColCM                    int     //This is an int 1 through maxY representing how many columns of squares there are
 
-	StimFileNameCM 				   string
-	ImageFileNameCM 				   string
-	OutRoutingStatsNameCM			string
-	OutRoutingNameCM				string
+	StimFileNameCM        string
+	ImageFileNameCM       string
+	OutRoutingStatsNameCM string
+	OutRoutingNameCM      string
+	CPUProfile            string
+	MemProfile            string
 
 	NumSuperNodes  int
 	SuperNodeType  int
@@ -54,41 +56,38 @@ type Params struct{
 	NodesPrint    bool
 	GridPrint     bool
 
-	DriftFile    	*os.File
-	NodeFile     	*os.File
-	PositionFile 	*os.File
-	GridFile 		*os.File
-	EnergyFile 		*os.File
-	RoutingFile 	*os.File
-	AttractionFile 	*os.File
-	BoolFile 	*os.File
+	DriftFile      *os.File
+	NodeFile       *os.File
+	PositionFile   *os.File
+	GridFile       *os.File
+	EnergyFile     *os.File
+	RoutingFile    *os.File
+	AttractionFile *os.File
+	BoolFile       *os.File
 
-	SensorPath string
+	SensorPath  string
 	SensorTimes []int
-	CurrTime int
+	CurrTime    int
 
-	FoundBomb    bool
-	Err 		 error
+	FoundBomb bool
+	Err       error
 
+	BoardMap [][]int
 
-	BoardMap  		[][]int
-
-
-	BoolGrid       [][]bool
-	Grid           [][]*Square
+	BoolGrid [][]bool
+	Grid     [][]*Square
 
 	SensorReadings [][][]float64
 
 	SquareCapacity int
 
+	XDiv int
+	YDiv int
 
-	XDiv			int
-	YDiv			int
-
-	MaxX             int
-	MaxY             int
-	BombX            int
-	BombY            int
+	MaxX  int
+	MaxY  int
+	BombX int
+	BombY int
 
 	ThreshHoldBatteryToHave  float32
 	TotalPercentBatteryToUse float32
@@ -96,18 +95,17 @@ type Params struct{
 	Iterations_of_event      int
 	EstimatedPingsNeeded     int
 
-	B              *Bomb
+	B *Bomb
 
-	Tau1 			float64
-	Tau2 		 	float64
+	Tau1 float64
+	Tau2 float64
 
-	Recalibrate    bool
+	Recalibrate bool
 
-	FileName 		string
+	FileName string
 
 	RegionRouting bool
 	AStarRouting  bool
-
 
 	NumNodeNodes               int
 	NumWallNodes               int
@@ -130,8 +128,6 @@ type Params struct{
 	NumStoredSamples int
 	NumGridSamples   int
 
-
-
 	WallNodeList []WallNodes
 	NodeList     []NodeImpl
 
@@ -142,14 +138,12 @@ type Params struct{
 	BatteryLossesCheckingGPSScalar    []float32
 	BatteryLossesCheckingServerScalar []float32
 
-	NumAtt         int
-	Attractions    []*Attraction
-	BombSquare     *Square
-	XLoc           int
-	YLoc           int
+	NumAtt      int
+	Attractions []*Attraction
+	BombSquare  *Square
+	XLoc        int
+	YLoc        int
 
-	Width 			int
-	Height 			int
-
-
+	Width  int
+	Height int
 }

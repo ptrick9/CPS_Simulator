@@ -1,6 +1,7 @@
 package main
 
 import (
+	"./cps"
 	"bytes"
 	"flag"
 	"fmt"
@@ -14,40 +15,33 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	"./cps"
 )
 
 var (
+	p *cps.Params
+	r *cps.RegionParams
 
-
-	p  *cps.Params
-	r  *cps.RegionParams
-
-
-	err 		 error
+	err error
 )
 
 func init() {
 	image.RegisterFormat("png", "png", png.Decode, png.DecodeConfig)
 }
 
-
-
 func main() {
-	
+
 	p = &cps.Params{}
 	r = &cps.RegionParams{}
-	
-	
+
 	prnt := false
-	
+
 	rand.Seed(time.Now().UTC().UnixNano())
 
 	getFlags()
 
 	p.MaxX = 408
 	p.MaxY = 408
-	
+
 	//squareRow = squareRowCM
 	//squareCol = squareColCM
 
@@ -385,8 +379,6 @@ func main() {
 				break
 			}
 		}
-
-		
 
 		r.Node_tables = make([]map[cps.Tuple]float64, len(r.Square_list))
 

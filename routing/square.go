@@ -1,7 +1,7 @@
 package main
 
 import (
-    "math"
+	"math"
 )
 
 type RoutingSquare struct {

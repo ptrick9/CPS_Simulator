@@ -62,7 +62,7 @@ var (
 	negativeSittingStopThresholdCM int     // This is a negative number for the sitting to be set to when map is reset
 	sittingStopThresholdCM         int     // This is the threshold for the longest time a node can sit before no longer moving
 	gridCapacityPercentageCM       float64 // This is the percent of a subgrid that can be filled with nodes, between 0.0 and 1.0
-	errorModifierCM				   float64 // Multiplier for error model
+	errorModifierCM                float64 // Multiplier for error model
 	outputFileNameCM               string  // This is the prefix of the output text file
 	inputFileNameCM                string  // This must be the name of the input text file with ".txt"
 	naturalLossCM                  float64 // This can be any number n: 0 < n < .1
@@ -75,7 +75,7 @@ var (
 	movementSamplingPeriodCM       int     // This can be any int number n: 1 <= n <= 100
 	maxBufferCapacityCM            int     // This can be aby int number n: 10 <= n <= 100
 	energyModelCM                  string  // This can be "custom", "2StageServer", or other string will result in dynamic
-	noEnergyModelCM				   bool    // If set to true, all energy model values ignored
+	noEnergyModelCM                bool    // If set to true, all energy model values ignored
 	sensorSamplingPeriodCM         int     // This can be any int n: 1 <= n <= 100
 	GPSSamplingPeriodCM            int     // This can be any int n: 1 <= n < sensorSamplingPeriodCM <=  100
 	serverSamplingPeriodCM         int     // This can be any int n: 1 <= n < GPSSamplingPeriodCM <= 100
@@ -109,7 +109,7 @@ var (
 	nodeFile     *os.File
 	positionFile *os.File
 	foundBomb    bool
-	err 		 error
+	err          error
 
 	// End the command line variables.
 )
@@ -256,8 +256,8 @@ func main() {
 	//fmt.Fprintln(gridFile, "Total Number of Nodes:", (numNodes + numSuperNodes))
 	//fmt.Fprintln(gridFile, "Runs:", iterations_of_event)
 
-	fmt.Fprintln(gridFile,"Width:", squareCol)
-	fmt.Fprintln(gridFile,"Height:", squareRow)
+	fmt.Fprintln(gridFile, "Width:", squareCol)
+	fmt.Fprintln(gridFile, "Height:", squareRow)
 
 	//Printing parameters to driftFile
 	fmt.Fprintln(driftFile, "Number of Nodes:", numNodes)
@@ -334,14 +334,14 @@ func main() {
 	//This function initializes the super nodes in the scheduler's sNodeList
 	scheduler.makeSuperNodes()
 
-	fmt.Printf("Running Simulator iteration %d\\%v",0, iterations_of_event)
+	fmt.Printf("Running Simulator iteration %d\\%v", 0, iterations_of_event)
 
 	i := 0
 	for i = 0; i < iterations_of_event && !foundBomb; i++ {
 
 		makeNodes()
 		//fmt.Println(iterations_used)
-		fmt.Printf("\rRunning Simulator iteration %d\\%v",i, iterations_of_event)
+		fmt.Printf("\rRunning Simulator iteration %d\\%v", i, iterations_of_event)
 		if positionPrint {
 			fmt.Fprintln(positionFile, "t= ", iterations_used, " amount= ", len(nodeList))
 		}
@@ -538,7 +538,7 @@ func main() {
 	fmt.Fprintln(positionFile, "Height:", maxY)
 	fmt.Fprintf(positionFile, "Amount: %-8v\n", i)
 
-	if (i < iterations_of_event - 1) {
+	if i < iterations_of_event-1 {
 		fmt.Printf("\nFound bomb at iteration: %v \nSimulation Complete\n", i)
 	} else {
 		fmt.Println("\nSimulation Complete")
@@ -547,7 +547,6 @@ func main() {
 	for i := range boolGrid {
 		fmt.Fprintln(boolFile, boolGrid[i])
 	}
-
 
 }
 

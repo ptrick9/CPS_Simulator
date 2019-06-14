@@ -6,12 +6,12 @@ import (
 
 	//"bufio"
 	"fmt"
+	"image"
 	"io/ioutil"
 	"math"
 	"os"
 	"regexp"
 	"strconv"
-	"image"
 	//"time"
 	"log"
 )
@@ -24,22 +24,22 @@ var (
 	bufferFuture  = [][]int{{}}             // point to be worked with
 	starter       = 1                       // This is the destination number
 	/*p.BoardMap      = [][]int{                // This is the map with all the position variables for path finding
-		{0, 0, 0, 0, 0},
-		{0, 0, 0, 0, 0},
-		{0, 0, 0, 0, 0},
-		{0, 0, 0, 0, 0},
-		{0, 0, 0, 0, 0}}*/
+	{0, 0, 0, 0, 0},
+	{0, 0, 0, 0, 0},
+	{0, 0, 0, 0, 0},
+	{0, 0, 0, 0, 0},
+	{0, 0, 0, 0, 0}}*/
 
 	wallPoints = [][]int{{1, 1}, {1, 2}, {1, 3}, {2, 1}}
 	// end variables for making maps
 
 	/*
-	npos    [][]int // node positions
-	wpos    [][]int // wall positions
-	spos    [][]int // super node positions
-	ppos    [][]int // super node points of interest positions
-	poikpos [][]int // points of interest kinetic
-	poispos [][]int // points of interest static
+		npos    [][]int // node positions
+		wpos    [][]int // wall positions
+		spos    [][]int // super node positions
+		ppos    [][]int // super node points of interest positions
+		poikpos [][]int // points of interest kinetic
+		poispos [][]int // points of interest static
 	*/
 
 	//b []byte
@@ -439,15 +439,12 @@ func HandleMovement(p *Params) {
 	}
 }
 
-
 // Fills the walls into the board based on the wall positions extrapolated from the file
 func FillInWallsToBoard(p *Params) {
 	for i := 0; i < len(p.Wpos); i++ {
 		p.BoardMap[p.Wpos[i][1]][p.Wpos[i][0]] = -1
 	}
 }
-
-
 
 // Fills the points of interest into the current buffer
 
@@ -618,9 +615,7 @@ func FillInMap(p *Params) {
 	bufferFuture = [][]int{{}}
 }
 
-
 func ReadMap(p *Params, r *RegionParams) {
-
 
 	CreateBoard(p.MaxX, p.MaxY, p)
 
@@ -633,7 +628,6 @@ func ReadMap(p *Params, r *RegionParams) {
 	r.Square_list = make([]RoutingSquare, 0)
 
 	r.Border_dict = make(map[int][]int)
-
 
 	imgfile, err := os.Open(p.ImageFileNameCM)
 	if err != nil {
@@ -671,11 +665,10 @@ func ReadMap(p *Params, r *RegionParams) {
 				r.Point_list2[x][y] = true
 				r.Point_dict[Tuple{x, y}] = true
 
-
 			} else {
 				r.Point_dict[Tuple{x, y}] = false
 				p.BoardMap[y][x] = -1
-				temp := make([] int, 2)
+				temp := make([]int, 2)
 				temp[0] = x
 				temp[1] = y
 				p.Wpos = append(p.Wpos, temp)
@@ -746,8 +739,8 @@ func SetupFiles(p *Params) {
 	//defer p.GridFile.Close()
 
 	//Write parameters to gridFile
-	fmt.Fprintln(p.GridFile,"Width:", p.SquareColCM)
-	fmt.Fprintln(p.GridFile,"Height:", p.SquareRowCM)
+	fmt.Fprintln(p.GridFile, "Width:", p.SquareColCM)
+	fmt.Fprintln(p.GridFile, "Height:", p.SquareRowCM)
 
 	p.NodeFile, err = os.Create(p.OutputFileNameCM + "-node_reading.txt")
 	if err != nil {
@@ -780,7 +773,6 @@ func SetupFiles(p *Params) {
 	//defer p.AttractionFile.Close()
 }
 
-
 func SetupParameters(p *Params) {
 
 	p.XDiv = p.MaxX / p.SquareColCM
@@ -804,9 +796,7 @@ func SetupParameters(p *Params) {
 
 	//readCSV(p)
 
-
 }
-
 
 func readCSV(p *Params) {
 
@@ -834,24 +824,24 @@ func readCSV(p *Params) {
 	topVal := 0.0
 	i := 9
 
-	numSamples := len(record[9])-2
+	numSamples := len(record[9]) - 2
 
-	p.SensorReadings = make([][][] float64, p.Width)
+	p.SensorReadings = make([][][]float64, p.Width)
 	for i := range p.SensorReadings {
-		p.SensorReadings[i] = make([][] float64, p.Height)
+		p.SensorReadings[i] = make([][]float64, p.Height)
 		for j := range p.SensorReadings[i] {
-			p.SensorReadings[i][j] = make([] float64, numSamples)
+			p.SensorReadings[i][j] = make([]float64, numSamples)
 			for k := range p.SensorReadings[i][j] {
 				p.SensorReadings[i][j][k] = 0
 			}
 		}
 	}
 
-	averaged := make([][][] float64, p.Width)
+	averaged := make([][][]float64, p.Width)
 	for i := range averaged {
-		averaged[i] = make([][] float64, p.Height)
+		averaged[i] = make([][]float64, p.Height)
 		for j := range averaged[i] {
-			averaged[i][j] = make([] float64, numSamples)
+			averaged[i][j] = make([]float64, numSamples)
 			for k := range averaged[i][j] {
 				averaged[i][j][k] = -1
 			}
@@ -860,7 +850,7 @@ func readCSV(p *Params) {
 
 	for i < len(record) {
 		//fmt.Println(record[i])
-		x, err := strconv.ParseFloat(record[i][0], 32);
+		x, err := strconv.ParseFloat(record[i][0], 32)
 		/*if err == nil {
 			fmt.Println(Round(x, 0.5))
 		} else {
@@ -869,7 +859,7 @@ func readCSV(p *Params) {
 		if x > big {
 			big = x
 		}
-		y, err := strconv.ParseFloat(record[i][1], 32);
+		y, err := strconv.ParseFloat(record[i][1], 32)
 		/*if err == nil {
 			fmt.Println(Round(y, 0.5))
 		}*/
@@ -879,9 +869,9 @@ func readCSV(p *Params) {
 		j := 2
 		/*fmt.Printf("%v %v\n", int(x*2), int(y*2))
 		fmt.Printf("%v\n", len(record[i]))*/
-		if (int(x*2) < p.Width && int(y*2) < p.Height) {
+		if int(x*2) < p.Width && int(y*2) < p.Height {
 			for j < len(record[i]) {
-				read1, _ := strconv.ParseFloat(record[i][j], 32);
+				read1, _ := strconv.ParseFloat(record[i][j], 32)
 				if err == nil {
 					//fmt.Printf("%e ", read1)
 				}
@@ -900,25 +890,20 @@ func readCSV(p *Params) {
 		i++
 	}
 
-
-
-
-
 	fmt.Printf("\ntop: %v\n", topVal)
-
 
 	cw := 7
 	ch := 7
-	divider := 1.0/float64(cw * ch)
+	divider := 1.0 / float64(cw*ch)
 	radius := cw / 2
 
 	for k := range p.SensorReadings[0][0] {
 		for i := range p.SensorReadings {
 			for j := range p.SensorReadings[i] {
 				total := 0.0
-				for ci := radius; ci >= radius * -1; ci-- {
-					for cj := radius; cj >= radius * -1; cj-- {
-						if i+ci > 0 && i + ci < p.Width && j+cj > 0 && j+cj < p.Height {
+				for ci := radius; ci >= radius*-1; ci-- {
+					for cj := radius; cj >= radius*-1; cj-- {
+						if i+ci > 0 && i+ci < p.Width && j+cj > 0 && j+cj < p.Height {
 							total += p.SensorReadings[i+ci][j+cj][k] * divider
 						}
 					}

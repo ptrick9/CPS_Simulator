@@ -13,7 +13,7 @@ type sn_one struct {
 //This function is called every tick
 //It adds points to the super node's routePoints and routePath lists
 //	and moves it along the path
-func (n* sn_one) tick() {
+func (n *sn_one) tick() {
 	//If there are still squares to visit the super node should move along
 	//	the path
 	if len(n.getRoutePoints()) > 1 {
@@ -36,7 +36,7 @@ func (n* sn_one) tick() {
 //This function adds points to the routePath list in order for
 //	for the super node to follow, it also inserts points into the
 //	routePath if a new point appears and qualifies for insertion
-func (n* sn_one) updatePath(){
+func (n *sn_one) updatePath() {
 	//If numDestinations is 0 then there are currently no points for the super
 	//	node to visit
 	//That means that all the points in the nodePoints list can be visited without
@@ -70,15 +70,15 @@ func (n* sn_one) updatePath(){
 		//Saves the destination index to be the startinf point for the next iteration
 		for len(dist_list) > 0 {
 			start := end
-			lowdist := float64(maxX*maxY);//1000.0
+			lowdist := float64(maxX * maxY) //1000.0
 			for _, d := range dist_list {
-				if (d.x == start) {
-					if (d.dist < lowdist) {
+				if d.x == start {
+					if d.dist < lowdist {
 						lowdist = d.dist
 						end = d.y
 					}
-				} else if (d.y == start) {
-					if (d.dist < lowdist) {
+				} else if d.y == start {
+					if d.dist < lowdist {
 						lowdist = d.dist
 						end = d.x
 					}
@@ -112,7 +112,7 @@ func (n* sn_one) updatePath(){
 		copy(n.routePoints, cpy)
 
 		//If numDestinations is not 0 then the current routePath needs to be altered
-	}else {
+	} else {
 		//Loops through the points added to the routePoints list that are not accounted
 		//	for by the super nodes numDestinations
 		for i := n.numDestinations + 1; i < len(n.routePoints); i++ {
@@ -165,11 +165,11 @@ func (n* sn_one) updatePath(){
 					if ind == 0 {
 						start_found = true
 					}
-					for j := 0; (j < len(n.routePath) && !end_found); j++ {
-						if (n.routePath[j].x == n.routePoints[ind].x) && (n.routePath[j].y == n.routePoints[ind].y) && !start_found{
+					for j := 0; j < len(n.routePath) && !end_found; j++ {
+						if (n.routePath[j].x == n.routePoints[ind].x) && (n.routePath[j].y == n.routePoints[ind].y) && !start_found {
 							start_ind = j
 							start_found = true
-						}else if (n.routePath[j].x == n.routePoints[ind+1].x) && (n.routePath[j].y == n.routePoints[ind+1].y) && start_found {
+						} else if (n.routePath[j].x == n.routePoints[ind+1].x) && (n.routePath[j].y == n.routePoints[ind+1].y) && start_found {
 							end_ind = j
 							end_found = true
 						}
@@ -182,7 +182,7 @@ func (n* sn_one) updatePath(){
 					arr = aStar(n.routePoints[ind], n.routePoints[i])
 					arr = append(arr, aStar(n.routePoints[i], n.routePoints[ind+1])...)
 
-					if ind != 0{
+					if ind != 0 {
 						start_ind += 1
 					}
 
@@ -201,10 +201,9 @@ func (n* sn_one) updatePath(){
 					//	of destinations is increased
 					n.numDestinations++
 
-
 					//Otherwise, the next point becomes the current point and its next becomes
 					//	the new next
-				}else{
+				} else {
 					ind++
 				}
 			}
@@ -219,6 +218,6 @@ func (n* sn_one) updatePath(){
 }
 
 //Adds a routePoint to the super node's routePoints
-func (n* sn_one) addRoutePoint(c Coord) {
+func (n *sn_one) addRoutePoint(c Coord) {
 	n.routePoints = append(n.routePoints, c)
 }

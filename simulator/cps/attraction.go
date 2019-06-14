@@ -9,11 +9,11 @@ type Attraction struct {
 }
 
 //function to "teleport" an attraction
-func (a *Attraction) Move(x,y int){
+func (a *Attraction) Move(x, y int) {
 	a.X = x
 	a.Y = y
 }
 
-func (a Attraction) String() string{
-	return fmt.Sprintf("X: %v, Y: %v",a.X,a.Y)
+func (a Attraction) String() string {
+	return fmt.Sprintf("X: %v, Y: %v", a.X, a.Y)
 }

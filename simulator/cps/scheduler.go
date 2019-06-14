@@ -234,7 +234,6 @@ func ClosestDist(c Coord, list []Coord) float64 {
 	return dist
 }
 
-
 func (scheduler *Scheduler) MakeSuperNodes(p *Params) {
 	for i := 0; i < p.NumSuperNodes; i++ {
 		snode_points := make([]Coord, 1)

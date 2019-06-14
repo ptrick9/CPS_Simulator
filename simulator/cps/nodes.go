@@ -18,8 +18,8 @@ type NodeParent interface {
 	Row(div int) int                //Row of node
 	Col(div int) int                //Column of node
 	GetSpeed() []float32            //History of accelerometer based speeds of node
-	BatteryLossDynamic(p *Params)            //Battery loss based of ratios of battery usage
-	BatteryLossDynamic1(p *Params)           //2 stage buffer battery loss
+	BatteryLossDynamic(p *Params)   //Battery loss based of ratios of battery usage
+	BatteryLossDynamic1(p *Params)  //2 stage buffer battery loss
 	UpdateHistory(newValue float32) //updates history of node's samples
 	IncrementTotalSamples()         //increments total number of samples node has taken
 	GetAvg() float32                //returns average of node's past samples
@@ -193,8 +193,6 @@ func (n *NodeImpl) Distance(b Bomb) float32 {
 		return float32(math.Pow(1000/float64(dist), 1.5))
 	}
 }
-
-
 
 // These are the toString methods for battery levels
 func (n Bn) String() string { // extra extra string statements
@@ -1099,9 +1097,6 @@ func (curNode *NodeImpl) GetReadings(p *Params) {
 		p.Grid[curNode.Row(p.YDiv)][curNode.Col(p.XDiv)].SquareValues += (math.Pow(float64(errorDist-float64(gridAverage)), 2))
 	}
 }
-
-
-
 
 //Takes cares of taking a node's readings and printing detections and stuff
 func (curNode *NodeImpl) GetReadingsCSV(p *Params) {
