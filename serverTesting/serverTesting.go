@@ -16,8 +16,13 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
+	"log"
 	"math"
 	"math/rand"
+	"os"
+	"runtime"
+	"runtime/pprof"
+	"sync"
 	"time"
 
 	"image"
@@ -57,6 +62,18 @@ func main() {
 	rand.Seed(time.Now().UTC().UnixNano())
 
 	getFlags()
+
+	if p.CPUProfile != "" {
+		f, err := os.Create(p.CPUProfile)
+		if err != nil {
+			log.Fatal("could not create CPU profile: ", err)
+		}
+		defer f.Close()
+		if err := pprof.StartCPUProfile(f); err != nil {
+			log.Fatal("could not start CPU profile: ", err)
+		}
+		defer pprof.StopCPUProfile()
+	}
 
 	//fileName = p.InputFileNameCM
 	p.FileName = p.InputFileNameCM
@@ -256,7 +273,7 @@ func main() {
 
 			p.Grid[i][j] = &cps.Square{i, j, 0.0, 0, make([]float32, p.NumGridSamples),
 				p.NumGridSamples, 0.0, 0, 0, false,
-				0.0, 0.0, false, travelList}
+				0.0, 0.0, false, travelList, sync.Mutex{}}
 		}
 	}
 
@@ -484,6 +501,18 @@ func main() {
 	}
 	//p.Server.CalcStats()
 
+	if p.MemProfile != "" {
+		f, err := os.Create(p.MemProfile)
+		if err != nil {
+			log.Fatal("could not create memory profile: ", err)
+		}
+		defer f.Close()
+		runtime.GC() // get up-to-date statistics
+		if err := pprof.WriteHeapProfile(f); err != nil {
+			log.Fatal("could not write memory profile: ", err)
+		}
+	}
+
 
 }
 
@@ -541,6 +570,9 @@ func makeNodes() {
 
 func getFlags() {
 	//p = cps.Params{}
+	flag.StringVar(&p.CPUProfile, "cpuprofile", "", "write cpu profile to `file`")
+	flag.StringVar(&p.MemProfile, "memprofile", "", "write memory profile to `file`")
+
 
 	//fmt.Println(os.Args[1:], "\nhmmm? \n ") //C:\Users\Nick\Desktop\comand line experiments\src
 	flag.IntVar(&p.NegativeSittingStopThresholdCM, "negativeSittingStopThreshold", -10,

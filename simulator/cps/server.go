@@ -113,6 +113,7 @@ func (s *FusionCenter) Send(rd Reading) {
 //Calculates s.Mean, standard deviation and s.Variance
 func (s *FusionCenter) CalcStats() ([]float64, []float64, []float64) {
 	//fmt.Printf("Calculating stats for times: %v", s.times)
+	s.UpdateSquareNumNodes()
 	//Calculate the mean
 	sum := 0.0
 	for i:= range s.Times {

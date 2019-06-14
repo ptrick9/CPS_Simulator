@@ -304,7 +304,7 @@ func (n *NodeImpl) Move(p *Params) {
 			p.Grid[n.OldY][n.OldX].ActualNumNodes = p.Grid[n.OldY][n.OldX].ActualNumNodes - 1
 		}*/
 
-		p.Server.UpdateSquareNumNodes()
+		//p.Server.UpdateSquareNumNodes()
 		if n.Diffx == 0 && n.Diffy == 0 || n.Sitting < 0 {
 			n.Sitting = n.Sitting + 1
 		} else {
