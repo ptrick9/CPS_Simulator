@@ -2,6 +2,7 @@ package cps
 
 import (
 	"encoding/csv"
+	"math/rand"
 	"strings"
 
 	//"bufio"
@@ -12,7 +13,7 @@ import (
 	"os"
 	"regexp"
 	"strconv"
-	//"time"
+	//"Time"
 	"log"
 )
 
@@ -468,10 +469,10 @@ func FillPointsToBoard(p *Params) {
 
 // Fills in board map with the path finding values
 func FillInMap1(p *Params) {
-	/*start := time.Now()
+	/*start := Time.Now()
 
 	defer func() {
-		elapsed := time.Since(start)
+		elapsed := Time.Since(start)
 		//fmt.Println("Board Map took", elapsed)
 	}()*/
 
@@ -554,10 +555,10 @@ func CheckDown(i int, p *Params) {
 }
 
 func FillInMap(p *Params) {
-	/*start := time.Now()
+	/*start := Time.Now()
 
 	defer func() {
-		elapsed := time.Since(start)
+		elapsed := Time.Since(start)
 		//fmt.Println("Board Map took", elapsed)
 	}()*/
 
@@ -922,6 +923,10 @@ func readCSV(p *Params) {
 	}
 }
 
+func RangeInt(min, max int) int { //returns a random number between max and min
+	return rand.Intn(max-min) + min
+}
+
 // This prints the board map to the terminal
 //func printBoardMap(){
 //	for i:= 0; i < len(p.BoardMap); i++{
@@ -933,9 +938,9 @@ func readCSV(p *Params) {
 /*
 // This prints board Map to a txt file.
 func writeBordMapToFile2() {
-	start := time.Now()
+	start := Time.Now()
 	defer func() {
-		elapsed := time.Since(start)
+		elapsed := Time.Since(start)
 		fmt.Println("Printing Board Map took", elapsed)
 	}()
 	Check(errBoard)
@@ -954,7 +959,7 @@ func writeBordMapToFile2() {
 }
 
 func writeBordMapToFile() {
-	//start := time.Now()
+	//start := Time.Now()
 	Check(errBoard)
 	w := bufio.NewWriter(fileBoard)
 	w.WriteString("\nt=" + strconv.Itoa(iterations_used) + "\n\n")
@@ -965,6 +970,6 @@ func writeBordMapToFile() {
 		w.WriteString("\n")
 	}
 	w.Flush()
-	//elapsed := time.Since(start)
+	//elapsed := Time.Since(start)
 	//fmt.Println("Printing Board Map took", elapsed)
 }*/
