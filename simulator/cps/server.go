@@ -8,17 +8,35 @@ import (
 	"math"
 )
 
-var (
-	timeBuckets [1000][]float64 //2D array where each sub array is the sensor readings at one iteration
-	mean [1000]float64
-	stdDev [1000]float64
-	variance [1000]float64
-)
+/*var (
+	s.TimeBuckets [1000][]float64 //2D array where each sub array is the sensor readings at one iteration
+	s.Mean [1000]float64
+	s.StdDev [1000]float64
+	s.Variance [1000]float64
+)*/
 
 type FusionCenter struct {
 	P *Params
+
+	TimeBuckets 	[][]float64 //2D array where each sub array is the sensor readings at one iteration
+	Mean 			[]float64
+	StdDev 			[]float64
+	Variance 		[]float64
+	//TimesInPacket mapset.Set//Set of times in received packet
+	Times 			map[int]bool
 }
 
+func (s *FusionCenter) Init(){
+	s.TimeBuckets = make([][]float64, s.P.Iterations_used)
+	s.Mean = make([]float64, s.P.Iterations_used)
+	s.StdDev = make([]float64, s.P.Iterations_used)
+	s.Variance = make([]float64, s.P.Iterations_used)
+
+	//s.TimesInPacket = mapset.NewSet()
+	s.Times = make(map[int]bool, 0)
+}
+
+//Data sent by node
 type Reading struct {
 	sensorVal 	float64
 	xPos 		int
@@ -38,6 +56,7 @@ func (s FusionCenter) UpdateSquareAvg(rd Reading) {
 
 }
 
+//Searches node list and updates the number of nodes in each square
 func (s FusionCenter) UpdateSquareNumNodes() {
 	var node NodeImpl
 
@@ -54,7 +73,7 @@ func (s FusionCenter) UpdateSquareNumNodes() {
 		s.P.Grid[node.Y/s.P.YDiv][node.X/s.P.XDiv].ActualNumNodes += 1
 	}
 
-	//Debugging: Check if total nodes after update is equal to 1000
+	//Debugging: Check if total nodes after update is equal to total expected nodes
 	/*totalNodes := 0
 	for i:=0; i < len(s.P.Grid); i++ {
 		for j:=0; j < len(s.P.Grid[0]); j++ {
@@ -66,48 +85,115 @@ func (s FusionCenter) UpdateSquareNumNodes() {
 	}*/
 }
 
-func (s FusionCenter) Send(rd Reading) {
-	//fmt.Printf("Sending to server:\nID: %v, X: %v, Y: %v, Sensor Value: %v\n", rd.id, rd.xPos, rd.yPos, rd.sensorVal)
-	currBucket := timeBuckets[rd.time]
-	if currBucket != nil {
-		timeBuckets[rd.time] = append(currBucket, rd.sensorVal)
+//Node calls this to send data to server. Statistics are calculated each time data is received
+func (s *FusionCenter) Send(rd Reading) {
+	s.Times = make(map[int]bool, 0)
+	if s.Times[rd.time] {
+
 	} else {
-		timeBuckets[rd.time] = []float64{rd.sensorVal}
+		s.Times[rd.time] = true
+	}
+	//fmt.Printf("Sending to server:\nTime: %v, ID: %v, X: %v, Y: %v, Sensor Value: %v\n", rd.time, rd.id, rd.xPos, rd.yPos, rd.sensorVal)
+	if len(s.TimeBuckets) <= rd.time {
+		s.TimeBuckets = append(s.TimeBuckets, make([]float64,0))
+	}
+	currBucket := (s.TimeBuckets)[rd.time]
+	if len(currBucket) != 0 { //currBucket != nil
+		(s.TimeBuckets)[rd.time] = append(currBucket, rd.sensorVal)
+	} else {
+		(s.TimeBuckets)[rd.time] = append((s.TimeBuckets)[rd.time], rd.sensorVal) //s.TimeBuckets[rd.time] = []float64{rd.sensorVal}
 	}
 
 	s.UpdateSquareAvg(rd)
 	tile := s.P.Grid[rd.yPos/s.P.YDiv][rd.xPos/s.P.XDiv]
 	tile.SquareValues += math.Pow(float64(rd.sensorVal-float64(tile.Avg)), 2)
+	//s.CalcStats()
 }
 
-func (s FusionCenter) CalcStats() ([1000]float64, [1000]float64, [1000]float64) {
-	sum := 0.0
-	//stdSum := 0.0
+//Calculates s.Mean, standard deviation and s.Variance
+func (s *FusionCenter) CalcStats() ([]float64, []float64, []float64) {
+	//fmt.Printf("Calculating stats for times: %v", s.times)
 	//Calculate the mean
-	for i := 0; i < len(timeBuckets); i++ {
-		for j := 0; j < len(timeBuckets[i]); j++ {
-			//fmt.Printf("Bucket size: %v\n", len(timeBuckets[i]))
-			sum += timeBuckets[i][j]
-			//fmt.Printf("Time : %v, Elements #: %v, Value: %v\n", i, j, timeBuckets[i][j])
+	sum := 0.0
+	for i:= range s.Times {
+		for j := 0; j < len(s.TimeBuckets[i]); j++ {
+			//fmt.Printf("Bucket size: %v\n", len(s.TimeBuckets[i]))
+			sum += (s.TimeBuckets)[i][j]
+			//fmt.Printf("Time : %v, Elements #: %v, Value: %v\n", i, j, s.TimeBuckets[i][j])
 		}
-		mean[i] = sum / float64( len(timeBuckets[i]) )
+		if len(s.Mean) <= i {
+			s.Mean = append(s.Mean, sum / float64( len(s.TimeBuckets[i]) ))
+		} else {
+			s.Mean[i] = sum / float64(len(s.TimeBuckets[i]))
+		}
 	}
 
-	//Calculate Standard Variation
+	//Calculate the standard deviation and variance
 	sum = 0.0
-	for i:= 0; i < len(timeBuckets); i++ {
-		for j := 0; j < len(timeBuckets[i]); j++ {
-			sum += math.Pow(timeBuckets[i][j] - mean[i], 2)
+	for i:= range s.Times {
+		for j := 0; j < len((s.TimeBuckets)[i]); j++ {
+			sum += math.Pow((s.TimeBuckets)[i][j] - s.Mean[i], 2)
 		}
-		variance[i] = sum / float64( len(timeBuckets[i]) )
-		stdDev[i] = math.Sqrt(sum / float64( len(timeBuckets[i])) )
+
+		if len(s.Variance) <= i {
+			s.Variance = append(s.Variance, sum / float64( len(s.TimeBuckets[i]) ))
+		} else {
+			s.Variance[i] = sum / float64(len(s.TimeBuckets[i]))
+		}
+
+		if len(s.StdDev) <= i {
+			s.StdDev = append(s.StdDev, math.Sqrt(sum / float64( len((s.TimeBuckets)[i])) ))
+		} else {
+			s.StdDev[i] = math.Sqrt(sum / float64( len((s.TimeBuckets)[i])) )
+		}
+
+		//s.Variance[i] = sum / float64( len((s.TimeBuckets)[i]) )
+		//s.StdDev[i] = math.Sqrt(sum / float64( len((s.TimeBuckets)[i])) )
 	}
-	return mean, stdDev, variance
+
+	//sum := 0.0
+	//Calculate the Mean
+	/*for i := 0; i < len(s.TimeBuckets); i++ {
+		for j := 0; j < len(s.TimeBuckets[i]); j++ {
+			//fmt.Printf("Bucket size: %v\n", len(s.TimeBuckets[i]))
+			sum += (s.TimeBuckets)[i][j]
+			//fmt.Printf("Time : %v, Elements #: %v, Value: %v\n", i, j, s.TimeBuckets[i][j])
+		}
+		if len(s.Mean) <= i {
+			s.Mean = append(s.Mean, sum / float64( len(s.TimeBuckets[i]) ))
+		} else {
+			s.Mean[i] = sum / float64(len(s.TimeBuckets[i]))
+		}
+	}
+
+	//Calculate Standard Deviation and Variance
+	sum = 0.0
+	for i:= 0; i < len(s.TimeBuckets); i++ {
+		for j := 0; j < len((s.TimeBuckets)[i]); j++ {
+			sum += math.Pow((s.TimeBuckets)[i][j] - s.Mean[i], 2)
+		}
+
+		if len(s.Variance) <= i {
+			s.Variance = append(s.Variance, sum / float64( len(s.TimeBuckets[i]) ))
+		} else {
+			s.Variance[i] = sum / float64(len(s.TimeBuckets[i]))
+		}
+
+		if len(s.StdDev) <= i {
+			s.StdDev = append(s.StdDev, math.Sqrt(sum / float64( len((s.TimeBuckets)[i])) ))
+		} else {
+			s.StdDev[i] = math.Sqrt(sum / float64( len((s.TimeBuckets)[i])) )
+		}
+
+		//s.Variance[i] = sum / float64( len((s.TimeBuckets)[i]) )
+		//s.StdDev[i] = math.Sqrt(sum / float64( len((s.TimeBuckets)[i])) )
+	}*/
+	return s.Mean, s.StdDev, s.Variance
 }
 
 func (s FusionCenter) PrintStats() {
-	for i:= 0; i < 1000; i++ {
-		fmt.Printf("Time: %v, Mean: %v, Std Deviation: %v, Variance: %v\n", i, mean[i], stdDev[i], variance[i])
+	for i:= 0; i < s.P.Iterations_used; i++ {
+		fmt.Printf("Time: %v, Mean: %v, Std Deviation: %v, Variance: %v\n", i, s.Mean[i], s.StdDev[i], s.Variance[i])
 	}
 }
 

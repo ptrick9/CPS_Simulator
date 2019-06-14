@@ -47,7 +47,8 @@ func main() {
 	p = &cps.Params{}
 	r = &cps.RegionParams{}
 
-	p.Server = cps.FusionCenter{p}
+	p.Server = cps.FusionCenter{p, nil, nil, nil, nil, nil}
+	p.Server.Init()
 
 	p.Tau1 = 10
 	p.Tau2 = 500
@@ -464,6 +465,7 @@ func main() {
 		}
 
 		p.Iterations_used++
+		p.Server.CalcStats()
 	}
 
 	p.PositionFile.Seek(0, 0)
@@ -480,8 +482,7 @@ func main() {
 	for i := range p.BoolGrid {
 		fmt.Fprintln(p.BoolFile, p.BoolGrid[i])
 	}
-	p.Server.CalcStats()
-	//p.Server.PrintStats()
+	//p.Server.CalcStats()
 
 
 }
