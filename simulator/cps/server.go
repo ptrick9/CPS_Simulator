@@ -6,6 +6,7 @@ package cps
 import (
 	"fmt"
 	"math"
+	"sort"
 )
 
 /*var (
@@ -40,6 +41,7 @@ type Reading struct {
 	YPos      int
 	Time      int //Time represented by iteration number
 	Id        int //Node Id number
+	//StdDevFromMean	float64
 }
 
 func (s FusionCenter) GetSquareAverage(tile *Square) float32 {
@@ -124,6 +126,7 @@ func (s *FusionCenter) CalcStats() ([]float64, []float64, []float64) {
 		} else {
 			s.Mean[i] = sum / float64(len(s.TimeBuckets[i]))
 		}
+		sum = 0
 	}
 
 	//Calculate the standard deviation and variance
@@ -144,8 +147,29 @@ func (s *FusionCenter) CalcStats() ([]float64, []float64, []float64) {
 		} else {
 			s.StdDev[i] = math.Sqrt(sum / float64( len((s.TimeBuckets)[i])) )
 		}
+		sum = 0
 	}
+
+	//Determine how many std deviations data is away from mean
+	
+
 	return s.Mean, s.StdDev, s.Variance
+}
+
+//Gets median from data set and returns both the median and closest index to median
+func (s FusionCenter) getMedian(arr []float64) float64{
+	sort.Float64s(arr)
+	size := 0.0
+	median := 0.0
+	size = float64(len(arr))
+	//index := 0
+	//Check if even
+	if int(size) % 2 == 0 {
+		median = (arr[int(size / 2.0)] + arr[int(size / 2.0 + 1)] ) / 2
+	} else {
+		median = arr[int(size / 2.0 + 0.5)]
+	}
+	return median
 }
 
 func (s FusionCenter) PrintStats() {
