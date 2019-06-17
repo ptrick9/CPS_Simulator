@@ -168,7 +168,7 @@ func TestCalcStats(t *testing.T) {
 	srv.CalcStats()
 
 	expectedMean := []float64{2.5, 5.0}
-	expectedStdDev := []float64{1.118033988749895, 2.236067977}
+	expectedStdDev := []float64{1.118033988749895, 2.23606797749979}
 	expectedVariance := []float64{1.25, 5.0}
 
 	for i := 0; i < 2; i++ {
