@@ -316,6 +316,7 @@ func (n *NodeImpl) Move(p *Params) {
 func (n *NodeImpl) Recalibrate() {
 	n.Sensitivity = n.InitialSensitivity
 	n.NodeTime = 0
+	fmt.Printf("Node %v recalibrated!\n", n.Id)
 }
 
 //Moves the bouncing node
@@ -849,6 +850,43 @@ func (n *NodeImpl) UpdateHistory(newValue float32) {
 	n.Avg = sum / float32(numSamples)
 }
 
+func (n *NodeImpl) getDriftSlope() (float32, float32){
+	var r float32
+	var slope float32
+
+	var sum float32
+	var yAvg float32 = 0.0
+	squareSumX := 0.0
+	squareSumY := 0.0
+
+	var xSum float32
+	var ySum float32
+	var xySum float32
+	var xSqrSum float32
+	//size := float32(len(n.SampleHistory))
+
+	for i:= range n.SampleHistory {
+		ySum += float32(i)
+	}
+	yAvg = ySum / float32(len(n.SampleHistory))
+	for i := range n.SampleHistory {
+		sum += (n.SampleHistory[i] - n.Avg) * (float32(i) - yAvg)
+		squareSumX += math.Pow( float64(n.SampleHistory[i] - n.Avg), 2)
+		squareSumY += math.Pow( float64(i - 1), 2)
+
+		xSum += n.SampleHistory[i]
+		xySum += n.SampleHistory[i] * float32(i)
+		xSqrSum += float32(math.Pow(float64(n.SampleHistory[i]), 2))
+	}
+	r = sum / float32(math.Sqrt(squareSumX * squareSumY))
+	//slope = ( (size * xySum) - (xSum * ySum) ) / ( (size * float32(xSqrSum)) - float32(math.Pow(float64(xSum), 2)) )
+	slope = sum / float32(squareSumX)
+	if r > 1 || r < -1 {
+		fmt.Printf("Bad r value! Got %v\n", r)
+	}
+	return r, slope
+}
+
 /* this function increments a node's total number of samples by 1
 it's called whenever the node takes a new sample */
 func (n *NodeImpl) IncrementTotalSamples() {
@@ -1106,6 +1144,8 @@ func (curNode *NodeImpl) GetReadings(p *Params) {
 		//p.Grid[curNode.Row(p.YDiv)][curNode.Col(p.XDiv)].NumNodes++
 		////subtract grid average from node average, square it, and add it to this variable
 		p.Server.Send(Reading{errorDist, newX, newY, p.Iterations_used, curNode.GetID()})
+		//slope, r := curNode.getDriftSlope()
+		//fmt.Printf("Node: %v, Slope: %v, R value: %v\n", curNode.Id, slope, r)
 		//p.Grid[curNode.Row(p.YDiv)][curNode.Col(p.XDiv)].SquareValues += math.Pow(float64(errorDist-float64(gridAverage)), 2)
 	}
 

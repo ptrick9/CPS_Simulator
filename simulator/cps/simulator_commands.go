@@ -66,6 +66,7 @@ type Params struct {
 	RoutingFile    *os.File
 	AttractionFile *os.File
 	BoolFile       *os.File
+	ServerFile	   *os.File
 
 	SensorPath  string
 	SensorTimes []int

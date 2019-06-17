@@ -19,7 +19,7 @@ import (
 type FusionCenter struct {
 	P *Params
 
-	TimeBuckets 	[][]float64 //2D array where each sub array is the sensor readings at one iteration
+	TimeBuckets 	[][]Reading //2D array where each sub array is made of the readings at one iteration
 	Mean 			[]float64
 	StdDev 			[]float64
 	Variance 		[]float64
@@ -27,7 +27,7 @@ type FusionCenter struct {
 }
 
 func (s *FusionCenter) Init(){
-	s.TimeBuckets = make([][]float64, s.P.Iterations_used)
+	s.TimeBuckets = make([][]Reading, s.P.Iterations_used)
 	s.Mean = make([]float64, s.P.Iterations_used)
 	s.StdDev = make([]float64, s.P.Iterations_used)
 	s.Variance = make([]float64, s.P.Iterations_used)
@@ -94,13 +94,13 @@ func (s *FusionCenter) Send(rd Reading) {
 	}
 
 	if len(s.TimeBuckets) <= rd.Time {
-		s.TimeBuckets = append(s.TimeBuckets, make([]float64,0))
+		s.TimeBuckets = append(s.TimeBuckets, make([]Reading,0))
 	}
 	currBucket := (s.TimeBuckets)[rd.Time]
 	if len(currBucket) != 0 { //currBucket != nil
-		(s.TimeBuckets)[rd.Time] = append(currBucket, rd.SensorVal)
+		(s.TimeBuckets)[rd.Time] = append(currBucket, rd)
 	} else {
-		(s.TimeBuckets)[rd.Time] = append((s.TimeBuckets)[rd.Time], rd.SensorVal) //s.TimeBuckets[rd.Time] = []float64{rd.sensorVal}
+		(s.TimeBuckets)[rd.Time] = append((s.TimeBuckets)[rd.Time], rd) //s.TimeBuckets[rd.Time] = []float64{rd.sensorVal}
 	}
 
 	s.UpdateSquareAvg(rd)
@@ -115,10 +115,11 @@ func (s *FusionCenter) CalcStats() ([]float64, []float64, []float64) {
 
 	//Calculate the mean
 	sum := 0.0
+	StdDevFromMean := 0.0
 	for i:= range s.Times {
 		for j := 0; j < len(s.TimeBuckets[i]); j++ {
 			//fmt.Printf("Bucket size: %v\n", len(s.TimeBuckets[i]))
-			sum += (s.TimeBuckets)[i][j]
+			sum += (s.TimeBuckets)[i][j].SensorVal
 			//fmt.Printf("Time : %v, Elements #: %v, Value: %v\n", i, j, s.TimeBuckets[i][j])
 		}
 		if len(s.Mean) <= i {
@@ -133,7 +134,7 @@ func (s *FusionCenter) CalcStats() ([]float64, []float64, []float64) {
 	sum = 0.0
 	for i:= range s.Times {
 		for j := 0; j < len((s.TimeBuckets)[i]); j++ {
-			sum += math.Pow((s.TimeBuckets)[i][j] - s.Mean[i], 2)
+			sum += math.Pow((s.TimeBuckets)[i][j].SensorVal - s.Mean[i], 2)
 		}
 
 		if len(s.Variance) <= i {
@@ -147,12 +148,15 @@ func (s *FusionCenter) CalcStats() ([]float64, []float64, []float64) {
 		} else {
 			s.StdDev[i] = math.Sqrt(sum / float64( len((s.TimeBuckets)[i])) )
 		}
+		//Determine how many std deviations data is away from mean
+		for j:= range s.TimeBuckets[i] {
+			StdDevFromMean = (s.TimeBuckets[i][j].SensorVal - s.Mean[i]) / s.StdDev[i]
+			if StdDevFromMean > 4 || StdDevFromMean < -4{
+				//fmt.Printf("Potential detection by node %v at X:%v, Y:%v with reading %v\n", s.TimeBuckets[i][j].Id, s.TimeBuckets[i][j].Xpos, s.TimeBuckets[i][j].YPos, s.TimeBuckets[i][j].SensorVal)
+			}
+		}
 		sum = 0
 	}
-
-	//Determine how many std deviations data is away from mean
-	
-
 	return s.Mean, s.StdDev, s.Variance
 }
 
@@ -176,6 +180,12 @@ func (s FusionCenter) PrintStats() {
 	for i:= 0; i < s.P.Iterations_used; i++ {
 		fmt.Printf("Time: %v, Mean: %v, Std Deviation: %v, Variance: %v\n", i, s.Mean[i], s.StdDev[i], s.Variance[i])
 	}
+}
+
+func (s FusionCenter) PrintStatsFile() {
+	fmt.Fprintln(s.P.ServerFile, "Mean at each time:\n", s.P.Server.Mean)
+	fmt.Fprintln(s.P.ServerFile, "Standard Deviations at each time:\n", s.P.Server.StdDev)
+	fmt.Fprintln(s.P.ServerFile, "Variance at each time:\n", s.P.Server.Variance)
 }
 
 

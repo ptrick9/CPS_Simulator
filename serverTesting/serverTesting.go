@@ -512,8 +512,7 @@ func main() {
 			log.Fatal("could not write memory profile: ", err)
 		}
 	}
-
-
+	p.Server.PrintStatsFile()
 }
 
 func makeNodes() {

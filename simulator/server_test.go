@@ -149,7 +149,7 @@ func TestSend(t *testing.T) {
 	if srv.Times[0] != true {
 		t.Errorf("Time 0 not included in packet, got %v, wanted true", srv.Times[0])
 	}
-	if srv.TimeBuckets[0][0] != 0 {
+	if srv.TimeBuckets[0][0].SensorVal != 0 {
 		t.Errorf("TimeBuckets not updated properly, got %v, wanted %v", srv.TimeBuckets[0][0], 0)
 	}
 
@@ -163,8 +163,15 @@ func TestCalcStats(t *testing.T) {
 	srv.Times[0] = true
 	srv.Times[1] = true
 
+	rd1 := cps.Reading{1,0,0,0,1}
+	rd2 := cps.Reading{2,0,0,0,2}
+	rd3 := cps.Reading{3,0,0,0,3}
+	rd4 := cps.Reading{4,0,0,0,4}
+	rd5 := cps.Reading{6,0,0,0,5}
+	rd6 := cps.Reading{8,0,0,0,6}
 
-	srv.TimeBuckets = [][]float64{[]float64{1, 2, 3, 4}, []float64{2, 4, 6, 8}}
+	//srv.TimeBuckets = [][]float64{[]float64{1, 2, 3, 4}, []float64{2, 4, 6, 8}}
+	srv.TimeBuckets = [][]cps.Reading{[]cps.Reading{rd1, rd2, rd3, rd4}, []cps.Reading{rd2, rd4, rd5, rd6}}
 	srv.CalcStats()
 
 	expectedMean := []float64{2.5, 5.0}
