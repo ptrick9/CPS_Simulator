@@ -407,9 +407,9 @@ func Check(e error) {
 // Creates p.BoardMap
 func CreateBoard(x int, y int, p *Params) {
 	p.BoardMap = [][]int{}
-	for i := 0; i < y; i++ {
+	for i := 0; i < x; i++ {
 		p.BoardMap = append(p.BoardMap, []int{})
-		for j := 0; j < x; j++ {
+		for j := 0; j < y; j++ {
 			p.BoardMap[i] = append(p.BoardMap[i], 0)
 		}
 	}
@@ -419,14 +419,14 @@ func HandleMovement(p *Params) {
 	for j := 0; j < len(p.NodeList); j++ {
 
 		oldX, oldY := p.NodeList[j].GetLoc()
-		p.BoolGrid[oldY][oldX] = false //set the old spot false since the node will now move away
+		p.BoolGrid[oldX][oldY] = false //set the old spot false since the node will now move away
 
 		//move the node to its new location
 		p.NodeList[j].Move(p)
 
 		//set the new location in the boolean field to true
 		newX, newY := p.NodeList[j].GetLoc()
-		p.BoolGrid[newY][newX] = true
+		p.BoolGrid[newX][newY] = true
 
 		//writes the node information to the file
 		if p.EnergyPrint {
@@ -442,7 +442,7 @@ func HandleMovement(p *Params) {
 // Fills the walls into the board based on the wall positions extrapolated from the file
 func FillInWallsToBoard(p *Params) {
 	for i := 0; i < len(p.Wpos); i++ {
-		p.BoardMap[p.Wpos[i][1]][p.Wpos[i][0]] = -1
+		p.BoardMap[p.Wpos[i][0]][p.Wpos[i][1]] = -1
 	}
 }
 
@@ -462,7 +462,7 @@ func FillInBufferCurrent(p *Params) {
 func FillPointsToBoard(p *Params) {
 	for i := 0; i < len(bufferCurrent); i++ {
 		//fmt.Println(bufferCurrent)
-		p.BoardMap[bufferCurrent[i][0]][bufferCurrent[i][1]] = starter
+		p.BoardMap[bufferCurrent[i][1]][bufferCurrent[i][0]] = starter
 	}
 }
 
@@ -654,25 +654,25 @@ func ReadMap(p *Params, r *RegionParams) {
 
 	img, _, err := image.Decode(imgfile)
 
-	for x := 0; x < p.Height; x++ {
-		r.Point_list2 = append(r.Point_list2, make([]bool, p.Width))
+	for x := 0; x < p.Width; x++ {
+		r.Point_list2 = append(r.Point_list2, make([]bool, p.Height))
 	}
 
-	for x := 0; x < p.Height; x++ {
-		for y := 0; y < p.Width; y++ {
-			rr, _, _, _ := img.At(x, y).RGBA()
+	for x := 0; x < p.Width; x++ {
+		for y := 0; y < p.Height; y++ {
+			rr, _, _, _ := img.At(y, x).RGBA()
 			if rr != 0 {
 				r.Point_list2[x][y] = true
 				r.Point_dict[Tuple{x, y}] = true
 
 			} else {
 				r.Point_dict[Tuple{x, y}] = false
-				p.BoardMap[y][x] = -1
+				p.BoardMap[x][y] = -1
 				temp := make([]int, 2)
 				temp[0] = x
 				temp[1] = y
 				p.Wpos = append(p.Wpos, temp)
-				p.BoolGrid[y][x] = true
+				p.BoolGrid[x][y] = true
 			}
 		}
 	}
@@ -810,7 +810,7 @@ func readCSV(p *Params) {
 	r.FieldsPerRecord = -1
 	record, err := r.ReadAll()
 
-	reg, _ := regexp.Compile("t=([0-9]+)")
+	reg, _ := regexp.Compile("([0-9]+)")
 	times := (reg.FindAllStringSubmatch(strings.Join(record[8], " "), -1))
 
 	p.SensorTimes = make([]int, len(times))
@@ -818,13 +818,7 @@ func readCSV(p *Params) {
 		p.SensorTimes[i], _ = strconv.Atoi(times[i][1])
 	}
 
-	/*fmt.Println(err)
-	fmt.Println(len(record))*/
-	big := 0.0
-	topVal := 0.0
-	i := 9
-
-	numSamples := len(record[9]) - 2
+	numSamples := len(record[2]) - 2
 
 	p.SensorReadings = make([][][]float64, p.Width)
 	for i := range p.SensorReadings {
@@ -837,89 +831,25 @@ func readCSV(p *Params) {
 		}
 	}
 
-	averaged := make([][][]float64, p.Width)
-	for i := range averaged {
-		averaged[i] = make([][]float64, p.Height)
-		for j := range averaged[i] {
-			averaged[i][j] = make([]float64, numSamples)
-			for k := range averaged[i][j] {
-				averaged[i][j][k] = -1
-			}
-		}
-	}
 
+
+	i := 1
 	for i < len(record) {
-		//fmt.Println(record[i])
-		x, err := strconv.ParseFloat(record[i][0], 32)
-		/*if err == nil {
-			fmt.Println(Round(x, 0.5))
-		} else {
-			fmt.Println(err)
-		}*/
-		if x > big {
-			big = x
-		}
-		y, err := strconv.ParseFloat(record[i][1], 32)
-		/*if err == nil {
-			fmt.Println(Round(y, 0.5))
-		}*/
-		if y > big {
-			big = y
-		}
+		x, _ := strconv.ParseInt(record[i][1], 10, 32);
+		y, _ := strconv.ParseInt(record[i][0], 10, 32);
+
 		j := 2
-		/*fmt.Printf("%v %v\n", int(x*2), int(y*2))
-		fmt.Printf("%v\n", len(record[i]))*/
-		if int(x*2) < p.Width && int(y*2) < p.Height {
-			for j < len(record[i]) {
-				read1, _ := strconv.ParseFloat(record[i][j], 32)
-				if err == nil {
-					//fmt.Printf("%e ", read1)
-				}
 
-				//fmt.Printf("%v %v %v\n", int(x*2), int(y*2), j-2)
-				p.SensorReadings[int(x*2)][int(y*2)][j-2] = read1
-				if read1 > topVal {
-					topVal = read1
-				}
+		for j < len(record[i]) {
+			read1, _ := strconv.ParseFloat(record[i][j], 32);
 
-				j += 1
-			}
+			p.SensorReadings[x][y][j-2] = read1
+			j += 1
 		}
-		//fmt.Println()
-		fmt.Printf("\r%d\\%d", i, len(record))
 		i++
 	}
 
-	fmt.Printf("\ntop: %v\n", topVal)
 
-	cw := 7
-	ch := 7
-	divider := 1.0 / float64(cw*ch)
-	radius := cw / 2
-
-	for k := range p.SensorReadings[0][0] {
-		for i := range p.SensorReadings {
-			for j := range p.SensorReadings[i] {
-				total := 0.0
-				for ci := radius; ci >= radius*-1; ci-- {
-					for cj := radius; cj >= radius*-1; cj-- {
-						if i+ci > 0 && i+ci < p.Width && j+cj > 0 && j+cj < p.Height {
-							total += p.SensorReadings[i+ci][j+cj][k] * divider
-						}
-					}
-				}
-				averaged[i][j][k] = total
-			}
-		}
-	}
-
-	for k := range p.SensorReadings[0][0] {
-		for i := range p.SensorReadings {
-			for j := range p.SensorReadings[i] {
-				p.SensorReadings[i][j][k] = averaged[i][j][k]
-			}
-		}
-	}
 }
 
 // This prints the board map to the terminal

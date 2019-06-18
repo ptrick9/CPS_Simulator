@@ -98,13 +98,13 @@ func main() {
 	p.SquareRowCM = p.SquareRowCM
 	p.SquareColCM = p.SquareColCM
 
-	p.BoolGrid = make([][]bool, p.MaxY)
+	p.BoolGrid = make([][]bool, p.MaxX)
 	for i := range p.BoolGrid {
-		p.BoolGrid[i] = make([]bool, p.MaxX)
+		p.BoolGrid[i] = make([]bool, p.MaxY)
 	}
 	//Initializing the boolean field with values of false
-	for i := 0; i < p.MaxY; i++ {
-		for j := 0; j < p.MaxX; j++ {
+	for i := 0; i < p.MaxX; i++ {
+		for j := 0; j < p.MaxY; j++ {
 			p.BoolGrid[i][j] = false
 		}
 	}
@@ -542,7 +542,7 @@ func getFlags() {
 		"Percent the sub-Grid can be filled")
 	flag.StringVar(&p.InputFileNameCM, "inputFileName", "Log1_in.txt",
 		"Name of the input text file")
-	flag.StringVar(&p.SensorPath, "Sensor Readings", "Circle_2D.csv", "Sensor Reading Inputs")
+	flag.StringVar(&p.SensorPath, "sensorPath", "Circle_2D.csv", "Sensor Reading Inputs")
 	flag.StringVar(&p.OutputFileNameCM, "p.OutputFileName", "Log",
 		"Name of the output text file prefix")
 	flag.Float64Var(&p.NaturalLossCM, "naturalLoss", .005,
