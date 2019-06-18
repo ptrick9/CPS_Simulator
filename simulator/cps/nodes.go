@@ -233,6 +233,7 @@ func (n *NodeImpl) Move(p *Params) {
 			n.X >= 0 &&
 			n.X < len(p.BoardMap[n.Y-1]) &&
 			n.Y-1 < len(p.BoardMap) &&
+
 			p.BoardMap[n.Y-1][n.X] != -1 &&
 			p.BoolGrid[n.Y-1][n.X] == false { // &&
 			//p.BoardMap[n.X][n.Y-1] <= p.BoardMap[n.X][n.Y] {
