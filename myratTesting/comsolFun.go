@@ -1,11 +1,13 @@
 /*
--inputFileName=Scenario_1.txt
--imageFileName=circle_justWalls_400.png
+-inputFileName=Scenario_3.txt
+-imageFileName=marathon_street_map.png
 -logPosition=true
 -logGrid=true
 -logEnergy=true
 -logNodes=false
 -noEnergy=false
+-cpuprofile=cpufile.prof
+-sensorPath=C:\Users\Patrick\Dropbox\Patrick\udel\SPRING2019\testProject\smoothed_marathon.csv
 */
 
 package main
@@ -542,7 +544,7 @@ func getFlags() {
 		"Percent the sub-Grid can be filled")
 	flag.StringVar(&p.InputFileNameCM, "inputFileName", "Log1_in.txt",
 		"Name of the input text file")
-	flag.StringVar(&p.SensorPath, "Sensor Readings", "Circle_2D.csv", "Sensor Reading Inputs")
+	flag.StringVar(&p.SensorPath, "sensorPath", "Circle_2D.csv", "Sensor Reading Inputs")
 	flag.StringVar(&p.OutputFileNameCM, "p.OutputFileName", "Log",
 		"Name of the output text file prefix")
 	flag.Float64Var(&p.NaturalLossCM, "naturalLoss", .005,
