@@ -100,13 +100,13 @@ func main() {
 	p.SquareRowCM = p.SquareRowCM
 	p.SquareColCM = p.SquareColCM
 
-	p.BoolGrid = make([][]bool, p.MaxY)
+	p.BoolGrid = make([][]bool, p.MaxX)
 	for i := range p.BoolGrid {
-		p.BoolGrid[i] = make([]bool, p.MaxX)
+		p.BoolGrid[i] = make([]bool, p.MaxY)
 	}
 	//Initializing the boolean field with values of false
-	for i := 0; i < p.MaxY; i++ {
-		for j := 0; j < p.MaxX; j++ {
+	for i := 0; i < p.MaxX; i++ {
+		for j := 0; j < p.MaxY; j++ {
 			p.BoolGrid[i][j] = false
 		}
 	}

@@ -407,9 +407,9 @@ func Check(e error) {
 // Creates p.BoardMap
 func CreateBoard(x int, y int, p *Params) {
 	p.BoardMap = [][]int{}
-	for i := 0; i < y; i++ {
+	for i := 0; i < x; i++ {
 		p.BoardMap = append(p.BoardMap, []int{})
-		for j := 0; j < x; j++ {
+		for j := 0; j < y; j++ {
 			p.BoardMap[i] = append(p.BoardMap[i], 0)
 		}
 	}
@@ -419,14 +419,14 @@ func HandleMovement(p *Params) {
 	for j := 0; j < len(p.NodeList); j++ {
 
 		oldX, oldY := p.NodeList[j].GetLoc()
-		p.BoolGrid[oldY][oldX] = false //set the old spot false since the node will now move away
+		p.BoolGrid[oldX][oldY] = false //set the old spot false since the node will now move away
 
 		//move the node to its new location
 		p.NodeList[j].Move(p)
 
 		//set the new location in the boolean field to true
 		newX, newY := p.NodeList[j].GetLoc()
-		p.BoolGrid[newY][newX] = true
+		p.BoolGrid[newX][newY] = true
 
 		//writes the node information to the file
 		if p.EnergyPrint {
@@ -442,7 +442,7 @@ func HandleMovement(p *Params) {
 // Fills the walls into the board based on the wall positions extrapolated from the file
 func FillInWallsToBoard(p *Params) {
 	for i := 0; i < len(p.Wpos); i++ {
-		p.BoardMap[p.Wpos[i][1]][p.Wpos[i][0]] = -1
+		p.BoardMap[p.Wpos[i][0]][p.Wpos[i][1]] = -1
 	}
 }
 
@@ -462,7 +462,7 @@ func FillInBufferCurrent(p *Params) {
 func FillPointsToBoard(p *Params) {
 	for i := 0; i < len(bufferCurrent); i++ {
 		//fmt.Println(bufferCurrent)
-		p.BoardMap[bufferCurrent[i][0]][bufferCurrent[i][1]] = starter
+		p.BoardMap[bufferCurrent[i][1]][bufferCurrent[i][0]] = starter
 	}
 }
 
@@ -654,25 +654,25 @@ func ReadMap(p *Params, r *RegionParams) {
 
 	img, _, err := image.Decode(imgfile)
 
-	for x := 0; x < p.Height; x++ {
-		r.Point_list2 = append(r.Point_list2, make([]bool, p.Width))
+	for x := 0; x < p.Width; x++ {
+		r.Point_list2 = append(r.Point_list2, make([]bool, p.Height))
 	}
 
-	for x := 0; x < p.Height; x++ {
-		for y := 0; y < p.Width; y++ {
-			rr, _, _, _ := img.At(x, y).RGBA()
+	for x := 0; x < p.Width; x++ {
+		for y := 0; y < p.Height; y++ {
+			rr, _, _, _ := img.At(y, x).RGBA()
 			if rr != 0 {
 				r.Point_list2[x][y] = true
 				r.Point_dict[Tuple{x, y}] = true
 
 			} else {
 				r.Point_dict[Tuple{x, y}] = false
-				p.BoardMap[y][x] = -1
+				p.BoardMap[x][y] = -1
 				temp := make([]int, 2)
 				temp[0] = x
 				temp[1] = y
 				p.Wpos = append(p.Wpos, temp)
-				p.BoolGrid[y][x] = true
+				p.BoolGrid[x][y] = true
 			}
 		}
 	}
