@@ -114,6 +114,11 @@ type NodeImpl struct {
 	NodeTime           int
 	Sensitivity        float64
 	InitialSensitivity float64
+
+	allReadings 	   [1000]float64
+	calibrateTimes 	   []int
+	calibrateReading   []float64
+	hasCalibrated 	   bool
 }
 
 //NodeMovement controls the movement of all the normal nodes
@@ -316,7 +321,8 @@ func (n *NodeImpl) Move(p *Params) {
 func (n *NodeImpl) Recalibrate() {
 	n.Sensitivity = n.InitialSensitivity
 	n.NodeTime = 0
-	fmt.Printf("Node %v recalibrated!\n", n.Id)
+	//fmt.Printf("Node %v recalibrated!\n", n.Id)
+	n.hasCalibrated = true
 }
 
 //Moves the bouncing node
@@ -880,7 +886,7 @@ func (n *NodeImpl) getDriftSlope() (float32, float32){
 	}
 	r = sum / float32(math.Sqrt(squareSumX * squareSumY))
 	//slope = ( (size * xySum) - (xSum * ySum) ) / ( (size * float32(xSqrSum)) - float32(math.Pow(float64(xSum), 2)) )
-	slope = sum / float32(squareSumX)
+	//slope = sum / float32(squareSumX)
 	if r > 1 || r < -1 {
 		fmt.Printf("Bad r value! Got %v\n", r)
 	}
@@ -1143,7 +1149,23 @@ func (curNode *NodeImpl) GetReadings(p *Params) {
 		//p.Grid[curNode.Row(p.YDiv)][curNode.Col(p.XDiv)].TakeMeasurement(float32(errorDist))
 		//p.Grid[curNode.Row(p.YDiv)][curNode.Col(p.XDiv)].NumNodes++
 		////subtract grid average from node average, square it, and add it to this variable
-		p.Server.Send(Reading{errorDist, newX, newY, p.Iterations_used, curNode.GetID()})
+		p.Server.Send(curNode, Reading{errorDist, newX, newY, p.Iterations_used, curNode.GetID()})
+		if curNode.Id == 47 {
+			curNode.allReadings[p.Iterations_used] = errorDist
+			fmt.Fprintln(p.NodeTest, "Val:", errorDist)
+			fmt.Fprintln(p.NodeTest, "Sensi:", curNode.Sensitivity)
+			fmt.Fprintln(p.NodeTest, "Noise:", sNoise)
+			fmt.Fprintln(p.NodeTest, "Error:", sError)
+		}
+		if curNode.Id == 47 && curNode.hasCalibrated == true{
+			curNode.calibrateTimes = append(curNode.calibrateTimes, p.Iterations_used)
+			curNode.calibrateReading = append(curNode.calibrateReading, errorDist)
+		}
+		if p.Iterations_used == 999 && curNode.Id == 47 {
+			fmt.Fprintln(p.NodeTest2, "", curNode.calibrateTimes)
+			fmt.Fprintln(p.NodeTest2, "", curNode.calibrateReading)
+		}
+		curNode.hasCalibrated = false
 		//slope, r := curNode.getDriftSlope()
 		//fmt.Printf("Node: %v, Slope: %v, R value: %v\n", curNode.Id, slope, r)
 		//p.Grid[curNode.Row(p.YDiv)][curNode.Col(p.XDiv)].SquareValues += math.Pow(float64(errorDist-float64(gridAverage)), 2)
@@ -1262,7 +1284,7 @@ func (curNode *NodeImpl) GetReadingsCSV(p *Params) {
 		//p.Grid[curNode.Row(p.YDiv)][curNode.Col(p.XDiv)].NumNodes++
 		//subtract grid average from node average, square it, and add it to this variable
 		//p.Grid[curNode.Row(p.YDiv)][curNode.Col(p.XDiv)].SquareValues += (math.Pow(float64(errorDist-float64(gridAverage)), 2))
-		p.Server.Send(Reading{errorDist, newX, newY, p.Iterations_used, curNode.GetID()})
+		//p.Server.Send(Reading{errorDist, newX, newY, p.Iterations_used, curNode.GetID()})
 	}
 }
 

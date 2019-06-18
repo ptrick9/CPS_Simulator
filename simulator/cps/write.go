@@ -778,6 +778,24 @@ func SetupFiles(p *Params) {
 		log.Fatal("Cannot create file", err)
 	}
 	//defer p.ServerFile.Close()
+
+	p.NodeTest, err = os.Create(p.OutputFileNameCM + "-nodeTest.txt")
+	if err != nil {
+		log.Fatal("Cannot create file", err)
+	}
+	//defer p.ServerFile.Close()
+
+	p.NodeTest2, err = os.Create(p.OutputFileNameCM + "-nodeTest2.txt")
+	if err != nil {
+		log.Fatal("Cannot create file", err)
+	}
+	//defer p.ServerFile.Close()
+
+	p.DetectionFile, err = os.Create(p.OutputFileNameCM + "-detection.txt")
+	if err != nil {
+		log.Fatal("Cannot create file", err)
+	}
+	//defer p.ServerFile.Close()
 }
 
 func SetupParameters(p *Params) {

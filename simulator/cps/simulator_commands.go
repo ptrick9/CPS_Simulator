@@ -34,6 +34,7 @@ type Params struct {
 	GridPrintCM                    bool    //This is either true or false for whether to print grid readings to log file
 	SquareRowCM                    int     //This is an int 1 through maxX representing how many rows of squares there are
 	SquareColCM                    int     //This is an int 1 through maxY representing how many columns of squares there are
+	StdDevThresholdCM			   float64 //Detection Threshold based on standard deviations from mean
 
 	StimFileNameCM        string
 	ImageFileNameCM       string
@@ -67,6 +68,9 @@ type Params struct {
 	AttractionFile *os.File
 	BoolFile       *os.File
 	ServerFile	   *os.File
+	NodeTest	   *os.File
+	NodeTest2	   *os.File
+	DetectionFile  *os.File
 
 	SensorPath  string
 	SensorTimes []int

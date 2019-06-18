@@ -15,6 +15,10 @@ import (
 	s.StdDev [1000]float64
 	s.Variance [1000]float64
 )*/
+var (
+	falsePositives	int
+	truePositives	int
+)
 
 type FusionCenter struct {
 	P *Params
@@ -32,6 +36,9 @@ func (s *FusionCenter) Init(){
 	s.StdDev = make([]float64, s.P.Iterations_used)
 	s.Variance = make([]float64, s.P.Iterations_used)
 	s.Times = make(map[int]bool, 0)
+
+	falsePositives = 0
+	truePositives = 0
 }
 
 //Data sent by node
@@ -84,7 +91,7 @@ func (s FusionCenter) UpdateSquareNumNodes() {
 }
 
 //Node calls this to send data to server. Statistics are calculated each Time data is received
-func (s *FusionCenter) Send(rd Reading) {
+func (s *FusionCenter) Send(n *NodeImpl, rd Reading) {
 	//fmt.Printf("Sending to server:\nTime: %v, ID: %v, X: %v, Y: %v, Sensor Value: %v\n", rd.Time, rd.Id, rd.Xpos, rd.yPos, rd.sensorVal)
 	s.Times = make(map[int]bool, 0)
 	if s.Times[rd.Time] {
@@ -106,6 +113,9 @@ func (s *FusionCenter) Send(rd Reading) {
 	s.UpdateSquareAvg(rd)
 	tile := s.P.Grid[rd.YPos/s.P.YDiv][rd.Xpos/s.P.XDiv]
 	tile.SquareValues += math.Pow(float64(rd.SensorVal-float64(tile.Avg)), 2)
+	if rd.SensorVal > (float64(s.GetSquareAverage(s.P.Grid[rd.YPos/s.P.YDiv][rd.Xpos/s.P.XDiv])) + 3){ //Check if x over grid avg
+		n.Recalibrate()
+	}
 }
 
 //Calculates s.Mean, standard deviation and s.Variance
@@ -151,8 +161,18 @@ func (s *FusionCenter) CalcStats() ([]float64, []float64, []float64) {
 		//Determine how many std deviations data is away from mean
 		for j:= range s.TimeBuckets[i] {
 			StdDevFromMean = (s.TimeBuckets[i][j].SensorVal - s.Mean[i]) / s.StdDev[i]
-			if StdDevFromMean > 4 || StdDevFromMean < -4{
+			if StdDevFromMean > s.P.StdDevThresholdCM || StdDevFromMean < (-1.0 * s.P.StdDevThresholdCM){ //4
 				//fmt.Printf("Potential detection by node %v at X:%v, Y:%v with reading %v\n", s.TimeBuckets[i][j].Id, s.TimeBuckets[i][j].Xpos, s.TimeBuckets[i][j].YPos, s.TimeBuckets[i][j].SensorVal)
+				fmt.Fprintf(s.P.DetectionFile,"Potential detection by node %v at X:%v, Y:%v with reading %v\n", s.TimeBuckets[i][j].Id, s.TimeBuckets[i][j].Xpos, s.TimeBuckets[i][j].YPos, s.TimeBuckets[i][j].SensorVal)
+				dist := math.Pow(float64(math.Abs(float64(s.TimeBuckets[i][j].Xpos)-float64(s.P.B.X))), 2) + math.Pow(float64(math.Abs(float64(s.TimeBuckets[i][j].YPos)-float64(s.P.B.X))), 2)
+				if dist > s.P.DetectionThresholdCM {
+					fmt.Fprintf(s.P.DetectionFile,"False positive!\n")
+					falsePositives++
+				} else {
+						truePositives++
+						fmt.Fprintf(s.P.DetectionFile,"True Positive\n")
+				}
+
 			}
 		}
 		sum = 0
@@ -186,6 +206,9 @@ func (s FusionCenter) PrintStatsFile() {
 	fmt.Fprintln(s.P.ServerFile, "Mean at each time:\n", s.P.Server.Mean)
 	fmt.Fprintln(s.P.ServerFile, "Standard Deviations at each time:\n", s.P.Server.StdDev)
 	fmt.Fprintln(s.P.ServerFile, "Variance at each time:\n", s.P.Server.Variance)
+	fmt.Fprintf(s.P.DetectionFile, "Number of detections:%v\n", falsePositives + truePositives)
+	fmt.Fprintf(s.P.DetectionFile, "Number of false positives:%v\n", falsePositives)
+	fmt.Fprintf(s.P.DetectionFile, "Number of true positives:%v\n", truePositives)
 }
 
 
