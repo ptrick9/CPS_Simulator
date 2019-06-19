@@ -166,3 +166,5 @@ routing/stats2/
 routing/log.txt
 
 *.prof
+
+smoothed_marathon\.csv
