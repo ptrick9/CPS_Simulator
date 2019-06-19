@@ -443,7 +443,7 @@ func HandleMovement(p *Params) {
 // Fills the walls into the board based on the wall positions extrapolated from the file
 func FillInWallsToBoard(p *Params) {
 	for i := 0; i < len(p.Wpos); i++ {
-		p.BoardMap[p.Wpos[i][1]][p.Wpos[i][0]] = -1
+		p.BoardMap[p.Wpos[i][0]][p.Wpos[i][1]] = -1
 	}
 }
 
@@ -655,25 +655,25 @@ func ReadMap(p *Params, r *RegionParams) {
 
 	img, _, err := image.Decode(imgfile)
 
-	for x := 0; x < p.Height; x++ {
+	for x := 0; x < p.Width; x++ {
 		r.Point_list2 = append(r.Point_list2, make([]bool, p.Width))
 	}
 
-	for x := 0; x < p.Height; x++ {
-		for y := 0; y < p.Width; y++ {
-			rr, _, _, _ := img.At(x, y).RGBA()
+	for x := 0; x < p.Width; x++ {
+		for y := 0; y < p.Height; y++ {
+			rr, _, _, _ := img.At(x, p.Width - y).RGBA()
 			if rr != 0 {
 				r.Point_list2[x][y] = true
 				r.Point_dict[Tuple{x, y}] = true
 
 			} else {
 				r.Point_dict[Tuple{x, y}] = false
-				p.BoardMap[y][x] = -1
+				p.BoardMap[x][y] = -1
 				temp := make([]int, 2)
 				temp[0] = x
 				temp[1] = y
 				p.Wpos = append(p.Wpos, temp)
-				p.BoolGrid[y][x] = true
+				p.BoolGrid[x][y] = true
 			}
 		}
 	}

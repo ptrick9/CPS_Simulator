@@ -240,11 +240,11 @@ func (n *NodeImpl) Move(p *Params) {
 			n.X < len(p.BoardMap[n.Y-1]) &&
 			n.Y-1 < len(p.BoardMap) &&
 
-			p.BoardMap[n.Y-1][n.X] != -1 &&
-			p.BoolGrid[n.Y-1][n.X] == false { // &&
+			p.BoardMap[n.X][n.Y-1] != -1 &&
+			p.BoolGrid[n.X][n.Y-1] == false { // &&
 			//p.BoardMap[n.X][n.Y-1] <= p.BoardMap[n.X][n.Y] {
 
-			up := GridSpot{n.X, n.Y - 1, p.BoardMap[n.Y-1][n.X]}
+			up := GridSpot{n.X, n.Y - 1, p.BoardMap[n.X][n.Y-1]}
 			potentialSpots = append(potentialSpots, up)
 		}
 		if n.X+1 < len(p.BoardMap[n.Y]) &&
@@ -252,11 +252,11 @@ func (n *NodeImpl) Move(p *Params) {
 			n.Y < len(p.BoardMap) &&
 			n.Y >= 0 &&
 
-			p.BoardMap[n.Y][n.X+1] != -1 &&
-			p.BoolGrid[n.Y][n.X+1] == false { // &&
+			p.BoardMap[n.X+1][n.Y] != -1 &&
+			p.BoolGrid[n.X+1][n.Y] == false { // &&
 			//p.BoardMap[n.X+1][n.Y] <= p.BoardMap[n.X][n.Y] {
 
-			right := GridSpot{n.X + 1, n.Y, p.BoardMap[n.Y][n.X+1]}
+			right := GridSpot{n.X + 1, n.Y, p.BoardMap[n.X+1][n.Y]}
 			potentialSpots = append(potentialSpots, right)
 		}
 		if n.Y+1 < len(p.BoardMap) &&
@@ -264,11 +264,11 @@ func (n *NodeImpl) Move(p *Params) {
 			n.X < len(p.BoardMap[n.Y+1]) &&
 			n.X >= 0 &&
 
-			p.BoardMap[n.Y+1][n.X] != -1 &&
-			p.BoolGrid[n.Y+1][n.X] == false { //&&
+			p.BoardMap[n.X][n.Y+1] != -1 &&
+			p.BoolGrid[n.X][n.Y+1] == false { //&&
 			//p.BoardMap[n.X][n.Y+1] <= p.BoardMap[n.X][n.Y] {
 
-			down := GridSpot{n.X, n.Y + 1, p.BoardMap[n.Y+1][n.X]}
+			down := GridSpot{n.X, n.Y + 1, p.BoardMap[n.X][n.Y+1]}
 			potentialSpots = append(potentialSpots, down)
 		}
 		if n.X-1 >= 0 &&
@@ -276,11 +276,11 @@ func (n *NodeImpl) Move(p *Params) {
 			n.Y >= 0 &&
 			n.Y < len(p.BoardMap) &&
 
-			p.BoardMap[n.Y][n.X-1] != -1 &&
-			p.BoolGrid[n.Y][n.X-1] == false { // &&
+			p.BoardMap[n.X-1][n.Y] != -1 &&
+			p.BoolGrid[n.X-1][n.Y] == false { // &&
 			//p.BoardMap[n.X-1][n.Y] <= p.BoardMap[n.X][n.Y] {
 
-			left := GridSpot{n.X - 1, n.Y, p.BoardMap[n.Y][n.X-1]}
+			left := GridSpot{n.X - 1, n.Y, p.BoardMap[n.X-1][n.Y]}
 			potentialSpots = append(potentialSpots, left)
 		}
 
