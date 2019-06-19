@@ -110,8 +110,8 @@ func main() {
 		p.BoolGrid[i] = make([]bool, p.MaxX)
 	}
 	//Initializing the boolean field with values of false
-	for i := 0; i < p.MaxY; i++ {
-		for j := 0; j < p.MaxX; j++ {
+	for i := 0; i < p.MaxX; i++ {
+		for j := 0; j < p.MaxY; j++ {
 			p.BoolGrid[i][j] = false
 		}
 	}
@@ -137,8 +137,8 @@ func main() {
 	bl_max := -1
 	br_max := -1
 
-	for x := 0; x < p.Height; x++ {
-		for y := 0; y < p.Width; y++ {
+	for x := 0; x < p.Width; x++ {
+		for y := 0; y < p.Height; y++ {
 			if r.Point_dict[cps.Tuple{x, y}] {
 				if x+y < tl_min {
 					tl_min = x + y
