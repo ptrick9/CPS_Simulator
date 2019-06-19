@@ -105,11 +105,12 @@ func main() {
 	p.SquareRowCM = p.SquareRowCM
 	p.SquareColCM = p.SquareColCM
 
-	p.BoolGrid = make([][]bool, p.MaxY)
+	p.BoolGrid = make([][]bool, p.MaxX)
 	for i := range p.BoolGrid {
-		p.BoolGrid[i] = make([]bool, p.MaxX)
+		p.BoolGrid[i] = make([]bool, p.MaxY)
 	}
 	//Initializing the boolean field with values of false
+	fmt.Printf("Max X: %v, Max Y: %v", p.MaxX, p.MaxY)
 	for i := 0; i < p.MaxX; i++ {
 		for j := 0; j < p.MaxY; j++ {
 			p.BoolGrid[i][j] = false
@@ -667,7 +668,7 @@ func getFlags() {
 	flag.IntVar(&p.SquareRowCM, "p.SquareRowCM", 50, "Number of rows of p.Grid squares, 1 through p.MaxX")
 	flag.IntVar(&p.SquareColCM, "p.SquareColCM", 50, "Number of columns of p.Grid squares, 1 through p.MaxY")
 
-	flag.StringVar(&p.ImageFileNameCM, "imageFileName", "circle_justWalls_x4.png", "Name of the input text file")
+	flag.StringVar(&p.ImageFileNameCM, "imageFileName", "marathon_street_map.png", "Name of the input text file") //circle_justWalls_x4.png
 	flag.StringVar(&p.StimFileNameCM, "stimFileName", "circle_0.txt", "Name of the stimulus text file")
 	flag.StringVar(&p.OutRoutingNameCM, "outRoutingName", "log.txt", "Name of the stimulus text file")
 	flag.StringVar(&p.OutRoutingStatsNameCM, "outRoutingStatsName", "routingStats.txt", "Name of the output file for stats")
