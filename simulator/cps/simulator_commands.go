@@ -35,6 +35,7 @@ type Params struct {
 	SquareRowCM                    int     //This is an int 1 through maxX representing how many rows of squares there are
 	SquareColCM                    int     //This is an int 1 through maxY representing how many columns of squares there are
 	StdDevThresholdCM			   float64 //Detection Threshold based on standard deviations from mean
+	CalibrationThresholdCM		   float64
 
 	StimFileNameCM        string
 	ImageFileNameCM       string

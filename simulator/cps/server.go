@@ -28,6 +28,7 @@ type FusionCenter struct {
 	StdDev 			[]float64
 	Variance 		[]float64
 	Times 			map[int]bool
+	LastRecal		[]int
 }
 
 func (s *FusionCenter) Init(){
@@ -39,6 +40,8 @@ func (s *FusionCenter) Init(){
 
 	falsePositives = 0
 	truePositives = 0
+
+	s.LastRecal = make([]int, s.P.NumNodes) //s.P.NumNodes
 }
 
 //Data sent by node
@@ -113,8 +116,10 @@ func (s *FusionCenter) Send(n *NodeImpl, rd Reading) {
 	s.UpdateSquareAvg(rd)
 	tile := s.P.Grid[rd.YPos/s.P.YDiv][rd.Xpos/s.P.XDiv]
 	tile.SquareValues += math.Pow(float64(rd.SensorVal-float64(tile.Avg)), 2)
-	if rd.SensorVal > (float64(s.GetSquareAverage(s.P.Grid[rd.YPos/s.P.YDiv][rd.Xpos/s.P.XDiv])) + 3){ //Check if x over grid avg
+	if rd.SensorVal > (float64(s.GetSquareAverage(s.P.Grid[rd.YPos/s.P.YDiv][rd.Xpos/s.P.XDiv])) + s.P.CalibrationThresholdCM){ //Check if x over grid avg
 		n.Recalibrate()
+		s.LastRecal[n.Id] = s.P.Iterations_used
+		//fmt.Println(s.LastRecal)
 	}
 }
 
@@ -209,6 +214,8 @@ func (s FusionCenter) PrintStatsFile() {
 	fmt.Fprintf(s.P.DetectionFile, "Number of detections:%v\n", falsePositives + truePositives)
 	fmt.Fprintf(s.P.DetectionFile, "Number of false positives:%v\n", falsePositives)
 	fmt.Fprintf(s.P.DetectionFile, "Number of true positives:%v\n", truePositives)
+	fmt.Fprintf(s.P.DetectionFile, "Last Recalibration times:%v\n", s.LastRecal)
+
 }
 
 

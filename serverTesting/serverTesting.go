@@ -52,8 +52,7 @@ func main() {
 	p = &cps.Params{}
 	r = &cps.RegionParams{}
 
-	p.Server = cps.FusionCenter{p, nil, nil, nil, nil, nil}
-	p.Server.Init()
+	p.Server = cps.FusionCenter{p, nil, nil, nil, nil, nil, nil}
 
 	p.Tau1 = 10
 	p.Tau2 = 500
@@ -117,7 +116,7 @@ func main() {
 		}
 	}
 
-
+	p.Server.Init()
 	cps.ReadMap(p, r)
 
 	sum := 0
@@ -625,6 +624,7 @@ func getFlags() {
 	//Range 1, 2, or 4
 	//Currently works for only a few numbers, can be easily expanded but is not currently dynamic
 	flag.IntVar(&p.NumSuperNodes, "numSuperNodes", 4, "the number of super nodes in the simulator")
+	flag.Float64Var(&p.CalibrationThresholdCM, "Recalibration Threshold", 3.0, "Value over grid average to recalibrate node")
 
 	//Range: 0-2
 	//0: default routing algorithm, points added onto the end of the path and routed to in that order

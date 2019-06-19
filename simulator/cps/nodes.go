@@ -1150,18 +1150,18 @@ func (curNode *NodeImpl) GetReadings(p *Params) {
 		//p.Grid[curNode.Row(p.YDiv)][curNode.Col(p.XDiv)].NumNodes++
 		////subtract grid average from node average, square it, and add it to this variable
 		p.Server.Send(curNode, Reading{errorDist, newX, newY, p.Iterations_used, curNode.GetID()})
-		if curNode.Id == 47 {
+		if curNode.Id == 1 {
 			curNode.allReadings[p.Iterations_used] = errorDist
 			fmt.Fprintln(p.NodeTest, "Val:", errorDist)
 			fmt.Fprintln(p.NodeTest, "Sensi:", curNode.Sensitivity)
 			fmt.Fprintln(p.NodeTest, "Noise:", sNoise)
 			fmt.Fprintln(p.NodeTest, "Error:", sError)
 		}
-		if curNode.Id == 47 && curNode.hasCalibrated == true{
+		if curNode.Id == 1 && curNode.hasCalibrated == true{
 			curNode.calibrateTimes = append(curNode.calibrateTimes, p.Iterations_used)
 			curNode.calibrateReading = append(curNode.calibrateReading, errorDist)
 		}
-		if p.Iterations_used == 999 && curNode.Id == 47 {
+		if p.Iterations_used == 999 && curNode.Id == 1 {
 			fmt.Fprintln(p.NodeTest2, "", curNode.calibrateTimes)
 			fmt.Fprintln(p.NodeTest2, "", curNode.calibrateReading)
 		}
