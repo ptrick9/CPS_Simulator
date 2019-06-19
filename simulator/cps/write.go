@@ -408,9 +408,9 @@ func Check(e error) {
 // Creates p.BoardMap
 func CreateBoard(x int, y int, p *Params) {
 	p.BoardMap = [][]int{}
-	for i := 0; i < y; i++ {
+	for i := 0; i < x; i++ {
 		p.BoardMap = append(p.BoardMap, []int{})
-		for j := 0; j < x; j++ {
+		for j := 0; j < y; j++ {
 			p.BoardMap[i] = append(p.BoardMap[i], 0)
 		}
 	}
@@ -661,7 +661,7 @@ func ReadMap(p *Params, r *RegionParams) {
 
 	for x := 0; x < p.Width; x++ {
 		for y := 0; y < p.Height; y++ {
-			rr, _, _, _ := img.At(x, p.Width - y).RGBA()
+			rr, _, _, _ := img.At(x, p.Width).RGBA()
 			if rr != 0 {
 				r.Point_list2[x][y] = true
 				r.Point_dict[Tuple{x, y}] = true

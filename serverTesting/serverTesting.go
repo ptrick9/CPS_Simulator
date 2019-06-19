@@ -110,7 +110,6 @@ func main() {
 		p.BoolGrid[i] = make([]bool, p.MaxY)
 	}
 	//Initializing the boolean field with values of false
-	fmt.Printf("Max X: %v, Max Y: %v", p.MaxX, p.MaxY)
 	for i := 0; i < p.MaxX; i++ {
 		for j := 0; j < p.MaxY; j++ {
 			p.BoolGrid[i][j] = false
