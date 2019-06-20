@@ -316,6 +316,7 @@ func main() {
 		fmt.Fprintln(p.EnergyFile, "Amount:", len(p.NodeList))
 
 		cps.HandleMovement(p)
+		cps.HandleMovementCSV(p)
 
 		fmt.Fprintln(p.RoutingFile, "Amount:", p.NumSuperNodes)
 
@@ -541,6 +542,7 @@ func getFlags() {
 	flag.StringVar(&p.InputFileNameCM, "inputFileName", "Log1_in.txt",
 		"Name of the input text file")
 	flag.StringVar(&p.SensorPath, "sensorPath", "Circle_2D.csv", "Sensor Reading Inputs")
+	flag.StringVar(&p.MovementPath, "movementPath", "Circle_2D.csv", "Movement Inputs")
 	flag.StringVar(&p.OutputFileNameCM, "p.OutputFileName", "Log",
 		"Name of the output text file prefix")
 	flag.Float64Var(&p.NaturalLossCM, "naturalLoss", .005,

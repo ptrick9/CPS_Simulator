@@ -76,6 +76,8 @@ type Params struct {
 	DetectionFile  *os.File
 
 	SensorPath  string
+	MovementPath  string
+
 	SensorTimes []int
 	CurrTime    int
 
@@ -88,6 +90,7 @@ type Params struct {
 	Grid     [][]*Square
 
 	SensorReadings [][][]float64
+	NodeMovements  [][]Tuple
 
 	SquareCapacity int
 

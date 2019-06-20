@@ -440,6 +440,35 @@ func HandleMovement(p *Params) {
 	}
 }
 
+func HandleMovementCSV(p *Params) {
+	time := p.Iterations_used
+	for j := 0; j < len(p.NodeList); j++ {
+
+		oldX, oldY := p.NodeList[j].GetLoc()
+		p.BoolGrid[oldX][oldY] = false //set the old spot false since the node will now move away
+
+		//move the node to its new location
+		//p.NodeList[j].Move(p)
+
+		id := p.NodeList[j].GetID()
+		p.NodeList[j].X = p.NodeMovements[id][time].X
+		p.NodeList[j].Y = p.NodeMovements[id][time].Y
+
+		//set the new location in the boolean field to true
+		newX, newY := p.NodeList[j].GetLoc()
+		p.BoolGrid[newX][newY] = true
+
+		//writes the node information to the file
+		if p.EnergyPrint {
+			fmt.Fprintln(p.EnergyFile, p.NodeList[j])
+		}
+
+		//Add the node into its new Square's p.NumNodes
+		//If the node hasn't left the square, that Square's p.NumNodes will
+		//remain the same after these calculations
+	}
+}
+
 // Fills the walls into the board based on the wall positions extrapolated from the file
 func FillInWallsToBoard(p *Params) {
 	for i := 0; i < len(p.Wpos); i++ {
@@ -829,11 +858,13 @@ func SetupParameters(p *Params) {
 	p.BatteryLossesCheckingServerScalar = GetLinearBatteryLossConstant(len(p.Npos), float32(p.ServerSamplingLossCM))
 	p.Attractions = make([]*Attraction, p.NumAtt)
 
-	readCSV(p)
+	readSensorCSV(p)
+	readMovementCSV(p)
+
 
 }
 
-func readCSV(p *Params) {
+func readSensorCSV(p *Params) {
 
 	in, err := os.Open(p.SensorPath)
 	if err != nil {
@@ -893,6 +924,53 @@ func readCSV(p *Params) {
 	}
 	fmt.Printf("\n")
 }
+
+
+func readMovementCSV(p *Params) {
+
+	in, err := os.Open(p.MovementPath)
+	if err != nil {
+		println("error opening file")
+	}
+	defer in.Close()
+
+	r := csv.NewReader(in)
+	r.FieldsPerRecord = -1
+	record, err := r.ReadAll()
+
+
+	timeSteps := len(record)
+
+
+	p.NodeMovements = make([][]Tuple, p.NumNodes)
+	for i := range p.NodeMovements {
+		p.NodeMovements[i] = make([]Tuple, timeSteps)
+	}
+
+
+
+	time := 0
+	fmt.Printf("Movement CSV Processing\n")
+	for time < len(record) {
+		nodeID := 0
+
+		for nodeID < len(record[time])-1 {
+			x, _ := strconv.ParseInt(record[time][nodeID], 10, 32);
+			y, _ := strconv.ParseInt(record[time][nodeID+1], 10, 32);
+
+			p.NodeMovements[nodeID][time] = Tuple{int(x), int(y)}
+			nodeID += 2
+		}
+		time++
+
+		if(time % 10 == 0) {
+			prog := int(float32(time)/float32(len(record))*100)
+			fmt.Printf("\rProgress [%s%s] %d ", strings.Repeat("=", prog), strings.Repeat(".", 100-prog), prog)
+		}
+	}
+	fmt.Printf("\n")
+}
+
 
 func RangeInt(min, max int) int { //returns a random number between max and min
 	return rand.Intn(max-min) + min
