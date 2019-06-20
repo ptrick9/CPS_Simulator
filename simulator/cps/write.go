@@ -870,8 +870,8 @@ func readCSV(p *Params) {
 
 	i := 1
 	for i < len(record) {
-		x, _ := strconv.ParseInt(record[i][1], 10, 32);
-		y, _ := strconv.ParseInt(record[i][0], 10, 32);
+		x, _ := strconv.ParseInt(record[i][0], 10, 32);
+		y, _ := strconv.ParseInt(record[i][1], 10, 32);
 
 		j := 2
 

@@ -1,11 +1,14 @@
 /*
--inputFileName=Scenario_1.txt
--imageFileName=circle_justWalls_400.png
+-inputFileName=Scenario_3.txt
+-imageFileName=marathon_street_map.png
 -logPosition=true
 -logGrid=true
 -logEnergy=true
 -logNodes=false
--noEnergy=false
+-noEnergy=true
+-sensorPath=C:/Users/patrick/Dropbox/Patrick/udel/SUMMER2019/GitSimulator/smoothed_marathon.csv
+-SquareRowCM=60
+-SquareColCM=320
 */
 
 package main
@@ -98,26 +101,20 @@ func main() {
 	p.SquareRowCM = p.SquareRowCM
 	p.SquareColCM = p.SquareColCM
 
-	p.BoolGrid = make([][]bool, p.MaxY)
+	p.BoolGrid = make([][]bool, p.MaxX)
 	for i := range p.BoolGrid {
-		p.BoolGrid[i] = make([]bool, p.MaxX)
+		p.BoolGrid[i] = make([]bool, p.MaxY)
 	}
 	//Initializing the boolean field with values of false
-	for i := 0; i < p.MaxY; i++ {
-		for j := 0; j < p.MaxX; j++ {
+	for i := 0; i < p.MaxX; i++ {
+		for j := 0; j < p.MaxY; j++ {
 			p.BoolGrid[i][j] = false
 		}
 	}
 
 	cps.ReadMap(p, r)
 
-	sum := 0
-	for i := range p.BoardMap {
-		for j := range p.BoardMap[i] {
-			sum += p.BoardMap[i][j]
-		}
-	}
-	fmt.Println(sum)
+
 
 	top_left_corner := cps.Coord{X: 0, Y: 0}
 	top_right_corner := cps.Coord{X: 0, Y: 0}
@@ -129,8 +126,8 @@ func main() {
 	bl_max := -1
 	br_max := -1
 
-	for x := 0; x < p.Height; x++ {
-		for y := 0; y < p.Width; y++ {
+	for x := 0; x < p.Width; x++ {
+		for y := 0; y < p.Height; y++ {
 			if r.Point_dict[cps.Tuple{x, y}] {
 				if x+y < tl_min {
 					tl_min = x + y
@@ -409,7 +406,7 @@ func main() {
 					xLoc := (z * p.XDiv) + int(p.XDiv/2)
 					yLoc := (k * p.YDiv) + int(p.YDiv/2)
 					p.CenterCoord = cps.Coord{X: xLoc, Y: yLoc}
-					//scheduler.AddRoutePoint(p.CenterCoord, p, r)
+					scheduler.AddRoutePoint(p.CenterCoord, p, r)
 					p.Grid[k][z].HasDetected = true
 				}
 
@@ -420,7 +417,7 @@ func main() {
 					xLoc := (z * p.XDiv) + int(p.XDiv/2)
 					yLoc := (k * p.YDiv) + int(p.YDiv/2)
 					p.CenterCoord = cps.Coord{X: xLoc, Y: yLoc}
-					//scheduler.AddRoutePoint(p.CenterCoord, p, r)
+					scheduler.AddRoutePoint(p.CenterCoord, p, r)
 					p.Grid[k][z].HasDetected = true
 				}
 
@@ -625,8 +622,8 @@ func getFlags() {
 	flag.BoolVar(&p.GridPrintCM, "logGrid", false, "Whether you want to write p.Grid info to a log file")
 	flag.BoolVar(&p.EnergyPrintCM, "logEnergy", false, "Whether you want to write energy into to a log file")
 	flag.BoolVar(&p.NodesPrintCM, "logNodes", false, "Whether you want to write node readings to a log file")
-	flag.IntVar(&p.SquareRowCM, "p.SquareRowCM", 50, "Number of rows of p.Grid squares, 1 through p.MaxX")
-	flag.IntVar(&p.SquareColCM, "p.SquareColCM", 50, "Number of columns of p.Grid squares, 1 through p.MaxY")
+	flag.IntVar(&p.SquareRowCM, "SquareRowCM", 50, "Number of rows of p.Grid squares, 1 through p.MaxX")
+	flag.IntVar(&p.SquareColCM, "SquareColCM", 50, "Number of columns of p.Grid squares, 1 through p.MaxY")
 
 	flag.StringVar(&p.ImageFileNameCM, "imageFileName", "circle_justWalls_x4.png", "Name of the input text file")
 	flag.StringVar(&p.StimFileNameCM, "stimFileName", "circle_0.txt", "Name of the stimulus text file")
