@@ -869,7 +869,10 @@ func readCSV(p *Params) {
 
 
 	i := 1
+	fmt.Printf("Sensor CSV Processing\n")
 	for i < len(record) {
+
+
 		x, _ := strconv.ParseInt(record[i][0], 10, 32);
 		y, _ := strconv.ParseInt(record[i][1], 10, 32);
 
@@ -882,7 +885,13 @@ func readCSV(p *Params) {
 			j += 1
 		}
 		i++
+
+		if(i % 1000 == 0) {
+			prog := int(float32(i)/float32(len(record))*100)
+			fmt.Printf("\rProgress [%s%s] %d ", strings.Repeat("=", prog), strings.Repeat(".", 100-prog), prog)
+		}
 	}
+	fmt.Printf("\n")
 }
 
 func RangeInt(min, max int) int { //returns a random number between max and min

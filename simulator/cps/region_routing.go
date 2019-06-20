@@ -218,13 +218,13 @@ func GenerateRouting(p *Params, r *RegionParams) {
 
 		bottom_right := Tuple{temp.X, y_test.Y - 1}
 
-		fmt.Println(top_left.X, bottom_right.X, top_left.Y, bottom_right.Y)
+		//fmt.Println(top_left.X, bottom_right.X, top_left.Y, bottom_right.Y)
 
 		new_square := RoutingSquare{top_left.X, bottom_right.X, top_left.Y, bottom_right.Y, true, id_counter, make([]Tuple, 0)}
 		id_counter++
-		fmt.Println("start_r_square")
+		//fmt.Println("start_r_square")
 		RemoveRoutingSquare(new_square, r)
-		fmt.Println("end_r_square")
+		//fmt.Println("end_r_square")
 		r.Square_list = append(r.Square_list, new_square)
 	}
 	fmt.Println("Built all squares")
