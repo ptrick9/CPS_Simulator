@@ -846,7 +846,7 @@ func readCSV(p *Params) {
 	record, err := r.ReadAll()
 
 	reg, _ := regexp.Compile("([0-9]+)")
-	times := (reg.FindAllStringSubmatch(strings.Join(record[0], " "), -1))
+	times := reg.FindAllStringSubmatch(strings.Join(record[0], " "), -1)
 
 	p.SensorTimes = make([]int, len(times))
 	for i := range times {
@@ -877,7 +877,7 @@ func readCSV(p *Params) {
 
 		for j < len(record[i]) {
 			read1, _ := strconv.ParseFloat(record[i][j], 32);
-
+			//fmt.Printf("x:%v, y:%v, j:%v\n",x,y,j)
 			p.SensorReadings[x][y][j-2] = read1
 			j += 1
 		}

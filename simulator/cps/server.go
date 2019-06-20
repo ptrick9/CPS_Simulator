@@ -59,7 +59,7 @@ func (s FusionCenter) GetSquareAverage(tile *Square) float32 {
 }
 
 func (s FusionCenter) UpdateSquareAvg(rd Reading) {
-	tile := s.P.Grid[rd.YPos/s.P.YDiv][rd.Xpos/s.P.XDiv]
+	tile := s.P.Grid[rd.Xpos/s.P.XDiv][rd.YPos/s.P.YDiv]
 	tile.TakeMeasurement(float32(rd.SensorVal))
 
 }
@@ -78,7 +78,7 @@ func (s FusionCenter) UpdateSquareNumNodes() {
 	//Count number of nodes in each square
 	for i:=0; i < s.P.NumNodes; i++ {
 		node = s.P.NodeList[i]
-		s.P.Grid[node.Y/s.P.YDiv][node.X/s.P.XDiv].ActualNumNodes += 1
+		s.P.Grid[node.X/s.P.XDiv][node.Y/s.P.YDiv].ActualNumNodes += 1
 	}
 
 	//Debugging: Check if total nodes after update is equal to total expected nodes
@@ -95,7 +95,7 @@ func (s FusionCenter) UpdateSquareNumNodes() {
 
 //Node calls this to send data to server. Statistics are calculated each Time data is received
 func (s *FusionCenter) Send(n *NodeImpl, rd Reading) {
-	//fmt.Printf("Sending to server:\nTime: %v, ID: %v, X: %v, Y: %v, Sensor Value: %v\n", rd.Time, rd.Id, rd.Xpos, rd.yPos, rd.sensorVal)
+	//fmt.Printf("Sending to server:\nTime: %v, ID: %v, X: %v, Y: %v, Sensor Value: %v\n", rd.Time, rd.Id, rd.Xpos, rd.YPos, rd.SensorVal)
 	s.Times = make(map[int]bool, 0)
 	if s.Times[rd.Time] {
 
@@ -114,9 +114,9 @@ func (s *FusionCenter) Send(n *NodeImpl, rd Reading) {
 	}
 
 	s.UpdateSquareAvg(rd)
-	tile := s.P.Grid[rd.YPos/s.P.YDiv][rd.Xpos/s.P.XDiv]
+	tile := s.P.Grid[rd.Xpos/s.P.XDiv][rd.YPos/s.P.YDiv]
 	tile.SquareValues += math.Pow(float64(rd.SensorVal-float64(tile.Avg)), 2)
-	if rd.SensorVal > (float64(s.GetSquareAverage(s.P.Grid[rd.YPos/s.P.YDiv][rd.Xpos/s.P.XDiv])) + s.P.CalibrationThresholdCM){ //Check if x over grid avg
+	if rd.SensorVal > (float64(s.GetSquareAverage(s.P.Grid[rd.Xpos/s.P.XDiv][rd.YPos/s.P.YDiv])) + s.P.CalibrationThresholdCM){ //Check if x over grid avg
 		n.Recalibrate()
 		s.LastRecal[n.Id] = s.P.Iterations_used
 		//fmt.Println(s.LastRecal)

@@ -51,6 +51,8 @@ func main() {
 	p = &cps.Params{}
 	r = &cps.RegionParams{}
 
+	p.Server = cps.FusionCenter{p, nil, nil, nil, nil, nil, nil}
+
 	p.Tau1 = 10
 	p.Tau2 = 500
 	p.FoundBomb = false
@@ -112,6 +114,7 @@ func main() {
 		}
 	}
 
+	p.Server.Init()
 	cps.ReadMap(p, r)
 
 
@@ -229,13 +232,13 @@ func main() {
 		p.WallNodeList[i] = cps.WallNodes{Node: &cps.NodeImpl{X: p.Wpos[i][0], Y: p.Wpos[i][1]}}
 	}
 
-	p.Grid = make([][]*cps.Square, p.SquareRowCM) //this creates the p.Grid and only works if row is same size as column
+	p.Grid = make([][]*cps.Square, p.SquareColCM) //this creates the p.Grid and only works if row is same size as column
 	for i := range p.Grid {
-		p.Grid[i] = make([]*cps.Square, p.SquareColCM)
+		p.Grid[i] = make([]*cps.Square, p.SquareRowCM)
 	}
 
-	for i := 0; i < p.SquareRowCM; i++ {
-		for j := 0; j < p.SquareColCM; j++ {
+	for i := 0; i < p.SquareColCM; i++ {
+		for j := 0; j < p.SquareRowCM; j++ {
 
 			travelList := make([]bool, 0)
 			for k := 0; k < p.NumSuperNodes; k++ {
@@ -305,7 +308,7 @@ func main() {
 					p.NodeList[i].Sitting = 0
 				}
 				p.NodeList[i].GetReadingsCSV(p)
-				//p.NodeList[i].GetReadings(p)
+				p.NodeList[i].GetReadings(p)
 			//}(i)
 		}
 		//wg.Wait()
@@ -343,9 +346,9 @@ func main() {
 			//	AND if the simulator is currently in a mode that requests optimization
 
 			if length != len(s.GetRoutePoints()) {
-				bombSquare := p.Grid[p.B.Y/p.YDiv][p.B.X/p.XDiv]
-				sSquare := p.Grid[s.GetY()/p.YDiv][s.GetX()/p.XDiv]
-				p.Grid[s.GetY()/p.YDiv][s.GetX()/p.XDiv].HasDetected = false
+				bombSquare := p.Grid[p.B.X/p.XDiv][p.B.Y/p.YDiv]
+				sSquare := p.Grid[s.GetX()/p.XDiv][s.GetY()/p.YDiv]
+				p.Grid[s.GetX()/p.XDiv][s.GetY()/p.YDiv].HasDetected = false
 
 				bdist := float32(math.Pow(float64(math.Pow(float64(math.Abs(float64(s.GetX())-float64(p.B.X))), 2)+math.Pow(float64(math.Abs(float64(s.GetY())-float64(p.B.Y))), 2)), .5))
 
@@ -384,45 +387,45 @@ func main() {
 		}
 
 		//Loop over every square in the p.Grid once again
-		for k := 0; k < p.SquareRowCM; k++ {
-			for z := 0; z < p.SquareColCM; z++ {
-				bombSquare := p.Grid[p.B.Y/p.YDiv][p.B.X/p.XDiv]
+		for x := 0; x < p.SquareColCM; x++ { //k
+			for y := 0; y < p.SquareRowCM; y++ { //z
+				bombSquare := p.Grid[p.B.X/p.XDiv][p.B.Y/p.YDiv]
 				bs_y := float64(p.B.Y / p.YDiv)
 				bs_x := float64(p.B.X / p.XDiv)
 
-				p.Grid[k][z].StdDev = math.Sqrt(p.Grid[k][z].GetSquareValues() / float64(p.Grid[k][z].NumNodes-1))
+				p.Grid[x][y].StdDev = math.Sqrt(p.Grid[x][y].GetSquareValues() / float64(p.Grid[x][y].NumNodes-1))
 
 				//check for false negatives/positives
-				if p.Grid[k][z].NumNodes > 0 && float64(p.Grid[k][z].Avg) < p.DetectionThreshold && bombSquare == p.Grid[k][z] && !p.Grid[k][z].HasDetected {
+				if p.Grid[x][y].NumNodes > 0 && float64(p.Grid[x][y].Avg) < p.DetectionThreshold && bombSquare == p.Grid[x][y] && !p.Grid[x][y].HasDetected {
 					//this is a p.Grid false negative
-					fmt.Fprintln(p.DriftFile, "Grid False Negative Avg:", p.Grid[k][z].Avg, "Square Row:", k, "Square Column:", z, "Iteration:", iters)
-					p.Grid[k][z].HasDetected = false
+					fmt.Fprintln(p.DriftFile, "Grid False Negative Avg:", p.Grid[x][y].Avg, "Square Row:", y, "Square Column:", x, "Iteration:", iters)
+					p.Grid[x][y].HasDetected = false
 				}
 
-				if float64(p.Grid[k][z].Avg) >= p.DetectionThreshold && (math.Abs(bs_y-float64(k)) >= 1.1 && math.Abs(bs_x-float64(z)) >= 1.1) && !p.Grid[k][z].HasDetected {
+				if float64(p.Grid[x][y].Avg) >= p.DetectionThreshold && (math.Abs(bs_y-float64(y)) >= 1.1 && math.Abs(bs_x-float64(x)) >= 1.1) && !p.Grid[x][y].HasDetected {
 					//this is a false positive
-					fmt.Fprintln(p.DriftFile, "Grid False Positive Avg:", p.Grid[k][z].Avg, "Square Row:", k, "Square Column:", z, "Iteration:", iters)
+					fmt.Fprintln(p.DriftFile, "Grid False Positive Avg:", p.Grid[x][y].Avg, "Square Row:", y, "Square Column:", x, "Iteration:", iters)
 					//report to supernodes
-					xLoc := (z * p.XDiv) + int(p.XDiv/2)
-					yLoc := (k * p.YDiv) + int(p.YDiv/2)
+					xLoc := (x * p.XDiv) + int(p.XDiv/2)
+					yLoc := (y * p.YDiv) + int(p.YDiv/2)
 					p.CenterCoord = cps.Coord{X: xLoc, Y: yLoc}
 					scheduler.AddRoutePoint(p.CenterCoord, p, r)
-					p.Grid[k][z].HasDetected = true
+					p.Grid[x][y].HasDetected = true
 				}
 
-				if float64(p.Grid[k][z].Avg) >= p.DetectionThreshold && (math.Abs(bs_y-float64(k)) <= 1.1 && math.Abs(bs_x-float64(z)) <= 1.1) && !p.Grid[k][z].HasDetected {
+				if float64(p.Grid[x][y].Avg) >= p.DetectionThreshold && (math.Abs(bs_y-float64(y)) <= 1.1 && math.Abs(bs_x-float64(x)) <= 1.1) && !p.Grid[x][y].HasDetected {
 					//this is a true positive
-					fmt.Fprintln(p.DriftFile, "Grid True Positive Avg:", p.Grid[k][z].Avg, "Square Row:", k, "Square Column:", z, "Iteration:", iters)
+					fmt.Fprintln(p.DriftFile, "Grid True Positive Avg:", p.Grid[x][y].Avg, "Square Row:", y, "Square Column:", x, "Iteration:", iters)
 					//report to supernodes
-					xLoc := (z * p.XDiv) + int(p.XDiv/2)
-					yLoc := (k * p.YDiv) + int(p.YDiv/2)
+					xLoc := (x * p.XDiv) + int(p.XDiv/2)
+					yLoc := (y * p.YDiv) + int(p.YDiv/2)
 					p.CenterCoord = cps.Coord{X: xLoc, Y: yLoc}
 					scheduler.AddRoutePoint(p.CenterCoord, p, r)
-					p.Grid[k][z].HasDetected = true
+					p.Grid[x][y].HasDetected = true
 				}
 
-				p.Grid[k][z].SetSquareValues(0)
-				p.Grid[k][z].NumNodes = 0
+				p.Grid[x][y].SetSquareValues(0)
+				p.Grid[x][y].NumNodes = 0
 			}
 		}
 
@@ -443,8 +446,8 @@ func main() {
 		if p.NodesPrint {
 			fmt.Fprint(p.NodeFile, "----------------\n")
 		}
-
 		p.Iterations_used++
+		p.Server.CalcStats()
 	}
 
 	p.PositionFile.Seek(0, 0)
@@ -473,7 +476,7 @@ func main() {
 			log.Fatal("could not write memory profile: ", err)
 		}
 	}
-
+	p.Server.PrintStatsFile()
 }
 
 func makeNodes() {

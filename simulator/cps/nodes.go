@@ -1056,7 +1056,6 @@ func (curNode *NodeImpl) GetReadings(p *Params) {
 	sNoise := rand.NormFloat64()*0.5*p.ErrorModifierCM + float64(newDist)*sError
 
 	errorDist := sNoise / curNode.Sensitivity //this is the node's actual reading with error
-
 	//increment node Time
 	curNode.NodeTime++
 
