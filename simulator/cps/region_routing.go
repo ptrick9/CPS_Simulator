@@ -190,8 +190,8 @@ func GenerateRouting(p *Params, r *RegionParams) {
 	//for len(r.Point_list) != 0 {
 	for !done {
 		top_left := Tuple{-1, -1}
-		for x := 0; x < p.Height; x++ {
-			for y := 0; y < p.Width; y++ {
+		for x := 0; x < p.Width; x++ {
+			for y := 0; y < p.Height; y++ {
 				//fmt.Printf("X: %d, Y: %d, v: %d", x, y, r.Point_list2[x][y])
 				if r.Point_list2[x][y] {
 					top_left = Tuple{x, y}

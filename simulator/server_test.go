@@ -10,7 +10,7 @@ import (
 
 func TestInit(t *testing.T) {
 	p := cps.Params{}
-	p.Server = cps.FusionCenter{&p, nil, nil, nil, nil, nil}
+	p.Server = cps.FusionCenter{&p, nil, nil, nil, nil, nil, nil}
 	srv := p.Server
 	srv.Init()
 
@@ -53,7 +53,7 @@ func TestUpdateSquareAvg(t *testing.T) {
 	p.YDiv = 1
 	p.XDiv = 1
 	p.NumGridSamples = 1
-	p.Server = cps.FusionCenter{&p, nil, nil, nil, nil, nil}
+	p.Server = cps.FusionCenter{&p, nil, nil, nil, nil, nil, nil}
 	srv := p.Server
 	rd := cps.Reading{10,0,0,0,0}
 	travelList := make([]bool, 0)
@@ -77,7 +77,7 @@ func TestUpdateSquareAvg(t *testing.T) {
 
 func TestUpdateSquareNumNodes(t *testing.T) {
 	p := cps.Params{}
-	p.Server = cps.FusionCenter{&p, nil, nil, nil, nil, nil}
+	p.Server = cps.FusionCenter{&p, nil, nil, nil, nil, nil, nil}
 	srv := p.Server
 	p.NodeList = make([]cps.NodeImpl, 2)
 	p.NumNodes = 2
@@ -129,9 +129,9 @@ func TestUpdateSquareNumNodes(t *testing.T) {
 
 func TestSend(t *testing.T) {
 	p := cps.Params{}
-	p.Server = cps.FusionCenter{&p, nil, nil, nil, nil, nil}
+	p.Server = cps.FusionCenter{&p, nil, nil, nil, nil, nil, nil}
 	srv := p.Server
-	rd := cps.Reading{0,0,0,0,0}
+	//rd := cps.Reading{0,0,0,0,0}
 	p.XDiv = 1
 	p.YDiv = 1
 	travelList := make([]bool, 0)
@@ -144,7 +144,7 @@ func TestSend(t *testing.T) {
 
 	p.Grid = append(p.Grid, []*cps.Square{ &squ })
 
-	srv.Send(rd)
+	//srv.Send(rd)
 
 	if srv.Times[0] != true {
 		t.Errorf("Time 0 not included in packet, got %v, wanted true", srv.Times[0])
@@ -157,7 +157,7 @@ func TestSend(t *testing.T) {
 
 func TestCalcStats(t *testing.T) {
 	p := cps.Params{}
-	p.Server = cps.FusionCenter{&p, nil, nil, nil, nil, nil}
+	p.Server = cps.FusionCenter{&p, nil, nil, nil, nil, nil, nil}
 	srv := p.Server
 	srv.Times = make(map[int]bool)
 	srv.Times[0] = true

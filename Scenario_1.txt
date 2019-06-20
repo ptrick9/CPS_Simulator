@@ -1,4 +1,4 @@
-numNodes-1000
+numNodes-10000
 superNodeType-0
 maxX-400
 maxY-400

@@ -656,12 +656,12 @@ func ReadMap(p *Params, r *RegionParams) {
 	img, _, err := image.Decode(imgfile)
 
 	for x := 0; x < p.Width; x++ {
-		r.Point_list2 = append(r.Point_list2, make([]bool, p.Width))
+		r.Point_list2 = append(r.Point_list2, make([]bool, p.Height))
 	}
 
 	for x := 0; x < p.Width; x++ {
 		for y := 0; y < p.Height; y++ {
-			rr, _, _, _ := img.At(x, p.Width).RGBA()
+			rr, _, _, _ := img.At(x, y).RGBA()
 			if rr != 0 {
 				r.Point_list2[x][y] = true
 				r.Point_dict[Tuple{x, y}] = true
