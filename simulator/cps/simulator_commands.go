@@ -33,6 +33,7 @@ type Params struct {
 	SquareRowCM                    int     //This is an int 1 through maxX representing how many rows of squares there are
 	SquareColCM                    int     //This is an int 1 through maxY representing how many columns of squares there are
 
+
 	StimFileNameCM        string
 	ImageFileNameCM       string
 	OutRoutingStatsNameCM string
@@ -56,6 +57,7 @@ type Params struct {
 	NodesPrint    bool
 	GridPrint     bool
 
+	MoveReadingsFile *os.File
 	DriftFile      *os.File
 	NodeFile       *os.File
 	PositionFile   *os.File

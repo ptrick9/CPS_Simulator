@@ -1115,6 +1115,7 @@ func (curNode *NodeImpl) GetReadingsCSV(p *Params) {
 	curNode.Sensitivity = S0 + (S1)*math.Exp(-float64(curNode.NodeTime)/p.Tau1) + (S2)*math.Exp(-float64(curNode.NodeTime)/p.Tau2)
 	sNoise := rand.NormFloat64()*0.5*p.ErrorModifierCM + float64(newDist)*sError
 
+	clean := float64(newDist) / curNode.Sensitivity
 	errorDist := sNoise / curNode.Sensitivity //this is the node's actual reading with error
 
 	//increment node time
@@ -1124,6 +1125,8 @@ func (curNode *NodeImpl) GetReadingsCSV(p *Params) {
 		curNode.IncrementTotalSamples()
 		curNode.UpdateHistory(float32(errorDist))
 	}
+
+	fmt.Fprintln(p.MoveReadingsFile, "ID:", curNode.Id, "X:", newX, "Y:", newY, "Sense:", errorDist, "CleanSense:", clean, "Real:", newDist)
 
 	//Detection of false positives or false negatives
 	if errorDist < p.DetectionThresholdCM && float64(newDist) >= p.DetectionThresholdCM {

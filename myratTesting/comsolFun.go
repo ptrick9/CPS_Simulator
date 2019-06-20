@@ -184,7 +184,7 @@ func main() {
 	p.ThreshHoldBatteryToHave = 30.0 //This is the threshhold battery to have for all phones
 
 	p.Iterations_used = 0
-	p.Iterations_of_event = 1000
+	p.Iterations_of_event = 200
 	p.EstimatedPingsNeeded = 10200
 
 	cps.SetupFiles(p)
@@ -295,22 +295,23 @@ func main() {
 		//start := time.Now()
 
 		//is square thread safe
-		var wg sync.WaitGroup
-		wg.Add(len(p.NodeList))
+		//var wg sync.WaitGroup
+		//wg.Add(len(p.NodeList))
+		fmt.Fprintln(p.MoveReadingsFile, "T=", p.Iterations_used)
 		for i := 0; i < len(p.NodeList); i++ {
-			go func(i int) {
-				defer wg.Done()
+			//go func(i int) {
+			//	defer wg.Done()
 				if !p.NoEnergyModelCM {
 					p.NodeList[i].BatteryLossMostDynamic(p)
 				} else {
 					p.NodeList[i].HasCheckedSensor = true
 					p.NodeList[i].Sitting = 0
 				}
-				//p.NodeList[i].GetReadingsCSV(p)
-				p.NodeList[i].GetReadings(p)
-			}(i)
+				p.NodeList[i].GetReadingsCSV(p)
+				//p.NodeList[i].GetReadings(p)
+			//}(i)
 		}
-		wg.Wait()
+		//wg.Wait()
 		p.DriftFile.Sync()
 		p.NodeFile.Sync()
 		p.PositionFile.Sync()
@@ -408,7 +409,7 @@ func main() {
 					xLoc := (z * p.XDiv) + int(p.XDiv/2)
 					yLoc := (k * p.YDiv) + int(p.YDiv/2)
 					p.CenterCoord = cps.Coord{X: xLoc, Y: yLoc}
-					scheduler.AddRoutePoint(p.CenterCoord, p, r)
+					//scheduler.AddRoutePoint(p.CenterCoord, p, r)
 					p.Grid[k][z].HasDetected = true
 				}
 
@@ -419,7 +420,7 @@ func main() {
 					xLoc := (z * p.XDiv) + int(p.XDiv/2)
 					yLoc := (k * p.YDiv) + int(p.YDiv/2)
 					p.CenterCoord = cps.Coord{X: xLoc, Y: yLoc}
-					scheduler.AddRoutePoint(p.CenterCoord, p, r)
+					//scheduler.AddRoutePoint(p.CenterCoord, p, r)
 					p.Grid[k][z].HasDetected = true
 				}
 
@@ -542,7 +543,7 @@ func getFlags() {
 		"Percent the sub-Grid can be filled")
 	flag.StringVar(&p.InputFileNameCM, "inputFileName", "Log1_in.txt",
 		"Name of the input text file")
-	flag.StringVar(&p.SensorPath, "Sensor Readings", "Circle_2D.csv", "Sensor Reading Inputs")
+	flag.StringVar(&p.SensorPath, "sensorPath", "Circle_2D.csv", "Sensor Reading Inputs")
 	flag.StringVar(&p.OutputFileNameCM, "p.OutputFileName", "Log",
 		"Name of the output text file prefix")
 	flag.Float64Var(&p.NaturalLossCM, "naturalLoss", .005,
@@ -581,6 +582,7 @@ func getFlags() {
 		"Value where if a node gets this reading or higher, it will trigger a detection")
 	flag.Float64Var(&p.ErrorModifierCM, "errorMultiplier", 1.0,
 		"Multiplier for error values in system")
+
 	//Range 1, 2, or 4
 	//Currently works for only a few numbers, can be easily expanded but is not currently dynamic
 	flag.IntVar(&p.NumSuperNodes, "numSuperNodes", 4, "the number of super nodes in the simulator")

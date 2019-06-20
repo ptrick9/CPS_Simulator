@@ -770,6 +770,12 @@ func SetupFiles(p *Params) {
 	if err != nil {
 		log.Fatal("Cannot create file", err)
 	}
+
+	p.MoveReadingsFile, err = os.Create(p.OutputFileNameCM + "-movementReadings.txt")
+	if err != nil {
+		log.Fatal("Cannot create file", err)
+	}
+
 	//defer p.AttractionFile.Close()
 }
 
@@ -794,7 +800,7 @@ func SetupParameters(p *Params) {
 	p.BatteryLossesCheckingServerScalar = GetLinearBatteryLossConstant(len(p.Npos), float32(p.ServerSamplingLossCM))
 	p.Attractions = make([]*Attraction, p.NumAtt)
 
-	//readCSV(p)
+	readCSV(p)
 
 }
 
@@ -810,21 +816,15 @@ func readCSV(p *Params) {
 	r.FieldsPerRecord = -1
 	record, err := r.ReadAll()
 
-	reg, _ := regexp.Compile("t=([0-9]+)")
-	times := (reg.FindAllStringSubmatch(strings.Join(record[8], " "), -1))
+	reg, _ := regexp.Compile("([0-9]+)")
+	times := (reg.FindAllStringSubmatch(strings.Join(record[0], " "), -1))
 
 	p.SensorTimes = make([]int, len(times))
 	for i := range times {
 		p.SensorTimes[i], _ = strconv.Atoi(times[i][1])
 	}
 
-	/*fmt.Println(err)
-	fmt.Println(len(record))*/
-	big := 0.0
-	topVal := 0.0
-	i := 9
-
-	numSamples := len(record[9]) - 2
+	numSamples := len(record[2]) - 2
 
 	p.SensorReadings = make([][][]float64, p.Width)
 	for i := range p.SensorReadings {
@@ -837,88 +837,22 @@ func readCSV(p *Params) {
 		}
 	}
 
-	averaged := make([][][]float64, p.Width)
-	for i := range averaged {
-		averaged[i] = make([][]float64, p.Height)
-		for j := range averaged[i] {
-			averaged[i][j] = make([]float64, numSamples)
-			for k := range averaged[i][j] {
-				averaged[i][j][k] = -1
-			}
-		}
-	}
 
+
+	i := 1
 	for i < len(record) {
-		//fmt.Println(record[i])
-		x, err := strconv.ParseFloat(record[i][0], 32)
-		/*if err == nil {
-			fmt.Println(Round(x, 0.5))
-		} else {
-			fmt.Println(err)
-		}*/
-		if x > big {
-			big = x
-		}
-		y, err := strconv.ParseFloat(record[i][1], 32)
-		/*if err == nil {
-			fmt.Println(Round(y, 0.5))
-		}*/
-		if y > big {
-			big = y
-		}
+		x, _ := strconv.ParseInt(record[i][1], 10, 32);
+		y, _ := strconv.ParseInt(record[i][0], 10, 32);
+
 		j := 2
-		/*fmt.Printf("%v %v\n", int(x*2), int(y*2))
-		fmt.Printf("%v\n", len(record[i]))*/
-		if int(x*2) < p.Width && int(y*2) < p.Height {
-			for j < len(record[i]) {
-				read1, _ := strconv.ParseFloat(record[i][j], 32)
-				if err == nil {
-					//fmt.Printf("%e ", read1)
-				}
 
-				//fmt.Printf("%v %v %v\n", int(x*2), int(y*2), j-2)
-				p.SensorReadings[int(x*2)][int(y*2)][j-2] = read1
-				if read1 > topVal {
-					topVal = read1
-				}
+		for j < len(record[i]) {
+			read1, _ := strconv.ParseFloat(record[i][j], 32);
 
-				j += 1
-			}
+			p.SensorReadings[x][y][j-2] = read1
+			j += 1
 		}
-		//fmt.Println()
-		fmt.Printf("\r%d\\%d", i, len(record))
 		i++
-	}
-
-	fmt.Printf("\ntop: %v\n", topVal)
-
-	cw := 7
-	ch := 7
-	divider := 1.0 / float64(cw*ch)
-	radius := cw / 2
-
-	for k := range p.SensorReadings[0][0] {
-		for i := range p.SensorReadings {
-			for j := range p.SensorReadings[i] {
-				total := 0.0
-				for ci := radius; ci >= radius*-1; ci-- {
-					for cj := radius; cj >= radius*-1; cj-- {
-						if i+ci > 0 && i+ci < p.Width && j+cj > 0 && j+cj < p.Height {
-							total += p.SensorReadings[i+ci][j+cj][k] * divider
-						}
-					}
-				}
-				averaged[i][j][k] = total
-			}
-		}
-	}
-
-	for k := range p.SensorReadings[0][0] {
-		for i := range p.SensorReadings {
-			for j := range p.SensorReadings[i] {
-				p.SensorReadings[i][j][k] = averaged[i][j][k]
-			}
-		}
 	}
 }
 
