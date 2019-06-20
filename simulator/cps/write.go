@@ -420,14 +420,14 @@ func HandleMovement(p *Params) {
 	for j := 0; j < len(p.NodeList); j++ {
 
 		oldX, oldY := p.NodeList[j].GetLoc()
-		p.BoolGrid[oldY][oldX] = false //set the old spot false since the node will now move away
+		p.BoolGrid[oldX][oldY] = false //set the old spot false since the node will now move away
 
 		//move the node to its new location
 		p.NodeList[j].Move(p)
 
 		//set the new location in the boolean field to true
 		newX, newY := p.NodeList[j].GetLoc()
-		p.BoolGrid[newY][newX] = true
+		p.BoolGrid[newX][newY] = true
 
 		//writes the node information to the file
 		if p.EnergyPrint {
@@ -453,7 +453,7 @@ func FillInBufferCurrent(p *Params) {
 	bufferCurrent = [][]int{}
 	for i := 0; i < len(p.Poispos); i++ {
 		if p.Iterations_used >= p.Poispos[i][2] && p.Iterations_used < p.Poispos[i][3] {
-			bufferCurrent = append(bufferCurrent, []int{p.Poispos[i][1], p.Poispos[i][0]})
+			bufferCurrent = append(bufferCurrent, []int{p.Poispos[i][0], p.Poispos[i][1]})
 			//fmt.Println("1ho- ", iterations_used, "2ho", bufferCurrent)
 		}
 	}
@@ -662,7 +662,11 @@ func ReadMap(p *Params, r *RegionParams) {
 	for x := 0; x < p.Width; x++ {
 		for y := 0; y < p.Height; y++ {
 			rr, _, _, _ := img.At(x, y).RGBA()
-			if rr != 0 {
+			/*rr, gg, bb, _ := img.At(1599, 90).RGBA()
+			fmt.Printf("r: %d %d %d\n", rr, gg, bb)
+			rr, gg, bb, _ = img.At(1599, 89).RGBA()
+			fmt.Printf("r: %d %d %d\n", rr, gg, bb)*/
+			if rr >= 60000 {
 				r.Point_list2[x][y] = true
 				r.Point_dict[Tuple{x, y}] = true
 

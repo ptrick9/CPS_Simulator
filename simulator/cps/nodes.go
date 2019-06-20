@@ -237,8 +237,8 @@ func (n *NodeImpl) Move(p *Params) {
 		//only add the ones that are valid to move to into the list
 		if n.Y-1 >= 0 &&
 			n.X >= 0 &&
-			n.X < len(p.BoardMap[n.Y-1]) &&
-			n.Y-1 < len(p.BoardMap) &&
+			n.X < p.Width &&
+			n.Y-1 < p.Height &&
 
 			p.BoardMap[n.X][n.Y-1] != -1 &&
 			p.BoolGrid[n.X][n.Y-1] == false { // &&
@@ -247,9 +247,9 @@ func (n *NodeImpl) Move(p *Params) {
 			up := GridSpot{n.X, n.Y - 1, p.BoardMap[n.X][n.Y-1]}
 			potentialSpots = append(potentialSpots, up)
 		}
-		if n.X+1 < len(p.BoardMap[n.Y]) &&
+		if n.X+1 < p.Width &&
 			n.X+1 >= 0 &&
-			n.Y < len(p.BoardMap) &&
+			n.Y < p.Height &&
 			n.Y >= 0 &&
 
 			p.BoardMap[n.X+1][n.Y] != -1 &&
@@ -259,9 +259,9 @@ func (n *NodeImpl) Move(p *Params) {
 			right := GridSpot{n.X + 1, n.Y, p.BoardMap[n.X+1][n.Y]}
 			potentialSpots = append(potentialSpots, right)
 		}
-		if n.Y+1 < len(p.BoardMap) &&
+		if n.Y+1 < p.Height &&
 			n.Y+1 >= 0 &&
-			n.X < len(p.BoardMap[n.Y+1]) &&
+			n.X < p.Width &&
 			n.X >= 0 &&
 
 			p.BoardMap[n.X][n.Y+1] != -1 &&
@@ -272,9 +272,9 @@ func (n *NodeImpl) Move(p *Params) {
 			potentialSpots = append(potentialSpots, down)
 		}
 		if n.X-1 >= 0 &&
-			n.X-1 < len(p.BoardMap[n.Y]) &&
+			n.X-1 < p.Width &&
 			n.Y >= 0 &&
-			n.Y < len(p.BoardMap) &&
+			n.Y < p.Height &&
 
 			p.BoardMap[n.X-1][n.Y] != -1 &&
 			p.BoolGrid[n.X-1][n.Y] == false { // &&

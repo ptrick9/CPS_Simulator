@@ -199,7 +199,7 @@ func main() {
 
 
 	p.Iterations_used = 0
-	p.Iterations_of_event = 1000
+	p.Iterations_of_event = 200
 	p.EstimatedPingsNeeded = 10200
 
 
@@ -331,6 +331,7 @@ func main() {
 				}
 				p.NodeList[i].GetReadings(p)
 		}
+
 		runTimes[p.Iterations_used] = time.Since(start).Nanoseconds()
 
 
@@ -664,8 +665,8 @@ func getFlags() {
 	flag.BoolVar(&p.GridPrintCM, "logGrid", false, "Whether you want to write p.Grid info to a log file")
 	flag.BoolVar(&p.EnergyPrintCM, "logEnergy", false, "Whether you want to write energy into to a log file")
 	flag.BoolVar(&p.NodesPrintCM, "logNodes", false, "Whether you want to write node readings to a log file")
-	flag.IntVar(&p.SquareRowCM, "p.SquareRowCM", 50, "Number of rows of p.Grid squares, 1 through p.MaxX")
-	flag.IntVar(&p.SquareColCM, "p.SquareColCM", 50, "Number of columns of p.Grid squares, 1 through p.MaxY")
+	flag.IntVar(&p.SquareRowCM, "p.SquareRowCM", 60, "Number of rows of p.Grid squares, 1 through p.MaxX")
+	flag.IntVar(&p.SquareColCM, "p.SquareColCM", 320, "Number of columns of p.Grid squares, 1 through p.MaxY")
 
 	flag.StringVar(&p.ImageFileNameCM, "imageFileName", "marathon_street_map.png", "Name of the input text file") //circle_justWalls_x4.png
 	flag.StringVar(&p.StimFileNameCM, "stimFileName", "circle_0.txt", "Name of the stimulus text file")
