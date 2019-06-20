@@ -28,6 +28,7 @@ type NodeParent interface {
 	GeoDist(b Bomb) float32         //returns distance from bomb (rather than reading of node)
 	GetID() int                     //returns ID of node
 	GetLoc() (x, y int)             //returns x and y values of node
+
 	//following functions set drifting parameters of nodes
 	SetS0(s0 float64)
 	SetS1(s1 float64)
@@ -46,7 +47,7 @@ type NodeParent interface {
 //NodeImpl is a struct that implements all the methods listed
 //	above in NodeParent
 type NodeImpl struct {
-	Id                              int      //id of node
+	Id                              int      //Id of node
 	OldX                            int      // for movement
 	OldY                            int      // for movement
 	Sitting                         int      // for movement
@@ -113,6 +114,11 @@ type NodeImpl struct {
 	NodeTime           int
 	Sensitivity        float64
 	InitialSensitivity float64
+
+	allReadings 	   [1000]float64
+	calibrateTimes 	   []int
+	calibrateReading   []float64
+	hasCalibrated 	   bool
 }
 
 //NodeMovement controls the movement of all the normal nodes
@@ -196,19 +202,19 @@ func (n *NodeImpl) Distance(b Bomb) float32 {
 
 // These are the toString methods for battery levels
 func (n Bn) String() string { // extra extra string statements
-	return fmt.Sprintf("x: %v y: %v Xspeed: %v Yspeed: %v id: %v battery: %v sensor checked: %v sensor checks: %v GPS checked: %v GPS checks: %v server checked: %v server checks: %v buffer: %v ", n.X, n.Y, n.X_speed, n.Y_speed, n.Id, n.Battery, n.HasCheckedSensor, n.TotalChecksSensor, n.HasCheckedGPS, n.TotalChecksGPS, n.HasCheckedServer, n.TotalChecksServer, n.BufferI)
+	return fmt.Sprintf("x: %v y: %v Xspeed: %v Yspeed: %v Id: %v battery: %v sensor checked: %v sensor checks: %v GPS checked: %v GPS checks: %v server checked: %v server checks: %v buffer: %v ", n.X, n.Y, n.X_speed, n.Y_speed, n.Id, n.Battery, n.HasCheckedSensor, n.TotalChecksSensor, n.HasCheckedGPS, n.TotalChecksGPS, n.HasCheckedServer, n.TotalChecksServer, n.BufferI)
 }
 
 func (n Wn) String() string {
-	return fmt.Sprintf("x: %v y: %v speed: %v dir: %v id: %v battery: %v sensor checked: %v sensor checks: %v GPS checked: %v GPS checks: %v server checked: %v server checks: %v buffer: %v ", n.X, n.Y, n.Speed, n.Dir, n.Id, n.Battery, n.HasCheckedSensor, n.TotalChecksSensor, n.HasCheckedGPS, n.TotalChecksGPS, n.HasCheckedServer, n.TotalChecksServer, n.BufferI)
+	return fmt.Sprintf("x: %v y: %v speed: %v dir: %v Id: %v battery: %v sensor checked: %v sensor checks: %v GPS checked: %v GPS checks: %v server checked: %v server checks: %v buffer: %v ", n.X, n.Y, n.Speed, n.Dir, n.Id, n.Battery, n.HasCheckedSensor, n.TotalChecksSensor, n.HasCheckedGPS, n.TotalChecksGPS, n.HasCheckedServer, n.TotalChecksServer, n.BufferI)
 }
 
 func (n Rn) String() string {
-	return fmt.Sprintf("x: %v y: %v id: %v battery: %v sensor checked: %v sensor checks: %v GPS checked: %v GPS checks: %v server checked: %v server checks: %v buffer: %v ", n.X, n.Y, n.Id, n.Battery, n.HasCheckedSensor, n.TotalChecksSensor, n.HasCheckedGPS, n.TotalChecksGPS, n.HasCheckedServer, n.TotalChecksServer, n.BufferI)
+	return fmt.Sprintf("x: %v y: %v Id: %v battery: %v sensor checked: %v sensor checks: %v GPS checked: %v GPS checks: %v server checked: %v server checks: %v buffer: %v ", n.X, n.Y, n.Id, n.Battery, n.HasCheckedSensor, n.TotalChecksSensor, n.HasCheckedGPS, n.TotalChecksGPS, n.HasCheckedServer, n.TotalChecksServer, n.BufferI)
 } // end extra extra string statements
 
 func (n NodeImpl) String() string {
-	//return fmt.Sprintf("x: %v y: %v id: %v battery: %v sensor checked: %v sensor checks: %v GPS checked: %v GPS checks: %v server checked: %v server checks: %v buffer: %v ", n.X, n.Y, n.Id, n.Battery, n.HasCheckedSensor, n.TotalChecksSensor, n.HasCheckedGPS, n.TotalChecksGPS, n.HasCheckedServer, n.TotalChecksServer,n.BufferI)
+	//return fmt.Sprintf("x: %v y: %v Id: %v battery: %v sensor checked: %v sensor checks: %v GPS checked: %v GPS checks: %v server checked: %v server checks: %v buffer: %v ", n.X, n.Y, n.Id, n.Battery, n.HasCheckedSensor, n.TotalChecksSensor, n.HasCheckedGPS, n.TotalChecksGPS, n.HasCheckedServer, n.TotalChecksServer,n.BufferI)
 	return fmt.Sprintf("battery: %v sensor checked: %v GPS checked: %v ", int(n.Battery), n.HasCheckedSensor, n.HasCheckedGPS)
 
 }
@@ -231,50 +237,50 @@ func (n *NodeImpl) Move(p *Params) {
 		//only add the ones that are valid to move to into the list
 		if n.Y-1 >= 0 &&
 			n.X >= 0 &&
-			n.X < len(p.BoardMap[n.Y-1]) &&
-			n.Y-1 < len(p.BoardMap) &&
+			n.X < p.Width &&
+			n.Y-1 < p.Height &&
 
-			p.BoardMap[n.Y-1][n.X] != -1 &&
-			p.BoolGrid[n.Y-1][n.X] == false { // &&
+			p.BoardMap[n.X][n.Y-1] != -1 &&
+			p.BoolGrid[n.X][n.Y-1] == false { // &&
 			//p.BoardMap[n.X][n.Y-1] <= p.BoardMap[n.X][n.Y] {
 
-			up := GridSpot{n.X, n.Y - 1, p.BoardMap[n.Y-1][n.X]}
+			up := GridSpot{n.X, n.Y - 1, p.BoardMap[n.X][n.Y-1]}
 			potentialSpots = append(potentialSpots, up)
 		}
-		if n.X+1 < len(p.BoardMap[n.Y]) &&
+		if n.X+1 < p.Width &&
 			n.X+1 >= 0 &&
-			n.Y < len(p.BoardMap) &&
+			n.Y < p.Height &&
 			n.Y >= 0 &&
 
-			p.BoardMap[n.Y][n.X+1] != -1 &&
-			p.BoolGrid[n.Y][n.X+1] == false { // &&
+			p.BoardMap[n.X+1][n.Y] != -1 &&
+			p.BoolGrid[n.X+1][n.Y] == false { // &&
 			//p.BoardMap[n.X+1][n.Y] <= p.BoardMap[n.X][n.Y] {
 
-			right := GridSpot{n.X + 1, n.Y, p.BoardMap[n.Y][n.X+1]}
+			right := GridSpot{n.X + 1, n.Y, p.BoardMap[n.X+1][n.Y]}
 			potentialSpots = append(potentialSpots, right)
 		}
-		if n.Y+1 < len(p.BoardMap) &&
+		if n.Y+1 < p.Height &&
 			n.Y+1 >= 0 &&
-			n.X < len(p.BoardMap[n.Y+1]) &&
+			n.X < p.Width &&
 			n.X >= 0 &&
 
-			p.BoardMap[n.Y+1][n.X] != -1 &&
-			p.BoolGrid[n.Y+1][n.X] == false { //&&
+			p.BoardMap[n.X][n.Y+1] != -1 &&
+			p.BoolGrid[n.X][n.Y+1] == false { //&&
 			//p.BoardMap[n.X][n.Y+1] <= p.BoardMap[n.X][n.Y] {
 
-			down := GridSpot{n.X, n.Y + 1, p.BoardMap[n.Y+1][n.X]}
+			down := GridSpot{n.X, n.Y + 1, p.BoardMap[n.X][n.Y+1]}
 			potentialSpots = append(potentialSpots, down)
 		}
 		if n.X-1 >= 0 &&
-			n.X-1 < len(p.BoardMap[n.Y]) &&
+			n.X-1 < p.Width &&
 			n.Y >= 0 &&
-			n.Y < len(p.BoardMap) &&
+			n.Y < p.Height &&
 
-			p.BoardMap[n.Y][n.X-1] != -1 &&
-			p.BoolGrid[n.Y][n.X-1] == false { // &&
+			p.BoardMap[n.X-1][n.Y] != -1 &&
+			p.BoolGrid[n.X-1][n.Y] == false { // &&
 			//p.BoardMap[n.X-1][n.Y] <= p.BoardMap[n.X][n.Y] {
 
-			left := GridSpot{n.X - 1, n.Y, p.BoardMap[n.Y][n.X-1]}
+			left := GridSpot{n.X - 1, n.Y, p.BoardMap[n.X-1][n.Y]}
 			potentialSpots = append(potentialSpots, left)
 		}
 
@@ -283,18 +289,27 @@ func (n *NodeImpl) Move(p *Params) {
 		sort.Sort(byRandom(potentialSpots))
 		sort.Sort(byValue(potentialSpots))
 
-		for i := 0; i < len(potentialSpots); i++ {
+		/*for i := 0; i < len(potentialSpots); i++ {
 			if p.Grid[potentialSpots[i].Y/p.YDiv][potentialSpots[i].X/p.XDiv].ActualNumNodes <= p.SquareCapacity {
 				n.X = potentialSpots[i].X
 				n.Y = potentialSpots[i].Y
 				break
 			}
+		}*/
+
+		//If there are no potential spots, do not move
+		if len(potentialSpots) > 0 {
+			n.X = potentialSpots[0].X
+			n.Y = potentialSpots[0].Y
 		}
 
-		if n.X/p.XDiv != n.OldX || n.Y/p.YDiv != n.OldY {
+		//Change number of nodes in square
+		/*if n.X/p.XDiv != n.OldX || n.Y/p.YDiv != n.OldY {
 			p.Grid[n.Y/p.YDiv][n.X/p.XDiv].ActualNumNodes = p.Grid[n.Y/p.YDiv][n.X/p.XDiv].ActualNumNodes + 1
 			p.Grid[n.OldY][n.OldX].ActualNumNodes = p.Grid[n.OldY][n.OldX].ActualNumNodes - 1
-		}
+		}*/
+
+		//p.Server.UpdateSquareNumNodes()
 		if n.Diffx == 0 && n.Diffy == 0 || n.Sitting < 0 {
 			n.Sitting = n.Sitting + 1
 		} else {
@@ -306,6 +321,8 @@ func (n *NodeImpl) Move(p *Params) {
 func (n *NodeImpl) Recalibrate() {
 	n.Sensitivity = n.InitialSensitivity
 	n.NodeTime = 0
+	//fmt.Printf("Node %v recalibrated!\n", n.Id)
+	n.hasCalibrated = true
 }
 
 //Moves the bouncing node
@@ -427,7 +444,7 @@ func Insert_array(arr1 []Coord, arr2 []Coord, n int) []Coord {
 }
 
 //Returns the array with the element at ind1 moved to ind2
-//ind1 must always bef urther in the array than ind2
+//ind1 must always be further in the array than ind2
 func Remove_and_insert(arr []Coord, ind1, ind2 int) []Coord {
 	arr1 := make([]Coord, 0)
 	c := arr[ind1]
@@ -801,7 +818,7 @@ func (n *NodeImpl) BatteryLossDynamic(p *Params) {
 }
 
 /* updateHistory shifts all values in the sample history slice to the right and adds the value at the beginning
-Therefore, each time a node takes a sample in main, it also adds this sample to the beginning of the sample history.
+Therefore, each Time a node takes a sample in main, it also adds this sample to the beginning of the sample history.
 Each sample is only stored until ln more samples have been taken (this variable is in hello.go)
 */
 func (n *NodeImpl) UpdateHistory(newValue float32) {
@@ -837,6 +854,43 @@ func (n *NodeImpl) UpdateHistory(newValue float32) {
 		}
 	}
 	n.Avg = sum / float32(numSamples)
+}
+
+func (n *NodeImpl) getDriftSlope() (float32, float32){
+	var r float32
+	var slope float32
+
+	var sum float32
+	var yAvg float32 = 0.0
+	squareSumX := 0.0
+	squareSumY := 0.0
+
+	var xSum float32
+	var ySum float32
+	var xySum float32
+	var xSqrSum float32
+	//size := float32(len(n.SampleHistory))
+
+	for i:= range n.SampleHistory {
+		ySum += float32(i)
+	}
+	yAvg = ySum / float32(len(n.SampleHistory))
+	for i := range n.SampleHistory {
+		sum += (n.SampleHistory[i] - n.Avg) * (float32(i) - yAvg)
+		squareSumX += math.Pow( float64(n.SampleHistory[i] - n.Avg), 2)
+		squareSumY += math.Pow( float64(i - 1), 2)
+
+		xSum += n.SampleHistory[i]
+		xySum += n.SampleHistory[i] * float32(i)
+		xSqrSum += float32(math.Pow(float64(n.SampleHistory[i]), 2))
+	}
+	r = sum / float32(math.Sqrt(squareSumX * squareSumY))
+	//slope = ( (size * xySum) - (xSum * ySum) ) / ( (size * float32(xSqrSum)) - float32(math.Pow(float64(xSum), 2)) )
+	//slope = sum / float32(squareSumX)
+	if r > 1 || r < -1 {
+		fmt.Printf("Bad r value! Got %v\n", r)
+	}
+	return r, slope
 }
 
 /* this function increments a node's total number of samples by 1
@@ -992,7 +1046,7 @@ func (curNode *NodeImpl) GetReadings(p *Params) {
 
 	newDist := curNode.Distance(*p.B) //this is the node's reported value without error
 
-	//need to get the correct time reading value from system
+	//need to get the correct Time reading value from system
 	//need to verify where we read from
 
 	//Calculate error, sensitivity, and noise, as per the matlab code
@@ -1003,7 +1057,7 @@ func (curNode *NodeImpl) GetReadings(p *Params) {
 
 	errorDist := sNoise / curNode.Sensitivity //this is the node's actual reading with error
 
-	//increment node time
+	//increment node Time
 	curNode.NodeTime++
 
 	if curNode.HasCheckedSensor {
@@ -1018,14 +1072,14 @@ func (curNode *NodeImpl) GetReadings(p *Params) {
 			//just drifting
 			fmt.Fprintln(p.DriftFile, "Node False Negative (drifting) ID:", curNode.Id, "True Reading:", newDist, "Drifted Reading:",
 				errorDist, "S0:", curNode.S0, "S1:", curNode.S1, "S2:", curNode.S2, "E0:", curNode.E0, "E1:", curNode.E1,
-				"E2:", curNode.E2, "ET1:", curNode.ET1, "ET2:", curNode.ET2, "time since calibration:", curNode.NodeTime,
+				"E2:", curNode.E2, "ET1:", curNode.ET1, "ET2:", curNode.ET2, "Time since calibration:", curNode.NodeTime,
 				"Current Time (Iter):", p.Iterations_used, "Energy Level:", curNode.Battery, "Distance from bomb:", math.Sqrt(float64(curNode.GeoDist(*p.B))),
 				"x:", curNode.X, "y:", curNode.Y)
 		} else {
 			//both drifting and energy
 			fmt.Fprintln(p.DriftFile, "Node False Negative (both) ID:", curNode.Id, "True Reading:", newDist, "Drifted Reading:",
 				errorDist, "S0:", curNode.S0, "S1:", curNode.S1, "S2:", curNode.S2, "E0:", curNode.E0, "E1:", curNode.E1,
-				"E2:", curNode.E2, "ET1:", curNode.ET1, "ET2:", curNode.ET2, "time since calibration:", curNode.NodeTime,
+				"E2:", curNode.E2, "ET1:", curNode.ET1, "ET2:", curNode.ET2, "Time since calibration:", curNode.NodeTime,
 				"Current Time (Iter):", p.Iterations_used, "Energy Level:", curNode.Battery, "Distance from bomb:", math.Sqrt(float64(curNode.GeoDist(*p.B))),
 				"x:", curNode.X, "y:", curNode.Y)
 		}
@@ -1035,7 +1089,7 @@ func (curNode *NodeImpl) GetReadings(p *Params) {
 		//false negative due solely to energy
 		fmt.Fprintln(p.DriftFile, "Node False Negative (energy) ID:", curNode.Id, "True Reading:", newDist, "Drifted Reading:",
 			errorDist, "S0:", curNode.S0, "S1:", curNode.S1, "S2:", curNode.S2, "E0:", curNode.E0, "E1:", curNode.E1,
-			"E2:", curNode.E2, "ET1:", curNode.ET1, "ET2:", curNode.ET2, "time since calibration:", curNode.NodeTime,
+			"E2:", curNode.E2, "ET1:", curNode.ET1, "ET2:", curNode.ET2, "Time since calibration:", curNode.NodeTime,
 			"Current Time (Iter):", p.Iterations_used, "Energy Level:", curNode.Battery, "Distance from bomb:", math.Sqrt(float64(curNode.GeoDist(*p.B))),
 			"x:", curNode.X, "y:", curNode.Y)
 	}
@@ -1045,7 +1099,7 @@ func (curNode *NodeImpl) GetReadings(p *Params) {
 		//it must be due to drifting. Report relevant info to driftFile
 		fmt.Fprintln(p.DriftFile, "Node False Positive (drifting) ID:", curNode.Id, "True Reading:", newDist, "Drifted Reading:",
 			errorDist, "S0:", curNode.S0, "S1:", curNode.S1, "S2:", curNode.S2, "E0:", curNode.E0, "E1:", curNode.E1,
-			"E2:", curNode.E2, "ET1:", curNode.ET1, "ET2:", curNode.ET2, "time since calibration:", curNode.NodeTime,
+			"E2:", curNode.E2, "ET1:", curNode.ET1, "ET2:", curNode.ET2, "Time since calibration:", curNode.NodeTime,
 			"Current Time (Iter):", p.Iterations_used, "Energy Level:", curNode.Battery, "Distance from bomb:", math.Sqrt(float64(curNode.GeoDist(*p.B))),
 			"x:", curNode.X, "y:", curNode.Y)
 	}
@@ -1053,13 +1107,13 @@ func (curNode *NodeImpl) GetReadings(p *Params) {
 	if errorDist >= p.DetectionThresholdCM && float64(newDist) >= p.DetectionThresholdCM && curNode.HasCheckedSensor {
 		fmt.Fprintln(p.DriftFile, "Node True Positive ID:", curNode.Id, "True Reading:", newDist, "Drifted Reading:",
 			errorDist, "S0:", curNode.S0, "S1:", curNode.S1, "S2:", curNode.S2, "E0:", curNode.E0, "E1:", curNode.E1,
-			"E2:", curNode.E2, "ET1:", curNode.ET1, "ET2:", curNode.ET2, "time since calibration:", curNode.NodeTime,
+			"E2:", curNode.E2, "ET1:", curNode.ET1, "ET2:", curNode.ET2, "Time since calibration:", curNode.NodeTime,
 			"Current Time (Iter):", p.Iterations_used, "Energy Level:", curNode.Battery, "Distance from bomb:", math.Sqrt(float64(curNode.GeoDist(*p.B))),
 			"x:", curNode.X, "y:", curNode.Y)
 	}
 
 	//If the reading is more than 2 standard deviations away from the grid average, then recalibrate
-	gridAverage := p.Grid[curNode.Row(p.YDiv)][curNode.Col(p.XDiv)].Avg
+	//gridAverage := p.Grid[curNode.Row(p.YDiv)][curNode.Col(p.XDiv)].Avg
 	//standDev := grid[curNode.Row(yDiv)][curNode.Col(xDiv)].StdDev
 
 	//New condition added: also recalibrate when the node's sensitivity is <= 1/10 of its original sensitvity
@@ -1091,11 +1145,32 @@ func (curNode *NodeImpl) GetReadings(p *Params) {
 	//for that square
 	//Only do this if the sensor was pinged this iteration
 	if curNode.HasCheckedSensor {
-		p.Grid[curNode.Row(p.YDiv)][curNode.Col(p.XDiv)].TakeMeasurement(float32(errorDist))
-		p.Grid[curNode.Row(p.YDiv)][curNode.Col(p.XDiv)].NumNodes++
-		//subtract grid average from node average, square it, and add it to this variable
-		p.Grid[curNode.Row(p.YDiv)][curNode.Col(p.XDiv)].SquareValues += (math.Pow(float64(errorDist-float64(gridAverage)), 2))
+		//p.Server.UpdateSquareAvg(*curNode, errorDist)
+		//p.Grid[curNode.Row(p.YDiv)][curNode.Col(p.XDiv)].TakeMeasurement(float32(errorDist))
+		//p.Grid[curNode.Row(p.YDiv)][curNode.Col(p.XDiv)].NumNodes++
+		////subtract grid average from node average, square it, and add it to this variable
+		p.Server.Send(curNode, Reading{errorDist, newX, newY, p.Iterations_used, curNode.GetID()})
+		if curNode.Id == 1 {
+			curNode.allReadings[p.Iterations_used] = errorDist
+			fmt.Fprintln(p.NodeTest, "Val:", errorDist)
+			fmt.Fprintln(p.NodeTest, "Sensi:", curNode.Sensitivity)
+			fmt.Fprintln(p.NodeTest, "Noise:", sNoise)
+			fmt.Fprintln(p.NodeTest, "Error:", sError)
+		}
+		if curNode.Id == 1 && curNode.hasCalibrated == true{
+			curNode.calibrateTimes = append(curNode.calibrateTimes, p.Iterations_used)
+			curNode.calibrateReading = append(curNode.calibrateReading, errorDist)
+		}
+		if p.Iterations_used == 999 && curNode.Id == 1 {
+			fmt.Fprintln(p.NodeTest2, "", curNode.calibrateTimes)
+			fmt.Fprintln(p.NodeTest2, "", curNode.calibrateReading)
+		}
+		curNode.hasCalibrated = false
+		//slope, r := curNode.getDriftSlope()
+		//fmt.Printf("Node: %v, Slope: %v, R value: %v\n", curNode.Id, slope, r)
+		//p.Grid[curNode.Row(p.YDiv)][curNode.Col(p.XDiv)].SquareValues += math.Pow(float64(errorDist-float64(gridAverage)), 2)
 	}
+
 }
 
 //Takes cares of taking a node's readings and printing detections and stuff
@@ -1118,7 +1193,7 @@ func (curNode *NodeImpl) GetReadingsCSV(p *Params) {
 	clean := float64(newDist) / curNode.Sensitivity
 	errorDist := sNoise / curNode.Sensitivity //this is the node's actual reading with error
 
-	//increment node time
+	//increment node Time
 	curNode.NodeTime++
 
 	if curNode.HasCheckedSensor {
@@ -1135,14 +1210,14 @@ func (curNode *NodeImpl) GetReadingsCSV(p *Params) {
 			//just drifting
 			fmt.Fprintln(p.DriftFile, "Node False Negative (drifting) ID:", curNode.Id, "True Reading:", newDist, "Drifted Reading:",
 				errorDist, "S0:", curNode.S0, "S1:", curNode.S1, "S2:", curNode.S2, "E0:", curNode.E0, "E1:", curNode.E1,
-				"E2:", curNode.E2, "ET1:", curNode.ET1, "ET2:", curNode.ET2, "time since calibration:", curNode.NodeTime,
+				"E2:", curNode.E2, "ET1:", curNode.ET1, "ET2:", curNode.ET2, "Time since calibration:", curNode.NodeTime,
 				"Current Time (Iter):", p.Iterations_used, "Energy Level:", curNode.Battery, "Distance from bomb:", math.Sqrt(float64(curNode.GeoDist(*p.B))),
 				"x:", curNode.X, "y:", curNode.Y)
 		} else {
 			//both drifting and energy
 			fmt.Fprintln(p.DriftFile, "Node False Negative (both) ID:", curNode.Id, "True Reading:", newDist, "Drifted Reading:",
 				errorDist, "S0:", curNode.S0, "S1:", curNode.S1, "S2:", curNode.S2, "E0:", curNode.E0, "E1:", curNode.E1,
-				"E2:", curNode.E2, "ET1:", curNode.ET1, "ET2:", curNode.ET2, "time since calibration:", curNode.NodeTime,
+				"E2:", curNode.E2, "ET1:", curNode.ET1, "ET2:", curNode.ET2, "Time since calibration:", curNode.NodeTime,
 				"Current Time (Iter):", p.Iterations_used, "Energy Level:", curNode.Battery, "Distance from bomb:", math.Sqrt(float64(curNode.GeoDist(*p.B))),
 				"x:", curNode.X, "y:", curNode.Y)
 		}
@@ -1152,7 +1227,7 @@ func (curNode *NodeImpl) GetReadingsCSV(p *Params) {
 		//false negative due solely to energy
 		fmt.Fprintln(p.DriftFile, "Node False Negative (energy) ID:", curNode.Id, "True Reading:", newDist, "Drifted Reading:",
 			errorDist, "S0:", curNode.S0, "S1:", curNode.S1, "S2:", curNode.S2, "E0:", curNode.E0, "E1:", curNode.E1,
-			"E2:", curNode.E2, "ET1:", curNode.ET1, "ET2:", curNode.ET2, "time since calibration:", curNode.NodeTime,
+			"E2:", curNode.E2, "ET1:", curNode.ET1, "ET2:", curNode.ET2, "Time since calibration:", curNode.NodeTime,
 			"Current Time (Iter):", p.Iterations_used, "Energy Level:", curNode.Battery, "Distance from bomb:", math.Sqrt(float64(curNode.GeoDist(*p.B))),
 			"x:", curNode.X, "y:", curNode.Y)
 	}
@@ -1162,7 +1237,7 @@ func (curNode *NodeImpl) GetReadingsCSV(p *Params) {
 		//it must be due to drifting. Report relevant info to driftFile
 		fmt.Fprintln(p.DriftFile, "Node False Positive (drifting) ID:", curNode.Id, "True Reading:", newDist, "Drifted Reading:",
 			errorDist, "S0:", curNode.S0, "S1:", curNode.S1, "S2:", curNode.S2, "E0:", curNode.E0, "E1:", curNode.E1,
-			"E2:", curNode.E2, "ET1:", curNode.ET1, "ET2:", curNode.ET2, "time since calibration:", curNode.NodeTime,
+			"E2:", curNode.E2, "ET1:", curNode.ET1, "ET2:", curNode.ET2, "Time since calibration:", curNode.NodeTime,
 			"Current Time (Iter):", p.Iterations_used, "Energy Level:", curNode.Battery, "Distance from bomb:", math.Sqrt(float64(curNode.GeoDist(*p.B))),
 			"x:", curNode.X, "y:", curNode.Y)
 	}
@@ -1170,13 +1245,13 @@ func (curNode *NodeImpl) GetReadingsCSV(p *Params) {
 	if errorDist >= p.DetectionThresholdCM && float64(newDist) >= p.DetectionThresholdCM && curNode.HasCheckedSensor {
 		fmt.Fprintln(p.DriftFile, "Node True Positive ID:", curNode.Id, "True Reading:", newDist, "Drifted Reading:",
 			errorDist, "S0:", curNode.S0, "S1:", curNode.S1, "S2:", curNode.S2, "E0:", curNode.E0, "E1:", curNode.E1,
-			"E2:", curNode.E2, "ET1:", curNode.ET1, "ET2:", curNode.ET2, "time since calibration:", curNode.NodeTime,
+			"E2:", curNode.E2, "ET1:", curNode.ET1, "ET2:", curNode.ET2, "Time since calibration:", curNode.NodeTime,
 			"Current Time (Iter):", p.Iterations_used, "Energy Level:", curNode.Battery, "Distance from bomb:", math.Sqrt(float64(curNode.GeoDist(*p.B))),
 			"x:", curNode.X, "y:", curNode.Y)
 	}
 
 	//If the reading is more than 2 standard deviations away from the grid average, then recalibrate
-	gridAverage := p.Grid[curNode.Row(p.YDiv)][curNode.Col(p.XDiv)].Avg
+	//gridAverage := p.Grid[curNode.Row(p.YDiv)][curNode.Col(p.XDiv)].Avg
 	//standDev := grid[curNode.Row(yDiv)][curNode.Col(xDiv)].StdDev
 
 	//New condition added: also recalibrate when the node's sensitivity is <= 1/10 of its original sensitvity
@@ -1208,10 +1283,11 @@ func (curNode *NodeImpl) GetReadingsCSV(p *Params) {
 	//for that square
 	//Only do this if the sensor was pinged this iteration
 	if curNode.HasCheckedSensor {
-		p.Grid[curNode.Row(p.YDiv)][curNode.Col(p.XDiv)].TakeMeasurement(float32(errorDist))
-		p.Grid[curNode.Row(p.YDiv)][curNode.Col(p.XDiv)].NumNodes++
+		//p.Grid[curNode.Row(p.YDiv)][curNode.Col(p.XDiv)].TakeMeasurement(float32(errorDist))
+		//p.Grid[curNode.Row(p.YDiv)][curNode.Col(p.XDiv)].NumNodes++
 		//subtract grid average from node average, square it, and add it to this variable
-		p.Grid[curNode.Row(p.YDiv)][curNode.Col(p.XDiv)].SquareValues += (math.Pow(float64(errorDist-float64(gridAverage)), 2))
+		//p.Grid[curNode.Row(p.YDiv)][curNode.Col(p.XDiv)].SquareValues += (math.Pow(float64(errorDist-float64(gridAverage)), 2))
+		//p.Server.Send(Reading{errorDist, newX, newY, p.Iterations_used, curNode.GetID()})
 	}
 }
 

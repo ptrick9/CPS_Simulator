@@ -172,27 +172,15 @@ func GetPath(c1, c2 Coord, r *RegionParams) []Coord {
 func GenerateRouting(p *Params, r *RegionParams) {
 	fmt.Println("Beginning Region Routing")
 
-	/*
-		for x := 0; x < 200; x ++ {
-			for y := 0; y < 200; y++ {
-				if r.Point_dict[cps.Tuple{x, y}] {
-					fmt.Print("_")
-				} else {
-					fmt.Print("X")
-				}
-			}
-			fmt.Println()
-		}
-		fmt.Println(img.At(203, 26).RGBA())*/
 
 	id_counter := 0
 	done := false
 	//for len(r.Point_list) != 0 {
 	for !done {
 		top_left := Tuple{-1, -1}
-		for x := 0; x < p.Height; x++ {
-			for y := 0; y < p.Width; y++ {
-				//fmt.Printf("X: %d, Y: %d, v: %d", x, y, r.Point_list2[x][y])
+		for y := 0; y < p.Height; y++ {
+			for x := 0; x < p.Width; x++ {
+				//fmt.Printf("X: %d, Y: %d, v: %v progress: %d\n", x, y, r.Point_list2[x][y], len(r.Square_list))
 				if r.Point_list2[x][y] {
 					top_left = Tuple{x, y}
 					break
@@ -212,6 +200,7 @@ func GenerateRouting(p *Params, r *RegionParams) {
 
 		for r.Point_dict[Tuple{temp.X + 1, temp.Y}] {
 			temp.X += 1
+			//fmt.Printf("dict: X: %d, Y: %d", temp.X+1, temp.Y)
 		}
 
 		collide := false
@@ -229,16 +218,16 @@ func GenerateRouting(p *Params, r *RegionParams) {
 
 		bottom_right := Tuple{temp.X, y_test.Y - 1}
 
-		//fmt.Println(top_left.X, bottom_right.X, top_left.Y, bottom_right.Y)
+		fmt.Println(top_left.X, bottom_right.X, top_left.Y, bottom_right.Y)
 
 		new_square := RoutingSquare{top_left.X, bottom_right.X, top_left.Y, bottom_right.Y, true, id_counter, make([]Tuple, 0)}
 		id_counter++
-		//fmt.Println("start_r_square")
+		fmt.Println("start_r_square")
 		RemoveRoutingSquare(new_square, r)
-		//fmt.Println("end_r_square")
+		fmt.Println("end_r_square")
 		r.Square_list = append(r.Square_list, new_square)
 	}
-
+	fmt.Println("Built all squares")
 	length := len(r.Square_list)
 	for y, _ := range r.Square_list {
 		square := r.Square_list[y]

@@ -2,6 +2,7 @@ package cps
 
 import (
 	"encoding/csv"
+	"math/rand"
 	"strings"
 
 	//"bufio"
@@ -12,7 +13,7 @@ import (
 	"os"
 	"regexp"
 	"strconv"
-	//"time"
+	//"Time"
 	"log"
 )
 
@@ -407,9 +408,9 @@ func Check(e error) {
 // Creates p.BoardMap
 func CreateBoard(x int, y int, p *Params) {
 	p.BoardMap = [][]int{}
-	for i := 0; i < y; i++ {
+	for i := 0; i < x; i++ {
 		p.BoardMap = append(p.BoardMap, []int{})
-		for j := 0; j < x; j++ {
+		for j := 0; j < y; j++ {
 			p.BoardMap[i] = append(p.BoardMap[i], 0)
 		}
 	}
@@ -419,14 +420,14 @@ func HandleMovement(p *Params) {
 	for j := 0; j < len(p.NodeList); j++ {
 
 		oldX, oldY := p.NodeList[j].GetLoc()
-		p.BoolGrid[oldY][oldX] = false //set the old spot false since the node will now move away
+		p.BoolGrid[oldX][oldY] = false //set the old spot false since the node will now move away
 
 		//move the node to its new location
 		p.NodeList[j].Move(p)
 
 		//set the new location in the boolean field to true
 		newX, newY := p.NodeList[j].GetLoc()
-		p.BoolGrid[newY][newX] = true
+		p.BoolGrid[newX][newY] = true
 
 		//writes the node information to the file
 		if p.EnergyPrint {
@@ -442,7 +443,7 @@ func HandleMovement(p *Params) {
 // Fills the walls into the board based on the wall positions extrapolated from the file
 func FillInWallsToBoard(p *Params) {
 	for i := 0; i < len(p.Wpos); i++ {
-		p.BoardMap[p.Wpos[i][1]][p.Wpos[i][0]] = -1
+		p.BoardMap[p.Wpos[i][0]][p.Wpos[i][1]] = -1
 	}
 }
 
@@ -452,7 +453,7 @@ func FillInBufferCurrent(p *Params) {
 	bufferCurrent = [][]int{}
 	for i := 0; i < len(p.Poispos); i++ {
 		if p.Iterations_used >= p.Poispos[i][2] && p.Iterations_used < p.Poispos[i][3] {
-			bufferCurrent = append(bufferCurrent, []int{p.Poispos[i][1], p.Poispos[i][0]})
+			bufferCurrent = append(bufferCurrent, []int{p.Poispos[i][0], p.Poispos[i][1]})
 			//fmt.Println("1ho- ", iterations_used, "2ho", bufferCurrent)
 		}
 	}
@@ -468,10 +469,10 @@ func FillPointsToBoard(p *Params) {
 
 // Fills in board map with the path finding values
 func FillInMap1(p *Params) {
-	/*start := time.Now()
+	/*start := Time.Now()
 
 	defer func() {
-		elapsed := time.Since(start)
+		elapsed := Time.Since(start)
 		//fmt.Println("Board Map took", elapsed)
 	}()*/
 
@@ -554,10 +555,10 @@ func CheckDown(i int, p *Params) {
 }
 
 func FillInMap(p *Params) {
-	/*start := time.Now()
+	/*start := Time.Now()
 
 	defer func() {
-		elapsed := time.Since(start)
+		elapsed := Time.Since(start)
 		//fmt.Println("Board Map took", elapsed)
 	}()*/
 
@@ -654,25 +655,29 @@ func ReadMap(p *Params, r *RegionParams) {
 
 	img, _, err := image.Decode(imgfile)
 
-	for x := 0; x < p.Height; x++ {
-		r.Point_list2 = append(r.Point_list2, make([]bool, p.Width))
+	for x := 0; x < p.Width; x++ {
+		r.Point_list2 = append(r.Point_list2, make([]bool, p.Height))
 	}
 
-	for x := 0; x < p.Height; x++ {
-		for y := 0; y < p.Width; y++ {
+	for x := 0; x < p.Width; x++ {
+		for y := 0; y < p.Height; y++ {
 			rr, _, _, _ := img.At(x, y).RGBA()
-			if rr != 0 {
+			/*rr, gg, bb, _ := img.At(1599, 90).RGBA()
+			fmt.Printf("r: %d %d %d\n", rr, gg, bb)
+			rr, gg, bb, _ = img.At(1599, 89).RGBA()
+			fmt.Printf("r: %d %d %d\n", rr, gg, bb)*/
+			if rr >= 60000 {
 				r.Point_list2[x][y] = true
 				r.Point_dict[Tuple{x, y}] = true
 
 			} else {
 				r.Point_dict[Tuple{x, y}] = false
-				p.BoardMap[y][x] = -1
+				p.BoardMap[x][y] = -1
 				temp := make([]int, 2)
 				temp[0] = x
 				temp[1] = y
 				p.Wpos = append(p.Wpos, temp)
-				p.BoolGrid[y][x] = true
+				p.BoolGrid[x][y] = true
 			}
 		}
 	}
@@ -777,6 +782,30 @@ func SetupFiles(p *Params) {
 	}
 
 	//defer p.AttractionFile.Close()
+
+	p.ServerFile, err = os.Create(p.OutputFileNameCM + "-server.txt")
+	if err != nil {
+		log.Fatal("Cannot create file", err)
+	}
+	//defer p.ServerFile.Close()
+
+	p.NodeTest, err = os.Create(p.OutputFileNameCM + "-nodeTest.txt")
+	if err != nil {
+		log.Fatal("Cannot create file", err)
+	}
+	//defer p.ServerFile.Close()
+
+	p.NodeTest2, err = os.Create(p.OutputFileNameCM + "-nodeTest2.txt")
+	if err != nil {
+		log.Fatal("Cannot create file", err)
+	}
+	//defer p.ServerFile.Close()
+
+	p.DetectionFile, err = os.Create(p.OutputFileNameCM + "-detection.txt")
+	if err != nil {
+		log.Fatal("Cannot create file", err)
+	}
+	//defer p.ServerFile.Close()
 }
 
 func SetupParameters(p *Params) {
@@ -856,6 +885,10 @@ func readCSV(p *Params) {
 	}
 }
 
+func RangeInt(min, max int) int { //returns a random number between max and min
+	return rand.Intn(max-min) + min
+}
+
 // This prints the board map to the terminal
 //func printBoardMap(){
 //	for i:= 0; i < len(p.BoardMap); i++{
@@ -867,9 +900,9 @@ func readCSV(p *Params) {
 /*
 // This prints board Map to a txt file.
 func writeBordMapToFile2() {
-	start := time.Now()
+	start := Time.Now()
 	defer func() {
-		elapsed := time.Since(start)
+		elapsed := Time.Since(start)
 		fmt.Println("Printing Board Map took", elapsed)
 	}()
 	Check(errBoard)
@@ -888,7 +921,7 @@ func writeBordMapToFile2() {
 }
 
 func writeBordMapToFile() {
-	//start := time.Now()
+	//start := Time.Now()
 	Check(errBoard)
 	w := bufio.NewWriter(fileBoard)
 	w.WriteString("\nt=" + strconv.Itoa(iterations_used) + "\n\n")
@@ -899,6 +932,6 @@ func writeBordMapToFile() {
 		w.WriteString("\n")
 	}
 	w.Flush()
-	//elapsed := time.Since(start)
+	//elapsed := Time.Since(start)
 	//fmt.Println("Printing Board Map took", elapsed)
 }*/

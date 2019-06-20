@@ -1,6 +1,8 @@
 package cps
 
-import "os"
+import (
+	"os"
+)
 
 type Params struct {
 	NegativeSittingStopThresholdCM int     // This is a negative number for the sitting to be set to when map is reset
@@ -32,6 +34,8 @@ type Params struct {
 	GridPrintCM                    bool    //This is either true or false for whether to print grid readings to log file
 	SquareRowCM                    int     //This is an int 1 through maxX representing how many rows of squares there are
 	SquareColCM                    int     //This is an int 1 through maxY representing how many columns of squares there are
+	StdDevThresholdCM			   float64 //Detection Threshold based on standard deviations from mean
+	CalibrationThresholdCM		   float64
 
 
 	StimFileNameCM        string
@@ -66,6 +70,10 @@ type Params struct {
 	RoutingFile    *os.File
 	AttractionFile *os.File
 	BoolFile       *os.File
+	ServerFile	   *os.File
+	NodeTest	   *os.File
+	NodeTest2	   *os.File
+	DetectionFile  *os.File
 
 	SensorPath  string
 	SensorTimes []int
@@ -146,6 +154,11 @@ type Params struct {
 	XLoc        int
 	YLoc        int
 
-	Width  int
-	Height int
+	Width 			int
+	Height 			int
+	Server 			FusionCenter //Server object
+
+
+
+
 }
