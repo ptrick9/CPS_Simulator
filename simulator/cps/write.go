@@ -42,14 +42,6 @@ var (
 		poispos [][]int // points of interest static
 	*/
 
-	//b []byte
-	b2 []byte
-	b3 []byte
-	b4 []byte
-	b5 []byte
-	b6 []byte
-	b7 []byte
-
 	//numNodeNodes               int
 	//numWallNodes               int
 	//numPoints                  int
@@ -61,50 +53,7 @@ var (
 	makeBoardMapFile = true
 )
 
-//func main() {
-//
-//	getListedInput()
-//
-//	squareRow := getDashedInput("squareRow")
-//	squareCol:= getDashedInput("squareCol")
-//	numNodes:= getDashedInput("numNodes")
-//	numStoredSamples:= getDashedInput("numStoredSamples")
-//	Tau1:= getDashedInput("Tau1")
-//	Tau2:= getDashedInput("Tau2")
-//	superNodeType:= getDashedInput("superNodeType")
-//	maxX:= getDashedInput("maxX")
-//	maxY:= getDashedInput("maxY")
-//	bombX:= getDashedInput("bombX")
-//	bombY:= getDashedInput("bombY")
-//	Tester:= getDashedInput("Tester")
-//
-//	fmt.Println(squareRow,
-//		squareCol,
-//		numNodes,
-//		numStoredSamples,
-//		Tau1,
-//		Tau2,
-//		superNodeType,
-//		maxX,
-//		maxY,
-//		bombX,
-//		bombY,
-//		Tester)
-//
-//	createBoard(maxX,maxY)
-//
-//	fillInWallsToBoard()
-//
-//	fillInBufferCurrent()
-//
-//	fillPointsToBoard()
-//
-//	fillInMap()
-//
-//	writeBordMapToFile()
-//
-//}
-
+//GetDashedInput
 func GetDashedInput(s string, p *Params) int {
 	b := ReadFromFile(p.FileName)
 	r := regexp.MustCompile(string(s + "-[0-9]+"))
@@ -116,110 +65,81 @@ func GetDashedInput(s string, p *Params) int {
 	return int(s1)
 }
 
+
+
 func GetListedInput(p *Params) {
+	var temp []byte
 	dir, err := os.Getwd()
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println(dir)
-	b := ReadFromFile(p.FileName)
-	r := regexp.MustCompile("N: [0-9]+")
-	w := r.FindAllString(string(b), 10)
-	r = regexp.MustCompile("[0-9]+")
-	w = r.FindAllString(w[0], 10)
-	s, err := strconv.ParseInt(w[0], 10, 32)
+	fileBytes := ReadFromFile(p.FileName)
+	regex := regexp.MustCompile("N: [0-9]+")
+	text := regex.FindAllString(string(fileBytes), 10)
+	regex = regexp.MustCompile("[0-9]+")
+	text = regex.FindAllString(text[0], 10)
+	size, err := strconv.ParseInt(text[0], 10, 32)
 	Check(err)
-	r = regexp.MustCompile("x:[0-9]+, y:[0-9]+, t:[0-9]+")
-	fai := r.FindAllIndex(b, int(s))
-	w = r.FindAllString(string(b), int(s))
+	regex = regexp.MustCompile("x:[0-9]+, y:[0-9]+, t:[0-9]+")
+	fai := regex.FindAllIndex(fileBytes, int(size))
+	text = regex.FindAllString(string(fileBytes), int(size))
 	if len(fai) > 0 {
-		b2 = b[fai[len(fai)-1][1]:]
+		temp = fileBytes[fai[len(fai)-1][1]:]
 	} else {
-		b2 = b
+		temp = fileBytes
 	}
-	//fmt.Println(w)
-	FillInts(w, 0, p)
-	//fmt.Println(npos)
+	FillInts(text, 0, p)
 
-	r = regexp.MustCompile("W: [0-9]+")
-	w = r.FindAllString(string(b2), 10)
-	r = regexp.MustCompile("[0-9]+")
-	w = r.FindAllString(w[0], 10)
-	s, err = strconv.ParseInt(w[0], 10, 32)
-	r = regexp.MustCompile("x:[0-9]+, y:[0-9]+")
+	regex = regexp.MustCompile("W: [0-9]+")
+	text = regex.FindAllString(string(temp), 10)
+	regex = regexp.MustCompile("[0-9]+")
+	text = regex.FindAllString(text[0], 10)
+	size, err = strconv.ParseInt(text[0], 10, 32)
+	regex = regexp.MustCompile("x:[0-9]+, y:[0-9]+")
 	Check(err)
-	fai = r.FindAllIndex(b2, int(s))
-	w = r.FindAllString(string(b2), int(s))
+	fai = regex.FindAllIndex(temp, int(size))
+	text = regex.FindAllString(string(temp), int(size))
 	if len(fai) > 0 {
-		b3 = b2[fai[len(fai)-1][1]:]
-	} else {
-		b3 = b2
+		temp = temp[fai[len(fai)-1][1]:]
 	}
-	//fmt.Println(w)
-	FillInts(w, 1, p)
-	//fmt.Println(wpos)
+	FillInts(text, 1, p)
 
-	r = regexp.MustCompile("S: [0-9]+")
-	w = r.FindAllString(string(b3), 10)
-	r = regexp.MustCompile("[0-9]+")
-	w = r.FindAllString(w[0], 10)
-	s, err = strconv.ParseInt(w[0], 10, 32)
-	r = regexp.MustCompile("x:[0-9]+, y:[0-9]+, t:[0-9]+")
+	regex = regexp.MustCompile("S: [0-9]+")
+	text = regex.FindAllString(string(temp), 10)
+	regex = regexp.MustCompile("[0-9]+")
+	text = regex.FindAllString(text[0], 10)
+	size, err = strconv.ParseInt(text[0], 10, 32)
+	regex = regexp.MustCompile("x:[0-9]+, y:[0-9]+, t:[0-9]+")
 	Check(err)
-	fai = r.FindAllIndex(b3, int(s))
-	w = r.FindAllString(string(b3), int(s))
+	fai = regex.FindAllIndex(temp, int(size))
+	text = regex.FindAllString(string(temp), int(size))
 	if len(fai) > 0 {
-		b4 = b3[fai[len(fai)-1][1]:]
-	} else {
-		b4 = b3
+		temp = temp[fai[len(fai)-1][1]:]
 	}
-	//fmt.Println(w)
-	FillInts(w, 2, p)
-	//fmt.Println(spos)
+	FillInts(text, 2, p)
 
-	/*r = regexp.MustCompile("P: [0-9]+")
-	w = r.FindAllString(string(b4), 10)
-	r = regexp.MustCompile("[0-9]+")
-	w = r.FindAllString(w[0], 10)
-	s, err = strconv.ParseInt(w[0], 10, 32)
-	r = regexp.MustCompile("x:[0-9]+, y:[0-9]+, t:[0-9]+")
+	regex = regexp.MustCompile("POIS: [0-9]+")
+	text = regex.FindAllString(string(temp), 10)
+	regex = regexp.MustCompile("[0-9]+")
+	text = regex.FindAllString(text[0], 10)
+	size, err = strconv.ParseInt(text[0], 10, 32)
+	regex = regexp.MustCompile("x:[0-9]+, y:[0-9]+, ti:[0-9]+, to:[0-9]+")
 	Check(err)
-	fai = r.FindAllIndex(b4, int(s))
-	w = r.FindAllString(string(b4), int(s))
-	if len(fai) > 0 {
-		b5 = b4[fai[len(fai)-1][1]:]
+	fai = regex.FindAllIndex(temp, int(size))
+	text = regex.FindAllString(string(temp), int(size))
+	/*if len(fai) > 0 {
+		b6 = temp[fai[len(fai)-1][1]:]
 	} else {
-		b5 = b4
-	}
-	fmt.Println(w)
-	fillInts(w, 3)
-	fmt.Println(ppos)*/
-
-	b5 = b4
-
-	r = regexp.MustCompile("POIS: [0-9]+")
-	w = r.FindAllString(string(b5), 10)
-	r = regexp.MustCompile("[0-9]+")
-	w = r.FindAllString(w[0], 10)
-	s, err = strconv.ParseInt(w[0], 10, 32)
-	r = regexp.MustCompile("x:[0-9]+, y:[0-9]+, ti:[0-9]+, to:[0-9]+")
-	Check(err)
-	fai = r.FindAllIndex(b5, int(s))
-	w = r.FindAllString(string(b5), int(s))
-	if len(fai) > 0 {
-		b6 = b5[fai[len(fai)-1][1]:]
-	} else {
-		b6 = b5
-	}
-	//fmt.Println(w)
-	FillInts(w, 5, p)
-	//fmt.Println(poispos)
+		b6 = temp
+	}*/
+	FillInts(text, 5, p)
 
 	p.NumNodeNodes = len(p.Npos)
 	p.NumWallNodes = len(p.Wpos)
 	//numPoints = len(ppos)
 	p.NumPointsOfInterestStatic = len(p.Poispos)
-	//fmt.Println(numNodeNodes, numWallNodes, numPoints, numPointsOfInterestKinetic, numPointsOfInterestStatic)
+	//fmt.Println(p.NumNodeNodes, p.NumWallNodes, p.NumPointsOfInterestStatic)
 }
 
 func FillInts(s []string, place int, p *Params) {

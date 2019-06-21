@@ -75,6 +75,7 @@ func main() {
 	//fileName = p.InputFileNameCM
 	p.FileName = p.InputFileNameCM
 	cps.GetListedInput(p)
+	//os.Exit(0)
 
 	//p.SquareRowCM = getDashedInput("p.SquareRowCM")
 	//p.SquareColCM = getDashedInput("p.SquareColCM")
@@ -291,6 +292,8 @@ func main() {
 	p.Server.PrintStatsFile()
 }
 
+
+//MakeNodes creates all of the nodes in the simulator and stores them into NodeList
 func makeNodes() {
 	for i := 0; i < len(p.Npos); i++ {
 
@@ -340,6 +343,8 @@ func makeNodes() {
 	}
 }
 
+
+//getFlags defines and sets commandline values
 func getFlags() {
 	//p = cps.Params{}
 
@@ -470,12 +475,13 @@ func getFlags() {
 	//fmt.Println("tail:", flag.Args())
 }
 
-func rangeInt(min, max int) int { //returns a random number between max and min
+
+//rangeInt returns a random number between max and min
+func rangeInt(min, max int) int {
 	return rand.Intn(max-min) + min
 }
 
-//Saves the current measurements of each Square into a
-//buffer to print into the file
+//printGrid saves the current measurements of each Square into a buffer to print into the file
 func printGrid(g [][]*cps.Square) bytes.Buffer {
 	var buffer bytes.Buffer
 	for i, _ := range g {
@@ -487,8 +493,7 @@ func printGrid(g [][]*cps.Square) bytes.Buffer {
 	return buffer
 }
 
-//Saves the current p.NumNodes of each Square into a buffer
-//to print to the file
+//printGridNodes saves the current p.NumNodes of each Square into a buffer to print to the file
 func printGridNodes(g [][]*cps.Square) bytes.Buffer {
 	var buffer bytes.Buffer
 	for i, _ := range g {
@@ -500,6 +505,7 @@ func printGridNodes(g [][]*cps.Square) bytes.Buffer {
 	return buffer
 }
 
+//printSuperStats writes supernode data to a buffer
 func printSuperStats(SNodeList []cps.SuperNodeParent) bytes.Buffer {
 	var buffer bytes.Buffer
 	for _, i := range SNodeList {
@@ -507,22 +513,5 @@ func printSuperStats(SNodeList []cps.SuperNodeParent) bytes.Buffer {
 		buffer.WriteString(fmt.Sprintf("SquaresMoved: %d\t", i.GetSquaresMoved()))
 		buffer.WriteString(fmt.Sprintf("AvgResponseTime: %.2f\t", i.GetAvgResponseTime()))
 	}
-	return buffer
-}
-
-//Saves the Coords in the allPoints list into a buffer to
-//	print to the file
-//Now in server
-func printPoints(s cps.SuperNodeParent) bytes.Buffer {
-	var buffer bytes.Buffer
-	buffer.WriteString((fmt.Sprintf("[")))
-	for ind, i := range s.GetAllPoints() {
-		buffer.WriteString(i.String())
-
-		if ind != len(s.GetAllPoints())-1 {
-			buffer.WriteString(" ")
-		}
-	}
-	buffer.WriteString((fmt.Sprintf("]")))
 	return buffer
 }

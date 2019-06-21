@@ -17,6 +17,7 @@ var (
 	scheduler		*Scheduler
 )
 
+//FusionCenter is the server class which contains statistical, reading, and recalibration data
 type FusionCenter struct {
 	P *Params
 
@@ -28,6 +29,7 @@ type FusionCenter struct {
 	LastRecal		[]int
 }
 
+//Init initializes the values for the server
 func (s *FusionCenter) Init(){
 	s.TimeBuckets = make([][]Reading, s.P.Iterations_used)
 	s.Mean = make([]float64, s.P.Iterations_used)
@@ -41,16 +43,16 @@ func (s *FusionCenter) Init(){
 	s.LastRecal = make([]int, s.P.NumNodes) //s.P.NumNodes
 }
 
-//Data sent by node
+//Reading packages the data sent by a node
 type Reading struct {
 	SensorVal float64
 	Xpos      int
 	YPos      int
 	Time      int //Time represented by iteration number
 	Id        int //Node Id number
-	//StdDevFromMean	float64
 }
 
+//MakeGrid initializes a grid of Square objects according to the size of the map
 func (s FusionCenter) MakeGrid() {
 	p := s.P
 	p.Grid = make([][]*Square, p.SquareColCM) //this creates the p.Grid and only works if row is same size as column
@@ -73,6 +75,7 @@ func (s FusionCenter) MakeGrid() {
 	}
 }
 
+//CheckDetections iterates through the grid and validates detections by nodes
 func (s FusionCenter) CheckDetections(p *Params, scheduler *Scheduler) {
 	r := &RegionParams{}
 	//scheduler := Scheduler{}
@@ -121,7 +124,7 @@ func (s FusionCenter) CheckDetections(p *Params, scheduler *Scheduler) {
 	}
 }
 
-//Server performs this every iteration to move supernodes and check possible detections
+//Tick is performed every iteration to move supernodes and check possible detections
 func (srv FusionCenter) Tick() {
 	p := srv.P
 	r := &RegionParams{}
@@ -177,6 +180,7 @@ func (srv FusionCenter) Tick() {
 
 }
 
+//printPoints saves the Coords in the allPoints list into a buffer to print to the file
 func (srv FusionCenter) printPoints(s SuperNodeParent) bytes.Buffer {
 	var buffer bytes.Buffer
 	buffer.WriteString((fmt.Sprintf("[")))
@@ -191,6 +195,7 @@ func (srv FusionCenter) printPoints(s SuperNodeParent) bytes.Buffer {
 	return buffer
 }
 
+//MakeSuperNodes initializes the supernodes to the corners of the map
 func (s FusionCenter) MakeSuperNodes() {
 	p := s.P
 	r := RegionParams{}
@@ -265,17 +270,18 @@ func (s FusionCenter) MakeSuperNodes() {
 	}
 }
 
+//GetSquareAverage grabs and returns the average of a particular Square
 func (s FusionCenter) GetSquareAverage(tile *Square) float32 {
 	return tile.Avg
 }
 
+//UpdateSquareAvg takes a node reading and updates the parameters in the Square the node took the reading in
 func (s FusionCenter) UpdateSquareAvg(rd Reading) {
 	tile := s.P.Grid[rd.Xpos/s.P.XDiv][rd.YPos/s.P.YDiv]
 	tile.TakeMeasurement(float32(rd.SensorVal))
-
 }
 
-//Searches node list and updates the number of nodes in each square
+//UpdateSquareNumNodes searches the node list and updates the number of nodes in each square
 func (s FusionCenter) UpdateSquareNumNodes() {
 	var node NodeImpl
 
@@ -291,20 +297,10 @@ func (s FusionCenter) UpdateSquareNumNodes() {
 		node = s.P.NodeList[i]
 		s.P.Grid[node.X/s.P.XDiv][node.Y/s.P.YDiv].ActualNumNodes += 1
 	}
-
-	//Debugging: Check if total nodes after update is equal to total expected nodes
-	/*totalNodes := 0
-	for i:=0; i < len(s.P.Grid); i++ {
-		for j:=0; j < len(s.P.Grid[0]); j++ {
-			totalNodes += s.P.Grid[i][j].ActualNumNodes
-		}
-	}
-	if totalNodes != s.P.NumNodes {
-		fmt.Printf("Error, number of nodes do not match! Found %v nodes out of %v\n", totalNodes, s.P.NumNodeNodes)
-	}*/
 }
 
-//Node calls this to send data to server. Statistics are calculated each Time data is received
+//Send is called by a node to deliver a reading to the server.
+// Statistics are calculated each time data is received
 func (s *FusionCenter) Send(n *NodeImpl, rd Reading) {
 	//fmt.Printf("Sending to server:\nTime: %v, ID: %v, X: %v, Y: %v, Sensor Value: %v\n", rd.Time, rd.Id, rd.Xpos, rd.YPos, rd.SensorVal)
 	s.Times = make(map[int]bool, 0)
@@ -334,7 +330,7 @@ func (s *FusionCenter) Send(n *NodeImpl, rd Reading) {
 	}
 }
 
-//Calculates s.Mean, standard deviation and s.Variance
+//CalcStats calculates the mean, standard deviation and variance of the entire area at one time
 func (s *FusionCenter) CalcStats() ([]float64, []float64, []float64) {
 	//fmt.Printf("Calculating stats for times: %v", s.times)
 	s.UpdateSquareNumNodes()
@@ -374,6 +370,7 @@ func (s *FusionCenter) CalcStats() ([]float64, []float64, []float64) {
 		} else {
 			s.StdDev[i] = math.Sqrt(sum / float64( len((s.TimeBuckets)[i])) )
 		}
+
 		//Determine how many std deviations data is away from mean
 		for j:= range s.TimeBuckets[i] {
 			StdDevFromMean = (s.TimeBuckets[i][j].SensorVal - s.Mean[i]) / s.StdDev[i]
@@ -396,7 +393,7 @@ func (s *FusionCenter) CalcStats() ([]float64, []float64, []float64) {
 	return s.Mean, s.StdDev, s.Variance
 }
 
-//Gets median from data set and returns both the median and closest index to median
+//getMedian gets the median from a data set and returns it
 func (s FusionCenter) getMedian(arr []float64) float64{
 	sort.Float64s(arr)
 	size := 0.0
@@ -412,12 +409,14 @@ func (s FusionCenter) getMedian(arr []float64) float64{
 	return median
 }
 
+//PrintStats prints the mean, standard deviation, and variance for the whole map at every iteration
 func (s FusionCenter) PrintStats() {
 	for i:= 0; i < s.P.Iterations_used; i++ {
 		fmt.Printf("Time: %v, Mean: %v, Std Deviation: %v, Variance: %v\n", i, s.Mean[i], s.StdDev[i], s.Variance[i])
 	}
 }
 
+//PrintStatsFile outputs statistical and detection data to log files
 func (s FusionCenter) PrintStatsFile() {
 	fmt.Fprintln(s.P.ServerFile, "Mean at each time:\n", s.P.Server.Mean)
 	fmt.Fprintln(s.P.ServerFile, "Standard Deviations at each time:\n", s.P.Server.StdDev)
@@ -432,7 +431,7 @@ func (s FusionCenter) PrintStatsFile() {
 
 
 /*
-This is the OLD server GO file and it is a model of our server
+This is the OLD server GO file and it is a model of our server. It may contain compontents we want to incorporate later
 */
 
 //This is the server's data structure for a phone (or node)
