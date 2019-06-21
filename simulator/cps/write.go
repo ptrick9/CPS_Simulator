@@ -65,7 +65,20 @@ func GetDashedInput(s string, p *Params) int {
 	return int(s1)
 }
 
-
+//getString reads the input file and extracts the data from the specified category
+//headExp is a regular expression to denote the label and dataExp is the form the data will take
+func getString(p *Params, bytes []byte, headExp string, dataExp string) ([][]int, []string){
+	regex := regexp.MustCompile(headExp)
+	text := regex.FindAllString(string(bytes), 10)
+	regex = regexp.MustCompile("[0-9]+")
+	text = regex.FindAllString(text[0], 10)
+	size, err := strconv.ParseInt(text[0], 10, 32)
+	Check(err)
+	regex = regexp.MustCompile(dataExp)
+	fai := regex.FindAllIndex(bytes, int(size))
+	text = regex.FindAllString(string(bytes), int(size))
+	return fai, text
+}
 
 func GetListedInput(p *Params) {
 	var temp []byte
@@ -75,15 +88,8 @@ func GetListedInput(p *Params) {
 	}
 	fmt.Println(dir)
 	fileBytes := ReadFromFile(p.FileName)
-	regex := regexp.MustCompile("N: [0-9]+")
-	text := regex.FindAllString(string(fileBytes), 10)
-	regex = regexp.MustCompile("[0-9]+")
-	text = regex.FindAllString(text[0], 10)
-	size, err := strconv.ParseInt(text[0], 10, 32)
-	Check(err)
-	regex = regexp.MustCompile("x:[0-9]+, y:[0-9]+, t:[0-9]+")
-	fai := regex.FindAllIndex(fileBytes, int(size))
-	text = regex.FindAllString(string(fileBytes), int(size))
+
+	fai, text := getString(p, fileBytes, "N: [0-9]+", "x:[0-9]+, y:[0-9]+, t:[0-9]+")
 	if len(fai) > 0 {
 		temp = fileBytes[fai[len(fai)-1][1]:]
 	} else {
@@ -91,48 +97,19 @@ func GetListedInput(p *Params) {
 	}
 	FillInts(text, 0, p)
 
-	regex = regexp.MustCompile("W: [0-9]+")
-	text = regex.FindAllString(string(temp), 10)
-	regex = regexp.MustCompile("[0-9]+")
-	text = regex.FindAllString(text[0], 10)
-	size, err = strconv.ParseInt(text[0], 10, 32)
-	regex = regexp.MustCompile("x:[0-9]+, y:[0-9]+")
-	Check(err)
-	fai = regex.FindAllIndex(temp, int(size))
-	text = regex.FindAllString(string(temp), int(size))
+	fai, text = getString(p, temp, "W: [0-9]+", "x:[0-9]+, y:[0-9]+")
 	if len(fai) > 0 {
 		temp = temp[fai[len(fai)-1][1]:]
 	}
 	FillInts(text, 1, p)
 
-	regex = regexp.MustCompile("S: [0-9]+")
-	text = regex.FindAllString(string(temp), 10)
-	regex = regexp.MustCompile("[0-9]+")
-	text = regex.FindAllString(text[0], 10)
-	size, err = strconv.ParseInt(text[0], 10, 32)
-	regex = regexp.MustCompile("x:[0-9]+, y:[0-9]+, t:[0-9]+")
-	Check(err)
-	fai = regex.FindAllIndex(temp, int(size))
-	text = regex.FindAllString(string(temp), int(size))
+	fai, text = getString(p, temp, "S: [0-9]+", "x:[0-9]+, y:[0-9]+")
 	if len(fai) > 0 {
 		temp = temp[fai[len(fai)-1][1]:]
 	}
 	FillInts(text, 2, p)
 
-	regex = regexp.MustCompile("POIS: [0-9]+")
-	text = regex.FindAllString(string(temp), 10)
-	regex = regexp.MustCompile("[0-9]+")
-	text = regex.FindAllString(text[0], 10)
-	size, err = strconv.ParseInt(text[0], 10, 32)
-	regex = regexp.MustCompile("x:[0-9]+, y:[0-9]+, ti:[0-9]+, to:[0-9]+")
-	Check(err)
-	fai = regex.FindAllIndex(temp, int(size))
-	text = regex.FindAllString(string(temp), int(size))
-	/*if len(fai) > 0 {
-		b6 = temp[fai[len(fai)-1][1]:]
-	} else {
-		b6 = temp
-	}*/
+	fai, text = getString(p, temp, "POIS: [0-9]+", "x:[0-9]+, y:[0-9]+, ti:[0-9]+, to:[0-9]+")
 	FillInts(text, 5, p)
 
 	p.NumNodeNodes = len(p.Npos)

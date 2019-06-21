@@ -484,9 +484,16 @@ func rangeInt(min, max int) int {
 //printGrid saves the current measurements of each Square into a buffer to print into the file
 func printGrid(g [][]*cps.Square) bytes.Buffer {
 	var buffer bytes.Buffer
-	for i, _ := range g {
+	/*for i := range g {
 		for _, x := range g[i] {
 			buffer.WriteString(fmt.Sprintf("%.2f\t", x.Avg))
+		}
+		buffer.WriteString(fmt.Sprintf("\n"))
+	}
+	return buffer*/
+	for y := 0; y < len(g[0]); y++ {
+		for x:=0; x < len(g); x++ {
+			buffer.WriteString(fmt.Sprintf("%.2f\t", g[x][y].Avg))
 		}
 		buffer.WriteString(fmt.Sprintf("\n"))
 	}
