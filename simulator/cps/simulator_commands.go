@@ -122,24 +122,24 @@ type Params struct {
 	CSVMovement   bool
 	CSVSensor     bool
 
-	NumNodeNodes               int
+	CurrentNodes               int
 	NumWallNodes               int
 	NumPoints                  int
 	NumPointsOfInterestKinetic int
 	NumPointsOfInterestStatic  int
 
-	Npos    [][]int // node positions
-	Wpos    [][]int // wall positions
-	Spos    [][]int // super node positions
-	Ppos    [][]int // super node points of interest positions
-	Poikpos [][]int // points of interest kinetic
-	Poispos [][]int // points of interest static
+	NodeEntryTimes [][]int // node positions
+	Wpos           [][]int // wall positions
+	Spos           [][]int // super node positions
+	Ppos           [][]int // super node points of interest positions
+	Poikpos        [][]int // points of interest kinetic
+	Poispos        [][]int // points of interest static
 
 	DetectionThreshold float64
 
 	//SquareRow        int
 	//SquareCol        int
-	NumNodes         int
+	TotalNodes       int
 	NumStoredSamples int
 	NumGridSamples   int
 

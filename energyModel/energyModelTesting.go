@@ -147,7 +147,7 @@ func main() {
 	if p.NumNodes > p.NumNodeNodes {
 		for i := 0; i < p.NumNodes-p.NumNodeNodes; i++ {
 
-			//p.Npos = append(p.Npos, []int{rangeInt(1, p.MaxX), rangeInt(1, p.MaxY), 0})
+			//p.NodeEntryTimes = append(p.NodeEntryTimes, []int{rangeInt(1, p.MaxX), rangeInt(1, p.MaxY), 0})
 			p.Npos = append(p.Npos, []int{0, 0, 0})
 		}
 	}
@@ -165,7 +165,7 @@ func main() {
 
 	//Printing important information to the p.Grid log file
 	//fmt.Fprintln(p.GridFile, "Grid:", p.SquareRowCM, "x", p.SquareColCM)
-	//fmt.Fprintln(p.GridFile, "Total Number of Nodes:", (p.NumNodes + numSuperNodes))
+	//fmt.Fprintln(p.GridFile, "Total Number of Nodes:", (p.TotalNodes + numSuperNodes))
 	//fmt.Fprintln(p.GridFile, "Runs:", iterations_of_event)
 
 	fmt.Println("xDiv is ", p.XDiv, " yDiv is ", p.YDiv, " square capacity is ", p.SquareCapacity)
@@ -625,7 +625,7 @@ func printGrid(g [][]*cps.Square) bytes.Buffer {
 	return buffer
 }
 
-//Saves the current p.NumNodes of each Square into a buffer
+//Saves the current p.TotalNodes of each Square into a buffer
 //to print to the file
 func printGridNodes(g [][]*cps.Square) bytes.Buffer {
 	var buffer bytes.Buffer

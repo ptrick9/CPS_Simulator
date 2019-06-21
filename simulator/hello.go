@@ -41,7 +41,7 @@ func main() {
 
 	//p.SquareRowCM = getDashedInput("p.SquareRowCM")
 	//p.SquareColCM = getDashedInput("p.SquareColCM")
-	p.NumNodes = cps.GetDashedInput("numNodes", p)
+	p.TotalNodes = cps.GetDashedInput("numNodes", p)
 	//numStoredSamples = getDashedInput("numStoredSamples")
 	p.MaxX = cps.GetDashedInput("maxX", p)
 	p.MaxY = cps.GetDashedInput("maxY", p)
@@ -75,9 +75,9 @@ func main() {
 		Vn[i] = rand.NormFloat64() * -.5
 	}
 
-	if p.NumNodes > p.NumNodeNodes {
-		for i := 0; i < p.NumNodes-p.NumNodeNodes; i++ {
-			p.Npos = append(p.Npos, []int{rangeInt(1, p.MaxX), rangeInt(1, p.MaxY), 0})
+	if p.TotalNodes > p.CurrentNodes {
+		for i := 0; i < p.TotalNodes-p.CurrentNodes; i++ {
+			p.NodeEntryTimes = append(p.NodeEntryTimes, []int{rangeInt(1, p.MaxX), rangeInt(1, p.MaxY), 0})
 		}
 	}
 
@@ -88,11 +88,11 @@ func main() {
 	p.Iterations_used = 0
 	p.Iterations_of_event = 5000
 	p.EstimatedPingsNeeded = 10200
-	p.BatteryCharges = cps.GetLinearBatteryValues(len(p.Npos))
-	p.BatteryLosses = cps.GetLinearBatteryLossConstant(len(p.Npos), float32(p.NaturalLossCM))
-	p.BatteryLossesCheckingSensorScalar = cps.GetLinearBatteryLossConstant(len(p.Npos), float32(p.SensorSamplingLossCM))
-	p.BatteryLossesCheckingGPSScalar = cps.GetLinearBatteryLossConstant(len(p.Npos), float32(p.GPSSamplingLossCM))
-	p.BatteryLossesCheckingServerScalar = cps.GetLinearBatteryLossConstant(len(p.Npos), float32(p.ServerSamplingLossCM))
+	p.BatteryCharges = cps.GetLinearBatteryValues(len(p.NodeEntryTimes))
+	p.BatteryLosses = cps.GetLinearBatteryLossConstant(len(p.NodeEntryTimes), float32(p.NaturalLossCM))
+	p.BatteryLossesCheckingSensorScalar = cps.GetLinearBatteryLossConstant(len(p.NodeEntryTimes), float32(p.SensorSamplingLossCM))
+	p.BatteryLossesCheckingGPSScalar = cps.GetLinearBatteryLossConstant(len(p.NodeEntryTimes), float32(p.GPSSamplingLossCM))
+	p.BatteryLossesCheckingServerScalar = cps.GetLinearBatteryLossConstant(len(p.NodeEntryTimes), float32(p.ServerSamplingLossCM))
 	p.Attractions = make([]*cps.Attraction, p.NumAtt)
 
 	p.PositionFile, err = os.Create(p.OutputFileNameCM + "-simulatorOutput.txt")
@@ -163,14 +163,14 @@ func main() {
 
 	//Printing important information to the p.Grid log file
 	//fmt.Fprintln(p.GridFile, "Grid:", p.SquareRowCM, "x", p.SquareColCM)
-	//fmt.Fprintln(p.GridFile, "Total Number of Nodes:", (p.NumNodes + numSuperNodes))
+	//fmt.Fprintln(p.GridFile, "Total Number of Nodes:", (p.TotalNodes + numSuperNodes))
 	//fmt.Fprintln(p.GridFile, "Runs:", iterations_of_event)
 
 	fmt.Fprintln(p.GridFile, "Width:", p.SquareColCM)
 	fmt.Fprintln(p.GridFile, "Height:", p.SquareRowCM)
 
 	//Printing parameters to driftFile
-	fmt.Fprintln(p.DriftFile, "Number of Nodes:", p.NumNodes)
+	fmt.Fprintln(p.DriftFile, "Number of Nodes:", p.TotalNodes)
 	fmt.Fprintln(p.DriftFile, "Rows:", p.SquareRowCM)
 	fmt.Fprintln(p.DriftFile, "Columns:", p.SquareColCM)
 	fmt.Fprintln(p.DriftFile, "Samples Stored by Node:", p.NumStoredSamples)
@@ -308,8 +308,8 @@ func main() {
 				fmt.Fprintln(p.EnergyFile, p.NodeList[j])
 			}
 
-			//Add the node into its new Square's p.NumNodes
-			//If the node hasn't left the square, that Square's p.NumNodes will
+			//Add the node into its new Square's p.TotalNodes
+			//If the node hasn't left the square, that Square's p.TotalNodes will
 			//remain the same after these calculations
 		}
 
@@ -461,13 +461,13 @@ func main() {
 }
 
 func makeNodes() {
-	for i := 0; i < len(p.Npos); i++ {
+	for i := 0; i < len(p.NodeEntryTimes); i++ {
 
-		if p.Iterations_used == p.Npos[i][2] {
+		if p.Iterations_used == p.NodeEntryTimes[i][2] {
 
 			var initHistory = make([]float32, p.NumStoredSamples)
 
-			p.NodeList = append(p.NodeList, cps.NodeImpl{X: p.Npos[i][0], Y: p.Npos[i][1], Id: len(p.NodeList), SampleHistory: initHistory, Concentration: 0,
+			p.NodeList = append(p.NodeList, cps.NodeImpl{X: p.NodeEntryTimes[i][0], Y: p.NodeEntryTimes[i][1], Id: len(p.NodeList), SampleHistory: initHistory, Concentration: 0,
 				Cascade: i, Battery: p.BatteryCharges[i], BatteryLossScalar: p.BatteryLosses[i],
 				BatteryLossCheckingSensorScalar: p.BatteryLossesCheckingSensorScalar[i],
 				BatteryLossGPSScalar:            p.BatteryLossesCheckingGPSScalar[i],
@@ -497,7 +497,7 @@ func makeNodes() {
 
 			p.NodeList[len(p.NodeList)-1] = curNode
 
-			p.BoolGrid[p.Npos[i][1]][p.Npos[i][0]] = true
+			p.BoolGrid[p.NodeEntryTimes[i][1]][p.NodeEntryTimes[i][0]] = true
 		}
 	}
 }
@@ -635,7 +635,7 @@ func printGrid(g [][]*cps.Square) bytes.Buffer {
 	return buffer
 }
 
-//Saves the current p.NumNodes of each Square into a buffer
+//Saves the current p.TotalNodes of each Square into a buffer
 //to print to the file
 func printGridNodes(g [][]*cps.Square) bytes.Buffer {
 	var buffer bytes.Buffer

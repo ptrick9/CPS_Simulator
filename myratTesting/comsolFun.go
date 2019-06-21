@@ -77,7 +77,7 @@ func main() {
 
 	//p.SquareRowCM = getDashedInput("p.SquareRowCM")
 	//p.SquareColCM = getDashedInput("p.SquareColCM")
-	p.NumNodes = cps.GetDashedInput("numNodes", p)
+	p.TotalNodes = cps.GetDashedInput("numNodes", p)
 	//numStoredSamples = getDashedInput("numStoredSamples")
 	p.MaxX = cps.GetDashedInput("maxX", p)
 	p.MaxY = cps.GetDashedInput("maxY", p)
@@ -169,11 +169,11 @@ func main() {
 		Vn[i] = rand.NormFloat64() * -.5
 	}
 
-	if p.NumNodes > p.NumNodeNodes {
-		for i := 0; i < p.NumNodes-p.NumNodeNodes; i++ {
+	if p.TotalNodes > p.CurrentNodes {
+		for i := 0; i < p.TotalNodes-p.CurrentNodes; i++ {
 
-			//p.Npos = append(p.Npos, []int{rangeInt(1, p.MaxX), rangeInt(1, p.MaxY), 0})
-			p.Npos = append(p.Npos, []int{0, 0, 0})
+			//p.NodeEntryTimes = append(p.NodeEntryTimes, []int{rangeInt(1, p.MaxX), rangeInt(1, p.MaxY), 0})
+			p.NodeEntryTimes = append(p.NodeEntryTimes, []int{0, 0, 0})
 		}
 	}
 
@@ -190,7 +190,7 @@ func main() {
 
 	//Printing important information to the p.Grid log file
 	//fmt.Fprintln(p.GridFile, "Grid:", p.SquareRowCM, "x", p.SquareColCM)
-	//fmt.Fprintln(p.GridFile, "Total Number of Nodes:", (p.NumNodes + numSuperNodes))
+	//fmt.Fprintln(p.GridFile, "Total Number of Nodes:", (p.TotalNodes + numSuperNodes))
 	//fmt.Fprintln(p.GridFile, "Runs:", iterations_of_event)
 
 	fmt.Println("xDiv is ", p.XDiv, " yDiv is ", p.YDiv, " square capacity is ", p.SquareCapacity)
@@ -268,7 +268,13 @@ func main() {
 		}
 		fmt.Printf("Current time: %d\n", p.CurrTime)
 
-		makeNodes()
+		if p.CSVMovement {
+			cps.SetupCSVNodes(p)
+		} else {
+			//makeNodes()
+			cps.SetupRandomNodes(p)
+		}
+
 		//fmt.Println(iterations_used)
 		fmt.Printf("\rRunning Simulator iteration %d\\%v", iters, p.Iterations_of_event)
 		if p.PositionPrint {
@@ -484,54 +490,6 @@ func main() {
 
 }
 
-func makeNodes() {
-	for i := 0; i < len(p.Npos); i++ {
-
-		if p.Iterations_used == p.Npos[i][2] {
-
-			var initHistory = make([]float32, p.NumStoredSamples)
-
-			xx := rangeInt(1, p.MaxX)
-			yy := rangeInt(1, p.MaxY)
-			for p.BoolGrid[xx][yy] == true {
-				xx = rangeInt(1, p.MaxX)
-				yy = rangeInt(1, p.MaxY)
-			}
-
-			p.NodeList = append(p.NodeList, cps.NodeImpl{X: xx, Y: yy, Id: len(p.NodeList), SampleHistory: initHistory, Concentration: 0,
-				Cascade: i, Battery: p.BatteryCharges[i], BatteryLossScalar: p.BatteryLosses[i],
-				BatteryLossCheckingSensorScalar: p.BatteryLossesCheckingSensorScalar[i],
-				BatteryLossGPSScalar:            p.BatteryLossesCheckingGPSScalar[i],
-				BatteryLossCheckingServerScalar: p.BatteryLossesCheckingServerScalar[i]})
-
-			p.NodeList[len(p.NodeList)-1].SetConcentration(((1000) / (math.Pow((float64(p.NodeList[len(p.NodeList)-1].GeoDist(*p.B))/0.2)*0.25, 1.5))))
-
-			curNode := p.NodeList[len(p.NodeList)-1] //variable to keep track of current node being added
-
-			//values to determine coefficients
-			curNode.SetS0(rand.Float64()*0.2 + 0.1)
-			curNode.SetS1(rand.Float64()*0.2 + 0.1)
-			curNode.SetS2(rand.Float64()*0.2 + 0.1)
-			//values to determine error in coefficients
-			s0, s1, s2 := curNode.GetCoefficients()
-			curNode.SetE0(rand.Float64() * 0.1 * p.ErrorModifierCM * s0)
-			curNode.SetE1(rand.Float64() * 0.1 * p.ErrorModifierCM * s1)
-			curNode.SetE2(rand.Float64() * 0.1 * p.ErrorModifierCM * s2)
-			//Values to determine error in exponents
-			curNode.SetET1(p.Tau1 * rand.Float64() * p.ErrorModifierCM * 0.05)
-			curNode.SetET2(p.Tau1 * rand.Float64() * p.ErrorModifierCM * 0.05)
-
-			//set node time and initial sensitivity
-			curNode.NodeTime = 0
-			curNode.InitialSensitivity = s0 + (s1)*math.Exp(-float64(curNode.NodeTime)/p.Tau1) + (s2)*math.Exp(-float64(curNode.NodeTime)/p.Tau2)
-			curNode.Sensitivity = curNode.InitialSensitivity
-
-			p.NodeList[len(p.NodeList)-1] = curNode
-
-			p.BoolGrid[xx][yy] = true
-		}
-	}
-}
 
 func getFlags() {
 	//p = cps.Params{}
@@ -681,7 +639,7 @@ func printGrid(g [][]*cps.Square) bytes.Buffer {
 	return buffer
 }
 
-//Saves the current p.NumNodes of each Square into a buffer
+//Saves the current p.TotalNodes of each Square into a buffer
 //to print to the file
 func printGridNodes(g [][]*cps.Square) bytes.Buffer {
 	var buffer bytes.Buffer

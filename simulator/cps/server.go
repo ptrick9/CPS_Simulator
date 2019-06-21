@@ -41,7 +41,7 @@ func (s *FusionCenter) Init(){
 	falsePositives = 0
 	truePositives = 0
 
-	s.LastRecal = make([]int, s.P.NumNodes) //s.P.NumNodes
+	s.LastRecal = make([]int, s.P.TotalNodes) //s.P.TotalNodes
 }
 
 //Data sent by node
@@ -76,7 +76,7 @@ func (s FusionCenter) UpdateSquareNumNodes() {
 	}
 
 	//Count number of nodes in each square
-	for i:=0; i < s.P.NumNodes; i++ {
+	for i:=0; i < s.P.TotalNodes; i++ {
 		node = s.P.NodeList[i]
 		s.P.Grid[node.Y/s.P.YDiv][node.X/s.P.XDiv].ActualNumNodes += 1
 	}
@@ -88,8 +88,8 @@ func (s FusionCenter) UpdateSquareNumNodes() {
 			totalNodes += s.P.Grid[i][j].ActualNumNodes
 		}
 	}
-	if totalNodes != s.P.NumNodes {
-		fmt.Printf("Error, number of nodes do not match! Found %v nodes out of %v\n", totalNodes, s.P.NumNodeNodes)
+	if totalNodes != s.P.TotalNodes {
+		fmt.Printf("Error, number of nodes do not match! Found %v nodes out of %v\n", totalNodes, s.P.CurrentNodes)
 	}*/
 }
 
