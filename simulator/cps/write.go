@@ -4,7 +4,6 @@ import (
 	"encoding/csv"
 	"math/rand"
 	"strings"
-
 	//"bufio"
 	"fmt"
 	"image"
@@ -614,6 +613,19 @@ func FillInMap(p *Params) {
 	}
 	starter = 1
 	bufferFuture = [][]int{{}}
+}
+
+func MakeBoolGrid(p *Params) {
+	p.BoolGrid = make([][]bool, p.MaxX)
+	for i := range p.BoolGrid {
+		p.BoolGrid[i] = make([]bool, p.MaxY)
+	}
+	//Initializing the boolean field with values of false
+	for i := 0; i < p.MaxX; i++ {
+		for j := 0; j < p.MaxY; j++ {
+			p.BoolGrid[i][j] = false
+		}
+	}
 }
 
 func ReadMap(p *Params, r *RegionParams) {

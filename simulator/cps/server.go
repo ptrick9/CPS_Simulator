@@ -4,20 +4,17 @@ This is the server GO file and it is a model of our server
 package cps
 
 import (
+	"bytes"
 	"fmt"
 	"math"
 	"sort"
+	"sync"
 )
 
-/*var (
-	s.TimeBuckets [1000][]float64 //2D array where each sub array is the sensor readings at one iteration
-	s.Mean [1000]float64
-	s.StdDev [1000]float64
-	s.Variance [1000]float64
-)*/
 var (
 	falsePositives	int
 	truePositives	int
+	scheduler		*Scheduler
 )
 
 type FusionCenter struct {
@@ -52,6 +49,220 @@ type Reading struct {
 	Time      int //Time represented by iteration number
 	Id        int //Node Id number
 	//StdDevFromMean	float64
+}
+
+func (s FusionCenter) MakeGrid() {
+	p := s.P
+	p.Grid = make([][]*Square, p.SquareColCM) //this creates the p.Grid and only works if row is same size as column
+	for i := range p.Grid {
+		p.Grid[i] = make([]*Square, p.SquareRowCM)
+	}
+
+	for i := 0; i < p.SquareColCM; i++ {
+		for j := 0; j < p.SquareRowCM; j++ {
+
+			travelList := make([]bool, 0)
+			for k := 0; k < p.NumSuperNodes; k++ {
+				travelList = append(travelList, true)
+			}
+
+			p.Grid[i][j] = &Square{i, j, 0.0, 0, make([]float32, p.NumGridSamples),
+				p.NumGridSamples, 0.0, 0, 0, false,
+				0.0, 0.0, false, travelList, sync.Mutex{}}
+		}
+	}
+}
+
+func (s FusionCenter) CheckDetections(p *Params, scheduler *Scheduler) {
+	r := &RegionParams{}
+	//scheduler := Scheduler{}
+
+	for x := 0; x < p.SquareColCM; x++ { //k
+		for y := 0; y < p.SquareRowCM; y++ { //z
+			bombSquare := p.Grid[p.B.X/p.XDiv][p.B.Y/p.YDiv]
+			bs_y := float64(p.B.Y / p.YDiv)
+			bs_x := float64(p.B.X / p.XDiv)
+			iters := p.Iterations_used
+
+			p.Grid[x][y].StdDev = math.Sqrt(p.Grid[x][y].GetSquareValues() / float64(p.Grid[x][y].NumNodes-1))
+
+			//check for false negatives/positives
+			if p.Grid[x][y].NumNodes > 0 && float64(p.Grid[x][y].Avg) < p.DetectionThreshold && bombSquare == p.Grid[x][y] && !p.Grid[x][y].HasDetected {
+				//this is a p.Grid false negative
+				fmt.Fprintln(p.DriftFile, "Grid False Negative Avg:", p.Grid[x][y].Avg, "Square Row:", y, "Square Column:", x, "Iteration:", iters)
+				p.Grid[x][y].HasDetected = false
+			}
+
+			if float64(p.Grid[x][y].Avg) >= p.DetectionThreshold && (math.Abs(bs_y-float64(y)) >= 1.1 && math.Abs(bs_x-float64(x)) >= 1.1) && !p.Grid[x][y].HasDetected {
+				//this is a false positive
+				fmt.Fprintln(p.DriftFile, "Grid False Positive Avg:", p.Grid[x][y].Avg, "Square Row:", y, "Square Column:", x, "Iteration:", iters)
+				//report to supernodes
+				xLoc := (x * p.XDiv) + int(p.XDiv/2)
+				yLoc := (y * p.YDiv) + int(p.YDiv/2)
+				p.CenterCoord = Coord{X: xLoc, Y: yLoc}
+				scheduler.AddRoutePoint(p.CenterCoord, p, r)
+				p.Grid[x][y].HasDetected = true
+			}
+
+			if float64(p.Grid[x][y].Avg) >= p.DetectionThreshold && (math.Abs(bs_y-float64(y)) <= 1.1 && math.Abs(bs_x-float64(x)) <= 1.1) && !p.Grid[x][y].HasDetected {
+				//this is a true positive
+				fmt.Fprintln(p.DriftFile, "Grid True Positive Avg:", p.Grid[x][y].Avg, "Square Row:", y, "Square Column:", x, "Iteration:", iters)
+				//report to supernodes
+				xLoc := (x * p.XDiv) + int(p.XDiv/2)
+				yLoc := (y * p.YDiv) + int(p.YDiv/2)
+				p.CenterCoord = Coord{X: xLoc, Y: yLoc}
+				scheduler.AddRoutePoint(p.CenterCoord, p, r)
+				p.Grid[x][y].HasDetected = true
+			}
+
+			p.Grid[x][y].SetSquareValues(0)
+			p.Grid[x][y].NumNodes = 0
+		}
+	}
+}
+
+//Server performs this every iteration to move supernodes and check possible detections
+func (srv FusionCenter) Tick() {
+	p := srv.P
+	r := &RegionParams{}
+	optimize := false
+
+	for _, s := range scheduler.SNodeList {
+		//Saves the current length of the super node's list of routePoints
+		//If a routePoint is reached by a super node the scheduler should
+		// 	reorganize the paths
+		length := len(s.GetRoutePoints())
+
+		//The super node executes it's per iteration code
+		s.Tick(p, r)
+
+		//Compares the path lengths to decide if optimization is needed
+		//Optimization will only be done if he optimization requirements are met
+		//	AND if the simulator is currently in a mode that requests optimization
+
+		if length != len(s.GetRoutePoints()) {
+			bombSquare := p.Grid[p.B.X/p.XDiv][p.B.Y/p.YDiv]
+			sSquare := p.Grid[s.GetX()/p.XDiv][s.GetY()/p.YDiv]
+			p.Grid[s.GetX()/p.XDiv][s.GetY()/p.YDiv].HasDetected = false
+
+			bdist := float32(math.Pow(float64(math.Pow(float64(math.Abs(float64(s.GetX())-float64(p.B.X))), 2)+math.Pow(float64(math.Abs(float64(s.GetY())-float64(p.B.Y))), 2)), .5))
+
+			if bombSquare == sSquare || bdist < 8.0 {
+				p.FoundBomb = true
+			} else {
+				sSquare.Reset()
+			}
+
+		}
+
+		if length != len(s.GetRoutePoints()) {
+			optimize = p.DoOptimize // true &&
+		}
+
+		//Writes the super node information to a file
+		fmt.Fprint(p.RoutingFile, s)
+		pp := srv.printPoints(s)
+		fmt.Fprint(p.RoutingFile, " UnvisitedPoints: ")
+		fmt.Fprintln(p.RoutingFile, pp.String())
+	}
+
+	//Executes the optimization code if the optimize flag is true
+	if optimize {
+		//The scheduler optimizes the paths of each super node
+		scheduler.Optimize(p, r)
+		//Resets the optimize flag
+		optimize = false
+	}
+	srv.CheckDetections(p, scheduler)
+
+}
+
+func (srv FusionCenter) printPoints(s SuperNodeParent) bytes.Buffer {
+	var buffer bytes.Buffer
+	buffer.WriteString((fmt.Sprintf("[")))
+	for ind, i := range s.GetAllPoints() {
+		buffer.WriteString(i.String())
+
+		if ind != len(s.GetAllPoints())-1 {
+			buffer.WriteString(" ")
+		}
+	}
+	buffer.WriteString((fmt.Sprintf("]")))
+	return buffer
+}
+
+func (s FusionCenter) MakeSuperNodes() {
+	p := s.P
+	r := RegionParams{}
+
+	top_left_corner := Coord{X: 0, Y: 0}
+	top_right_corner := Coord{X: 0, Y: 0}
+	bot_left_corner := Coord{X: 0, Y: 0}
+	bot_right_corner := Coord{X: 0, Y: 0}
+
+	tl_min := p.Height + p.Width
+	tr_max := -1
+	bl_max := -1
+	br_max := -1
+
+	for x := 0; x < p.Width; x++ {
+		for y := 0; y < p.Height; y++ {
+			if r.Point_dict[Tuple{x, y}] {
+				if x+y < tl_min {
+					tl_min = x + y
+					top_left_corner.X = x
+					top_left_corner.Y = y
+				}
+				if y-x > tr_max {
+					tr_max = y - x
+					top_right_corner.X = x
+					top_right_corner.Y = y
+				}
+				if x-y > bl_max {
+					bl_max = x - y
+					bot_left_corner.X = x
+					bot_left_corner.Y = y
+				}
+				if x+y > br_max {
+					br_max = x + y
+					bot_right_corner.X = x
+					bot_right_corner.Y = y
+				}
+			}
+		}
+	}
+
+	fmt.Printf("TL: %v, TR %v, BL %v, BR %v\n", top_left_corner, top_right_corner, bot_left_corner, bot_right_corner)
+
+	starting_locs := make([]Coord, 4)
+	starting_locs[0] = top_left_corner
+	starting_locs[1] = top_right_corner
+	starting_locs[2] = bot_left_corner
+	starting_locs[3] = bot_right_corner
+
+	//The scheduler determines which supernode should pursue a point of interest
+	scheduler = &Scheduler{}
+
+	//List of all the supernodes on the grid
+	scheduler.SNodeList = make([]SuperNodeParent, p.NumSuperNodes)
+
+	for i := 0; i < p.NumSuperNodes; i++ {
+		snode_points := make([]Coord, 1)
+		snode_path := make([]Coord, 0)
+		all_points := make([]Coord, 0)
+
+		//Defining the starting x and y values for the super node
+		//This super node starts at the middle of the grid
+		x_val, y_val := starting_locs[i].X, starting_locs[i].Y
+		nodeCenter := Coord{X: x_val, Y: y_val}
+
+		scheduler.SNodeList[i] = &Sn_zero{&Supern{&NodeImpl{X: x_val, Y: y_val, Id: i}, 1,
+			1, p.SuperNodeRadius, p.SuperNodeRadius, 0, snode_points, snode_path,
+			nodeCenter, 0, 0, 0, 0, 0, all_points}}
+
+		//The super node's current location is always the first element in the routePoints list
+		scheduler.SNodeList[i].UpdateLoc()
+	}
 }
 
 func (s FusionCenter) GetSquareAverage(tile *Square) float32 {
