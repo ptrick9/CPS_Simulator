@@ -1043,7 +1043,7 @@ func readMovementCSV(p *Params) {
 
 
 	time := 0
-	fmt.Printf("Movement CSV Processing\n")
+	fmt.Printf("Movement CSV Processing %d TimeSteps for %d Nodes\n", len(record), len(record[0])/2)
 	for time < len(record) {
 		nodeID := 0
 

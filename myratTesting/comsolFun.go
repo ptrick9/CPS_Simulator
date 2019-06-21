@@ -326,9 +326,9 @@ func main() {
 
 
 		if p.CSVMovement {
-			cps.HandleMovement(p)
-		} else {
 			cps.HandleMovementCSV(p)
+		} else {
+			cps.HandleMovement(p)
 		}
 
 		fmt.Fprintln(p.RoutingFile, "Amount:", p.NumSuperNodes)
