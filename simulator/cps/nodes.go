@@ -1273,7 +1273,7 @@ func (curNode *NodeImpl) GetReadingsCSV(p *Params) {
 	}
 
 	if p.PositionPrint {
-		fmt.Fprintln(p.PositionFile, "ID:", curNode.GetID(), "x:", newX, "y:", newY)
+		//fmt.Fprintln(p.PositionFile, "ID:", curNode.GetID(), "x:", newX, "y:", newY)
 	}
 
 	p.Recalibrate = false
