@@ -304,8 +304,11 @@ func main() {
 					p.NodeList[i].HasCheckedSensor = true
 					p.NodeList[i].Sitting = 0
 				}
-				p.NodeList[i].GetReadingsCSV(p)
-				//p.NodeList[i].GetReadings(p)
+				if(p.CSVSensor) {
+					p.NodeList[i].GetReadingsCSV(p)
+				} else {
+					p.NodeList[i].GetReadings(p)
+				}
 			//}(i)
 		}
 		//wg.Wait()
@@ -315,8 +318,12 @@ func main() {
 
 		fmt.Fprintln(p.EnergyFile, "Amount:", len(p.NodeList))
 
-		cps.HandleMovement(p)
-		cps.HandleMovementCSV(p)
+
+		if p.CSVMovement {
+			cps.HandleMovement(p)
+		} else {
+			cps.HandleMovementCSV(p)
+		}
 
 		fmt.Fprintln(p.RoutingFile, "Amount:", p.NumSuperNodes)
 
@@ -581,6 +588,8 @@ func getFlags() {
 		"Value where if a node gets this reading or higher, it will trigger a detection")
 	flag.Float64Var(&p.ErrorModifierCM, "errorMultiplier", 1.0,
 		"Multiplier for error values in system")
+	flag.BoolVar(&p.CSVSensor, "csvSensor", true, "Read Sensor Values from CSV")
+	flag.BoolVar(&p.CSVMovement, "csvMove", true, "Read Movements from CSV")
 
 	//Range 1, 2, or 4
 	//Currently works for only a few numbers, can be easily expanded but is not currently dynamic

@@ -119,6 +119,8 @@ type Params struct {
 
 	RegionRouting bool
 	AStarRouting  bool
+	CSVMovement   bool
+	CSVSensor     bool
 
 	NumNodeNodes               int
 	NumWallNodes               int
