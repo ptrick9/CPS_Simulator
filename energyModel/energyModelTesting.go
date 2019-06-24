@@ -5,8 +5,12 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
+	"log"
 	"math"
 	"math/rand"
+	"os"
+//	"runtime"
+	"runtime/pprof"
 	"sync"
 	"time"
 
@@ -40,6 +44,18 @@ func main() {
 
 	getFlags()
 
+	if p.CPUProfile != "" {
+		f, err := os.Create(p.CPUProfile)
+		if err != nil {
+			log.Fatal("could not create CPU profile: ", err)
+		}
+		defer f.Close()
+		if err := pprof.StartCPUProfile(f); err != nil {
+			log.Fatal("could not start CPU profile: ", err)
+		}
+		defer pprof.StopCPUProfile()
+	}
+	
 	//fileName = p.InputFileNameCM
 	p.FileName = p.InputFileNameCM
 	cps.GetListedInput(p)
@@ -83,13 +99,13 @@ func main() {
 
 	cps.ReadMap(p, r)
 
-	sum := 0
-	for i := range p.BoardMap {
-		for j := range p.BoardMap[i] {
-			sum += p.BoardMap[i][j]
-		}
-	}
-	fmt.Println(sum)
+	//sum := 0
+	//for i := range p.BoardMap {
+	//	for j := range p.BoardMap[i] {
+	//		sum += p.BoardMap[i][j]
+	//	}
+	//}
+	//fmt.Println(sum)
 
 	top_left_corner := cps.Coord{X: 0, Y: 0}
 	top_right_corner := cps.Coord{X: 0, Y: 0}
@@ -244,7 +260,13 @@ func main() {
 		}
 		fmt.Printf("Current time: %d\n", p.CurrTime)
 
-		makeNodes()
+		//makeNodes()
+		if p.CSVMovement {
+			cps.SetupCSVNodes(p)
+		} else {
+			//makeNodes()
+			cps.SetupRandomNodes(p)
+		}
 		//fmt.Println(iterations_used)
 		fmt.Printf("\rRunning Simulator iteration %d\\%v", iters, p.Iterations_of_event)
 		if p.PositionPrint {
@@ -266,29 +288,36 @@ func main() {
 		}
 
 		//start := time.Now()
-		var wg sync.WaitGroup
-		wg.Add(len(p.NodeList))
+		//var wg sync.WaitGroup
+		//wg.Add(len(p.NodeList))
+		fmt.Fprintln(p.MoveReadingsFile, "T=", p.Iterations_used)
 		for i := 0; i < len(p.NodeList); i++ {
-			go func(i int) {
-				defer wg.Done()
+			//go func(i int) {
+				//defer wg.Done()
 				if !p.NoEnergyModelCM {
 					p.NodeList[i].BatteryLossMostDynamic(p)
 				} else {
 					p.NodeList[i].HasCheckedSensor = true
 					p.NodeList[i].Sitting = 0
 				}
-				//p.NodeList[i].GetReadingsCSV(p)
-				p.NodeList[i].GetReadings(p)
-			}(i)
+				if(p.CSVSensor) {
+					p.NodeList[i].GetReadingsCSV(p)
+				} else {
+					p.NodeList[i].GetReadings(p)
+				}
+			//}(i)
 		}
-		wg.Wait()
+		//wg.Wait()
 		p.DriftFile.Sync()
 		p.NodeFile.Sync()
 		p.PositionFile.Sync()
 
 		fmt.Fprintln(p.EnergyFile, "Amount:", len(p.NodeList))
-		cps.HandleMovement(p)
-
+		if p.CSVMovement {
+			cps.HandleMovementCSV(p)
+		} else {
+			cps.HandleMovement(p)
+		}
 		fmt.Fprintln(p.RoutingFile, "Amount:", p.NumSuperNodes)
 
 		//Alerts the scheduler to redraw the paths of super nodes as efficiently
@@ -502,6 +531,7 @@ func getFlags() {
 	flag.StringVar(&p.InputFileNameCM, "inputFileName", "Scenario_1.txt",
 		"Name of the input text file")
 	flag.StringVar(&p.SensorPath, "Sensor Readings", "Circle_2D.csv", "Sensor Reading Inputs")
+	flag.StringVar(&p.MovementPath, "movementPath", "Circle_2D.csv", "Movement Inputs")
 	flag.StringVar(&p.OutputFileNameCM, "p.OutputFileName", "Log",
 		"Name of the output text file prefix")
 	flag.Float64Var(&p.NaturalLossCM, "naturalLoss", .005,
@@ -551,6 +581,8 @@ func getFlags() {
 		"Value where if a node gets this reading or higher, it will trigger a detection")
 	flag.Float64Var(&p.ErrorModifierCM, "errorMultiplier", 1.0,
 		"Multiplier for error values in system")
+	flag.BoolVar(&p.CSVSensor, "csvSensor", true, "Read Sensor Values from CSV")
+	flag.BoolVar(&p.CSVMovement, "csvMove", true, "Read Movements from CSV")
 	//Range 1, 2, or 4
 	//Currently works for only a few numbers, can be easily expanded but is not currently dynamic
 	flag.IntVar(&p.NumSuperNodes, "numSuperNodes", 4, "the number of super nodes in the simulator")
@@ -596,7 +628,7 @@ func getFlags() {
 	flag.IntVar(&p.SquareRowCM, "p.SquareRowCM", 50, "Number of rows of p.Grid squares, 1 through p.MaxX")
 	flag.IntVar(&p.SquareColCM, "p.SquareColCM", 50, "Number of columns of p.Grid squares, 1 through p.MaxY")
 
-	flag.StringVar(&p.ImageFileNameCM, "imageFileName", "circle_justWalls_x4.png", "Name of the input text file")
+	flag.StringVar(&p.ImageFileNameCM, "imageFileName", "circle_justWalls_400.png", "Name of the input text file")
 	flag.StringVar(&p.StimFileNameCM, "stimFileName", "circle_0.txt", "Name of the stimulus text file")
 	flag.StringVar(&p.OutRoutingNameCM, "outRoutingName", "log.txt", "Name of the stimulus text file")
 	flag.StringVar(&p.OutRoutingStatsNameCM, "outRoutingStatsName", "routingStats.txt", "Name of the output file for stats")
