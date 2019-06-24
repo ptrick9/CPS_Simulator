@@ -127,7 +127,7 @@ func main() {
 	p.ThreshHoldBatteryToHave = 30.0 //This is the threshold battery to have for all phones
 
 	p.Iterations_used = 0
-	p.Iterations_of_event = 200
+	p.Iterations_of_event = p.IterationsCM
 	p.EstimatedPingsNeeded = 10200
 
 
@@ -361,6 +361,8 @@ func getFlags() {
 		"Multiplier for error values in system")
 	flag.BoolVar(&p.CSVSensor, "csvSensor", true, "Read Sensor Values from CSV")
 	flag.BoolVar(&p.CSVMovement, "csvMove", true, "Read Movements from CSV")
+
+	flag.IntVar(&p.IterationsCM, "iterations", 200, "Read Movements from CSV")
 
 	//Range 1, 2, or 4
 	//Currently works for only a few numbers, can be easily expanded but is not currently dynamic

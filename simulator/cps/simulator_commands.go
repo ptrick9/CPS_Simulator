@@ -104,6 +104,7 @@ type Params struct {
 
 	ThreshHoldBatteryToHave  float32
 	TotalPercentBatteryToUse float32
+	IterationsCM		     int
 	Iterations_used          int
 	Iterations_of_event      int
 	EstimatedPingsNeeded     int
