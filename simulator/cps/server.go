@@ -17,6 +17,7 @@ var (
 //FusionCenter is the server class which contains statistical, reading, and recalibration data
 type FusionCenter struct {
 	P *Params
+	R *RegionParams
 
 	TimeBuckets 	[][]Reading //2D array where each sub array is made of the readings at one iteration
 	Mean 			[]float64
@@ -74,7 +75,7 @@ func (s FusionCenter) MakeGrid() {
 
 //CheckDetections iterates through the grid and validates detections by nodes
 func (s FusionCenter) CheckDetections(p *Params, scheduler *Scheduler) {
-	r := &RegionParams{}
+	//s.R := &RegionParams{}
 
 	for x := 0; x < p.SquareColCM; x++ {
 		for y := 0; y < p.SquareRowCM; y++ {
@@ -101,7 +102,7 @@ func (s FusionCenter) CheckDetections(p *Params, scheduler *Scheduler) {
 				xLoc := (x * p.XDiv) + int(p.XDiv/2)
 				yLoc := (y * p.YDiv) + int(p.YDiv/2)
 				p.CenterCoord = Coord{X: xLoc, Y: yLoc}
-				scheduler.AddRoutePoint(p.CenterCoord, p, r)
+				scheduler.AddRoutePoint(p.CenterCoord, p, s.R)
 				p.Grid[x][y].HasDetected = true
 			}
 
@@ -113,7 +114,7 @@ func (s FusionCenter) CheckDetections(p *Params, scheduler *Scheduler) {
 				xLoc := (x * p.XDiv) + int(p.XDiv/2)
 				yLoc := (y * p.YDiv) + int(p.YDiv/2)
 				p.CenterCoord = Coord{X: xLoc, Y: yLoc}
-				scheduler.AddRoutePoint(p.CenterCoord, p, r)
+				scheduler.AddRoutePoint(p.CenterCoord, p, s.R)
 				p.Grid[x][y].HasDetected = true
 			}
 
@@ -126,7 +127,7 @@ func (s FusionCenter) CheckDetections(p *Params, scheduler *Scheduler) {
 //Tick is performed every iteration to move supernodes and check possible detections
 func (srv FusionCenter) Tick() {
 	p := srv.P
-	r := &RegionParams{}
+	//r := &RegionParams{}
 	optimize := false
 
 	for _, s := range scheduler.SNodeList {
@@ -136,7 +137,7 @@ func (srv FusionCenter) Tick() {
 		length := len(s.GetRoutePoints())
 
 		//The super node executes it's per iteration code
-		s.Tick(p, r)
+		s.Tick(p, srv.R)
 
 		//Compares the path lengths to decide if optimization is needed
 		//Optimization will only be done if he optimization requirements are met
@@ -171,7 +172,7 @@ func (srv FusionCenter) Tick() {
 	//Executes the optimization code if the optimize flag is true
 	if optimize {
 		//The scheduler optimizes the paths of each super node
-		scheduler.Optimize(p, r)
+		scheduler.Optimize(p, srv.R)
 		//Resets the optimize flag
 		optimize = false
 	}
@@ -197,7 +198,7 @@ func (srv FusionCenter) printPoints(s SuperNodeParent) bytes.Buffer {
 //MakeSuperNodes initializes the supernodes to the corners of the map
 func (s FusionCenter) MakeSuperNodes() {
 	p := s.P
-	r := RegionParams{}
+	//r := s.R
 
 	top_left_corner := Coord{X: 0, Y: 0}
 	top_right_corner := Coord{X: 0, Y: 0}
@@ -211,7 +212,7 @@ func (s FusionCenter) MakeSuperNodes() {
 
 	for x := 0; x < p.Width; x++ {
 		for y := 0; y < p.Height; y++ {
-			if r.Point_dict[Tuple{x, y}] {
+			if s.R.Point_dict[Tuple{x, y}] {
 				if x+y < tl_min {
 					tl_min = x + y
 					top_left_corner.X = x

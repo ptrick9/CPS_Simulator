@@ -776,7 +776,9 @@ func SetupParameters(p *Params) {
 	p.Attractions = make([]*Attraction, p.NumAtt)
 
 	readSensorCSV(p)
-	readMovementCSV(p)
+	if p.CSVMovement {
+		readMovementCSV(p)
+	}
 
 
 }

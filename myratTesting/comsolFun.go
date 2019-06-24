@@ -6,7 +6,7 @@
 -logEnergy=true
 -logNodes=false
 -noEnergy=true
--sensorPath=C:/Users/patrick/Dropbox/Patrick/udel/SUMMER2019/GitSimulator/smoothed_marathon.csv
+-sensorPath=smoothed_marathon.csv
 -SquareRowCM=60
 -SquareColCM=320
 -csvMove=true
@@ -51,7 +51,7 @@ func main() {
 	p = &cps.Params{}
 	r = &cps.RegionParams{}
 
-	p.Server = cps.FusionCenter{p, nil, nil, nil, nil, nil, nil}
+	p.Server = cps.FusionCenter{p, r, nil, nil, nil, nil, nil, nil}
 
 	p.Tau1 = 10
 	p.Tau2 = 500
@@ -106,6 +106,7 @@ func main() {
 	cps.MakeBoolGrid(p)
 	p.Server.Init()
 	cps.ReadMap(p, r)
+	p.Server.MakeSuperNodes()
 	cps.GenerateRouting(p, r)
 
 	//This is where the text file reading ends
@@ -140,7 +141,7 @@ func main() {
 
 	fmt.Println("xDiv is ", p.XDiv, " yDiv is ", p.YDiv, " square capacity is ", p.SquareCapacity)
 
-	p.Server.MakeSuperNodes()
+	//p.Server.MakeSuperNodes()
 
 	p.B = &cps.Bomb{X: p.BombX, Y: p.BombY}
 
