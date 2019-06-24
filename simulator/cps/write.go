@@ -1,3 +1,4 @@
+//CPS contains the simulator
 package cps
 
 import (

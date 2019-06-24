@@ -1,6 +1,3 @@
-/*
-This is the server GO file and it is a model of our server
-*/
 package cps
 
 import (
