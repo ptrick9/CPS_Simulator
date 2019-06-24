@@ -279,6 +279,7 @@ func GenerateRouting(p *Params, r *RegionParams) {
 	//fmt.Println(r.Border_dict)
 
 	//Cutting takes place in this loop
+
 	for true {
 		rebuilt := false
 

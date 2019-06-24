@@ -813,6 +813,7 @@ func ReadMap(p *Params, r *RegionParams) {
 }
 
 func SetupFiles(p *Params) {
+	fmt.Printf("Building Output Files\n")
 	dummy, err := os.Create("dummyFile.txt")
 	if err != nil {
 		log.Fatal("cannot create file", err)
@@ -964,7 +965,7 @@ func readSensorCSV(p *Params) {
 		println("error opening file")
 	}
 	defer in.Close()
-
+	fmt.Printf("Reading Sensor Files\n")
 	r := csv.NewReader(in)
 	r.FieldsPerRecord = -1
 	record, err := r.ReadAll()
@@ -1041,18 +1042,17 @@ func readMovementCSV(p *Params) {
 	}
 
 
-
 	time := 0
-	fmt.Printf("Movement CSV Processing %d TimeSteps for %d Nodes\n", len(record), len(record[0])/2)
+	fmt.Printf("Movement CSV Processing %d TimeSteps for %d Nodes  %d\n", len(record), len(record[0])/2, p.TotalNodes)
 	for time < len(record) {
-		nodeID := 0
+		iter := 0
 
-		for nodeID < len(record[time])-1 {
-			x, _ := strconv.ParseInt(record[time][nodeID], 10, 32);
-			y, _ := strconv.ParseInt(record[time][nodeID+1], 10, 32);
+		for iter < len(record[time])-1 {
+			x, _ := strconv.ParseInt(record[time][iter], 10, 32);
+			y, _ := strconv.ParseInt(record[time][iter+1], 10, 32);
 
-			p.NodeMovements[nodeID][time] = Tuple{int(x), int(y)}
-			nodeID += 2
+			p.NodeMovements[iter/2][time] = Tuple{int(x), int(y)}
+			iter += 2
 		}
 		time++
 

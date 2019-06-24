@@ -184,6 +184,7 @@ func main() {
 	p.Iterations_of_event = 200
 	p.EstimatedPingsNeeded = 10200
 
+
 	cps.SetupFiles(p)
 
 	cps.SetupParameters(p)
@@ -259,6 +260,14 @@ func main() {
 
 	iters := 0
 	p.CurrTime = 0
+
+
+	if p.CSVMovement {
+		cps.SetupCSVNodes(p)
+	} else {
+		cps.SetupRandomNodes(p)
+	}
+
 	for iters = 0; iters < p.Iterations_of_event && !p.FoundBomb; iters++ {
 
 		for i := 0; i < len(p.SensorTimes); i++ {
@@ -268,12 +277,8 @@ func main() {
 		}
 		fmt.Printf("Current time: %d\n", p.CurrTime)
 
-		if p.CSVMovement {
-			cps.SetupCSVNodes(p)
-		} else {
-			//makeNodes()
-			cps.SetupRandomNodes(p)
-		}
+
+
 
 		//fmt.Println(iterations_used)
 		fmt.Printf("\rRunning Simulator iteration %d\\%v", iters, p.Iterations_of_event)
@@ -622,9 +627,7 @@ func getFlags() {
 	//fmt.Println("tail:", flag.Args())
 }
 
-func rangeInt(min, max int) int { //returns a random number between max and min
-	return rand.Intn(max-min) + min
-}
+
 
 //Saves the current measurements of each Square into a
 //buffer to print into the file
