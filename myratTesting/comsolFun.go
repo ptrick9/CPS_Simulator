@@ -9,6 +9,8 @@
 -sensorPath=C:/Users/patrick/Dropbox/Patrick/udel/SUMMER2019/GitSimulator/smoothed_marathon.csv
 -SquareRowCM=60
 -SquareColCM=320
+-csvMove=true
+-movementPath=C:/Users/patrick/Dropbox/Patrick/udel/SUMMER2019/GitSimulator/output.txt
 */
 
 package main
@@ -20,7 +22,6 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"math"
 	"math/rand"
 	"os"
 	"runtime"
