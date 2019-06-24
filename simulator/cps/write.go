@@ -113,7 +113,7 @@ func GetListedInput(p *Params) {
 	fai, text = getString(p, temp, "POIS: [0-9]+", "x:[0-9]+, y:[0-9]+, ti:[0-9]+, to:[0-9]+")
 	FillInts(text, 5, p)
 
-	p.NumNodeNodes = len(p.Npos)
+	p.CurrentNodes = len(p.NodeEntryTimes)
 	p.NumWallNodes = len(p.Wpos)
 	//numPoints = len(ppos)
 	p.NumPointsOfInterestStatic = len(p.Poispos)
@@ -130,7 +130,7 @@ func FillInts(s []string, place int, p *Params) {
 			s1, err := strconv.ParseInt(x[0], 10, 32)
 			Check(err)
 			ap := []int{int(s1), 0, 0}
-			p.Npos = append(p.Npos, ap)
+			p.NodeEntryTimes = append(p.NodeEntryTimes, ap)
 
 			r = regexp.MustCompile("y:[0-9]+")
 			X = r.FindAllString(s[i], 1)
@@ -138,7 +138,7 @@ func FillInts(s []string, place int, p *Params) {
 			x = r.FindAllString(X[0], 1)
 			s1, err = strconv.ParseInt(x[0], 10, 32)
 			Check(err)
-			p.Npos[i][1] = int(s1)
+			p.NodeEntryTimes[i][1] = int(s1)
 
 			r = regexp.MustCompile("t:[0-9]+")
 			X = r.FindAllString(s[i], 1)
@@ -146,7 +146,7 @@ func FillInts(s []string, place int, p *Params) {
 			x = r.FindAllString(X[0], 1)
 			s1, err = strconv.ParseInt(x[0], 10, 32)
 			Check(err)
-			p.Npos[i][2] = int(s1)
+			p.NodeEntryTimes[i][2] = int(s1)
 		}
 	} else if place == 1 {
 		for i := 0; i < len(s); i++ {
@@ -331,11 +331,133 @@ func HandleMovement(p *Params) {
 			fmt.Fprintln(p.EnergyFile, p.NodeList[j])
 		}
 
-		//Add the node into its new Square's p.NumNodes
-		//If the node hasn't left the square, that Square's p.NumNodes will
+		//Add the node into its new Square's p.TotalNodes
+		//If the node hasn't left the square, that Square's p.TotalNodes will
 		//remain the same after these calculations
 	}
 }
+
+
+func HandleMovementCSV(p *Params) {
+	time := p.Iterations_used
+	for j := 0; j < len(p.NodeList); j++ {
+
+		if p.NodeList[j].Valid {
+			oldX, oldY := p.NodeList[j].GetLoc()
+			p.BoolGrid[oldX][oldY] = false //set the old spot false since the node will now move away
+		}
+		//move the node to its new location
+		//p.NodeList[j].Move(p)
+
+		id := p.NodeList[j].GetID()
+		p.NodeList[j].X = p.NodeMovements[id][time].X
+		p.NodeList[j].Y = p.NodeMovements[id][time].Y
+
+
+		//set the new location in the boolean field to true
+		newX, newY := p.NodeList[j].GetLoc()
+
+		if p.NodeList[j].InBounds(p) {
+			p.NodeList[j].Valid = true
+		} else {
+			p.NodeList[j].Valid = false
+		}
+		if p.NodeList[j].Valid {
+			p.BoolGrid[newX][newY] = true
+		}
+
+		//writes the node information to the file
+		if p.EnergyPrint {
+			fmt.Fprintln(p.EnergyFile, p.NodeList[j])
+		}
+
+		//Add the node into its new Square's p.TotalNodes
+		//If the node hasn't left the square, that Square's p.TotalNodes will
+		//remain the same after these calculations
+	}
+}
+
+
+func InitializeNodeParameters(p *Params, nodeNum int) *NodeImpl{
+
+	var initHistory = make([]float32, p.NumStoredSamples)
+
+	//initialize nodes to invalid starting point as starting point will be selected after initialization
+	curNode := NodeImpl{X: -1, Y: -1, Id: len(p.NodeList), SampleHistory: initHistory, Concentration: 0,
+		Cascade: nodeNum, Battery: p.BatteryCharges[nodeNum], BatteryLossScalar: p.BatteryLosses[nodeNum],
+		BatteryLossCheckingSensorScalar: p.BatteryLossesCheckingSensorScalar[nodeNum],
+		BatteryLossGPSScalar:            p.BatteryLossesCheckingGPSScalar[nodeNum],
+		BatteryLossCheckingServerScalar: p.BatteryLossesCheckingServerScalar[nodeNum]}
+
+
+	//values to determine coefficients
+	curNode.SetS0(rand.Float64()*0.2 + 0.1)
+	curNode.SetS1(rand.Float64()*0.2 + 0.1)
+	curNode.SetS2(rand.Float64()*0.2 + 0.1)
+	//values to determine error in coefficients
+	s0, s1, s2 := curNode.GetCoefficients()
+	curNode.SetE0(rand.Float64() * 0.1 * p.ErrorModifierCM * s0)
+	curNode.SetE1(rand.Float64() * 0.1 * p.ErrorModifierCM * s1)
+	curNode.SetE2(rand.Float64() * 0.1 * p.ErrorModifierCM * s2)
+	//Values to determine error in exponents
+	curNode.SetET1(p.Tau1 * rand.Float64() * p.ErrorModifierCM * 0.05)
+	curNode.SetET2(p.Tau1 * rand.Float64() * p.ErrorModifierCM * 0.05)
+
+	//set node time and initial sensitivity
+	curNode.NodeTime = 0
+	curNode.InitialSensitivity = s0 + (s1)*math.Exp(-float64(curNode.NodeTime)/p.Tau1) + (s2)*math.Exp(-float64(curNode.NodeTime)/p.Tau2)
+	curNode.Sensitivity = curNode.InitialSensitivity
+
+	return &curNode
+}
+
+func SetupCSVNodes(p *Params) {
+	for i := 0; i < p.TotalNodes; i++ {
+		newNode := InitializeNodeParameters(p, i)
+
+		newNode.X = p.NodeMovements[i][0].X
+		newNode.Y = p.NodeMovements[i][1].Y
+
+		if newNode.InBounds(p) {
+			newNode.Valid = true
+			p.BoolGrid[newNode.X][newNode.Y] = true
+		} else {
+			newNode.Valid = false
+		}
+
+		p.NodeList = append(p.NodeList, *newNode)
+		p.CurrentNodes += 1
+	}
+
+}
+
+func SetupRandomNodes(p *Params) {
+	for i := 0; i < len(p.NodeEntryTimes); i++ {
+		if p.Iterations_used == p.NodeEntryTimes[i][2] {
+
+			newNode := InitializeNodeParameters(p, i)
+
+			xx := rangeInt(1, p.MaxX)
+			yy := rangeInt(1, p.MaxY)
+			for p.BoolGrid[xx][yy] == true {
+				xx = rangeInt(1, p.MaxX)
+				yy = rangeInt(1, p.MaxY)
+			}
+
+			newNode.X = xx
+			newNode.Y = yy
+
+			newNode.Valid = true
+
+			p.BoolGrid[xx][yy] = true
+
+			p.NodeList = append(p.NodeList, *newNode)
+			p.CurrentNodes += 1
+
+		}
+	}
+}
+
 
 // Fills the walls into the board based on the wall positions extrapolated from the file
 func FillInWallsToBoard(p *Params) {
@@ -514,6 +636,7 @@ func ReadMap(p *Params, r *RegionParams) {
 }
 
 func SetupFiles(p *Params) {
+	fmt.Printf("Building Output Files\n")
 	dummy, err := os.Create("dummyFile.txt")
 	if err != nil {
 		log.Fatal("cannot create file", err)
@@ -539,7 +662,7 @@ func SetupFiles(p *Params) {
 	//defer p.DriftFile.Close()
 
 	//Printing parameters to driftFile
-	fmt.Fprintln(p.DriftFile, "Number of Nodes:", p.NumNodes)
+	fmt.Fprintln(p.DriftFile, "Number of Nodes:", p.TotalNodes)
 	fmt.Fprintln(p.DriftFile, "Rows:", p.SquareRowCM)
 	fmt.Fprintln(p.DriftFile, "Columns:", p.SquareColCM)
 	fmt.Fprintln(p.DriftFile, "Samples Stored by Node:", p.NumStoredSamples)
@@ -645,25 +768,27 @@ func SetupParameters(p *Params) {
 	p.Center.Y = p.MaxY / 2
 
 	p.TotalPercentBatteryToUse = float32(p.ThresholdBatteryToUseCM)
-	p.BatteryCharges = GetLinearBatteryValues(len(p.Npos))
-	p.BatteryLosses = GetLinearBatteryLossConstant(len(p.Npos), float32(p.NaturalLossCM))
-	p.BatteryLossesCheckingSensorScalar = GetLinearBatteryLossConstant(len(p.Npos), float32(p.SensorSamplingLossCM))
-	p.BatteryLossesCheckingGPSScalar = GetLinearBatteryLossConstant(len(p.Npos), float32(p.GPSSamplingLossCM))
-	p.BatteryLossesCheckingServerScalar = GetLinearBatteryLossConstant(len(p.Npos), float32(p.ServerSamplingLossCM))
+	p.BatteryCharges = GetLinearBatteryValues(len(p.NodeEntryTimes))
+	p.BatteryLosses = GetLinearBatteryLossConstant(len(p.NodeEntryTimes), float32(p.NaturalLossCM))
+	p.BatteryLossesCheckingSensorScalar = GetLinearBatteryLossConstant(len(p.NodeEntryTimes), float32(p.SensorSamplingLossCM))
+	p.BatteryLossesCheckingGPSScalar = GetLinearBatteryLossConstant(len(p.NodeEntryTimes), float32(p.GPSSamplingLossCM))
+	p.BatteryLossesCheckingServerScalar = GetLinearBatteryLossConstant(len(p.NodeEntryTimes), float32(p.ServerSamplingLossCM))
 	p.Attractions = make([]*Attraction, p.NumAtt)
 
-	readCSV(p)
+	readSensorCSV(p)
+	readMovementCSV(p)
+
 
 }
 
-func readCSV(p *Params) {
+func readSensorCSV(p *Params) {
 
 	in, err := os.Open(p.SensorPath)
 	if err != nil {
 		println("error opening file")
 	}
 	defer in.Close()
-
+	fmt.Printf("Reading Sensor Files\n")
 	r := csv.NewReader(in)
 	r.FieldsPerRecord = -1
 	record, err := r.ReadAll()
@@ -692,7 +817,10 @@ func readCSV(p *Params) {
 
 
 	i := 1
+	fmt.Printf("Sensor CSV Processing\n")
 	for i < len(record) {
+
+
 		x, _ := strconv.ParseInt(record[i][0], 10, 32);
 		y, _ := strconv.ParseInt(record[i][1], 10, 32);
 
@@ -705,8 +833,60 @@ func readCSV(p *Params) {
 			j += 1
 		}
 		i++
+
+		if(i % 1000 == 0) {
+			prog := int(float32(i)/float32(len(record))*100)
+			fmt.Printf("\rProgress [%s%s] %d ", strings.Repeat("=", prog), strings.Repeat(".", 100-prog), prog)
+		}
 	}
+	fmt.Printf("\n")
 }
+
+
+func readMovementCSV(p *Params) {
+
+	in, err := os.Open(p.MovementPath)
+	if err != nil {
+		println("error opening file")
+	}
+	defer in.Close()
+
+	r := csv.NewReader(in)
+	r.FieldsPerRecord = -1
+	record, err := r.ReadAll()
+
+
+	timeSteps := len(record)
+
+
+	p.NodeMovements = make([][]Tuple, p.TotalNodes)
+	for i := range p.NodeMovements {
+		p.NodeMovements[i] = make([]Tuple, timeSteps)
+	}
+
+
+	time := 0
+	fmt.Printf("Movement CSV Processing %d TimeSteps for %d Nodes  %d\n", len(record), len(record[0])/2, p.TotalNodes)
+	for time < len(record) {
+		iter := 0
+
+		for iter < len(record[time])-1 {
+			x, _ := strconv.ParseInt(record[time][iter], 10, 32);
+			y, _ := strconv.ParseInt(record[time][iter+1], 10, 32);
+
+			p.NodeMovements[iter/2][time] = Tuple{int(x), int(y)}
+			iter += 2
+		}
+		time++
+
+		if(time % 10 == 0) {
+			prog := int(float32(time)/float32(len(record))*100)
+			fmt.Printf("\rProgress [%s%s] %d ", strings.Repeat("=", prog), strings.Repeat(".", 100-prog), prog)
+		}
+	}
+	fmt.Printf("\n")
+}
+
 
 func RangeInt(min, max int) int { //returns a random number between max and min
 	return rand.Intn(max-min) + min

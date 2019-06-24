@@ -80,7 +80,7 @@ func main() {
 
 	//p.SquareRowCM = getDashedInput("p.SquareRowCM")
 	//p.SquareColCM = getDashedInput("p.SquareColCM")
-	p.NumNodes = cps.GetDashedInput("numNodes", p)
+	p.TotalNodes = cps.GetDashedInput("numNodes", p)
 	//numStoredSamples = getDashedInput("numStoredSamples")
 	p.MaxX = cps.GetDashedInput("maxX", p)
 	p.MaxY = cps.GetDashedInput("maxY", p)
@@ -185,11 +185,11 @@ func main() {
 		Vn[i] = rand.NormFloat64() * -.5
 	}
 
-	if p.NumNodes > p.NumNodeNodes {
-		for i := 0; i < p.NumNodes-p.NumNodeNodes; i++ {
+	if p.TotalNodes > p.CurrentNodes {
+		for i := 0; i < p.TotalNodes-p.CurrentNodes; i++ {
 
-			//p.Npos = append(p.Npos, []int{rangeInt(1, p.MaxX), rangeInt(1, p.MaxY), 0})
-			p.Npos = append(p.Npos, []int{0, 0, 0})
+			//p.NodeEntryTimes = append(p.NodeEntryTimes, []int{rangeInt(1, p.MaxX), rangeInt(1, p.MaxY), 0})
+			p.NodeEntryTimes = append(p.NodeEntryTimes, []int{0, 0, 0})
 		}
 	}
 
@@ -215,7 +215,7 @@ func main() {
 
 	//Printing important information to the p.Grid log file
 	//fmt.Fprintln(p.GridFile, "Grid:", p.SquareRowCM, "x", p.SquareColCM)
-	//fmt.Fprintln(p.GridFile, "Total Number of Nodes:", (p.NumNodes + numSuperNodes))
+	//fmt.Fprintln(p.GridFile, "Total Number of Nodes:", (p.TotalNodes + numSuperNodes))
 	//fmt.Fprintln(p.GridFile, "Runs:", iterations_of_event)
 
 
@@ -516,9 +516,9 @@ func main() {
 }
 
 func makeNodes() {
-	for i := 0; i < len(p.Npos); i++ {
+	for i := 0; i < len(p.NodeEntryTimes); i++ {
 
-		if p.Iterations_used == p.Npos[i][2] {
+		if p.Iterations_used == p.NodeEntryTimes[i][2] {
 
 			var initHistory = make([]float32, p.NumStoredSamples)
 
@@ -714,7 +714,7 @@ func printGrid(g [][]*cps.Square) bytes.Buffer {
 	return buffer
 }
 
-//Saves the current p.NumNodes of each Square into a buffer
+//Saves the current p.TotalNodes of each Square into a buffer
 //to print to the file
 func printGridNodes(g [][]*cps.Square) bytes.Buffer {
 	var buffer bytes.Buffer

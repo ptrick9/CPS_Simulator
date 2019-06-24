@@ -77,7 +77,7 @@ func main() {
 
 	//p.SquareRowCM = getDashedInput("p.SquareRowCM")
 	//p.SquareColCM = getDashedInput("p.SquareColCM")
-	p.NumNodes = cps.GetDashedInput("numNodes", p)
+	p.TotalNodes = cps.GetDashedInput("numNodes", p)
 	//numStoredSamples = getDashedInput("numStoredSamples")
 	p.MaxX = cps.GetDashedInput("maxX", p)
 	p.MaxY = cps.GetDashedInput("maxY", p)
@@ -113,11 +113,11 @@ func main() {
 		Vn[i] = rand.NormFloat64() * -.5
 	}
 
-	if p.NumNodes > p.NumNodeNodes {
-		for i := 0; i < p.NumNodes-p.NumNodeNodes; i++ {
+	if p.TotalNodes > p.CurrentNodes {
+		for i := 0; i < p.TotalNodes-p.CurrentNodes; i++ {
 
-			//p.Npos = append(p.Npos, []int{rangeInt(1, p.MaxX), rangeInt(1, p.MaxY), 0})
-			p.Npos = append(p.Npos, []int{0, 0, 0})
+			//p.NodeEntryTimes = append(p.NodeEntryTimes, []int{rangeInt(1, p.MaxX), rangeInt(1, p.MaxY), 0})
+			p.NodeEntryTimes = append(p.NodeEntryTimes, []int{0, 0, 0})
 		}
 	}
 
@@ -128,12 +128,13 @@ func main() {
 	p.Iterations_of_event = 200
 	p.EstimatedPingsNeeded = 10200
 
+
 	cps.SetupFiles(p)
 	cps.SetupParameters(p)
 
 	//Printing important information to the p.Grid log file
 	//fmt.Fprintln(p.GridFile, "Grid:", p.SquareRowCM, "x", p.SquareColCM)
-	//fmt.Fprintln(p.GridFile, "Total Number of Nodes:", (p.NumNodes + numSuperNodes))
+	//fmt.Fprintln(p.GridFile, "Total Number of Nodes:", (p.TotalNodes + numSuperNodes))
 	//fmt.Fprintln(p.GridFile, "Runs:", iterations_of_event)
 
 	fmt.Println("xDiv is ", p.XDiv, " yDiv is ", p.YDiv, " square capacity is ", p.SquareCapacity)
@@ -158,6 +159,14 @@ func main() {
 
 	iters := 0
 	p.CurrTime = 0
+
+
+	if p.CSVMovement {
+		cps.SetupCSVNodes(p)
+	} else {
+		cps.SetupRandomNodes(p)
+	}
+
 	for iters = 0; iters < p.Iterations_of_event && !p.FoundBomb; iters++ {
 
 		for i := 0; i < len(p.SensorTimes); i++ {
@@ -167,7 +176,9 @@ func main() {
 		}
 		fmt.Printf("Current time: %d\n", p.CurrTime)
 
-		makeNodes()
+
+
+
 		//fmt.Println(iterations_used)
 		fmt.Printf("\rRunning Simulator iteration %d\\%v", iters, p.Iterations_of_event)
 		if p.PositionPrint {
@@ -202,8 +213,11 @@ func main() {
 					p.NodeList[i].HasCheckedSensor = true
 					p.NodeList[i].Sitting = 0
 				}
-				p.NodeList[i].GetReadingsCSV(p)
-				p.NodeList[i].GetReadings(p)
+				if(p.CSVSensor) {
+					p.NodeList[i].GetReadingsCSV(p)
+				} else {
+					p.NodeList[i].GetReadings(p)
+				}
 			//}(i)
 		}
 		//wg.Wait()
@@ -213,7 +227,12 @@ func main() {
 
 		fmt.Fprintln(p.EnergyFile, "Amount:", len(p.NodeList))
 
-		cps.HandleMovement(p)
+
+		if p.CSVMovement {
+			cps.HandleMovementCSV(p)
+		} else {
+			cps.HandleMovement(p)
+		}
 
 		fmt.Fprintln(p.RoutingFile, "Amount:", p.NumSuperNodes)
 
@@ -283,58 +302,6 @@ func main() {
 }
 
 
-//MakeNodes creates all of the nodes in the simulator and stores them into NodeList
-func makeNodes() {
-	for i := 0; i < len(p.Npos); i++ {
-
-		if p.Iterations_used == p.Npos[i][2] {
-
-			var initHistory = make([]float32, p.NumStoredSamples)
-
-			xx := rangeInt(1, p.MaxX)
-			yy := rangeInt(1, p.MaxY)
-			for p.BoolGrid[xx][yy] == true {
-				xx = rangeInt(1, p.MaxX)
-				yy = rangeInt(1, p.MaxY)
-			}
-
-			p.NodeList = append(p.NodeList, cps.NodeImpl{X: xx, Y: yy, Id: len(p.NodeList), SampleHistory: initHistory, Concentration: 0,
-				Cascade: i, Battery: p.BatteryCharges[i], BatteryLossScalar: p.BatteryLosses[i],
-				BatteryLossCheckingSensorScalar: p.BatteryLossesCheckingSensorScalar[i],
-				BatteryLossGPSScalar:            p.BatteryLossesCheckingGPSScalar[i],
-				BatteryLossCheckingServerScalar: p.BatteryLossesCheckingServerScalar[i]})
-
-			p.NodeList[len(p.NodeList)-1].SetConcentration(((1000) / (math.Pow((float64(p.NodeList[len(p.NodeList)-1].GeoDist(*p.B))/0.2)*0.25, 1.5))))
-
-			curNode := p.NodeList[len(p.NodeList)-1] //variable to keep track of current node being added
-
-			//values to determine coefficients
-			curNode.SetS0(rand.Float64()*0.2 + 0.1)
-			curNode.SetS1(rand.Float64()*0.2 + 0.1)
-			curNode.SetS2(rand.Float64()*0.2 + 0.1)
-			//values to determine error in coefficients
-			s0, s1, s2 := curNode.GetCoefficients()
-			curNode.SetE0(rand.Float64() * 0.1 * p.ErrorModifierCM * s0)
-			curNode.SetE1(rand.Float64() * 0.1 * p.ErrorModifierCM * s1)
-			curNode.SetE2(rand.Float64() * 0.1 * p.ErrorModifierCM * s2)
-			//Values to determine error in exponents
-			curNode.SetET1(p.Tau1 * rand.Float64() * p.ErrorModifierCM * 0.05)
-			curNode.SetET2(p.Tau1 * rand.Float64() * p.ErrorModifierCM * 0.05)
-
-			//set node time and initial sensitivity
-			curNode.NodeTime = 0
-			curNode.InitialSensitivity = s0 + (s1)*math.Exp(-float64(curNode.NodeTime)/p.Tau1) + (s2)*math.Exp(-float64(curNode.NodeTime)/p.Tau2)
-			curNode.Sensitivity = curNode.InitialSensitivity
-
-			p.NodeList[len(p.NodeList)-1] = curNode
-
-			p.BoolGrid[xx][yy] = true
-		}
-	}
-}
-
-
-//getFlags defines and sets commandline values
 func getFlags() {
 	//p = cps.Params{}
 
@@ -351,6 +318,7 @@ func getFlags() {
 	flag.StringVar(&p.InputFileNameCM, "inputFileName", "Log1_in.txt",
 		"Name of the input text file")
 	flag.StringVar(&p.SensorPath, "sensorPath", "Circle_2D.csv", "Sensor Reading Inputs")
+	flag.StringVar(&p.MovementPath, "movementPath", "Circle_2D.csv", "Movement Inputs")
 	flag.StringVar(&p.OutputFileNameCM, "p.OutputFileName", "Log",
 		"Name of the output text file prefix")
 	flag.Float64Var(&p.NaturalLossCM, "naturalLoss", .005,
@@ -389,6 +357,8 @@ func getFlags() {
 		"Value where if a node gets this reading or higher, it will trigger a detection")
 	flag.Float64Var(&p.ErrorModifierCM, "errorMultiplier", 1.0,
 		"Multiplier for error values in system")
+	flag.BoolVar(&p.CSVSensor, "csvSensor", true, "Read Sensor Values from CSV")
+	flag.BoolVar(&p.CSVMovement, "csvMove", true, "Read Movements from CSV")
 
 	//Range 1, 2, or 4
 	//Currently works for only a few numbers, can be easily expanded but is not currently dynamic
@@ -465,11 +435,6 @@ func getFlags() {
 	//fmt.Println("tail:", flag.Args())
 }
 
-
-//rangeInt returns a random number between max and min
-func rangeInt(min, max int) int {
-	return rand.Intn(max-min) + min
-}
 
 //printGrid saves the current measurements of each Square into a buffer to print into the file
 func printGrid(g [][]*cps.Square) bytes.Buffer {

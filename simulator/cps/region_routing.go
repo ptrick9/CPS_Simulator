@@ -218,7 +218,7 @@ func GenerateRouting(p *Params, r *RegionParams) {
 
 		bottom_right := Tuple{temp.X, y_test.Y - 1}
 
-		//intln(top_left.X, bottom_right.X, top_left.Y, bottom_right.Y)
+		//fmt.Println(top_left.X, bottom_right.X, top_left.Y, bottom_right.Y)
 
 		new_square := RoutingSquare{top_left.X, bottom_right.X, top_left.Y, bottom_right.Y, true, id_counter, make([]Tuple, 0)}
 		id_counter++
@@ -279,6 +279,7 @@ func GenerateRouting(p *Params, r *RegionParams) {
 	//fmt.Println(r.Border_dict)
 
 	//Cutting takes place in this loop
+
 	for true {
 		rebuilt := false
 

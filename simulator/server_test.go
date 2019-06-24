@@ -83,7 +83,7 @@ func TestUpdateSquareNumNodes(t *testing.T) {
 	p.Server = cps.FusionCenter{&p, nil, nil, nil, nil, nil, nil}
 	srv := p.Server
 	p.NodeList = make([]cps.NodeImpl, 2)
-	p.NumNodes = 2
+	p.TotalNodes = 2
 	p.YDiv = 2
 	p.XDiv = 2
 	makeNodesForTest(&p)
@@ -210,9 +210,9 @@ func TestPrintStats(t *testing.T) {
 
 func makeNodesForTest(p *cps.Params) {
 	//p := cps.Params{}
-	for i := 0; i < len(p.Npos); i++ {
+	for i := 0; i < len(p.NodeEntryTimes); i++ {
 
-		if p.Iterations_used == p.Npos[i][2] {
+		if p.Iterations_used == p.NodeEntryTimes[i][2] {
 
 			var initHistory = make([]float32, p.NumStoredSamples)
 
