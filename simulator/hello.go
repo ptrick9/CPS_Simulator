@@ -1,7 +1,7 @@
 package main
 
 import (
-	"./cps"
+	"CPS_Simulator/simulator/cps"
 	"bytes"
 	"flag"
 	"fmt"
@@ -234,7 +234,7 @@ func main() {
 
 			p.Grid[i][j] = &cps.Square{i, j, 0.0, 0, make([]float32, p.NumGridSamples),
 				p.NumGridSamples, 0.0, 0, 0, false,
-				0.0, 0.0, false, travelList}
+				0.0, 0.0, false, travelList, sync.Mutex{}}
 		}
 	}
 

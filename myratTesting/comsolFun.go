@@ -72,10 +72,8 @@ func main() {
 		defer pprof.StopCPUProfile()
 	}
 
-	//fileName = p.InputFileNameCM
 	p.FileName = p.InputFileNameCM
 	cps.GetListedInput(p)
-	//os.Exit(0)
 
 	//p.SquareRowCM = getDashedInput("p.SquareRowCM")
 	//p.SquareColCM = getDashedInput("p.SquareColCM")
@@ -103,11 +101,10 @@ func main() {
 	p.SquareRowCM = p.SquareRowCM
 	p.SquareColCM = p.SquareColCM
 
+	//Initializers
 	cps.MakeBoolGrid(p)
-
 	p.Server.Init()
 	cps.ReadMap(p, r)
-
 	cps.GenerateRouting(p, r)
 
 	//This is where the text file reading ends
@@ -132,7 +129,6 @@ func main() {
 	p.EstimatedPingsNeeded = 10200
 
 	cps.SetupFiles(p)
-
 	cps.SetupParameters(p)
 
 	//Printing important information to the p.Grid log file
@@ -158,11 +154,6 @@ func main() {
 
 	fmt.Println("Super Node Type", p.SuperNodeType)
 	fmt.Println("Dimensions: ", p.MaxX, "x", p.MaxY)
-	//fmt.Println(p.SensorTimes)
-
-	//This function initializes the super nodes in the scheduler's SNodeList
-	//scheduler.MakeSuperNodes(p)
-
 	fmt.Printf("Running Simulator iteration %d\\%v", 0, p.Iterations_of_event)
 
 	iters := 0
@@ -192,7 +183,6 @@ func main() {
 				cps.FillInBufferCurrent(p)
 				cps.FillPointsToBoard(p)
 				cps.FillInMap(p)
-				//writeBordMapToFile()
 				i = len(p.Poispos)
 			}
 		}

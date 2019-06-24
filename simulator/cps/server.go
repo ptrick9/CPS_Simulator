@@ -75,10 +75,9 @@ func (s FusionCenter) MakeGrid() {
 //CheckDetections iterates through the grid and validates detections by nodes
 func (s FusionCenter) CheckDetections(p *Params, scheduler *Scheduler) {
 	r := &RegionParams{}
-	//scheduler := Scheduler{}
 
-	for x := 0; x < p.SquareColCM; x++ { //k
-		for y := 0; y < p.SquareRowCM; y++ { //z
+	for x := 0; x < p.SquareColCM; x++ {
+		for y := 0; y < p.SquareRowCM; y++ {
 			bombSquare := p.Grid[p.B.X/p.XDiv][p.B.Y/p.YDiv]
 			bs_y := float64(p.B.Y / p.YDiv)
 			bs_x := float64(p.B.X / p.XDiv)
@@ -89,12 +88,14 @@ func (s FusionCenter) CheckDetections(p *Params, scheduler *Scheduler) {
 			//check for false negatives/positives
 			if p.Grid[x][y].NumNodes > 0 && float64(p.Grid[x][y].Avg) < p.DetectionThreshold && bombSquare == p.Grid[x][y] && !p.Grid[x][y].HasDetected {
 				//this is a p.Grid false negative
+				fmt.Println("False neg")
 				fmt.Fprintln(p.DriftFile, "Grid False Negative Avg:", p.Grid[x][y].Avg, "Square Row:", y, "Square Column:", x, "Iteration:", iters)
 				p.Grid[x][y].HasDetected = false
 			}
 
 			if float64(p.Grid[x][y].Avg) >= p.DetectionThreshold && (math.Abs(bs_y-float64(y)) >= 1.1 && math.Abs(bs_x-float64(x)) >= 1.1) && !p.Grid[x][y].HasDetected {
 				//this is a false positive
+				fmt.Println("False pos")
 				fmt.Fprintln(p.DriftFile, "Grid False Positive Avg:", p.Grid[x][y].Avg, "Square Row:", y, "Square Column:", x, "Iteration:", iters)
 				//report to supernodes
 				xLoc := (x * p.XDiv) + int(p.XDiv/2)
@@ -106,6 +107,7 @@ func (s FusionCenter) CheckDetections(p *Params, scheduler *Scheduler) {
 
 			if float64(p.Grid[x][y].Avg) >= p.DetectionThreshold && (math.Abs(bs_y-float64(y)) <= 1.1 && math.Abs(bs_x-float64(x)) <= 1.1) && !p.Grid[x][y].HasDetected {
 				//this is a true positive
+				fmt.Println("True pos")
 				fmt.Fprintln(p.DriftFile, "Grid True Positive Avg:", p.Grid[x][y].Avg, "Square Row:", y, "Square Column:", x, "Iteration:", iters)
 				//report to supernodes
 				xLoc := (x * p.XDiv) + int(p.XDiv/2)
