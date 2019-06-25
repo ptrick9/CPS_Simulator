@@ -13,7 +13,8 @@ import (
 
 func TestInit(t *testing.T) {
 	p := cps.Params{}
-	p.Server = cps.FusionCenter{&p, nil, nil, nil, nil, nil, nil}
+	r := cps.RegionParams{}
+	p.Server = cps.FusionCenter{&p, &r, nil, nil, nil, nil, nil, nil, nil}
 	srv := p.Server
 	srv.Init()
 
@@ -53,10 +54,11 @@ func TestGetSquareAverage(t *testing.T) {
 
 func TestUpdateSquareAvg(t *testing.T) {
 	p := cps.Params{}
+	r := cps.RegionParams{}
 	p.YDiv = 1
 	p.XDiv = 1
 	p.NumGridSamples = 1
-	p.Server = cps.FusionCenter{&p, nil, nil, nil, nil, nil, nil}
+	p.Server = cps.FusionCenter{&p, &r, nil, nil, nil, nil, nil, nil, nil}
 	srv := p.Server
 	rd := cps.Reading{10,0,0,0,0}
 	travelList := make([]bool, 0)
@@ -80,7 +82,8 @@ func TestUpdateSquareAvg(t *testing.T) {
 
 func TestUpdateSquareNumNodes(t *testing.T) {
 	p := cps.Params{}
-	p.Server = cps.FusionCenter{&p, nil, nil, nil, nil, nil, nil}
+	r := cps.RegionParams{}
+	p.Server = cps.FusionCenter{&p, &r, nil, nil, nil, nil, nil, nil,nil}
 	srv := p.Server
 	p.NodeList = make([]cps.NodeImpl, 2)
 	p.TotalNodes = 2
@@ -132,7 +135,8 @@ func TestUpdateSquareNumNodes(t *testing.T) {
 
 func TestSend(t *testing.T) {
 	p := cps.Params{}
-	p.Server = cps.FusionCenter{&p, nil, nil, nil, nil, nil, nil}
+	r := cps.RegionParams{}
+	p.Server = cps.FusionCenter{&p, &r, nil, nil, nil, nil, nil, nil,nil}
 	srv := p.Server
 	//rd := cps.Reading{0,0,0,0,0}
 	p.XDiv = 1
@@ -166,8 +170,13 @@ func TestSend(t *testing.T) {
 
 func TestCalcStats(t *testing.T) {
 	p := cps.Params{}
-	p.Server = cps.FusionCenter{&p, nil, nil, nil, nil, nil, nil}
+	r := cps.RegionParams{}
+	//getFlagsForTest(&p)
+	//cps.SetupParameters(&p)
+
+	p.Server = cps.FusionCenter{&p, &r, nil, nil, nil, nil, nil, nil, nil}
 	srv := p.Server
+	srv.Init()
 	srv.Times = make(map[int]bool)
 	srv.Times[0] = true
 	srv.Times[1] = true
@@ -260,9 +269,10 @@ func makeNodesForTest(p *cps.Params) {
 
 func TestMakeGrid(t *testing.T) {
 	p := cps.Params{}
+	r := cps.RegionParams{}
 	p.SquareColCM = 5
 	p.SquareRowCM = 5
-	p.Server = cps.FusionCenter{&p,nil,nil,nil,nil,nil,nil}
+	p.Server = cps.FusionCenter{&p,&r, nil,nil,nil,nil,nil,nil, nil}
 	srv := p.Server
 
 	srv.MakeGrid()
@@ -280,8 +290,10 @@ func TestMakeGrid(t *testing.T) {
 
 func TestMakeSuperNodes(t *testing.T) {
 	p := cps.Params{}
-	p.Server = cps.FusionCenter{&p,nil,nil,nil,nil,nil,nil}
+	r := cps.RegionParams{}
+	p.Server = cps.FusionCenter{&p,&r, nil,nil,nil,nil,nil,nil, nil}
 	srv := p.Server
+	srv.Init()
 
 	p.Height = 2
 	p.Width = 2
@@ -297,36 +309,55 @@ func TestMakeSuperNodes(t *testing.T) {
 
 func TestCheckDetections(t *testing.T) {
 	p := cps.Params{}
-	p.Server = cps.FusionCenter{&p,nil,nil,nil,nil,nil,nil}
+	r := cps.RegionParams{}
+	p.Server = cps.FusionCenter{&p,&r,nil,nil,nil,nil,nil, nil, nil}
 	srv := p.Server
+	srv.Init()
+	p.YDiv = 1
+	p.XDiv = 1
 	getFlagsForTest(&p)
 	cps.SetupParameters(&p)
 
 	p.B = &cps.Bomb{1,1}
 
-	sch := &cps.Scheduler{}
+	//sch := srv.Sch//sch := &cps.Scheduler{}
 	p.NodeList = append(p.NodeList, cps.NodeImpl{X: 1, Y: 1, Id: len(p.NodeList), SampleHistory: []float32{}, Concentration: 0,
 		Cascade: 0, Battery: 0, BatteryLossScalar: 0,
 		BatteryLossCheckingSensorScalar: 0,
 		BatteryLossGPSScalar: 0, BatteryLossCheckingServerScalar: 0})
-	sch.SNodeList = append(sch.SNodeList, &cps.Sn_zero{&cps.Supern{&cps.NodeImpl{X: 0, Y: 0, Id: 0}, 1,
+	srv.Sch.SNodeList = append(srv.Sch.SNodeList, &cps.Sn_zero{&p,&r,&cps.Supern{&p,&r, &cps.NodeImpl{X: 0, Y: 0, Id: 0}, 1,
 		1, p.SuperNodeRadius, p.SuperNodeRadius, 0, make([]cps.Coord, 1), make([]cps.Coord, 0),
 		cps.Coord{X: 1, Y: 1}, 0, 0, 0, 0, 0, make([]cps.Coord, 0)}})
 
 	srv.MakeGrid()
 
 	p.Grid[0][0].Avg = 4
-	srv.CheckDetections(&p, sch)
+	srv.CheckDetections()
 
 
-	if p.Grid[0][0].HasDetected {
-		t.Errorf("E")
+	if !p.Grid[0][0].HasDetected {
+		t.Errorf("True positive missed!")
 	}
 
 }
 
+func TestGetMedian(t *testing.T) {
+	p := cps.Params{}
+	srv := p.Server
+	arr := []float64{ 1.0, 2.0, 3.0, 4.0 }
+	median := srv.GetMedian(arr)
+	if median != 2.5 {
+		t.Errorf("Incorrect median, got %v, wanted %v", median, 2.5)
+	}
+	arr = []float64{ 1.0, 2.0, 3.0, 4.0 , 5.0}
+	median = srv.GetMedian(arr)
+	if median != 3 {
+		t.Errorf("Incorrect median, got %v, wanted %v", median, 3.0)
+	}
+}
+
 func getFlagsForTest(p *cps.Params) {
-	flag.IntVar(&p.NumNodes, "NumNodes", 3, "number of nodes")
+	//flag.IntVar(&p.NumNodes, "NumNodes", 3, "number of nodes")
 	flag.IntVar(&p.MaxX, "MaxX", 10, "Maximum X value")
 	flag.IntVar(&p.MaxY, "MaxY", 10, "Maximum Y value")
 
@@ -404,6 +435,8 @@ func getFlagsForTest(p *cps.Params) {
 	flag.StringVar(&p.OutRoutingStatsNameCM, "outRoutingStatsName", "routingStats.txt", "Name of the output file for stats")
 
 	flag.BoolVar(&p.RegionRouting, "regionRouting", true, "True if you want to use the new routing algorithm with regions and cutting")
+	flag.BoolVar(&p.CSVMovement, "CSVMovement", false, "True if you want to use the csv for node movement")
+	flag.BoolVar(&p.CSVSensor, "CSVSensor", false, "True if you want to use the csv for node movement")
 
 	flag.Parse()
 	fmt.Println("Natural Loss: ", p.NaturalLossCM)

@@ -51,7 +51,7 @@ func main() {
 	p = &cps.Params{}
 	r = &cps.RegionParams{}
 
-	p.Server = cps.FusionCenter{p, r, nil, nil, nil, nil, nil, nil}
+	p.Server = cps.FusionCenter{p, r, nil, nil, nil, nil, nil, nil, nil}
 
 	p.Tau1 = 10
 	p.Tau2 = 500
@@ -127,7 +127,7 @@ func main() {
 	p.ThreshHoldBatteryToHave = 30.0 //This is the threshold battery to have for all phones
 
 	p.Iterations_used = 0
-	p.Iterations_of_event = 200
+	p.Iterations_of_event = 400
 	p.EstimatedPingsNeeded = 10200
 
 
@@ -210,15 +210,15 @@ func main() {
 			//go func(i int) {
 			//	defer wg.Done()
 				if !p.NoEnergyModelCM {
-					p.NodeList[i].BatteryLossMostDynamic(p)
+					p.NodeList[i].BatteryLossMostDynamic()
 				} else {
 					p.NodeList[i].HasCheckedSensor = true
 					p.NodeList[i].Sitting = 0
 				}
 				if(p.CSVSensor) {
-					p.NodeList[i].GetReadingsCSV(p)
+					p.NodeList[i].GetReadingsCSV()
 				} else {
-					p.NodeList[i].GetReadings(p)
+					p.NodeList[i].GetReadings()
 				}
 			//}(i)
 		}
@@ -359,7 +359,7 @@ func getFlags() {
 		"Value where if a node gets this reading or higher, it will trigger a detection")
 	flag.Float64Var(&p.ErrorModifierCM, "errorMultiplier", 1.0,
 		"Multiplier for error values in system")
-	flag.BoolVar(&p.CSVSensor, "csvSensor", true, "Read Sensor Values from CSV")
+	flag.BoolVar(&p.CSVSensor, "csvSensor", false, "Read Sensor Values from CSV")
 	flag.BoolVar(&p.CSVMovement, "csvMove", true, "Read Movements from CSV")
 
 	//Range 1, 2, or 4

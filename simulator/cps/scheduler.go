@@ -8,6 +8,8 @@ import (
 //It is responsible for adding the points of interest to the super nodes, this
 //	process differs on the type of super node
 type Scheduler struct {
+	P *Params
+	R *RegionParams
 	SNodeList []SuperNodeParent
 	//SNodeList []Supern
 }
@@ -16,8 +18,9 @@ type Scheduler struct {
 //	its routePath
 //The scheduler removes all the nodes' points of interest and redistributes them again
 //	attempting to make the routing process more efficient
-func (s *Scheduler) Optimize(pp *Params, r *RegionParams) {
-
+func (s *Scheduler) Optimize() {
+	//pp := s.P
+	//r := s.R
 	points := make([]Coord, 0)
 
 	//Loops through the super node list appending every points to the newly created points list
@@ -42,23 +45,22 @@ func (s *Scheduler) Optimize(pp *Params, r *RegionParams) {
 
 	//Adds the points back into the simulator
 	for p, _ := range points {
-		s.AddRoutePoint(points[p], pp, r)
+		s.AddRoutePoint(points[p])
 	}
 }
 
 //This function determines which super node adding method should be called
-
-func (s *Scheduler) AddRoutePoint(c Coord, p *Params, r *RegionParams) {
-	if p.SuperNodeType == 0 {
-		s.AddRoutePoint0(c, p, r)
-	} else if p.SuperNodeType == 1 {
-		s.AddRoutePoint1(c, p, r)
-	} else if p.SuperNodeType == 2 || p.SuperNodeType == 3 || p.SuperNodeType == 4 {
-		s.AddRoutePoint1_circle(c, p, r)
-	} else if p.SuperNodeType == 5 {
-		s.AddRoutePoint1_regions(c, p, r)
-	} else if p.SuperNodeType == 6 || p.SuperNodeType == 7 {
-		s.AddRoutePoint2(c, p, r)
+func (s *Scheduler) AddRoutePoint(c Coord) {
+	if s.P.SuperNodeType == 0 {
+		s.AddRoutePoint0(c)
+	} else if s.P.SuperNodeType == 1 {
+		s.AddRoutePoint1(c)
+	} else if s.P.SuperNodeType == 2 || s.P.SuperNodeType == 3 || s.P.SuperNodeType == 4 {
+		s.AddRoutePoint1_circle(c)
+	} else if s.P.SuperNodeType == 5 {
+		s.AddRoutePoint1_regions(c)
+	} else if s.P.SuperNodeType == 6 || s.P.SuperNodeType == 7 {
+		s.AddRoutePoint2(c)
 	}
 }
 
@@ -66,7 +68,7 @@ func (s *Scheduler) AddRoutePoint(c Coord, p *Params, r *RegionParams) {
 //Since super node 0 operates on the default scheduling algorithm the
 //	scheduler adds the new point of interest to the super node who's
 //	final destination is closest to the point
-func (s *Scheduler) AddRoutePoint0(c Coord, p *Params, r *RegionParams) {
+func (s *Scheduler) AddRoutePoint0(c Coord) {
 	dist := 100000.0
 	nodeDist := 100000.0
 	closestNode := -1
@@ -92,7 +94,7 @@ func (s *Scheduler) AddRoutePoint0(c Coord, p *Params, r *RegionParams) {
 		}
 	}
 	//Tells that super node to add that point
-	s.SNodeList[closestNode].AddRoutePoint(c, p, r)
+	s.SNodeList[closestNode].AddRoutePoint(c)
 }
 
 //Adds a point of interest to a super node of type 1
@@ -103,7 +105,7 @@ func (s *Scheduler) AddRoutePoint0(c Coord, p *Params, r *RegionParams) {
 //This prioritizes the proximity of the super nodes in determining which
 //	one will travel to the newly added point, but also adds in the distance that
 //	super node is currently attempting to travel
-func (s *Scheduler) AddRoutePoint1(c Coord, p *Params, r *RegionParams) {
+func (s *Scheduler) AddRoutePoint1(c Coord) {
 	dist := 10000.0
 	closestNode := -1
 	nodeDist := 0.0
@@ -139,13 +141,13 @@ func (s *Scheduler) AddRoutePoint1(c Coord, p *Params, r *RegionParams) {
 		}
 	}
 	//Tells that super node to add that point to the decided super node
-	s.SNodeList[closestNode].AddRoutePoint(c, p, r)
+	s.SNodeList[closestNode].AddRoutePoint(c)
 }
 
 //This is a variation on the super node 1 adding function
 //This restricts the super node to a circular region that covers an area of the
 //	entire grid
-func (s *Scheduler) AddRoutePoint1_circle(c Coord, p *Params, r *RegionParams) {
+func (s *Scheduler) AddRoutePoint1_circle(c Coord) {
 	circleNode := -1
 
 	//Loops through the list of super nodes to find the optimal super node to visit
@@ -161,7 +163,7 @@ func (s *Scheduler) AddRoutePoint1_circle(c Coord, p *Params, r *RegionParams) {
 		//	the point has been claimed by another super node
 		//If another super node is currently chosen to visit the newly added point the
 		//	length of the super nodes' routePaths are compared
-		if nodeDist <= p.SuperNodeRadius {
+		if nodeDist <= s.P.SuperNodeRadius {
 			if circleNode != -1 {
 				if ClosestDist(c, s.SNodeList[n].GetRoutePath()) < ClosestDist(c, s.SNodeList[circleNode].GetRoutePath()) {
 					circleNode = n
@@ -172,24 +174,24 @@ func (s *Scheduler) AddRoutePoint1_circle(c Coord, p *Params, r *RegionParams) {
 		}
 	}
 	//Tells that super node to add that point to the decided super node
-	s.SNodeList[circleNode].AddRoutePoint(c, p, r)
+	s.SNodeList[circleNode].AddRoutePoint(c)
 }
 
 //This is a variation on the super node 1 adding function
 //This restricts the super node to a quadrant of the grid that only it covers
-func (s *Scheduler) AddRoutePoint1_regions(c Coord, p *Params, r *RegionParams) {
+func (s *Scheduler) AddRoutePoint1_regions(c Coord) {
 	//Boundary conditions
-	if c.X < (p.MaxX / 2) {
-		if c.Y < (p.MaxY / 2) {
-			s.SNodeList[0].AddRoutePoint(c, p, r)
+	if c.X < (s.P.MaxX / 2) {
+		if c.Y < (s.P.MaxY / 2) {
+			s.SNodeList[0].AddRoutePoint(c)
 		} else {
-			s.SNodeList[2].AddRoutePoint(c, p, r)
+			s.SNodeList[2].AddRoutePoint(c)
 		}
 	} else {
-		if c.Y < (p.MaxY / 2) {
-			s.SNodeList[1].AddRoutePoint(c, p, r)
+		if c.Y < (s.P.MaxY / 2) {
+			s.SNodeList[1].AddRoutePoint(c)
 		} else {
-			s.SNodeList[3].AddRoutePoint(c, p, r)
+			s.SNodeList[3].AddRoutePoint(c)
 		}
 	}
 }
@@ -198,7 +200,7 @@ func (s *Scheduler) AddRoutePoint1_regions(c Coord, p *Params, r *RegionParams) 
 //Super nodes of type 2 schedule their routes within regions so this
 //	function add the point to the super node whose center is closest
 //	to the point
-func (s *Scheduler) AddRoutePoint2(c Coord, p *Params, r *RegionParams) {
+func (s *Scheduler) AddRoutePoint2(c Coord) {
 	dist := 1000.0
 	closestNode := -1
 
@@ -212,7 +214,7 @@ func (s *Scheduler) AddRoutePoint2(c Coord, p *Params, r *RegionParams) {
 	}
 
 	//Tells that super node to add that point
-	s.SNodeList[closestNode].AddRoutePoint(c, p, r)
+	s.SNodeList[closestNode].AddRoutePoint(c)
 }
 
 //This function returns the distance between the specified Coord c
@@ -234,36 +236,37 @@ func ClosestDist(c Coord, list []Coord) float64 {
 	return dist
 }
 
-func (scheduler *Scheduler) MakeSuperNodes(p *Params) {
-	for i := 0; i < p.NumSuperNodes; i++ {
+//MakeSuperNodes generates super nodes and adds them to the super node list within scheduler
+func (scheduler *Scheduler) MakeSuperNodes() {
+	for i := 0; i < scheduler.P.NumSuperNodes; i++ {
 		snode_points := make([]Coord, 1)
 		snode_path := make([]Coord, 0)
 		all_points := make([]Coord, 0)
 
-		if p.SuperNodeType == 0 {
+		if scheduler.P.SuperNodeType == 0 {
 
 			//Defining the starting x and y values for the super node
 			//This super node starts at the middle of the p.Grid
-			nodeCenter, x_val, y_val := MakeCenter1(i, p)
+			nodeCenter, x_val, y_val := MakeCenter1(i, scheduler.P)
 
-			scheduler.SNodeList[i] = &Sn_zero{&Supern{&NodeImpl{X: x_val, Y: y_val, Id: i}, 1,
-				1, p.SuperNodeRadius, p.SuperNodeRadius, 0, snode_points, snode_path,
+			scheduler.SNodeList[i] = &Sn_zero{scheduler.P, scheduler.R,&Supern{scheduler.P, scheduler.R,&NodeImpl{X: x_val, Y: y_val, Id: i}, 1,
+				1, scheduler.P.SuperNodeRadius, scheduler.P.SuperNodeRadius, 0, snode_points, snode_path,
 				nodeCenter, 0, 0, 0, 0, 0, all_points}}
-		} else if (p.SuperNodeType == 6) || (p.SuperNodeType == 7) {
+		} else if (scheduler.P.SuperNodeType == 6) || (scheduler.P.SuperNodeType == 7) {
 			//makeRegionList initializes the regionList for this super node
-			r_list := MakeRegionList(i, p)
+			r_list := MakeRegionList(i, scheduler.P)
 
 			//makeCenter creates the Coord that represents the super node's center
-			nodeCenter, x_val, y_val := MakeCenter2(i, r_list, p)
+			nodeCenter, x_val, y_val := MakeCenter2(i, r_list, scheduler.P)
 
 			//The useRegionList is just initialized to an empty list
 			ur_list := make([]Region, 0)
 
-			scheduler.SNodeList[i] = &Sn_two{&Supern{&NodeImpl{Id: i, X: x_val, Y: y_val}, 1,
-				1, p.SuperNodeRadius, p.SuperNodeRadius, 0, snode_points,
+			scheduler.SNodeList[i] = &Sn_two{&Supern{scheduler.P,scheduler.R,&NodeImpl{Id: i, X: x_val, Y: y_val}, 1,
+				1, scheduler.P.SuperNodeRadius, scheduler.P.SuperNodeRadius, 0, snode_points,
 				snode_path, nodeCenter, 0, 0, 0, 0,
 				1, all_points}, r_list, ur_list}
-		} else if (p.SuperNodeType >= 1) || (p.SuperNodeType <= 5) {
+		} else if (scheduler.P.SuperNodeType >= 1) || (scheduler.P.SuperNodeType <= 5) {
 			nodeCenter := Coord{}
 			x_val := 0
 			y_val := 0
@@ -271,16 +274,16 @@ func (scheduler *Scheduler) MakeSuperNodes(p *Params) {
 			yRad := 0
 
 			//makeCenter creates the Coord that represents the super node's center
-			if p.SuperNodeType == 1 {
-				nodeCenter, x_val, y_val = MakeCenter1(i, p)
-			} else if p.SuperNodeType == 2 || p.SuperNodeType == 5 {
-				nodeCenter, x_val, y_val, xRad, yRad = MakeCenter1_corners(i, p)
-			} else if p.SuperNodeType == 3 {
-				nodeCenter, x_val, y_val, xRad, yRad = MakeCenter1_sides(i, p)
-			} else if p.SuperNodeType == 4 {
-				nodeCenter, x_val, y_val, xRad, yRad = MakeCenter1_largeCorners(i, p)
+			if scheduler.P.SuperNodeType == 1 {
+				nodeCenter, x_val, y_val = MakeCenter1(i, scheduler.P)
+			} else if scheduler.P.SuperNodeType == 2 || scheduler.P.SuperNodeType == 5 {
+				nodeCenter, x_val, y_val, xRad, yRad = MakeCenter1_corners(i, scheduler.P)
+			} else if scheduler.P.SuperNodeType == 3 {
+				nodeCenter, x_val, y_val, xRad, yRad = MakeCenter1_sides(i, scheduler.P)
+			} else if scheduler.P.SuperNodeType == 4 {
+				nodeCenter, x_val, y_val, xRad, yRad = MakeCenter1_largeCorners(i, scheduler.P)
 			}
-			scheduler.SNodeList[i] = &Sn_one{&Supern{&NodeImpl{X: x_val, Y: y_val, Id: i}, 1,
+			scheduler.SNodeList[i] = &Sn_one{&Supern{scheduler.P,scheduler.R, &NodeImpl{X: x_val, Y: y_val, Id: i}, 1,
 				1, xRad, yRad, 0, snode_points, snode_path,
 				nodeCenter, 0, 0,
 				0, 0, 1, all_points}}

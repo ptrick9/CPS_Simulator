@@ -9,15 +9,15 @@ import (
 //	as well as some methods only defined for super nodes
 type SuperNodeParent interface {
 	NodeParent
-	Tick(p *Params, r *RegionParams)
+	Tick()
 
-	PathMove(p *Params)
-	CentMove(p *Params)
+	PathMove()
+	CentMove()
 
 	UpdateLoc()
 
-	AddRoutePoint(Coord, *Params, *RegionParams)
-	UpdatePath(p *Params, r *RegionParams)
+	AddRoutePoint(Coord)
+	UpdatePath()
 	Route(grid [][]*Square, c1 Coord, c2 Coord, list []Coord) []Coord
 
 	IncSquareMoved(int)
@@ -44,6 +44,8 @@ type SuperNodeParent interface {
 //They contain attributes not contained by other nodes
 //	to control their movement through the grid
 type Supern struct {
+	P *Params
+	R *RegionParams
 	*NodeImpl
 	X_speed int
 	Y_speed int
@@ -78,7 +80,7 @@ func (n Supern) String() string {
 //Moves the super node along the path determined by the RoutePath list
 //It also maintains the RoutePoints and RoutePath lists, deleting elements
 //	once they have been visited by the super node
-func (n *Supern) PathMove(p *Params) {
+func (n *Supern) PathMove() {
 
 	//Increase the time of the points that are being travelled to
 	for p, _ := range n.RoutePoints {
@@ -93,12 +95,12 @@ func (n *Supern) PathMove(p *Params) {
 	//If there are enough Coords for the super node to move its full speed it will
 	//If there are not enough Coords in the RoutePath list, the super node will move
 	//	as far as possible
-	if len(n.RoutePath) >= p.SuperNodeSpeed {
-		n.X = n.RoutePath[p.SuperNodeSpeed-1].X
-		n.Y = n.RoutePath[p.SuperNodeSpeed-1].Y
+	if len(n.RoutePath) >= n.P.SuperNodeSpeed {
+		n.X = n.RoutePath[n.P.SuperNodeSpeed-1].X
+		n.Y = n.RoutePath[n.P.SuperNodeSpeed-1].Y
 
 		//Saves the value of the index to remove the Coords
-		removal_index = p.SuperNodeSpeed
+		removal_index = n.P.SuperNodeSpeed
 	} else {
 		n.X = n.RoutePath[len(n.RoutePath)-1].X
 		n.Y = n.RoutePath[len(n.RoutePath)-1].Y
@@ -127,7 +129,7 @@ func (n *Supern) PathMove(p *Params) {
 
 				//If a super node of type 2 is moving towards its center than the squares it
 				//	moves should not count towards it total
-				if (n.RoutePoints[1].X == n.Center.X) && (n.RoutePoints[1].Y == n.Center.Y) && (p.SuperNodeType == 2) {
+				if (n.RoutePoints[1].X == n.Center.X) && (n.RoutePoints[1].Y == n.Center.Y) && (n.P.SuperNodeType == 2) {
 					countSquares = false
 				}
 				//It is then removed from the RoutePoints list
@@ -223,13 +225,13 @@ func (n Supern) Route(grid [][]*Square, c1 Coord, c2 Coord, list []Coord) []Coor
 //	point of the path and then calls path move
 //This allows the super node to have empty RoutePoints and RoutePath
 //	when a new point of interest is added
-func (n *Supern) CentMove(p *Params) {
+func (n *Supern) CentMove() {
 	arr := make([]Coord, 0)
-	arr = AStar(n.RoutePoints[0], n.Center, p)
+	arr = AStar(n.RoutePoints[0], n.Center, n.P)
 	arr = append(arr, n.Center)
 	n.RoutePath = append(n.RoutePath, arr...)
 
-	n.PathMove(p)
+	n.PathMove()
 }
 
 //Updates the location of the super node within the gird

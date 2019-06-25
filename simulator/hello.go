@@ -242,7 +242,7 @@ func main() {
 	fmt.Println("Dimensions: ", p.MaxX, "x", p.MaxY)
 
 	//This function initializes the super nodes in the scheduler's SNodeList
-	scheduler.MakeSuperNodes(p)
+	scheduler.MakeSuperNodes()
 
 	fmt.Printf("Running Simulator iteration %d\\%v", 0, p.Iterations_of_event)
 
@@ -277,12 +277,12 @@ func main() {
 			go func(i int) {
 				defer wg.Done()
 				if !p.NoEnergyModelCM {
-					p.NodeList[i].BatteryLossMostDynamic(p)
+					p.NodeList[i].BatteryLossMostDynamic()
 				} else {
 					p.NodeList[i].HasCheckedSensor = true
 					p.NodeList[i].Sitting = 0
 				}
-				p.NodeList[i].GetReadings(p)
+				p.NodeList[i].GetReadings()
 			}(i)
 		}
 		wg.Wait()
@@ -332,7 +332,7 @@ func main() {
 			length := len(s.GetRoutePoints())
 
 			//The super node executes it's per iteration code
-			s.Tick(p, r)
+			s.Tick()
 
 			//Compares the path lengths to decide if optimization is needed
 			//Optimization will only be done if he optimization requirements are met
@@ -367,7 +367,7 @@ func main() {
 		//Executes the optimization code if the optimize flag is true
 		if optimize {
 			//The scheduler optimizes the paths of each super node
-			scheduler.Optimize(p, r)
+			scheduler.Optimize()
 			//Resets the optimize flag
 			optimize = false
 		}
@@ -402,7 +402,7 @@ func main() {
 					xLoc := (z * p.XDiv) + int(p.XDiv/2)
 					yLoc := (k * p.YDiv) + int(p.YDiv/2)
 					p.CenterCoord = cps.Coord{X: xLoc, Y: yLoc}
-					scheduler.AddRoutePoint(p.CenterCoord, p, r)
+					scheduler.AddRoutePoint(p.CenterCoord)
 					p.Grid[k][z].HasDetected = true
 				}
 
@@ -413,7 +413,7 @@ func main() {
 					xLoc := (z * p.XDiv) + int(p.XDiv/2)
 					yLoc := (k * p.YDiv) + int(p.YDiv/2)
 					p.CenterCoord = cps.Coord{X: xLoc, Y: yLoc}
-					scheduler.AddRoutePoint(p.CenterCoord, p, r)
+					scheduler.AddRoutePoint(p.CenterCoord)
 					p.Grid[k][z].HasDetected = true
 				}
 
