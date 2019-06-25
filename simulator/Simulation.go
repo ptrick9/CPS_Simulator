@@ -205,15 +205,7 @@ func main() {
 			}
 		}
 
-		if p.PositionPrint {
-			amount := 0
-			for i := 0; i < p.CurrentNodes; i ++ {
-				if p.NodeList[i].Valid {
-					amount += 1
-				}
-			}
-			fmt.Fprintln(p.PositionFile, "t= ", p.Iterations_used, " amount= ", amount)
-		}
+
 
 		//start := time.Now()
 
