@@ -197,8 +197,8 @@ func (curNode *NodeImpl) Col(div int) int {
 }
 
 func (curNode *NodeImpl) InBounds(p *Params) bool {
-	if curNode.X < p.Width && curNode.X >= 0 {
-		if curNode.Y < p.Height && curNode.Y >= 0 {
+	if curNode.X < curNode.P.Width && curNode.X >= 0 {
+		if curNode.Y < curNode.P.Height && curNode.Y >= 0 {
 			return true
 		}
 	}
@@ -219,20 +219,20 @@ func (curNode *NodeImpl) Distance(b Bomb) float32 {
 }
 
 // These are the toString methods for battery levels
-func (n Bn) String() string { // extra extra string statements
-	return fmt.Sprintf("x: %v y: %v Xspeed: %v Yspeed: %v Id: %v battery: %v sensor checked: %v sensor checks: %v GPS checked: %v GPS checks: %v server checked: %v server checks: %v buffer: %v ", n.X, n.Y, n.X_speed, n.Y_speed, n.Id, n.Battery, n.HasCheckedSensor, n.TotalChecksSensor, n.HasCheckedGPS, n.TotalChecksGPS, n.HasCheckedServer, n.TotalChecksServer, n.BufferI)
+func (curNode Bn) String() string { // extra extra string statements
+	return fmt.Sprintf("x: %v y: %v Xspeed: %v Yspeed: %v Id: %v battery: %v sensor checked: %v sensor checks: %v GPS checked: %v GPS checks: %v server checked: %v server checks: %v buffer: %v ", curNode.X, curNode.Y, curNode.X_speed, curNode.Y_speed, curNode.Id, curNode.Battery, curNode.HasCheckedSensor, curNode.TotalChecksSensor, curNode.HasCheckedGPS, curNode.TotalChecksGPS, curNode.HasCheckedServer, curNode.TotalChecksServer, curNode.BufferI)
 }
 
-func (n Wn) String() string {
-	return fmt.Sprintf("x: %v y: %v speed: %v dir: %v Id: %v battery: %v sensor checked: %v sensor checks: %v GPS checked: %v GPS checks: %v server checked: %v server checks: %v buffer: %v ", n.X, n.Y, n.Speed, n.Dir, n.Id, n.Battery, n.HasCheckedSensor, n.TotalChecksSensor, n.HasCheckedGPS, n.TotalChecksGPS, n.HasCheckedServer, n.TotalChecksServer, n.BufferI)
+func (curNode Wn) String() string {
+	return fmt.Sprintf("x: %v y: %v speed: %v dir: %v Id: %v battery: %v sensor checked: %v sensor checks: %v GPS checked: %v GPS checks: %v server checked: %v server checks: %v buffer: %v ", curNode.X, curNode.Y, curNode.Speed, curNode.Dir, curNode.Id, curNode.Battery, curNode.HasCheckedSensor, curNode.TotalChecksSensor, curNode.HasCheckedGPS, curNode.TotalChecksGPS, curNode.HasCheckedServer, curNode.TotalChecksServer, curNode.BufferI)
 }
 
-func (n Rn) String() string {
-	return fmt.Sprintf("x: %v y: %v Id: %v battery: %v sensor checked: %v sensor checks: %v GPS checked: %v GPS checks: %v server checked: %v server checks: %v buffer: %v ", n.X, n.Y, n.Id, n.Battery, n.HasCheckedSensor, n.TotalChecksSensor, n.HasCheckedGPS, n.TotalChecksGPS, n.HasCheckedServer, n.TotalChecksServer, n.BufferI)
+func (curNode Rn) String() string {
+	return fmt.Sprintf("x: %v y: %v Id: %v battery: %v sensor checked: %v sensor checks: %v GPS checked: %v GPS checks: %v server checked: %v server checks: %v buffer: %v ", curNode.X, curNode.Y, curNode.Id, curNode.Battery, curNode.HasCheckedSensor, curNode.TotalChecksSensor, curNode.HasCheckedGPS, curNode.TotalChecksGPS, curNode.HasCheckedServer, curNode.TotalChecksServer, curNode.BufferI)
 } // end extra extra string statements
 
 func (curNode NodeImpl) String() string {
-	//return fmt.Sprintf("x: %v y: %v Id: %v battery: %v sensor checked: %v sensor checks: %v GPS checked: %v GPS checks: %v server checked: %v server checks: %v buffer: %v ", n.X, n.Y, n.Id, n.Battery, n.HasCheckedSensor, n.TotalChecksSensor, n.HasCheckedGPS, n.TotalChecksGPS, n.HasCheckedServer, n.TotalChecksServer,n.BufferI)
+	//return fmt.Sprintf("x: %v y: %v Id: %v battery: %v sensor checked: %v sensor checks: %v GPS checked: %v GPS checks: %v server checked: %v server checks: %v buffer: %v ", curNode.X, curNode.Y, curNode.Id, curNode.Battery, curNode.HasCheckedSensor, curNode.TotalChecksSensor, curNode.HasCheckedGPS, curNode.TotalChecksGPS, curNode.HasCheckedServer, curNode.TotalChecksServer,curNode.BufferI)
 	return fmt.Sprintf("battery: %v sensor checked: %v GPS checked: %v ", int(curNode.Battery), curNode.HasCheckedSensor, curNode.HasCheckedGPS)
 
 }
@@ -246,59 +246,59 @@ func (c Coord) Equals(c2 Coord) bool {
 }
 
 func (curNode *NodeImpl) Move(p *Params) {
-	if curNode.Sitting <= p.SittingStopThresholdCM {
-		curNode.OldX = curNode.X / p.XDiv
-		curNode.OldY = curNode.Y / p.XDiv
+	if curNode.Sitting <= curNode.P.SittingStopThresholdCM {
+		curNode.OldX = curNode.X / curNode.P.XDiv
+		curNode.OldY = curNode.Y / curNode.P.XDiv
 
 		var potentialSpots []GridSpot
 
 		//only add the ones that are valid to move to into the list
 		if curNode.Y-1 >= 0 &&
 			curNode.X >= 0 &&
-			curNode.X < p.Width &&
-			curNode.Y-1 < p.Height &&
+			curNode.X < curNode.P.Width &&
+			curNode.Y-1 < curNode.P.Height &&
 
-			p.BoardMap[curNode.X][curNode.Y-1] != -1 &&
-			p.BoolGrid[curNode.X][curNode.Y-1] == false { // &&
-			//p.BoardMap[n.X][n.Y-1] <= p.BoardMap[n.X][n.Y] {
+			curNode.P.BoardMap[curNode.X][curNode.Y-1] != -1 &&
+			curNode.P.BoolGrid[curNode.X][curNode.Y-1] == false { // &&
+			//curNode.P.BoardMap[curNode.X][curNode.Y-1] <= curNode.P.BoardMap[curNode.X][curNode.Y] {
 
-			up := GridSpot{curNode.X, curNode.Y - 1, p.BoardMap[curNode.X][curNode.Y-1]}
+			up := GridSpot{curNode.X, curNode.Y - 1, curNode.P.BoardMap[curNode.X][curNode.Y-1]}
 			potentialSpots = append(potentialSpots, up)
 		}
-		if curNode.X+1 < p.Width &&
+		if curNode.X+1 < curNode.P.Width &&
 			curNode.X+1 >= 0 &&
-			curNode.Y < p.Height &&
+			curNode.Y < curNode.P.Height &&
 			curNode.Y >= 0 &&
 
-			p.BoardMap[curNode.X+1][curNode.Y] != -1 &&
-			p.BoolGrid[curNode.X+1][curNode.Y] == false { // &&
-			//p.BoardMap[n.X+1][n.Y] <= p.BoardMap[n.X][n.Y] {
+			curNode.P.BoardMap[curNode.X+1][curNode.Y] != -1 &&
+			curNode.P.BoolGrid[curNode.X+1][curNode.Y] == false { // &&
+			//curNode.P.BoardMap[curNode.X+1][curNode.Y] <= curNode.P.BoardMap[curNode.X][curNode.Y] {
 
-			right := GridSpot{curNode.X + 1, curNode.Y, p.BoardMap[curNode.X+1][curNode.Y]}
+			right := GridSpot{curNode.X + 1, curNode.Y, curNode.P.BoardMap[curNode.X+1][curNode.Y]}
 			potentialSpots = append(potentialSpots, right)
 		}
-		if curNode.Y+1 < p.Height &&
+		if curNode.Y+1 < curNode.P.Height &&
 			curNode.Y+1 >= 0 &&
-			curNode.X < p.Width &&
+			curNode.X < curNode.P.Width &&
 			curNode.X >= 0 &&
 
-			p.BoardMap[curNode.X][curNode.Y+1] != -1 &&
-			p.BoolGrid[curNode.X][curNode.Y+1] == false { //&&
-			//p.BoardMap[n.X][n.Y+1] <= p.BoardMap[n.X][n.Y] {
+			curNode.P.BoardMap[curNode.X][curNode.Y+1] != -1 &&
+			curNode.P.BoolGrid[curNode.X][curNode.Y+1] == false { //&&
+			//curNode.P.BoardMap[curNode.X][curNode.Y+1] <= curNode.P.BoardMap[curNode.X][curNode.Y] {
 
-			down := GridSpot{curNode.X, curNode.Y + 1, p.BoardMap[curNode.X][curNode.Y+1]}
+			down := GridSpot{curNode.X, curNode.Y + 1, curNode.P.BoardMap[curNode.X][curNode.Y+1]}
 			potentialSpots = append(potentialSpots, down)
 		}
 		if curNode.X-1 >= 0 &&
-			curNode.X-1 < p.Width &&
+			curNode.X-1 < curNode.P.Width &&
 			curNode.Y >= 0 &&
-			curNode.Y < p.Height &&
+			curNode.Y < curNode.P.Height &&
 
-			p.BoardMap[curNode.X-1][curNode.Y] != -1 &&
-			p.BoolGrid[curNode.X-1][curNode.Y] == false { // &&
-			//p.BoardMap[n.X-1][n.Y] <= p.BoardMap[n.X][n.Y] {
+			curNode.P.BoardMap[curNode.X-1][curNode.Y] != -1 &&
+			curNode.P.BoolGrid[curNode.X-1][curNode.Y] == false { // &&
+			//curNode.P.BoardMap[curNode.X-1][curNode.Y] <= curNode.P.BoardMap[curNode.X][curNode.Y] {
 
-			left := GridSpot{curNode.X - 1, curNode.Y, p.BoardMap[curNode.X-1][curNode.Y]}
+			left := GridSpot{curNode.X - 1, curNode.Y, curNode.P.BoardMap[curNode.X-1][curNode.Y]}
 			potentialSpots = append(potentialSpots, left)
 		}
 
@@ -308,9 +308,9 @@ func (curNode *NodeImpl) Move(p *Params) {
 		sort.Sort(byValue(potentialSpots))
 
 		/*for i := 0; i < len(potentialSpots); i++ {
-			if p.Grid[potentialSpots[i].Y/p.YDiv][potentialSpots[i].X/p.XDiv].ActualNumNodes <= p.SquareCapacity {
-				n.X = potentialSpots[i].X
-				n.Y = potentialSpots[i].Y
+			if curNode.P.Grid[potentialSpots[i].Y/curNode.P.YDiv][potentialSpots[i].X/curNode.P.XDiv].ActualNumNodes <= curNode.P.SquareCapacity {
+				curNode.X = potentialSpots[i].X
+				curNode.Y = potentialSpots[i].Y
 				break
 			}
 		}*/
@@ -322,12 +322,12 @@ func (curNode *NodeImpl) Move(p *Params) {
 		}
 
 		//Change number of nodes in square
-		/*if n.X/p.XDiv != n.OldX || n.Y/p.YDiv != n.OldY {
-			p.Grid[n.Y/p.YDiv][n.X/p.XDiv].ActualNumNodes = p.Grid[n.Y/p.YDiv][n.X/p.XDiv].ActualNumNodes + 1
-			p.Grid[n.OldY][n.OldX].ActualNumNodes = p.Grid[n.OldY][n.OldX].ActualNumNodes - 1
+		/*if curNode.X/curNode.P.XDiv != curNode.OldX || curNode.Y/curNode.P.YDiv != curNode.OldY {
+			curNode.P.Grid[curNode.Y/curNode.P.YDiv][curNode.X/curNode.P.XDiv].ActualNumNodes = curNode.P.Grid[curNode.Y/curNode.P.YDiv][curNode.X/curNode.P.XDiv].ActualNumNodes + 1
+			curNode.P.Grid[curNode.OldY][curNode.OldX].ActualNumNodes = curNode.P.Grid[curNode.OldY][curNode.OldX].ActualNumNodes - 1
 		}*/
 
-		//p.Server.UpdateSquareNumNodes()
+		//curNode.P.Server.UpdateSquareNumNodes()
 		if curNode.Diffx == 0 && curNode.Diffy == 0 || curNode.Sitting < 0 {
 			curNode.Sitting = curNode.Sitting + 1
 		} else {
@@ -339,96 +339,96 @@ func (curNode *NodeImpl) Move(p *Params) {
 func (curNode *NodeImpl) Recalibrate() {
 	curNode.Sensitivity = curNode.InitialSensitivity
 	curNode.NodeTime = 0
-	//fmt.Printf("Node %v recalibrated!\n", n.Id)
+	//fmt.Printf("Node %v recalibrated!\curNode", curNode.Id)
 	curNode.hasCalibrated = true
 }
 
 //Moves the bouncing node
-func (n *Bn) Move(p *Params) {
+func (curNode *Bn) Move(p *Params) {
 	//Boundary conditions
-	if n.X+n.X_speed < p.MaxX && n.X+n.X_speed >= 0 {
-		n.X = n.X + n.X_speed
+	if curNode.X+curNode.X_speed < curNode.P.MaxX && curNode.X+curNode.X_speed >= 0 {
+		curNode.X = curNode.X + curNode.X_speed
 	} else {
-		if n.X+n.X_speed >= p.MaxX {
-			n.X = n.X - (n.X_speed - (p.MaxX - 1 - n.X))
-			n.X_speed = n.X_speed * -1
+		if curNode.X+curNode.X_speed >= curNode.P.MaxX {
+			curNode.X = curNode.X - (curNode.X_speed - (curNode.P.MaxX - 1 - curNode.X))
+			curNode.X_speed = curNode.X_speed * -1
 		} else {
-			n.X = (n.X_speed + n.X) * -1
-			n.X_speed = n.X_speed * -1
+			curNode.X = (curNode.X_speed + curNode.X) * -1
+			curNode.X_speed = curNode.X_speed * -1
 		}
 	}
-	if n.Y+n.Y_speed < p.MaxY && n.Y+n.Y_speed >= 0 {
-		n.Y = n.Y + n.Y_speed
+	if curNode.Y+curNode.Y_speed < curNode.P.MaxY && curNode.Y+curNode.Y_speed >= 0 {
+		curNode.Y = curNode.Y + curNode.Y_speed
 	} else {
-		if n.Y+n.Y_speed >= p.MaxY {
-			n.Y = n.Y - (n.Y_speed - (p.MaxY - 1 - n.Y))
-			n.Y_speed = n.Y_speed * -1
+		if curNode.Y+curNode.Y_speed >= curNode.P.MaxY {
+			curNode.Y = curNode.Y - (curNode.Y_speed - (curNode.P.MaxY - 1 - curNode.Y))
+			curNode.Y_speed = curNode.Y_speed * -1
 		} else {
-			n.Y = (n.Y_speed + n.Y) * -1
-			n.Y_speed = n.Y_speed * -1
+			curNode.Y = (curNode.Y_speed + curNode.Y) * -1
+			curNode.Y_speed = curNode.Y_speed * -1
 		}
 	}
 }
 
 //Moves the wall nodes
-func (n *Wn) Move(p *Params) {
-	if n.Dir == 0 { //x-axis
+func (curNode *Wn) Move(p *Params) {
+	if curNode.Dir == 0 { //x-axis
 		//Boundary conditions
-		if n.X+n.Speed < p.MaxX && n.X+n.Speed >= 0 {
-			n.X = n.X + n.Speed
+		if curNode.X+curNode.Speed < curNode.P.MaxX && curNode.X+curNode.Speed >= 0 {
+			curNode.X = curNode.X + curNode.Speed
 		} else {
-			if n.X+n.Speed >= p.MaxX {
-				n.X = n.X - (n.Speed - (p.MaxX - 1 - n.X))
-				n.Speed = n.Speed * -1
+			if curNode.X+curNode.Speed >= curNode.P.MaxX {
+				curNode.X = curNode.X - (curNode.Speed - (curNode.P.MaxX - 1 - curNode.X))
+				curNode.Speed = curNode.Speed * -1
 			} else {
-				n.X = (n.Speed + n.X) * -1
-				n.Speed = n.Speed * -1
+				curNode.X = (curNode.Speed + curNode.X) * -1
+				curNode.Speed = curNode.Speed * -1
 			}
 		}
 	} else { //y-axis
-		if n.Y+n.Speed < p.MaxY && n.Y+n.Speed >= 0 {
-			n.Y = n.Y + n.Speed
+		if curNode.Y+curNode.Speed < curNode.P.MaxY && curNode.Y+curNode.Speed >= 0 {
+			curNode.Y = curNode.Y + curNode.Speed
 		} else {
-			if n.Y+n.Speed >= p.MaxY {
-				n.Y = n.Y - (n.Speed - (p.MaxY - 1 - n.Y))
-				n.Speed = n.Speed * -1
+			if curNode.Y+curNode.Speed >= curNode.P.MaxY {
+				curNode.Y = curNode.Y - (curNode.Speed - (curNode.P.MaxY - 1 - curNode.Y))
+				curNode.Speed = curNode.Speed * -1
 			} else {
-				n.Y = (n.Speed + n.Y) * -1
-				n.Speed = n.Speed * -1
+				curNode.Y = (curNode.Speed + curNode.Y) * -1
+				curNode.Speed = curNode.Speed * -1
 			}
 		}
 	}
 }
 
 //Moves the random nodes
-func (n *Rn) Move(p *Params) {
+func (curNode *Rn) Move(p *Params) {
 	x_speed := rangeInt(-3, 3)
 	y_speed := rangeInt(-3, 3)
 
 	//Boundary conditions
-	if n.X+x_speed < p.MaxX && n.X+x_speed >= 0 {
-		n.X = n.X + x_speed
+	if curNode.X+x_speed < curNode.P.MaxX && curNode.X+x_speed >= 0 {
+		curNode.X = curNode.X + x_speed
 	} else {
-		if n.X+x_speed >= p.MaxX {
-			n.X = n.X - (x_speed - (p.MaxX - 1 - n.X))
+		if curNode.X+x_speed >= curNode.P.MaxX {
+			curNode.X = curNode.X - (x_speed - (curNode.P.MaxX - 1 - curNode.X))
 		} else {
-			n.X = (x_speed + n.X) * -1
+			curNode.X = (x_speed + curNode.X) * -1
 		}
 	}
-	if n.Y+y_speed < p.MaxY && n.Y+y_speed >= 0 {
-		n.Y = n.Y + y_speed
+	if curNode.Y+y_speed < curNode.P.MaxY && curNode.Y+y_speed >= 0 {
+		curNode.Y = curNode.Y + y_speed
 	} else {
-		if n.Y+y_speed >= p.MaxY {
-			n.Y = n.Y - (y_speed - (p.MaxY - 1 - n.Y))
+		if curNode.Y+y_speed >= curNode.P.MaxY {
+			curNode.Y = curNode.Y - (y_speed - (curNode.P.MaxY - 1 - curNode.Y))
 		} else {
-			n.Y = (y_speed + n.Y) * -1
+			curNode.Y = (y_speed + curNode.Y) * -1
 		}
 	}
 }
 
-//Returns the arr with the element at index n removed
-func Remove_index(arr []Path, n int) []Path {
-	return arr[:n+copy(arr[n:], arr[n+1:])]
+//Returns the arr with the element at index curNode removed
+func Remove_index(arr []Path, curNode int) []Path {
+	return arr[:curNode+copy(arr[curNode:], arr[curNode+1:])]
 }
 
 //Returns the array with the range of elements from index
@@ -452,12 +452,12 @@ func Remove_range(arr []Coord, a, b int) []Coord {
 }
 
 //Returns the array with the specified array inserted inside at
-//	index n
-func Insert_array(arr1 []Coord, arr2 []Coord, n int) []Coord {
+//	index curNode
+func Insert_array(arr1 []Coord, arr2 []Coord, curNode int) []Coord {
 	if len(arr1) == 0 {
 		return arr2
 	} else {
-		return append(arr1[:n], append(arr2, arr1[n:]...)...)
+		return append(arr1[:curNode], append(arr2, arr1[curNode:]...)...)
 	}
 }
 
@@ -510,13 +510,13 @@ func (curNode *NodeImpl) BatteryLossDynamic1() {
 	// This is the predicted natural loss to prevent overages.
 	naturalLoss = curNode.Battery - (float32(curNode.P.Iterations_of_event-curNode.P.Iterations_used) * curNode.BatteryLossScalar)
 	// This is the algorithm that determines sampling rate's ratios
-	n.Pings = n.Battery * p.TotalPercentBatteryToUse / (n.BatteryLossSensor + n.BatteryLossGPS + n.BatteryLossServer) // set percentage for consumption here, also '50' if no minus
-	n.InverseSensor = 1 / n.BatteryLossSensor
-	n.InverseGPS = 1 / n.BatteryLossGPS
-	n.InverseServer = 1 / n.BatteryLossServer
-	n.SensorPings = n.Pings * (n.InverseSensor / (n.InverseServer + n.InverseGPS + n.InverseGPS))
-	n.GPSPings = n.Pings * (n.InverseGPS / (n.InverseServer + n.InverseGPS + n.InverseGPS))
-	n.ServerPings = n.Pings * (n.InverseServer / (n.InverseServer + n.InverseGPS + n.InverseGPS))
+	curNode.Pings = curNode.Battery * curNode.P.TotalPercentBatteryToUse / (curNode.BatteryLossSensor + curNode.BatteryLossGPS + curNode.BatteryLossServer) // set percentage for consumption here, also '50' if no minus
+	curNode.InverseSensor = 1 / curNode.BatteryLossSensor
+	curNode.InverseGPS = 1 / curNode.BatteryLossGPS
+	curNode.InverseServer = 1 / curNode.BatteryLossServer
+	curNode.SensorPings = curNode.Pings * (curNode.InverseSensor / (curNode.InverseServer + curNode.InverseGPS + curNode.InverseGPS))
+	curNode.GPSPings = curNode.Pings * (curNode.InverseGPS / (curNode.InverseServer + curNode.InverseGPS + curNode.InverseGPS))
+	curNode.ServerPings = curNode.Pings * (curNode.InverseServer / (curNode.InverseServer + curNode.InverseGPS + curNode.InverseGPS))
 
 	if naturalLoss > curNode.P.ThreshHoldBatteryToHave {
 		curNode.SensorPingPeriod = float32(curNode.P.Iterations_of_event-curNode.P.Iterations_used) / curNode.SensorPings
@@ -524,11 +524,11 @@ func (curNode *NodeImpl) BatteryLossDynamic1() {
 			curNode.SensorPingPeriod = 1
 		}
 		// Checks to see if sensor is pinged
-		if (n.ToggleCheckIterator-n.Cascade)%int(n.SensorPingPeriod) == 0 && n.Battery > 1 {
-			n.Battery = n.Battery - n.BatteryLossSensor
-			n.TotalChecksSensor = n.TotalChecksSensor + 1
-			n.HasCheckedSensor = true
-			n.Sense(p)
+		if (curNode.ToggleCheckIterator-curNode.Cascade)%int(curNode.SensorPingPeriod) == 0 && curNode.Battery > 1 {
+			curNode.Battery = curNode.Battery - curNode.BatteryLossSensor
+			curNode.TotalChecksSensor = curNode.TotalChecksSensor + 1
+			curNode.HasCheckedSensor = true
+			curNode.Sense()
 		} else {
 			curNode.HasCheckedSensor = false
 		}
@@ -537,31 +537,31 @@ func (curNode *NodeImpl) BatteryLossDynamic1() {
 		if curNode.GPSPingPeriod < 1 {
 			curNode.GPSPingPeriod = 1
 		}
-		if ((n.ToggleCheckIterator-n.Cascade)%int(n.GPSPingPeriod) == 0 && n.Battery > 1) || (n.Speed > float32(p.MovementSamplingSpeedCM) && n.ToggleCheckIterator%p.MovementSamplingPeriodCM == 0) { // && n.ToggleCheckIterator%n.SpeedGPSPeriod == 0
-			n.Battery = n.Battery - n.BatteryLossGPS
-			n.TotalChecksGPS = n.TotalChecksGPS + 1
-			n.HasCheckedGPS = true
-			n.GPS(p)
+		if ((curNode.ToggleCheckIterator-curNode.Cascade)%int(curNode.GPSPingPeriod) == 0 && curNode.Battery > 1) || (curNode.Speed > float32(curNode.P.MovementSamplingSpeedCM) && curNode.ToggleCheckIterator%curNode.P.MovementSamplingPeriodCM == 0) { // && curNode.ToggleCheckIterator%curNode.SpeedGPSPeriod == 0
+			curNode.Battery = curNode.Battery - curNode.BatteryLossGPS
+			curNode.TotalChecksGPS = curNode.TotalChecksGPS + 1
+			curNode.HasCheckedGPS = true
+			curNode.GPS()
 		} else {
 			curNode.HasCheckedGPS = false
 		}
 
 		// This is the 2 stage buffer based on battery percentages
-		if n.Battery >= 75 { //100 - 75 percent
-			if (n.ToggleCheckIterator-n.Cascade)%14 == 0 && n.Battery > 1 { // 1000/70 = 14
-				n.Battery = n.Battery - n.BatteryLossServer
-				n.TotalChecksServer = n.TotalChecksServer + 1
-				n.HasCheckedServer = true
-				n.Server()
+		if curNode.Battery >= 75 { //100 - 75 percent
+			if (curNode.ToggleCheckIterator-curNode.Cascade)%14 == 0 && curNode.Battery > 1 { // 1000/70 = 14
+				curNode.Battery = curNode.Battery - curNode.BatteryLossServer
+				curNode.TotalChecksServer = curNode.TotalChecksServer + 1
+				curNode.HasCheckedServer = true
+				curNode.Server()
 			} else {
 				curNode.HasCheckedServer = false
 			}
-		} else if n.Battery >= 30 && n.Battery < 75 { //70 - 30 percent
-			if (n.ToggleCheckIterator-n.Cascade)%50 == 0 && n.Battery > 1 { //1000/20 = 50
-				n.Battery = n.Battery - n.BatteryLossServer
-				n.TotalChecksServer = n.TotalChecksServer + 1
-				n.HasCheckedServer = true
-				n.Server()
+		} else if curNode.Battery >= 30 && curNode.Battery < 75 { //70 - 30 percent
+			if (curNode.ToggleCheckIterator-curNode.Cascade)%50 == 0 && curNode.Battery > 1 { //1000/20 = 50
+				curNode.Battery = curNode.Battery - curNode.BatteryLossServer
+				curNode.TotalChecksServer = curNode.TotalChecksServer + 1
+				curNode.HasCheckedServer = true
+				curNode.Server()
 			} else {
 				curNode.HasCheckedServer = false
 			}
@@ -611,30 +611,30 @@ func (curNode *NodeImpl) BatteryLossTable() {
 	naturalLoss = curNode.Battery - (float32(curNode.P.Iterations_of_event-curNode.P.Iterations_used) * curNode.BatteryLossScalar)
 
 	// this is the battery loss based on checking the sensor, GPS, and server.
-	if naturalLoss > p.ThreshHoldBatteryToHave {
-		if (n.ToggleCheckIterator-n.Cascade)%p.SensorSamplingPeriodCM == 0 {
-			n.Battery = n.Battery - n.BatteryLossSensor
-			n.TotalChecksSensor = n.TotalChecksSensor + 1
-			n.HasCheckedSensor = true
-			n.Sense(p)
+	if naturalLoss > curNode.P.ThreshHoldBatteryToHave {
+		if (curNode.ToggleCheckIterator-curNode.Cascade)%curNode.P.SensorSamplingPeriodCM == 0 {
+			curNode.Battery = curNode.Battery - curNode.BatteryLossSensor
+			curNode.TotalChecksSensor = curNode.TotalChecksSensor + 1
+			curNode.HasCheckedSensor = true
+			curNode.Sense()
 		} else {
 			curNode.HasCheckedSensor = false
 		}
-		if (n.ToggleCheckIterator-n.Cascade)%p.GPSSamplingPeriodCM == 0 || (speed > float32(p.MovementSamplingSpeedCM) && n.ToggleCheckIterator%p.MovementSamplingPeriodCM == 0) { // && n.ToggleCheckIterator%n.SpeedGPSPeriod == 0
-			n.Battery = n.Battery - n.BatteryLossGPS
-			n.TotalChecksGPS = n.TotalChecksGPS + 1
-			n.HasCheckedGPS = true
-			n.GPS(p)
+		if (curNode.ToggleCheckIterator-curNode.Cascade)%curNode.P.GPSSamplingPeriodCM == 0 || (speed > float32(curNode.P.MovementSamplingSpeedCM) && curNode.ToggleCheckIterator%curNode.P.MovementSamplingPeriodCM == 0) { // && curNode.ToggleCheckIterator%curNode.SpeedGPSPeriod == 0
+			curNode.Battery = curNode.Battery - curNode.BatteryLossGPS
+			curNode.TotalChecksGPS = curNode.TotalChecksGPS + 1
+			curNode.HasCheckedGPS = true
+			curNode.GPS()
 		} else {
 			curNode.HasCheckedGPS = false
 		}
 
 		// Check to ping server
-		if (n.ToggleCheckIterator-n.Cascade)%p.ServerSamplingPeriodCM == 0 {
-			n.Battery = n.Battery - n.BatteryLossServer
-			n.TotalChecksServer = n.TotalChecksServer + 1
-			n.HasCheckedServer = true
-			n.Server()
+		if (curNode.ToggleCheckIterator-curNode.Cascade)%curNode.P.ServerSamplingPeriodCM == 0 {
+			curNode.Battery = curNode.Battery - curNode.BatteryLossServer
+			curNode.TotalChecksServer = curNode.TotalChecksServer + 1
+			curNode.HasCheckedServer = true
+			curNode.Server()
 		} else {
 			curNode.HasCheckedServer = false
 		}
@@ -681,17 +681,17 @@ func (curNode *NodeImpl) BatteryLossMostDynamic() {
 	naturalLoss = curNode.Battery - (float32(curNode.P.Iterations_of_event) * curNode.BatteryLossScalar)
 
 	// This is the ratio algorithm used to determine the rate of pings
-	n.InverseSensor = 1 / n.BatteryLossSensor
-	n.InverseGPS = 1 / n.BatteryLossGPS
-	n.InverseServer = 1 / n.BatteryLossServer
+	curNode.InverseSensor = 1 / curNode.BatteryLossSensor
+	curNode.InverseGPS = 1 / curNode.BatteryLossGPS
+	curNode.InverseServer = 1 / curNode.BatteryLossServer
 
-	//SensorBatteryToUse := (totalPercentBatteryToUse * (n.InverseSensor / (n.InverseServer + n.InverseGPS + n.InverseSensor)))
-	//GPSBatteryToUse := (totalPercentBatteryToUse * (n.InverseGPS / (n.InverseServer + n.InverseGPS + n.InverseSensor)))
-	//ServerBatteryToUse := (totalPercentBatteryToUse * (n.InverseServer / (n.InverseServer + n.InverseGPS + n.InverseSensor)))
+	//SensorBatteryToUse := (totalPercentBatteryToUse * (curNode.InverseSensor / (curNode.InverseServer + curNode.InverseGPS + curNode.InverseSensor)))
+	//GPSBatteryToUse := (totalPercentBatteryToUse * (curNode.InverseGPS / (curNode.InverseServer + curNode.InverseGPS + curNode.InverseSensor)))
+	//ServerBatteryToUse := (totalPercentBatteryToUse * (curNode.InverseServer / (curNode.InverseServer + curNode.InverseGPS + curNode.InverseSensor)))
 
-	n.SensorPings = (p.TotalPercentBatteryToUse * (n.InverseSensor / (n.InverseServer + n.InverseGPS + n.InverseSensor))) / n.BatteryLossSensor
-	n.GPSPings = (p.TotalPercentBatteryToUse * (n.InverseGPS / (n.InverseServer + n.InverseGPS + n.InverseSensor))) / n.BatteryLossGPS
-	n.ServerPings = (p.TotalPercentBatteryToUse * (n.InverseServer / (n.InverseServer + n.InverseGPS + n.InverseSensor))) / n.BatteryLossServer
+	curNode.SensorPings = (curNode.P.TotalPercentBatteryToUse * (curNode.InverseSensor / (curNode.InverseServer + curNode.InverseGPS + curNode.InverseSensor))) / curNode.BatteryLossSensor
+	curNode.GPSPings = (curNode.P.TotalPercentBatteryToUse * (curNode.InverseGPS / (curNode.InverseServer + curNode.InverseGPS + curNode.InverseSensor))) / curNode.BatteryLossGPS
+	curNode.ServerPings = (curNode.P.TotalPercentBatteryToUse * (curNode.InverseServer / (curNode.InverseServer + curNode.InverseGPS + curNode.InverseSensor))) / curNode.BatteryLossServer
 
 	// this is the battery loss based on checking the sensor, GPS, and server.
 	if naturalLoss > curNode.P.ThreshHoldBatteryToHave {
@@ -700,11 +700,11 @@ func (curNode *NodeImpl) BatteryLossMostDynamic() {
 			curNode.SensorPingPeriod = 1
 		}
 		// Check to ping sensor
-		if (n.ToggleCheckIterator-n.Cascade)%int(n.SensorPingPeriod) == 0 && n.Battery > 1 {
-			n.Battery = n.Battery - n.BatteryLossSensor
-			n.TotalChecksSensor = n.TotalChecksSensor + 1
-			n.HasCheckedSensor = true
-			n.Sense(p)
+		if (curNode.ToggleCheckIterator-curNode.Cascade)%int(curNode.SensorPingPeriod) == 0 && curNode.Battery > 1 {
+			curNode.Battery = curNode.Battery - curNode.BatteryLossSensor
+			curNode.TotalChecksSensor = curNode.TotalChecksSensor + 1
+			curNode.HasCheckedSensor = true
+			curNode.Sense()
 		} else {
 			curNode.HasCheckedSensor = false
 		}
@@ -713,11 +713,11 @@ func (curNode *NodeImpl) BatteryLossMostDynamic() {
 			curNode.GPSPingPeriod = 1
 		}
 		// Check to ping GPS, also note the extra pings made by a high speed.
-		if ((n.ToggleCheckIterator-n.Cascade)%int(n.GPSPingPeriod) == 0 && n.Battery > 1) || (n.Speed > float32(p.MovementSamplingSpeedCM) && n.ToggleCheckIterator%p.MovementSamplingPeriodCM == 0) { // && n.ToggleCheckIterator%n.SpeedGPSPeriod == 0
-			n.Battery = n.Battery - n.BatteryLossGPS
-			n.TotalChecksGPS = n.TotalChecksGPS + 1
-			n.HasCheckedGPS = true
-			n.GPS(p)
+		if ((curNode.ToggleCheckIterator-curNode.Cascade)%int(curNode.GPSPingPeriod) == 0 && curNode.Battery > 1) || (curNode.Speed > float32(curNode.P.MovementSamplingSpeedCM) && curNode.ToggleCheckIterator%curNode.P.MovementSamplingPeriodCM == 0) { // && curNode.ToggleCheckIterator%curNode.SpeedGPSPeriod == 0
+			curNode.Battery = curNode.Battery - curNode.BatteryLossGPS
+			curNode.TotalChecksGPS = curNode.TotalChecksGPS + 1
+			curNode.HasCheckedGPS = true
+			curNode.GPS()
 		} else {
 			curNode.HasCheckedGPS = false
 		}
@@ -731,12 +731,12 @@ func (curNode *NodeImpl) BatteryLossMostDynamic() {
 			curNode.ToggleCheckIterator = curNode.Cascade + 1
 		}
 		// Check to ping server
-		//fmt.Println(n.ToggleCheckIterator,n.Cascade,n.ServerPingPeriod,n.Id, n.ServerPings,n.BatteryLossCheckingServerScalar, iterations_of_event,float32(iterations_of_event),int(float32(iterations_of_event)))
-		if (n.ToggleCheckIterator-n.Cascade)%int(n.ServerPingPeriod) == 0 && n.Battery > 1 {
-			n.Battery = n.Battery - n.BatteryLossServer
-			n.TotalChecksServer = n.TotalChecksServer + 1
-			n.HasCheckedServer = true
-			n.Server()
+		//fmt.Println(curNode.ToggleCheckIterator,curNode.Cascade,curNode.ServerPingPeriod,curNode.Id, curNode.ServerPings,curNode.BatteryLossCheckingServerScalar, iterations_of_event,float32(iterations_of_event),int(float32(iterations_of_event)))
+		if (curNode.ToggleCheckIterator-curNode.Cascade)%int(curNode.ServerPingPeriod) == 0 && curNode.Battery > 1 {
+			curNode.Battery = curNode.Battery - curNode.BatteryLossServer
+			curNode.TotalChecksServer = curNode.TotalChecksServer + 1
+			curNode.HasCheckedServer = true
+			curNode.Server()
 		} else {
 			curNode.HasCheckedServer = false
 		}
@@ -783,13 +783,13 @@ func (curNode *NodeImpl) BatteryLossDynamic() {
 	naturalLoss = curNode.Battery - (float32(curNode.P.Iterations_of_event-curNode.P.Iterations_used) * curNode.BatteryLossScalar)
 
 	// This is the ratio algorithm used to determine the rate of pings
-	n.Pings = n.Battery * .5 / (n.BatteryLossSensor + n.BatteryLossGPS + n.BatteryLossServer) // set percentage for consumption here, also '50' if no minus
-	n.InverseSensor = 1 / n.BatteryLossSensor
-	n.InverseGPS = 1 / n.BatteryLossGPS
-	n.InverseServer = 1 / n.BatteryLossServer
-	n.SensorPings = n.Pings * (n.InverseSensor / (n.InverseServer + n.InverseGPS + n.InverseGPS))
-	n.GPSPings = n.Pings * (n.InverseGPS / (n.InverseServer + n.InverseGPS + n.InverseGPS))
-	n.ServerPings = n.Pings * (n.InverseServer / (n.InverseServer + n.InverseGPS + n.InverseGPS))
+	curNode.Pings = curNode.Battery * .5 / (curNode.BatteryLossSensor + curNode.BatteryLossGPS + curNode.BatteryLossServer) // set percentage for consumption here, also '50' if no minus
+	curNode.InverseSensor = 1 / curNode.BatteryLossSensor
+	curNode.InverseGPS = 1 / curNode.BatteryLossGPS
+	curNode.InverseServer = 1 / curNode.BatteryLossServer
+	curNode.SensorPings = curNode.Pings * (curNode.InverseSensor / (curNode.InverseServer + curNode.InverseGPS + curNode.InverseGPS))
+	curNode.GPSPings = curNode.Pings * (curNode.InverseGPS / (curNode.InverseServer + curNode.InverseGPS + curNode.InverseGPS))
+	curNode.ServerPings = curNode.Pings * (curNode.InverseServer / (curNode.InverseServer + curNode.InverseGPS + curNode.InverseGPS))
 
 	// this is the battery loss based on checking the sensor, GPS, and server.
 	if naturalLoss > curNode.P.ThreshHoldBatteryToHave {
@@ -798,11 +798,11 @@ func (curNode *NodeImpl) BatteryLossDynamic() {
 			curNode.SensorPingPeriod = 1
 		}
 		// Check to ping sensor
-		if (n.ToggleCheckIterator-n.Cascade)%int(n.SensorPingPeriod) == 0 && n.Battery > 1 {
-			n.Battery = n.Battery - n.BatteryLossSensor
-			n.TotalChecksSensor = n.TotalChecksSensor + 1
-			n.HasCheckedSensor = true
-			n.Sense(p)
+		if (curNode.ToggleCheckIterator-curNode.Cascade)%int(curNode.SensorPingPeriod) == 0 && curNode.Battery > 1 {
+			curNode.Battery = curNode.Battery - curNode.BatteryLossSensor
+			curNode.TotalChecksSensor = curNode.TotalChecksSensor + 1
+			curNode.HasCheckedSensor = true
+			curNode.Sense()
 		} else {
 			curNode.HasCheckedSensor = false
 		}
@@ -811,11 +811,11 @@ func (curNode *NodeImpl) BatteryLossDynamic() {
 			curNode.GPSPingPeriod = 1
 		}
 		// Check to ping GPS, also note the extra pings made by a high speed.
-		if ((n.ToggleCheckIterator-n.Cascade)%int(n.GPSPingPeriod) == 0 && n.Battery > 1) || (speed > float32(p.MovementSamplingSpeedCM) && n.ToggleCheckIterator%p.MovementSamplingPeriodCM == 0) { // && n.ToggleCheckIterator%n.SpeedGPSPeriod == 0
-			n.Battery = n.Battery - n.BatteryLossGPS
-			n.TotalChecksGPS = n.TotalChecksGPS + 1
-			n.HasCheckedGPS = true
-			n.GPS(p)
+		if ((curNode.ToggleCheckIterator-curNode.Cascade)%int(curNode.GPSPingPeriod) == 0 && curNode.Battery > 1) || (speed > float32(curNode.P.MovementSamplingSpeedCM) && curNode.ToggleCheckIterator%curNode.P.MovementSamplingPeriodCM == 0) { // && curNode.ToggleCheckIterator%curNode.SpeedGPSPeriod == 0
+			curNode.Battery = curNode.Battery - curNode.BatteryLossGPS
+			curNode.TotalChecksGPS = curNode.TotalChecksGPS + 1
+			curNode.HasCheckedGPS = true
+			curNode.GPS()
 		} else {
 			curNode.HasCheckedGPS = false
 		}
@@ -824,11 +824,11 @@ func (curNode *NodeImpl) BatteryLossDynamic() {
 			curNode.ServerPingPeriod = 1
 		}
 		// Check to ping server
-		if (n.ToggleCheckIterator-n.Cascade)%int(n.ServerPingPeriod) == 0 && n.Battery > 1 {
-			n.Battery = n.Battery - n.BatteryLossServer
-			n.TotalChecksServer = n.TotalChecksServer + 1
-			n.HasCheckedServer = true
-			n.Server()
+		if (curNode.ToggleCheckIterator-curNode.Cascade)%int(curNode.ServerPingPeriod) == 0 && curNode.Battery > 1 {
+			curNode.Battery = curNode.Battery - curNode.BatteryLossServer
+			curNode.TotalChecksServer = curNode.TotalChecksServer + 1
+			curNode.HasCheckedServer = true
+			curNode.Server()
 		} else {
 			curNode.HasCheckedServer = false
 		}
@@ -837,33 +837,33 @@ func (curNode *NodeImpl) BatteryLossDynamic() {
 
 
 //decrement battery due to transmitting/receiving over BlueTooth
-func (n *NodeImpl) DecrementPowerBT(packet int){
-	n.Battery = n.Battery - n.BatteryLossBT*n.Battery
+func (curNode *NodeImpl) DecrementPowerBT(packet int){
+	curNode.Battery = curNode.Battery - curNode.BatteryLossBT*curNode.Battery
 }
 
 //decrement battery due to transmitting/receiving over WiFi
-func (n *NodeImpl) DecrementPowerWifi(packet int){
-	n.Battery = n.Battery - n.BatteryLossWifi
+func (curNode *NodeImpl) DecrementPowerWifi(packet int){
+	curNode.Battery = curNode.Battery - curNode.BatteryLossWifi
 }
 
 //decrement battery due to transmitting/receiving over 4G
-func (n *NodeImpl) DecrementPower4G(packet int){
-	n.Battery = n.Battery - n.BatteryLoss4G*n.Battery
+func (curNode *NodeImpl) DecrementPower4G(packet int){
+	curNode.Battery = curNode.Battery - curNode.BatteryLoss4G*curNode.Battery
 }
 
 //decrement battery due to sampling Accelerometer
-func (n *NodeImpl) DecrementPowerAccel(){
-	n.Battery = n.Battery - n.BatteryLossAccelerometer*n.Battery
+func (curNode *NodeImpl) DecrementPowerAccel(){
+	curNode.Battery = curNode.Battery - curNode.BatteryLossAccelerometer*curNode.Battery
 }
 
 //decrement battery due to transmitting/receiving GPS
-func (n *NodeImpl) DecrementPowerGPS(){
-	n.Battery = n.Battery - n.BatteryLossGPS*n.Battery
+func (curNode *NodeImpl) DecrementPowerGPS(){
+	curNode.Battery = curNode.Battery - curNode.BatteryLossGPS*curNode.Battery
 }
 
 //decrement battery due to using GPS
-func (n *NodeImpl) DecrementPowerSensor(){
-	n.Battery = n.Battery - n.BatteryLossSensor*n.Battery
+func (curNode *NodeImpl) DecrementPowerSensor(){
+	curNode.Battery = curNode.Battery - curNode.BatteryLossSensor*curNode.Battery
 }
 
 
@@ -919,7 +919,7 @@ func (curNode *NodeImpl) getDriftSlope() (float32, float32){
 	var ySum float32
 	var xySum float32
 	var xSqrSum float32
-	//size := float32(len(n.SampleHistory))
+	//size := float32(len(curNode.SampleHistory))
 
 	for i:= range curNode.SampleHistory {
 		ySum += float32(i)
@@ -1065,7 +1065,7 @@ func (curNode *NodeImpl) GPS() {
 
 //This is the actual upload to the server
 func (curNode *NodeImpl) Server() {
-	//getData(&s,n.XPos[0:n.BufferI],n.YPos[0:n.BufferI],n.Value[0:n.BufferI],n.Time[0:n.BufferI], n.Id,n.BufferI)
+	//getData(&s,curNode.XPos[0:curNode.BufferI],curNode.YPos[0:curNode.BufferI],curNode.Value[0:curNode.BufferI],curNode.Time[0:curNode.BufferI], curNode.Id,curNode.BufferI)
 	curNode.BufferI = 0
 }
 
@@ -1161,7 +1161,7 @@ func (curNode *NodeImpl) GetReadings() {
 		}
 
 		//If the reading is more than 2 standard deviations away from the grid average, then recalibrate
-		//gridAverage := curNode.P.Grid[curNode.Row(p.YDiv)][curNode.Col(p.XDiv)].Avg
+		//gridAverage := curNode.P.Grid[curNode.Row(curNode.P.YDiv)][curNode.Col(curNode.P.XDiv)].Avg
 		//standDev := grid[curNode.Row(yDiv)][curNode.Col(xDiv)].StdDev
 
 		//New condition added: also recalibrate when the node's sensitivity is <= 1/10 of its original sensitvity
@@ -1193,9 +1193,9 @@ func (curNode *NodeImpl) GetReadings() {
 		//for that square
 		//Only do this if the sensor was pinged this iteration
 		if curNode.HasCheckedSensor {
-			//p.Server.UpdateSquareAvg(*curNode, errorDist)
-			//p.Grid[curNode.Row(p.YDiv)][curNode.Col(p.XDiv)].TakeMeasurement(float32(errorDist))
-			//p.Grid[curNode.Row(p.YDiv)][curNode.Col(p.XDiv)].TotalNodes++
+			//curNode.P.Server.UpdateSquareAvg(*curNode, errorDist)
+			//curNode.P.Grid[curNode.Row(curNode.P.YDiv)][curNode.Col(curNode.P.XDiv)].TakeMeasurement(float32(errorDist))
+			//curNode.P.Grid[curNode.Row(curNode.P.YDiv)][curNode.Col(curNode.P.XDiv)].TotalNodes++
 			////subtract grid average from node average, square it, and add it to this variable
 			curNode.P.Server.Send(curNode, Reading{errorDist, newX, newY, curNode.P.Iterations_used, curNode.GetID()})
 			if curNode.Id == 1 {
@@ -1215,8 +1215,8 @@ func (curNode *NodeImpl) GetReadings() {
 			}
 			curNode.hasCalibrated = false
 			//slope, r := curNode.getDriftSlope()
-			//fmt.Printf("Node: %v, Slope: %v, R value: %v\n", curNode.Id, slope, r)
-			//p.Grid[curNode.Row(p.YDiv)][curNode.Col(p.XDiv)].SquareValues += math.Pow(float64(errorDist-float64(gridAverage)), 2)
+			//fmt.Printf("Node: %v, Slope: %v, R value: %v\curNode", curNode.Id, slope, r)
+			//curNode.P.Grid[curNode.Row(curNode.P.YDiv)][curNode.Col(curNode.P.XDiv)].SquareValues += math.Pow(float64(errorDist-float64(gridAverage)), 2)
 		}
 	}
 
@@ -1228,7 +1228,7 @@ func (curNode *NodeImpl) GetReadingsCSV() {
 	if curNode.Valid { //check if node has shown up yet
 		newX, newY := curNode.GetLoc()
 
-		//newDist := curNode.Distance(*p.B) //this is the node's reported value without error
+		//newDist := curNode.Distance(*curNode.P.B) //this is the node's reported value without error
 		newDist := curNode.P.SensorReadings[newX][newY][curNode.P.CurrTime]
 		//Calculate error, sensitivity, and noise, as per the matlab code
 		S0, S1, S2, E0, E1, E2, ET1, ET2 := curNode.GetParams()
@@ -1297,7 +1297,7 @@ func (curNode *NodeImpl) GetReadingsCSV() {
 		}
 
 		//If the reading is more than 2 standard deviations away from the grid average, then recalibrate
-		//gridAverage := p.Grid[curNode.Row(p.YDiv)][curNode.Col(p.XDiv)].Avg
+		//gridAverage := curNode.P.Grid[curNode.Row(curNode.P.YDiv)][curNode.Col(curNode.P.XDiv)].Avg
 		//standDev := grid[curNode.Row(yDiv)][curNode.Col(xDiv)].StdDev
 
 		//New condition added: also recalibrate when the node's sensitivity is <= 1/10 of its original sensitvity
@@ -1329,11 +1329,11 @@ func (curNode *NodeImpl) GetReadingsCSV() {
 		//for that square
 		//Only do this if the sensor was pinged this iteration
 		if curNode.HasCheckedSensor {
-			//p.Grid[curNode.Row(p.YDiv)][curNode.Col(p.XDiv)].TakeMeasurement(float32(errorDist))
-			//p.Grid[curNode.Row(p.YDiv)][curNode.Col(p.XDiv)].TotalNodes++
+			//curNode.P.Grid[curNode.Row(curNode.P.YDiv)][curNode.Col(curNode.P.XDiv)].TakeMeasurement(float32(errorDist))
+			//curNode.P.Grid[curNode.Row(curNode.P.YDiv)][curNode.Col(curNode.P.XDiv)].TotalNodes++
 			//subtract grid average from node average, square it, and add it to this variable
-			//p.Grid[curNode.Row(p.YDiv)][curNode.Col(p.XDiv)].SquareValues += (math.Pow(float64(errorDist-float64(gridAverage)), 2))
-			//p.Server.Send(Reading{errorDist, newX, newY, p.Iterations_used, curNode.GetID()})
+			//curNode.P.Grid[curNode.Row(curNode.P.YDiv)][curNode.Col(curNode.P.XDiv)].SquareValues += (math.Pow(float64(errorDist-float64(gridAverage)), 2))
+			//curNode.P.Server.Send(Reading{errorDist, newX, newY, curNode.P.Iterations_used, curNode.GetID()})
 		}
 	}
 }
