@@ -788,7 +788,9 @@ func SetupParameters(p *Params) {
 
 	p.Attractions = make([]*Attraction, p.NumAtt)
 
-	readSensorCSV(p)
+	if p.CSVSensor {
+		readSensorCSV(p)
+	}
 	if p.CSVMovement {
 		readMovementCSV(p)
 	}
@@ -1018,7 +1020,7 @@ func GetFlags(p *Params) {
 		"Multiplier for error values in system")
 	flag.BoolVar(&p.CSVSensor, "csvSensor", true, "Read Sensor Values from CSV")
 	flag.BoolVar(&p.CSVMovement, "csvMove", true, "Read Movements from CSV")
-
+	flag.IntVar(&p.IterationsCM, "iterations", 200, "Read Movements from CSV")
 	//Range 1, 2, or 4
 	//Currently works for only a few numbers, can be easily expanded but is not currently dynamic
 	flag.IntVar(&p.NumSuperNodes, "numSuperNodes", 4, "the number of super nodes in the simulator")
