@@ -68,7 +68,7 @@ func (s FusionCenter) MakeGrid() {
 
 			p.Grid[i][j] = &Square{i, j, 0.0, 0, make([]float32, p.NumGridSamples),
 				p.NumGridSamples, 0.0, 0, 0, false,
-				0.0, 0.0, false, travelList, sync.Mutex{}}
+				0.0, 0.0, false, travelList, map[Tuple]*NodeImpl{},sync.Mutex{}}
 		}
 	}
 }
