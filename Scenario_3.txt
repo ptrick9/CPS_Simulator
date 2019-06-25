@@ -1,9 +1,9 @@
-numNodes-1000
+numNodes-2000
 superNodeType-0
 maxX-1600
 maxY-300
-bombX-100
-bombY-80
+bombX-1300
+bombY-150
 N: 0
 W: 0
 S: 0
