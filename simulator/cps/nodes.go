@@ -128,6 +128,8 @@ type NodeImpl struct {
 	calibrateReading   []float64
 	hasCalibrated 	   bool
 
+	BatteryOverTime	   map[int]float32
+
 }
 
 //NodeMovement controls the movement of all the normal nodes
@@ -639,6 +641,14 @@ func (curNode *NodeImpl) BatteryLossTable() {
 			curNode.HasCheckedServer = false
 		}
 	}
+}
+
+func (curNode *NodeImpl) LogBatteryPower(t int){
+	//t should be p.CurrTime
+	if(curNode.BatteryOverTime == nil){
+		curNode.BatteryOverTime = map[int]float32{}
+	}
+	curNode.BatteryOverTime[t] = curNode.Battery;
 }
 
 //This is the battery loss function where the server sensor and GPS are pinged separately and by their own accord

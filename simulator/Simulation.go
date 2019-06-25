@@ -210,6 +210,7 @@ func main() {
 			//	defer wg.Done()
 			if !p.NoEnergyModelCM {
 				p.NodeList[i].BatteryLossMostDynamic()
+				p.NodeList[i].LogBatteryPower(p.CurrTime) //added for logging battery
 			} else {
 				p.NodeList[i].HasCheckedSensor = true
 				p.NodeList[i].Sitting = 0
@@ -300,6 +301,7 @@ func main() {
 		}
 	}
 	p.Server.PrintStatsFile()
+	PrintNodeBatteryOverTime(p)
 }
 
 //
@@ -477,4 +479,30 @@ func printSuperStats(SNodeList []cps.SuperNodeParent) bytes.Buffer {
 		buffer.WriteString(fmt.Sprintf("AvgResponseTime: %.2f\t", i.GetAvgResponseTime()))
 	}
 	return buffer
+}
+
+func PrintNodeBatteryOverTime(p * cps.Params) error {
+	file, err := os.Create("BatteryOverTime2.csv")
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+
+	fmt.Fprint(file, "Time,")
+	for i := range p.NodeList{
+		n := p.NodeList[i]
+		fmt.Fprint(file, "Node",n.GetID(),",")
+	}
+	fmt.Fprint(file, "\n")
+
+	for t:=0; t<p.Iterations_of_event; t++{
+		fmt.Fprint(file, t, ",")
+		for i := range p.NodeList{
+			n := p.NodeList[i]
+			fmt.Fprint(file, n.BatteryOverTime[t],",")
+		}
+		fmt.Fprint(file, "\n")
+	}
+	return file.Sync()
 }
