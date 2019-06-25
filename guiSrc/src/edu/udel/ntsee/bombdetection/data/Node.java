@@ -5,13 +5,19 @@ import java.util.regex.Pattern;
 
 public class Node {
 
+    private int id;
     private int x;
     private int y;
 
-    public Node(int x, int y) {
+    public Node(int id, int x, int y) {
 
+        this.id = id;
         this.x = x;
         this.y = y;
+    }
+
+    public int getID() {
+        return id;
     }
 
     public int getX() {
@@ -53,15 +59,6 @@ public class Node {
         return String.format("x:%d, y:%d", x, y);
     }
 
-    private static final Pattern NODE_PATTERN = Pattern.compile("^x:(\\d+), y:(\\d+)$");
-    public static Node fromString(String string) {
 
-        Matcher m = NODE_PATTERN.matcher(string);
-        if (!m.find()) throw new IllegalArgumentException("Can not parse node: Invalid format");
-
-        int x = Integer.parseInt(m.group(1));
-        int y = Integer.parseInt(m.group(2));
-        return new Node(x, y);
-    }
 
 }
