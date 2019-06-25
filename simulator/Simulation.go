@@ -175,7 +175,7 @@ func main() {
 				p.CurrTime = i
 			}
 		}
-		fmt.Printf("Current time: %d\n", p.CurrTime)
+		//fmt.Printf("Current time: %d\n", p.CurrTime)
 
 
 
@@ -183,7 +183,13 @@ func main() {
 		//fmt.Println(iterations_used)
 		fmt.Printf("\rRunning Simulator iteration %d\\%v", iters, p.Iterations_of_event)
 		if p.PositionPrint {
-			fmt.Fprintln(p.PositionFile, "t= ", p.Iterations_used, " amount= ", len(p.NodeList))
+			amount:= 0
+			for i:= 0; i < p.TotalNodes; i++ {
+				if p.NodeList[i].Valid {
+					amount += 1
+				}
+			}
+			fmt.Fprintln(p.PositionFile, "t= ", p.Iterations_used, " amount= ", amount)
 		}
 		for i := 0; i < len(p.Poispos); i++ {
 			if p.Iterations_used == p.Poispos[i][2] || p.Iterations_used == p.Poispos[i][3] {

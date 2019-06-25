@@ -1333,7 +1333,10 @@ func (curNode *NodeImpl) GetReadingsCSV() {
 			//curNode.P.Grid[curNode.Row(curNode.P.YDiv)][curNode.Col(curNode.P.XDiv)].TotalNodes++
 			//subtract grid average from node average, square it, and add it to this variable
 			//curNode.P.Grid[curNode.Row(curNode.P.YDiv)][curNode.Col(curNode.P.XDiv)].SquareValues += (math.Pow(float64(errorDist-float64(gridAverage)), 2))
-			//curNode.P.Server.Send(Reading{errorDist, newX, newY, curNode.P.Iterations_used, curNode.GetID()})
+			if curNode.Valid {
+				curNode.P.Server.Send(curNode, Reading{errorDist, newX, newY, curNode.P.Iterations_used, curNode.GetID()})
+			}
+			//curNode.P.Server.Send(curNode, Reading{errorDist, newX, newY, curNode.P.Iterations_used, curNode.GetID()})
 		}
 	}
 }
