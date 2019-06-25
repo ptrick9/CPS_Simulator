@@ -1,6 +1,8 @@
 package cps
 
-import "os"
+import (
+	"os"
+)
 
 type Params struct {
 	NegativeSittingStopThresholdCM int     // This is a negative number for the sitting to be set to when map is reset
@@ -10,9 +12,15 @@ type Params struct {
 	OutputFileNameCM               string  // This is the prefix of the output text file
 	InputFileNameCM                string  // This must be the name of the input text file with ".txt"
 	NaturalLossCM                  float64 // This can be any number n: 0 < n < .1
-	SensorSamplingLossCM           float64 // This can be any number n: 0 < n < .1
-	GPSSamplingLossCM              float64 // This can be any number n: 0 < n < GPSSamplingLossCM < .1
-	ServerSamplingLossCM           float64 // This can be any number n: 0 < n < serverSamplingLossCM < .1
+
+	SamplingLossSensorCM           float64 // This can be any number n: 0 < n < .1
+	SamplingLossGPSCM              float64 // This can be any number n: 0 < n < GPSSamplingLossCM < .1
+	SamplingLossServerCM           float64 // This can be any number n: 0 < n < serverSamplingLossCM < .1
+	SamplingLossBTCM			   float64
+	SamplingLossWifiCM			   float64
+	SamplingLoss4GCM			   float64
+	SamplingLossAccelCM			   float64
+
 	ThresholdBatteryToHaveCM       int     // This can be any number n: 0 < n < 50
 	ThresholdBatteryToUseCM        int     // This can be any number n: 0 < n < 20 < 100-thresholdBatteryToHaveCM
 	MovementSamplingSpeedCM        int     // This can be any number n: 0 < n < 100
@@ -32,6 +40,9 @@ type Params struct {
 	GridPrintCM                    bool    //This is either true or false for whether to print grid readings to log file
 	SquareRowCM                    int     //This is an int 1 through maxX representing how many rows of squares there are
 	SquareColCM                    int     //This is an int 1 through maxY representing how many columns of squares there are
+	StdDevThresholdCM			   float64 //Detection Threshold based on standard deviations from mean
+	CalibrationThresholdCM		   float64
+
 
 	StimFileNameCM        string
 	ImageFileNameCM       string
@@ -56,6 +67,7 @@ type Params struct {
 	NodesPrint    bool
 	GridPrint     bool
 
+	MoveReadingsFile *os.File
 	DriftFile      *os.File
 	NodeFile       *os.File
 	PositionFile   *os.File
@@ -64,8 +76,14 @@ type Params struct {
 	RoutingFile    *os.File
 	AttractionFile *os.File
 	BoolFile       *os.File
+	ServerFile	   *os.File
+	NodeTest	   *os.File
+	NodeTest2	   *os.File
+	DetectionFile  *os.File
 
 	SensorPath  string
+	MovementPath  string
+
 	SensorTimes []int
 	CurrTime    int
 
@@ -78,6 +96,7 @@ type Params struct {
 	Grid     [][]*Square
 
 	SensorReadings [][][]float64
+	NodeMovements  [][]Tuple
 
 	SquareCapacity int
 
@@ -91,6 +110,7 @@ type Params struct {
 
 	ThreshHoldBatteryToHave  float32
 	TotalPercentBatteryToUse float32
+	IterationsCM		     int
 	Iterations_used          int
 	Iterations_of_event      int
 	EstimatedPingsNeeded     int
@@ -106,25 +126,27 @@ type Params struct {
 
 	RegionRouting bool
 	AStarRouting  bool
+	CSVMovement   bool
+	CSVSensor     bool
 
-	NumNodeNodes               int
+	CurrentNodes               int
 	NumWallNodes               int
 	NumPoints                  int
 	NumPointsOfInterestKinetic int
 	NumPointsOfInterestStatic  int
 
-	Npos    [][]int // node positions
-	Wpos    [][]int // wall positions
-	Spos    [][]int // super node positions
-	Ppos    [][]int // super node points of interest positions
-	Poikpos [][]int // points of interest kinetic
-	Poispos [][]int // points of interest static
+	NodeEntryTimes [][]int // node positions
+	Wpos           [][]int // wall positions
+	Spos           [][]int // super node positions
+	Ppos           [][]int // super node points of interest positions
+	Poikpos        [][]int // points of interest kinetic
+	Poispos        [][]int // points of interest static
 
 	DetectionThreshold float64
 
 	//SquareRow        int
 	//SquareCol        int
-	NumNodes         int
+	TotalNodes       int
 	NumStoredSamples int
 	NumGridSamples   int
 
@@ -134,9 +156,13 @@ type Params struct {
 	BatteryCharges []float32
 	BatteryLosses  []float32
 
-	BatteryLossesCheckingSensorScalar []float32
-	BatteryLossesCheckingGPSScalar    []float32
-	BatteryLossesCheckingServerScalar []float32
+	BatteryLossesSensor				  []float32
+	BatteryLossesGPS 			      []float32
+	BatteryLossesServer 			  []float32
+	BatteryLossesBT					  []float32
+	BatteryLossesWiFi				  []float32
+	BatteryLosses4G					  []float32
+	BatteryLossesAccelerometer		  []float32
 
 	NumAtt      int
 	Attractions []*Attraction
@@ -144,6 +170,11 @@ type Params struct {
 	XLoc        int
 	YLoc        int
 
-	Width  int
-	Height int
+	Width 			int
+	Height 			int
+	Server 			FusionCenter //Server object
+
+
+	NodePositionMap			map[Tuple]*NodeImpl
+
 }

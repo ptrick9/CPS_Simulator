@@ -1,0 +1,1171 @@
+package cps // import "CPS_Simulator/simulator/cps"
+
+This is the server GO file and it is a model of our server
+
+Write file
+
+FUNCTIONS
+
+func Area_ratio(sq1, sq2 RoutingSquare) float64
+func Check(e error)
+    Checks an error
+
+func ClosestDist(c Coord, list []Coord) float64
+    This function returns the distance between the specified Coord c
+
+    and the closest Coord in the provided list of Coords
+
+func CreateBoard(x int, y int, p *Params)
+    Creates p.BoardMap
+
+func CreateFile(name string)
+    Creates a file file with specific name
+
+func Dist(p1, p2 Tuple) float64
+func FillInBufferCurrent(p *Params)
+func FillInMap(p *Params)
+func FillInWallsToBoard(p *Params)
+    Fills the walls into the board based on the wall positions extrapolated from
+    the file
+
+func FillInts(s []string, place int, p *Params)
+func FillPointsToBoard(p *Params)
+    Fills the points of interest to the board
+
+func GenerateRouting(p *Params, r *RegionParams)
+func GetDashedInput(s string, p *Params) int
+    GetDashedInput
+
+func GetIndexInt(slice []int, element int) int
+    returns index of int in array
+
+func GetInitialChargeSuperDynamic(numNodes int, scalar float32) (y []float32)
+    returns charges from custom distribution array ratio to scale of original
+    array
+
+func GetIntFromByte(a byte) int
+    Returns the char number associated with a byte
+
+func GetLetterFromByte(a byte) string
+    Returns the string character of a byte
+
+func GetLinearBatteryLossConstant(numNodes int, lossConst float32) (y []float32)
+    Returns a constant value for a uniform battery loss for all the nodes
+
+func GetLinearBatteryValues(numNodes int) (y []float32)
+    Returns linear list of battery values, very good for debugging because it is
+    in order
+
+func GetListedInput(p *Params)
+func GetNormDistro(numNodes int, mu float32, sigma float32) (arr []float32)
+    The 2 functions are what we will most likely use produces a normal
+    distribution sample with specific sigma and mu
+
+func GetinitialChargeDynamic(numNodes int) (y []float32)
+    returns charges from custom distribution array
+
+func HandleMovement(p *Params)
+func Is_in(i int, list []int) bool
+func MakeBoolGrid(p *Params)
+func Max(x, y int) int
+func NormalInverse(mu float32, sigma float32) float32
+    produces normal sample
+
+func Point_list_remove(point Tuple, r *RegionParams)
+func PossPaths(p1, p2 Tuple, r *RegionParams)
+func ProduceCustomDistribution(numb int) (y []float32)
+    Created custom distribution
+
+func RandomInt(min, max int) int
+    returns random number between 2 numbers
+
+func RangeInt(min, max int) int
+func ReadFromFile(name string) (b []byte)
+    Reads entire file to array of bytes
+
+func ReadMap(p *Params, r *RegionParams)
+func Rebuild(sq_list []RoutingSquare, r *RegionParams)
+func RegionContaining(p Tuple, r *RegionParams) int
+func RemoveFloat32(slice []float32, s int) []float32
+    removes index from array
+
+func RemoveRoutingSquare(sq RoutingSquare, r *RegionParams)
+func Search(prev_region, curr_region, end_region int, curr_path []int, r *RegionParams)
+func SetupFiles(p *Params)
+func SetupParameters(p *Params)
+func Shuffle(a []float32) []float32
+    shuffles array
+
+func Side_ratio(sq1, sq2 RoutingSquare) float64
+func Square_equals(s1, s2 RoutingSquare) bool
+func Square_list_remove(s RoutingSquare, r *RegionParams)
+func Within(s RoutingSquare, p Tuple) bool
+func WriteToFile(name string, message string)
+    Clears file then writes message
+
+
+TYPES
+
+type Attraction struct {
+	X int
+	Y int
+}
+    Attraction type contains the locations of the attraction point
+
+func (a *Attraction) Move(x, y int)
+    function to "teleport" an attraction
+
+func (a Attraction) String() string
+type Bn struct {
+	*NodeImpl
+	X_speed int
+	Y_speed int
+}
+    Bouncing nodes bound around the grid
+
+func (n *Bn) Move(p *Params)
+    Moves the bouncing node
+
+func (n Bn) String() string
+    These are the toString methods for battery levels
+
+type Bomb struct {
+	X int
+	Y int
+}
+    Bomb type contains the location of the bomb
+
+type Coord struct {
+	Parent      *Coord
+	X, Y        int
+	Time        int
+	G, H, Score int
+}
+    Coord is a struct that contains x and y coordinates of
+
+    a square in the grid
+
+    This struct is used by the super node type to create its
+
+    route through the grid
+
+func AStar(a Coord, b Coord, p *Params) []Coord
+    This function takes a start and an end Coord and returns a list of Coords
+
+    that connect them without going through walls
+
+func GetPath(c1, c2 Coord, r *RegionParams) []Coord
+func InRegionRouting(p1, p2 Tuple) []Coord
+func Insert_array(arr1 []Coord, arr2 []Coord, n int) []Coord
+    Returns the array with the specified array inserted inside at
+
+    index n
+
+func MakeCenter1(sNodeNum int, p *Params) (Coord, int, int)
+    This function determines the center position for the super nodes The center
+    depends on the number of super nodes in the simulation
+
+func MakeCenter1_corners(sNodeNum int, p *Params) (Coord, int, int, int, int)
+    This function determines the center position for the super nodes' circles
+    This currently works for only 4 super nodes as this is a special test for a
+    unique version of super nodes of type 1 This version has the super nodes'
+    circles positioned in the four corners
+
+func MakeCenter1_largeCorners(sNodeNum int, p *Params) (Coord, int, int, int, int)
+    This function determines the center position for the super nodes' circles
+    This currently works for only 4 super nodes as this is a special test for a
+
+    unique version of super nodes of type 1
+
+    This version has the super nodes' circles positioned in the four corners
+    However, unlike the other circular centers the radii of these circles are
+    larger
+
+    therefore the centers of the super nodes are different
+
+func MakeCenter1_sides(sNodeNum int, p *Params) (Coord, int, int, int, int)
+    This function determines the center position for the super nodes' circles
+    This currently works for only 4 super nodes as this is a special test for a
+
+    unique version of super nodes of type 1
+
+    This version has the super nodes' circles positioned on the four sides
+
+func MakeCenter2(sNodeNum int, r_list []Region, p *Params) (Coord, int, int)
+    This function determines the center position of super nodes of type 2 Super
+    nodes of type 2 are centered inside their respective regions
+
+func Remove_and_insert(arr []Coord, ind1, ind2 int) []Coord
+    Returns the array with the element at ind1 moved to ind2 ind1 must always be
+    further in the array than ind2
+
+func Remove_coord_index(arr []Coord, n int) []Coord
+    This function removed the Coord element at the specified index n
+
+func Remove_range(arr []Coord, a, b int) []Coord
+    Returns the array with the range of elements from index
+
+    a to b removed
+
+func (c Coord) Equals(c2 Coord) bool
+func (a *Coord) GetWalkable(b Coord, closedList []Coord, p Coord, pp *Params) []Coord
+    This function returns a list of Coords that are adjacent to
+
+    the Coord that called this function
+
+    It only returns Coords that can be walked to, this does not
+
+    include walls and previously travelled Coords
+
+func (a *Coord) In(list []Coord) (bool, int)
+    This function returns whether or not a Coord
+
+    is in a list of Coords and where in the list it is
+
+func (c Coord) IsWithinRegion(reg Region) bool
+    This function returns true if the Coord that called it is inside
+
+    the specified region
+
+func (a *Coord) SetScore(b Coord, p *Params)
+    setScore takes a Coord and the destination and
+
+    calculates the new score for this Coord
+
+func (c Coord) String() string
+type FusionCenter struct {
+	P *Params
+
+	TimeBuckets [][]Reading //2D array where each sub array is made of the readings at one iteration
+	Mean        []float64
+	StdDev      []float64
+	Variance    []float64
+	Times       map[int]bool
+	LastRecal   []int
+}
+    FusionCenter is the server class which contains statistical, reading, and
+    recalibration data
+
+func (s *FusionCenter) CalcStats() ([]float64, []float64, []float64)
+    CalcStats calculates the mean, standard deviation and variance of the entire
+    area at one time
+
+func (s FusionCenter) CheckDetections(p *Params, scheduler *Scheduler)
+    CheckDetections iterates through the grid and validates detections by nodes
+
+func (s FusionCenter) GetSquareAverage(tile *Square) float32
+    GetSquareAverage grabs and returns the average of a particular Square
+
+func (s *FusionCenter) Init()
+    Init initializes the values for the server
+
+func (s FusionCenter) MakeGrid()
+    MakeGrid initializes a grid of Square objects according to the size of the
+    map
+
+func (s FusionCenter) MakeSuperNodes()
+    MakeSuperNodes initializes the supernodes to the corners of the map
+
+func (s FusionCenter) PrintStats()
+    PrintStats prints the mean, standard deviation, and variance for the whole
+    map at every iteration
+
+func (s FusionCenter) PrintStatsFile()
+    PrintStatsFile outputs statistical and detection data to log files
+
+func (s *FusionCenter) Send(n *NodeImpl, rd Reading)
+    Send is called by a node to deliver a reading to the server. Statistics are
+    calculated each time data is received
+
+func (srv FusionCenter) Tick()
+    Tick is performed every iteration to move supernodes and check possible
+    detections
+
+func (s FusionCenter) UpdateSquareAvg(rd Reading)
+    UpdateSquareAvg takes a node reading and updates the parameters in the
+    Square the node took the reading in
+
+func (s FusionCenter) UpdateSquareNumNodes()
+    UpdateSquareNumNodes searches the node list and updates the number of nodes
+    in each square
+
+type GridSpot struct {
+	X     int
+	Y     int
+	Value int
+}
+
+type NodeImpl struct {
+	Id                              int      //Id of node
+	OldX                            int      // for movement
+	OldY                            int      // for movement
+	Sitting                         int      // for movement
+	X                               int      //x pos of node
+	Y                               int      //y pos of node
+	Battery                         float32  //battery of node
+	BatteryLossScalar               float32  //natural incremental battery loss of node
+	BatteryLossCheckingSensorScalar float32  //sensor based battery loss of node
+	BatteryLossGPSScalar            float32  //GPS based battery loss of node
+	BatteryLossCheckingServerScalar float32  //server communication based battery loss of node
+	ToggleCheckIterator             int      //node's personal iterator mostly for cascading pings
+	HasCheckedSensor                bool     //did the node just ping the sensor?
+	TotalChecksSensor               int      //total sensor pings of node
+	HasCheckedGPS                   bool     //did the node just ping the GPS?
+	TotalChecksGPS                  int      //total GPS pings of node
+	HasCheckedServer                bool     //did the node just communicate with the server?
+	TotalChecksServer               int      //how many times did the node communicate with the server?
+	PingPeriod                      float32  //This is the aggregate ping period used in some ping rate determining algorithms
+	SensorPingPeriod                float32  //This is the ping period for the sensor
+	GPSPingPeriod                   float32  //This is the ping period for the GPS
+	ServerPingPeriod                float32  //This is the ping period for the server
+	Pings                           float32  //This is an aggregate pings used in some ping rate determining algorithms
+	SensorPings                     float32  //This is the total sensor pings to be made
+	GPSPings                        float32  //This is the total GPS pings to be made
+	ServerPings                     float32  //This is the total server pings to be made
+	Cascade                         int      //This cascades the pings of the nodes
+	BufferI                         int      //This is to keep track of the node's buffer size
+	XPos                            [100]int //x pos buffer of node
+	YPos                            [100]int //y pos buffer of node
+	Value                           [100]int //value buffer of node
+	AccelerometerSpeedServer        [100]int //Accelerometer speed history of node
+	Time                            [100]int //This keeps track of when specific pings are made
+	//speedGPSPeriod int //This is a special period for speed based GPS pings but it is not used and may never be
+	AccelerometerPosition [2][3]int //This is the accelerometer model of node
+	AccelerometerSpeed    []float32 //History of accelerometer speeds recorded
+	InverseSensor         float32   //Algorithm place holder declared here for speed
+	InverseGPS            float32   //Algorithm place holder declared here for speed
+	InverseServer         float32   //Algorithm place holder declared here for speed
+	SampleHistory         []float32 //a history of the node's readings
+	Avg                   float32   //weighted average of the node's most recent readings
+	TotalSamples          int       //total number of samples taken by a node
+	SpeedWeight           float32   //weight given to averaging of node's samples, based on node's speed
+	NumResets             int       //number of times a node has had to reset due to drifting
+	Concentration         float64   //used to determine reading of node
+	SpeedGPSPeriod        int
+
+	Current  int
+	Previous int
+	Diffx    int
+	Diffy    int
+	Speed    float32
+
+	//The following values are all various drifting parameters of the node
+	NewX               int
+	NewY               int
+	S0                 float64
+	S1                 float64
+	S2                 float64
+	E0                 float64
+	E1                 float64
+	E2                 float64
+	ET1                float64
+	ET2                float64
+	NodeTime           int
+	Sensitivity        float64
+	InitialSensitivity float64
+
+	// Has unexported fields.
+}
+    NodeImpl is a struct that implements all the methods listed
+
+    above in NodeParent
+
+func (n *NodeImpl) BatteryLossDynamic(p *Params)
+    This is the battery loss function where the server sensor and GPS are pinged
+    separately and by their own accord
+
+func (n *NodeImpl) BatteryLossDynamic1(p *Params)
+    This is the battery loss function that clears the buffer at 2 different
+    rates based on the battery percentage left
+
+func (n *NodeImpl) BatteryLossMostDynamic(p *Params)
+    This is the battery loss function where the server sensor and GPS are pinged
+    separately and by their own accord
+
+func (n *NodeImpl) BatteryLossTable(p *Params)
+    This is the battery loss function where the server sensor and GPS are pinged
+    separately and by their own accord
+
+func (n *NodeImpl) Col(div int) int
+    Returns the y index of the square in which the specific
+
+    node currently resides
+
+func (n *NodeImpl) Distance(b Bomb) float32
+    Returns a float representing the detection of the bomb
+
+    by the specific node depending on distance
+
+func (n *NodeImpl) GPS(p *Params)
+    This is the actual pinging of the GPS
+
+func (n *NodeImpl) GeoDist(b Bomb) float32
+    Returns node distance to the bomb
+
+func (n *NodeImpl) GetAvg() float32
+    getter function for average
+
+func (n *NodeImpl) GetCoefficients() (float64, float64, float64)
+    getter function for just S0 - S2 parameters
+
+func (n *NodeImpl) GetID() int
+    getter function for ID field
+
+func (n *NodeImpl) GetLoc() (int, int)
+    getter function for x and y locations
+
+func (n *NodeImpl) GetParams() (float64, float64, float64, float64, float64, float64, float64, float64)
+    getter function for all parameters
+
+func (curNode *NodeImpl) GetReadings(p *Params)
+    Takes cares of taking a node's readings and printing detections and stuff
+
+func (curNode *NodeImpl) GetReadingsCSV(p *Params)
+    Takes cares of taking a node's readings and printing detections and stuff
+
+func (n *NodeImpl) GetSpeed() []float32
+    Returns array of accelerometer speeds recorded for a specific node
+
+func (n *NodeImpl) GetValue(p *Params) int
+    Returns a different version of the distance to the bomb
+
+func (n *NodeImpl) GetX() int
+    getter function for x
+
+func (n *NodeImpl) GetY() int
+    getter function for y
+
+func (n *NodeImpl) IncrementNumResets()
+    increases numResets field
+
+func (n *NodeImpl) IncrementTotalSamples()
+
+    this function increments a node's total number of samples by 1
+    it's called whenever the node takes a new sample
+
+func (n *NodeImpl) Move(p *Params)
+func (n *NodeImpl) Recalibrate()
+func (n *NodeImpl) Row(div int) int
+    Returns the x index of the square in which the specific
+
+    node currently resides
+
+func (n *NodeImpl) Sense(p *Params)
+    This is the actual pinging of the sensor
+
+func (n *NodeImpl) Server()
+    This is the actual upload to the server
+
+func (n *NodeImpl) SetConcentration(conc float64)
+    setter function for concentration field
+
+func (n *NodeImpl) SetE0(e0 float64)
+    setter function for E0
+
+func (n *NodeImpl) SetE1(e1 float64)
+    setter function for E1
+
+func (n *NodeImpl) SetE2(e2 float64)
+    setter function for E2
+
+func (n *NodeImpl) SetET1(et1 float64)
+    setter function for ET1
+
+func (n *NodeImpl) SetET2(et2 float64)
+    setter function for ET2
+
+func (n *NodeImpl) SetS0(s0 float64)
+    setter function for S0
+
+func (n *NodeImpl) SetS1(s1 float64)
+    setter function for S1
+
+func (n *NodeImpl) SetS2(s2 float64)
+    setter function for S2
+
+func (n NodeImpl) String() string
+func (n *NodeImpl) UpdateHistory(newValue float32)
+
+    updateHistory shifts all values in the sample history slice to the right and adds the value at the beginning
+    Therefore, each Time a node takes a sample in main, it also adds this sample
+    to the beginning of the sample history. Each sample is only stored until ln
+    more samples have been taken (this variable is in hello.go)
+
+type NodeMovement interface {
+	NodeParent
+	Move(p *Params)
+}
+    NodeMovement controls the movement of all the normal nodes It inherits all
+    the methods and attributes from NodeParent
+
+    and NodeImpl
+
+type NodeParent interface {
+	Distance(b Bomb) float32        //distance to bomb in the form of the node's reading
+	Row(div int) int                //Row of node
+	Col(div int) int                //Column of node
+	GetSpeed() []float32            //History of accelerometer based speeds of node
+	BatteryLossDynamic(p *Params)   //Battery loss based of ratios of battery usage
+	BatteryLossDynamic1(p *Params)  //2 stage buffer battery loss
+	UpdateHistory(newValue float32) //updates history of node's samples
+	IncrementTotalSamples()         //increments total number of samples node has taken
+	GetAvg() float32                //returns average of node's past samples
+	IncrementNumResets()            //increments the number of times a node has been reset
+	SetConcentration(conc float64)  //sets the concentration of a node
+	GeoDist(b Bomb) float32         //returns distance from bomb (rather than reading of node)
+	GetID() int                     //returns ID of node
+	GetLoc() (x, y int)             //returns x and y values of node
+
+	//following functions set drifting parameters of nodes
+	SetS0(s0 float64)
+	SetS1(s1 float64)
+	SetS2(s2 float64)
+	SetE0(e0 float64)
+	SetE1(e1 float64)
+	SetE2(e2 float64)
+	SetET1(et1 float64)
+	SetET2(et2 float64)
+	GetParams() (float64, float64, float64, float64, float64, float64, float64, float64) //returns all of the above parameters
+	GetCoefficients() (float64, float64, float64)                                        //returns some of the above parameters
+	GetX() int                                                                           //returns x position of node
+	GetY() int                                                                           //returns y position of node
+}
+    The NodeParent interface is inherited by all node types
+
+type Params struct {
+	NegativeSittingStopThresholdCM int     // This is a negative number for the sitting to be set to when map is reset
+	SittingStopThresholdCM         int     // This is the threshold for the longest time a node can sit before no longer moving
+	GridCapacityPercentageCM       float64 // This is the percent of a subgrid that can be filled with nodes, between 0.0 and 1.0
+	ErrorModifierCM                float64 // Multiplier for error model
+	OutputFileNameCM               string  // This is the prefix of the output text file
+	InputFileNameCM                string  // This must be the name of the input text file with ".txt"
+	NaturalLossCM                  float64 // This can be any number n: 0 < n < .1
+	SensorSamplingLossCM           float64 // This can be any number n: 0 < n < .1
+	GPSSamplingLossCM              float64 // This can be any number n: 0 < n < GPSSamplingLossCM < .1
+	ServerSamplingLossCM           float64 // This can be any number n: 0 < n < serverSamplingLossCM < .1
+	ThresholdBatteryToHaveCM       int     // This can be any number n: 0 < n < 50
+	ThresholdBatteryToUseCM        int     // This can be any number n: 0 < n < 20 < 100-thresholdBatteryToHaveCM
+	MovementSamplingSpeedCM        int     // This can be any number n: 0 < n < 100
+	MovementSamplingPeriodCM       int     // This can be any int number n: 1 <= n <= 100
+	MaxBufferCapacityCM            int     // This can be aby int number n: 10 <= n <= 100
+	EnergyModelCM                  string  // This can be "custom", "2StageServer", or other string will result in dynamic
+	NoEnergyModelCM                bool    // If set to true, all energy model values ignored
+	SensorSamplingPeriodCM         int     // This can be any int n: 1 <= n <= 100
+	GPSSamplingPeriodCM            int     // This can be any int n: 1 <= n < sensorSamplingPeriodCM <=  100
+	ServerSamplingPeriodCM         int     // This can be any int n: 1 <= n < GPSSamplingPeriodCM <= 100
+	NumStoredSamplesCM             int     // This can be any int n: 5 <= n <= 25
+	GridStoredSamplesCM            int     // This can be any int n: 5 <= n <= 25
+	DetectionThresholdCM           float64 //This is whatever value 1-1000 we determine should constitute a "detection" of a bomb
+	PositionPrintCM                bool    //This is either true or false for whether to print positions to log file
+	EnergyPrintCM                  bool    //This is either true or false for whether to print energy info to log file
+	NodesPrintCM                   bool    //This is either true or false for whether to print node readings/averages to log file
+	GridPrintCM                    bool    //This is either true or false for whether to print grid readings to log file
+	SquareRowCM                    int     //This is an int 1 through maxX representing how many rows of squares there are
+	SquareColCM                    int     //This is an int 1 through maxY representing how many columns of squares there are
+	StdDevThresholdCM              float64 //Detection Threshold based on standard deviations from mean
+	CalibrationThresholdCM         float64
+
+	StimFileNameCM        string
+	ImageFileNameCM       string
+	OutRoutingStatsNameCM string
+	OutRoutingNameCM      string
+	CPUProfile            string
+	MemProfile            string
+
+	NumSuperNodes  int
+	SuperNodeType  int
+	SuperNodeSpeed int
+	DoOptimize     bool
+	//superNodeVariation int
+	SuperNodeRadius int
+
+	CenterCoord Coord
+
+	Center Coord
+
+	PositionPrint bool
+	EnergyPrint   bool
+	NodesPrint    bool
+	GridPrint     bool
+
+	MoveReadingsFile *os.File
+	DriftFile        *os.File
+	NodeFile         *os.File
+	PositionFile     *os.File
+	GridFile         *os.File
+	EnergyFile       *os.File
+	RoutingFile      *os.File
+	AttractionFile   *os.File
+	BoolFile         *os.File
+	ServerFile       *os.File
+	NodeTest         *os.File
+	NodeTest2        *os.File
+	DetectionFile    *os.File
+
+	SensorPath  string
+	SensorTimes []int
+	CurrTime    int
+
+	FoundBomb bool
+	Err       error
+
+	BoardMap [][]int
+
+	BoolGrid [][]bool
+	Grid     [][]*Square
+
+	SensorReadings [][][]float64
+
+	SquareCapacity int
+
+	XDiv int
+	YDiv int
+
+	MaxX  int
+	MaxY  int
+	BombX int
+	BombY int
+
+	ThreshHoldBatteryToHave  float32
+	TotalPercentBatteryToUse float32
+	Iterations_used          int
+	Iterations_of_event      int
+	EstimatedPingsNeeded     int
+
+	B *Bomb
+
+	Tau1 float64
+	Tau2 float64
+
+	Recalibrate bool
+
+	FileName string
+
+	RegionRouting bool
+	AStarRouting  bool
+
+	NumNodeNodes               int
+	NumWallNodes               int
+	NumPoints                  int
+	NumPointsOfInterestKinetic int
+	NumPointsOfInterestStatic  int
+
+	Npos    [][]int // node positions
+	Wpos    [][]int // wall positions
+	Spos    [][]int // super node positions
+	Ppos    [][]int // super node points of interest positions
+	Poikpos [][]int // points of interest kinetic
+	Poispos [][]int // points of interest static
+
+	DetectionThreshold float64
+
+	//SquareRow        int
+	//SquareCol        int
+	NumNodes         int
+	NumStoredSamples int
+	NumGridSamples   int
+
+	WallNodeList []WallNodes
+	NodeList     []NodeImpl
+
+	BatteryCharges []float32
+	BatteryLosses  []float32
+
+	BatteryLossesCheckingSensorScalar []float32
+	BatteryLossesCheckingGPSScalar    []float32
+	BatteryLossesCheckingServerScalar []float32
+
+	NumAtt      int
+	Attractions []*Attraction
+	BombSquare  *Square
+	XLoc        int
+	YLoc        int
+
+	Width  int
+	Height int
+	Server FusionCenter //Server object
+
+}
+
+type Path struct {
+	X, Y int
+	Dist float64
+}
+    Path is a struct that contains an x and y integer and
+
+    a float for distance
+
+    This struct is used when calculating the distance between
+
+    points of interest on the grid during super node route
+    scheduling
+
+func Remove_index(arr []Path, n int) []Path
+    Returns the arr with the element at index n removed
+
+type Reading struct {
+	SensorVal float64
+	Xpos      int
+	YPos      int
+	Time      int //Time represented by iteration number
+	Id        int //Node Id number
+}
+    Reading packages the data sent by a node
+
+type Region struct {
+	Center, Edge Coord
+	Points       []Coord
+}
+    The struct region defines a rectangular area inside the
+
+    grid
+
+func MakeRegionList(sNodeNum int, p *Params) []Region
+    Initializes the regionList for the super node
+
+func Remove_region(arr []Region, n int) []Region
+    The function returns the arr with the element at index n removed
+
+type RegionParams struct {
+	Point_list []Tuple
+
+	Point_list2 [][]bool
+
+	Point_dict map[Tuple]bool
+
+	Square_list []RoutingSquare
+
+	Border_dict map[int][]int
+
+	Node_tables []map[Tuple]float64
+
+	Possible_paths [][]int
+
+	Stim_list map[int]Tuple
+}
+
+type Rn struct {
+	*NodeImpl
+}
+    Random nodes get assigned a random x, y velocity every
+
+    move update
+
+func (n *Rn) Move(p *Params)
+    Moves the random nodes
+
+func (n Rn) String() string
+type RoutingSquare struct {
+	X1, X2, Y1, Y2 int
+	Can_cut        bool
+	Id_num         int
+	Routers        []Tuple
+}
+
+func Double_cut(sq1, sq2 RoutingSquare) []RoutingSquare
+func Single_cut(sq1, sq2 RoutingSquare) []RoutingSquare
+type Scheduler struct {
+	SNodeList []SuperNodeParent
+}
+    Then scheduler type contains the list of all the super nodes in the
+    simulation It is responsible for adding the points of interest to the super
+    nodes, this
+
+    process differs on the type of super node
+
+func (s *Scheduler) AddRoutePoint(c Coord, p *Params, r *RegionParams)
+func (s *Scheduler) AddRoutePoint0(c Coord, p *Params, r *RegionParams)
+    Adds a point of interest to a super node of type 0 Since super node 0
+    operates on the default scheduling algorithm the
+
+    scheduler adds the new point of interest to the super node who's
+    final destination is closest to the point
+
+func (s *Scheduler) AddRoutePoint1(c Coord, p *Params, r *RegionParams)
+    Adds a point of interest to a super node of type 1 This is a more
+    complicated and sophisticated version of the super node 0
+
+    adding function
+
+    This adds the distance from the newly added point to the closest spot on the
+
+    super node's path to the length of the super node's current path
+
+    This prioritizes the proximity of the super nodes in determining which
+
+    one will travel to the newly added point, but also adds in the distance that
+    super node is currently attempting to travel
+
+func (s *Scheduler) AddRoutePoint1_circle(c Coord, p *Params, r *RegionParams)
+    This is a variation on the super node 1 adding function This restricts the
+    super node to a circular region that covers an area of the
+
+    entire grid
+
+func (s *Scheduler) AddRoutePoint1_regions(c Coord, p *Params, r *RegionParams)
+    This is a variation on the super node 1 adding function This restricts the
+    super node to a quadrant of the grid that only it covers
+
+func (s *Scheduler) AddRoutePoint2(c Coord, p *Params, r *RegionParams)
+    Adds a point of interest to a super node of type 2 Super nodes of type 2
+    schedule their routes within regions so this
+
+    function add the point to the super node whose center is closest
+    to the point
+
+func (scheduler *Scheduler) MakeSuperNodes(p *Params)
+func (s *Scheduler) Optimize(pp *Params, r *RegionParams)
+    This function is called every time a super node reaches a point of interest
+    along
+
+    its routePath
+
+    The scheduler removes all the nodes' points of interest and redistributes
+    them again
+
+    attempting to make the routing process more efficient
+
+type Sn_one struct {
+	*Supern
+}
+    Super node of type 1 The super node with the minimum distance routing
+    algorithm
+
+func (n *Sn_one) AddRoutePoint(c Coord, p *Params, r *RegionParams)
+    Adds a RoutePoint to the super node's RoutePoints
+
+func (n *Sn_one) Tick(p *Params, r *RegionParams)
+    This function is called every tick It adds points to the super node's
+    RoutePoints and RoutePath lists
+
+    and moves it along the path
+
+func (n *Sn_one) UpdatePath(p *Params, r *RegionParams)
+    updatePath is called when the number of destinations is less
+
+    than the number of points in the RoutePoints list
+
+    This means a new point of interest was added and needs to be
+
+    visited
+
+    This function adds points to the RoutePath list in order for
+
+    for the super node to follow, it also inserts points into the
+    RoutePath if a new point appears and qualifies for insertion
+
+type Sn_two struct {
+	*Supern
+
+	RegionList     []Region
+	UsedRegionList []Region
+}
+    Super node of type 2 The super node with the regional routing algorithm
+
+func (n *Sn_two) AddRoutePoint(c Coord, p *Params, r *RegionParams)
+    This function adds a point of interest to the allPoints list This list is
+    traversed and the point's regions are decided when
+
+    updating the path
+
+func (n *Sn_two) AddToRegion(r int)
+    This function removes Points from the allPoints list and adds them to the
+
+    specified region's (n.RegionList[r]) Points list
+
+func (n *Sn_two) Calc_triangle_tot(r Region, pp *Params) ([]Coord, []Coord)
+    This function calculates the total number of Points of interest inside
+
+    a regions lower and upper triangles
+
+    The region can be split into triangles either top-right to bottom-left
+
+    or top-left to bottom-right
+
+func (n *Sn_two) MostPointsRegion() int
+    This function returns the index of the Region with the most Points of
+    interest
+
+    inside of it
+
+func (n *Sn_two) OldestInRegion(reg Region) int
+    This function takes a Region and returns the oldest point of interest
+
+    inside that Region
+
+func (n *Sn_two) OldestPointRegion() int
+    This function returns the index of the Region with the oldest point of
+    interest
+
+    inside of it
+
+func (n *Sn_two) Tick(p *Params, r *RegionParams)
+    This function is called every tick It adds Points to the super nodes
+    routePoints and routePath lists
+
+    and moves it along those paths
+
+func (n *Sn_two) TotalInRegion(reg Region) int
+    This function takes a Region and returns the total number of Points
+
+    of interest inside the Region
+
+func (n *Sn_two) UpdatePath(p *Params, r *RegionParams)
+    This function updates the path for the super node to follow updatePath is
+    only called when the super node is in the Center of the grid
+
+    with no more Points to visit
+
+    It searches the four quadrants of the grid and finds the one with the most
+    Points
+
+    of interest inside of it or the one with the oldest point of interest inside it,
+    it then plots a route that takes the super node to the Edge of that region and
+    back, intercepting Points along the way
+
+    Once a region has been visited it will not be visited again until all of the
+
+    region have been visited or all the other regions are currently empty
+
+type Sn_zero struct {
+	*Supern
+}
+    Super node of type 1 The super node with the minimum distance routing
+    algorithm
+
+func (n *Sn_zero) AddRoutePoint(c Coord, p *Params, r *RegionParams)
+    Adds a routePoint to the super node's routePoints
+
+func (n *Sn_zero) Tick(p *Params, r *RegionParams)
+    This function is called every tick It adds points to the super node's
+    routePoints and routePath
+
+    lists and moves the super node if necessary
+
+func (n *Sn_zero) UpdatePath(p *Params, r *RegionParams)
+    This super node just adds the newest point at the end of the current path
+
+type Square struct {
+	X int
+	Y int
+
+	Avg      float32
+	NumEntry int
+	Values   []float32
+	MaxEntry int
+	Tot      float32
+
+	NumNodes        int
+	ActualNumNodes  int
+	PointOfInterest bool
+
+	StdDev       float64
+	SquareValues float64
+	HasDetected  bool
+
+	CanBeTravelledTo []bool
+
+	Lock sync.Mutex
+}
+    Square type contains the average of the readings in the Square,
+
+    the number of total entries that have been taken in that
+    specific Square, the list of values that are used to calculate
+    the average, the maximum number of entries that list can
+    contain, the total of those entries before they are averaged,
+    and the number of nodes inside of the specific Square
+
+func (s *Square) AddNode()
+    Adds a node to this Square, increasing its numNodes
+
+func (s *Square) GetSquareValues() float64
+    getter function for squareValues
+
+func (s *Square) RemoveNode()
+    Removes a node from this Square, decreasing its numNodes
+
+func (s *Square) Reset()
+    reset the square to prevent repetitive false positives
+
+func (s *Square) SetSquareValues(squareVals float64)
+    setter function for squareValues
+
+func (s *Square) String() string
+    toString method for Squares
+
+func (s *Square) TakeMeasurement(x float32)
+    This function takes a measurement from a node inside that
+
+    Square and adds its value to the value list and calculates
+    the new average
+
+type SuperNode2Impl interface {
+	Calc_triangle_tot(Region) (int, int)
+	Add_route_point([][]Square, Coord)
+	WthinRegion(Region)
+}
+    This interface is implemented by super node of type 2
+
+type SuperNodeParent interface {
+	NodeParent
+	Tick(p *Params, r *RegionParams)
+
+	PathMove(p *Params)
+	CentMove(p *Params)
+
+	UpdateLoc()
+
+	AddRoutePoint(Coord, *Params, *RegionParams)
+	UpdatePath(p *Params, r *RegionParams)
+	Route(grid [][]*Square, c1 Coord, c2 Coord, list []Coord) []Coord
+
+	IncSquareMoved(int)
+	IncAllPoints()
+
+	GetRoutePath() []Coord
+	GetRoutePoints() []Coord
+	GetNumDest() int
+	GetCenter() Coord
+	GetSquaresMoved() int
+	GetPointsVisited() int
+	GetId() int
+	GetAvgResponseTime() float64
+	GetAllPoints() []Coord
+	GetSuperNodeType() int
+
+	SetNumDest(int)
+	SetRoutePath([]Coord)
+	SetRoutePoints([]Coord)
+}
+    SuperNodeMovement controls all the movement of the super nodes
+
+    as well as some methods only defined for super nodes
+
+type Supern struct {
+	*NodeImpl
+	X_speed int
+	Y_speed int
+
+	XRadius int
+	YRadius int
+
+	NumDestinations int
+
+	RoutePoints []Coord
+	RoutePath   []Coord
+
+	Center Coord
+
+	SquaresMoved int
+
+	PointsVisited   int
+	TotResponseTime int
+	AvgResponseTime float64
+
+	SuperNodeType int
+
+	AllPoints []Coord
+}
+    Super nodes travel through the gird based of a Route
+
+    dictated by a grid path algorithm
+
+    They contain attributes not contained by other nodes
+
+    to control their movement through the grid
+
+func (n *Supern) CentMove(p *Params)
+    Moves the super node back towards it's assigned center point Instead of
+    constructing an entire path to follow and then scrapping
+
+    it when a new point of interest arrives, centMove adds only the
+    point of the path and then calls path move
+
+    This allows the super node to have empty RoutePoints and RoutePath
+
+    when a new point of interest is added
+
+func (n *Supern) GetAllPoints() []Coord
+func (n *Supern) GetAvgResponseTime() float64
+func (n *Supern) GetCenter() Coord
+func (n *Supern) GetId() int
+func (n *Supern) GetNumDest() int
+func (n *Supern) GetPointsVisited() int
+func (n *Supern) GetRoutePath() []Coord
+    Various getters for super node attributes to be accessed by the
+    SuperNodeMovement interface
+
+func (n *Supern) GetRoutePoints() []Coord
+func (n *Supern) GetSquaresMoved() int
+func (n *Supern) GetSuperNodeType() int
+func (n *Supern) GetX() int
+func (n *Supern) GetY() int
+func (n *Supern) IncAllPoints()
+    Increments the time of all points not currently being visited
+
+    byt the super node
+
+func (n *Supern) IncSquareMoved(num int)
+    This function helps keep track of the amount of squares the
+
+    super node is travelling, this is used to test the effectiveness
+    of the routing algorithms
+
+func (n *Supern) PathMove(p *Params)
+    Moves the super node along the path determined by the RoutePath list It also
+    maintains the RoutePoints and RoutePath lists, deleting elements
+
+    once they have been visited by the super node
+
+func (n Supern) Route(grid [][]*Square, c1 Coord, c2 Coord, list []Coord) []Coord
+    The Route function adds Coords to the RoutePath of the specific
+
+    super node
+
+    It recursively finds the Square with the least number of nodes between
+
+    the two Coords
+
+    Once the Square with the lowest numNodes is found the Route
+
+    function is called again between the beginning node/the lowest
+    node and the lowest node/the end node
+
+    Eventually this adds Coords from the beginning to the end travelling
+
+    along the least populated nodes along the way
+
+func (n *Supern) SetNumDest(d int)
+    Various setters for super node attributes to be accessed by the
+    SuperNodeMovement interface
+
+func (n *Supern) SetRoutePath(c []Coord)
+func (n *Supern) SetRoutePoints(c []Coord)
+func (n Supern) String() string
+    toString for super nodes
+
+func (n *Supern) UpdateLoc()
+    Updates the location of the super node within the gird Determines what
+    square it's in not the exact x,y
+
+type Tuple struct {
+	X, Y int
+}
+
+type WallNodes struct {
+	Node *NodeImpl
+}
+
+type Wn struct {
+	*NodeImpl
+	Speed int
+	Dir   int
+}
+    Wall nodes go in a straight line from top/bottom or
+
+    side/side
+
+func (n *Wn) Move(p *Params)
+    Moves the wall nodes
+
+func (n Wn) String() string

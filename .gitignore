@@ -166,3 +166,9 @@ routing/stats2/
 routing/log.txt
 
 *.prof
+
+smoothed_marathon\.csv
+
+guiSrc/output/production/guiSrc/edu/udel/ntsee/bombdetection/data/
+
+*.class

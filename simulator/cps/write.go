@@ -1,9 +1,11 @@
+//CPS contains the simulator
 package cps
 
 import (
 	"encoding/csv"
+	"flag"
+	"math/rand"
 	"strings"
-
 	//"bufio"
 	"fmt"
 	"image"
@@ -12,7 +14,7 @@ import (
 	"os"
 	"regexp"
 	"strconv"
-	//"time"
+	//"Time"
 	"log"
 )
 
@@ -42,14 +44,6 @@ var (
 		poispos [][]int // points of interest static
 	*/
 
-	//b []byte
-	b2 []byte
-	b3 []byte
-	b4 []byte
-	b5 []byte
-	b6 []byte
-	b7 []byte
-
 	//numNodeNodes               int
 	//numWallNodes               int
 	//numPoints                  int
@@ -61,50 +55,7 @@ var (
 	makeBoardMapFile = true
 )
 
-//func main() {
-//
-//	getListedInput()
-//
-//	squareRow := getDashedInput("squareRow")
-//	squareCol:= getDashedInput("squareCol")
-//	numNodes:= getDashedInput("numNodes")
-//	numStoredSamples:= getDashedInput("numStoredSamples")
-//	Tau1:= getDashedInput("Tau1")
-//	Tau2:= getDashedInput("Tau2")
-//	superNodeType:= getDashedInput("superNodeType")
-//	maxX:= getDashedInput("maxX")
-//	maxY:= getDashedInput("maxY")
-//	bombX:= getDashedInput("bombX")
-//	bombY:= getDashedInput("bombY")
-//	Tester:= getDashedInput("Tester")
-//
-//	fmt.Println(squareRow,
-//		squareCol,
-//		numNodes,
-//		numStoredSamples,
-//		Tau1,
-//		Tau2,
-//		superNodeType,
-//		maxX,
-//		maxY,
-//		bombX,
-//		bombY,
-//		Tester)
-//
-//	createBoard(maxX,maxY)
-//
-//	fillInWallsToBoard()
-//
-//	fillInBufferCurrent()
-//
-//	fillPointsToBoard()
-//
-//	fillInMap()
-//
-//	writeBordMapToFile()
-//
-//}
-
+//GetDashedInput
 func GetDashedInput(s string, p *Params) int {
 	b := ReadFromFile(p.FileName)
 	r := regexp.MustCompile(string(s + "-[0-9]+"))
@@ -116,110 +67,58 @@ func GetDashedInput(s string, p *Params) int {
 	return int(s1)
 }
 
+//getString reads the input file and extracts the data from the specified category
+//headExp is a regular expression to denote the label and dataExp is the form the data will take
+func getString(p *Params, bytes []byte, headExp string, dataExp string) ([][]int, []string){
+	regex := regexp.MustCompile(headExp)
+	text := regex.FindAllString(string(bytes), 10)
+	regex = regexp.MustCompile("[0-9]+")
+	text = regex.FindAllString(text[0], 10)
+	size, err := strconv.ParseInt(text[0], 10, 32)
+	Check(err)
+	regex = regexp.MustCompile(dataExp)
+	fai := regex.FindAllIndex(bytes, int(size))
+	text = regex.FindAllString(string(bytes), int(size))
+	return fai, text
+}
+
 func GetListedInput(p *Params) {
+	var temp []byte
 	dir, err := os.Getwd()
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println(dir)
-	b := ReadFromFile(p.FileName)
-	r := regexp.MustCompile("N: [0-9]+")
-	w := r.FindAllString(string(b), 10)
-	r = regexp.MustCompile("[0-9]+")
-	w = r.FindAllString(w[0], 10)
-	s, err := strconv.ParseInt(w[0], 10, 32)
-	Check(err)
-	r = regexp.MustCompile("x:[0-9]+, y:[0-9]+, t:[0-9]+")
-	fai := r.FindAllIndex(b, int(s))
-	w = r.FindAllString(string(b), int(s))
+	fileBytes := ReadFromFile(p.FileName)
+
+	fai, text := getString(p, fileBytes, "N: [0-9]+", "x:[0-9]+, y:[0-9]+, t:[0-9]+")
 	if len(fai) > 0 {
-		b2 = b[fai[len(fai)-1][1]:]
+		temp = fileBytes[fai[len(fai)-1][1]:]
 	} else {
-		b2 = b
+		temp = fileBytes
 	}
-	//fmt.Println(w)
-	FillInts(w, 0, p)
-	//fmt.Println(npos)
+	FillInts(text, 0, p)
 
-	r = regexp.MustCompile("W: [0-9]+")
-	w = r.FindAllString(string(b2), 10)
-	r = regexp.MustCompile("[0-9]+")
-	w = r.FindAllString(w[0], 10)
-	s, err = strconv.ParseInt(w[0], 10, 32)
-	r = regexp.MustCompile("x:[0-9]+, y:[0-9]+")
-	Check(err)
-	fai = r.FindAllIndex(b2, int(s))
-	w = r.FindAllString(string(b2), int(s))
+	fai, text = getString(p, temp, "W: [0-9]+", "x:[0-9]+, y:[0-9]+")
 	if len(fai) > 0 {
-		b3 = b2[fai[len(fai)-1][1]:]
-	} else {
-		b3 = b2
+		temp = temp[fai[len(fai)-1][1]:]
 	}
-	//fmt.Println(w)
-	FillInts(w, 1, p)
-	//fmt.Println(wpos)
+	FillInts(text, 1, p)
 
-	r = regexp.MustCompile("S: [0-9]+")
-	w = r.FindAllString(string(b3), 10)
-	r = regexp.MustCompile("[0-9]+")
-	w = r.FindAllString(w[0], 10)
-	s, err = strconv.ParseInt(w[0], 10, 32)
-	r = regexp.MustCompile("x:[0-9]+, y:[0-9]+, t:[0-9]+")
-	Check(err)
-	fai = r.FindAllIndex(b3, int(s))
-	w = r.FindAllString(string(b3), int(s))
+	fai, text = getString(p, temp, "S: [0-9]+", "x:[0-9]+, y:[0-9]+")
 	if len(fai) > 0 {
-		b4 = b3[fai[len(fai)-1][1]:]
-	} else {
-		b4 = b3
+		temp = temp[fai[len(fai)-1][1]:]
 	}
-	//fmt.Println(w)
-	FillInts(w, 2, p)
-	//fmt.Println(spos)
+	FillInts(text, 2, p)
 
-	/*r = regexp.MustCompile("P: [0-9]+")
-	w = r.FindAllString(string(b4), 10)
-	r = regexp.MustCompile("[0-9]+")
-	w = r.FindAllString(w[0], 10)
-	s, err = strconv.ParseInt(w[0], 10, 32)
-	r = regexp.MustCompile("x:[0-9]+, y:[0-9]+, t:[0-9]+")
-	Check(err)
-	fai = r.FindAllIndex(b4, int(s))
-	w = r.FindAllString(string(b4), int(s))
-	if len(fai) > 0 {
-		b5 = b4[fai[len(fai)-1][1]:]
-	} else {
-		b5 = b4
-	}
-	fmt.Println(w)
-	fillInts(w, 3)
-	fmt.Println(ppos)*/
+	fai, text = getString(p, temp, "POIS: [0-9]+", "x:[0-9]+, y:[0-9]+, ti:[0-9]+, to:[0-9]+")
+	FillInts(text, 5, p)
 
-	b5 = b4
-
-	r = regexp.MustCompile("POIS: [0-9]+")
-	w = r.FindAllString(string(b5), 10)
-	r = regexp.MustCompile("[0-9]+")
-	w = r.FindAllString(w[0], 10)
-	s, err = strconv.ParseInt(w[0], 10, 32)
-	r = regexp.MustCompile("x:[0-9]+, y:[0-9]+, ti:[0-9]+, to:[0-9]+")
-	Check(err)
-	fai = r.FindAllIndex(b5, int(s))
-	w = r.FindAllString(string(b5), int(s))
-	if len(fai) > 0 {
-		b6 = b5[fai[len(fai)-1][1]:]
-	} else {
-		b6 = b5
-	}
-	//fmt.Println(w)
-	FillInts(w, 5, p)
-	//fmt.Println(poispos)
-
-	p.NumNodeNodes = len(p.Npos)
+	p.CurrentNodes = len(p.NodeEntryTimes)
 	p.NumWallNodes = len(p.Wpos)
 	//numPoints = len(ppos)
 	p.NumPointsOfInterestStatic = len(p.Poispos)
-	//fmt.Println(numNodeNodes, numWallNodes, numPoints, numPointsOfInterestKinetic, numPointsOfInterestStatic)
+	//fmt.Println(p.NumNodeNodes, p.NumWallNodes, p.NumPointsOfInterestStatic)
 }
 
 func FillInts(s []string, place int, p *Params) {
@@ -232,7 +131,7 @@ func FillInts(s []string, place int, p *Params) {
 			s1, err := strconv.ParseInt(x[0], 10, 32)
 			Check(err)
 			ap := []int{int(s1), 0, 0}
-			p.Npos = append(p.Npos, ap)
+			p.NodeEntryTimes = append(p.NodeEntryTimes, ap)
 
 			r = regexp.MustCompile("y:[0-9]+")
 			X = r.FindAllString(s[i], 1)
@@ -240,7 +139,7 @@ func FillInts(s []string, place int, p *Params) {
 			x = r.FindAllString(X[0], 1)
 			s1, err = strconv.ParseInt(x[0], 10, 32)
 			Check(err)
-			p.Npos[i][1] = int(s1)
+			p.NodeEntryTimes[i][1] = int(s1)
 
 			r = regexp.MustCompile("t:[0-9]+")
 			X = r.FindAllString(s[i], 1)
@@ -248,7 +147,7 @@ func FillInts(s []string, place int, p *Params) {
 			x = r.FindAllString(X[0], 1)
 			s1, err = strconv.ParseInt(x[0], 10, 32)
 			Check(err)
-			p.Npos[i][2] = int(s1)
+			p.NodeEntryTimes[i][2] = int(s1)
 		}
 	} else if place == 1 {
 		for i := 0; i < len(s); i++ {
@@ -407,9 +306,9 @@ func Check(e error) {
 // Creates p.BoardMap
 func CreateBoard(x int, y int, p *Params) {
 	p.BoardMap = [][]int{}
-	for i := 0; i < y; i++ {
+	for i := 0; i < x; i++ {
 		p.BoardMap = append(p.BoardMap, []int{})
-		for j := 0; j < x; j++ {
+		for j := 0; j < y; j++ {
 			p.BoardMap[i] = append(p.BoardMap[i], 0)
 		}
 	}
@@ -419,30 +318,155 @@ func HandleMovement(p *Params) {
 	for j := 0; j < len(p.NodeList); j++ {
 
 		oldX, oldY := p.NodeList[j].GetLoc()
-		p.BoolGrid[oldY][oldX] = false //set the old spot false since the node will now move away
+		p.BoolGrid[oldX][oldY] = false //set the old spot false since the node will now move away
 
 		//move the node to its new location
 		p.NodeList[j].Move(p)
 
 		//set the new location in the boolean field to true
 		newX, newY := p.NodeList[j].GetLoc()
-		p.BoolGrid[newY][newX] = true
+		p.BoolGrid[newX][newY] = true
 
 		//writes the node information to the file
 		if p.EnergyPrint {
 			fmt.Fprintln(p.EnergyFile, p.NodeList[j])
 		}
 
-		//Add the node into its new Square's p.NumNodes
-		//If the node hasn't left the square, that Square's p.NumNodes will
+		//Add the node into its new Square's p.TotalNodes
+		//If the node hasn't left the square, that Square's p.TotalNodes will
 		//remain the same after these calculations
 	}
 }
 
+
+func HandleMovementCSV(p *Params) {
+	time := p.Iterations_used
+	for j := 0; j < len(p.NodeList); j++ {
+
+		if p.NodeList[j].Valid {
+			oldX, oldY := p.NodeList[j].GetLoc()
+			p.BoolGrid[oldX][oldY] = false //set the old spot false since the node will now move away
+		}
+		//move the node to its new location
+		//p.NodeList[j].Move(p)
+
+		id := p.NodeList[j].GetID()
+		p.NodeList[j].X = p.NodeMovements[id][time].X
+		p.NodeList[j].Y = p.NodeMovements[id][time].Y
+
+
+		//set the new location in the boolean field to true
+		newX, newY := p.NodeList[j].GetLoc()
+
+		if p.NodeList[j].InBounds(p) {
+			p.NodeList[j].Valid = true
+		} else {
+			p.NodeList[j].Valid = false
+		}
+		if p.NodeList[j].Valid {
+			p.BoolGrid[newX][newY] = true
+		}
+
+		//writes the node information to the file
+		if p.EnergyPrint {
+			fmt.Fprintln(p.EnergyFile, p.NodeList[j])
+		}
+
+		//Add the node into its new Square's p.TotalNodes
+		//If the node hasn't left the square, that Square's p.TotalNodes will
+		//remain the same after these calculations
+	}
+}
+
+
+func InitializeNodeParameters(p *Params, nodeNum int) *NodeImpl{
+
+	var initHistory = make([]float32, p.NumStoredSamples)
+
+	//initialize nodes to invalid starting point as starting point will be selected after initialization
+	curNode := NodeImpl{X: -1, Y: -1, Id: len(p.NodeList), SampleHistory: initHistory, Concentration: 0,
+		Cascade: nodeNum, Battery: p.BatteryCharges[nodeNum], BatteryLossScalar: p.BatteryLosses[nodeNum],
+		BatteryLossSensor:        p.BatteryLossesSensor[nodeNum],
+		BatteryLossGPS:           p.BatteryLossesGPS[nodeNum],
+		BatteryLossServer:        p.BatteryLossesServer[nodeNum],
+		BatteryLoss4G:            p.BatteryLosses4G[nodeNum],
+		BatteryLossAccelerometer: p.BatteryLossesAccelerometer[nodeNum],
+		BatteryLossWifi:		  p.BatteryLossesWiFi[nodeNum],
+		BatteryLossBT:			  p.BatteryLossesBT[nodeNum]}
+
+	//values to determine coefficients
+	curNode.SetS0(rand.Float64()*0.2 + 0.1)
+	curNode.SetS1(rand.Float64()*0.2 + 0.1)
+	curNode.SetS2(rand.Float64()*0.2 + 0.1)
+	//values to determine error in coefficients
+	s0, s1, s2 := curNode.GetCoefficients()
+	curNode.SetE0(rand.Float64() * 0.1 * p.ErrorModifierCM * s0)
+	curNode.SetE1(rand.Float64() * 0.1 * p.ErrorModifierCM * s1)
+	curNode.SetE2(rand.Float64() * 0.1 * p.ErrorModifierCM * s2)
+	//Values to determine error in exponents
+	curNode.SetET1(p.Tau1 * rand.Float64() * p.ErrorModifierCM * 0.05)
+	curNode.SetET2(p.Tau1 * rand.Float64() * p.ErrorModifierCM * 0.05)
+
+	//set node time and initial sensitivity
+	curNode.NodeTime = 0
+	curNode.InitialSensitivity = s0 + (s1)*math.Exp(-float64(curNode.NodeTime)/p.Tau1) + (s2)*math.Exp(-float64(curNode.NodeTime)/p.Tau2)
+	curNode.Sensitivity = curNode.InitialSensitivity
+
+	return &curNode
+}
+
+func SetupCSVNodes(p *Params) {
+	for i := 0; i < p.TotalNodes; i++ {
+		newNode := InitializeNodeParameters(p, i)
+
+		newNode.X = p.NodeMovements[i][0].X
+		newNode.Y = p.NodeMovements[i][1].Y
+
+		if newNode.InBounds(p) {
+			newNode.Valid = true
+			p.BoolGrid[newNode.X][newNode.Y] = true
+		} else {
+			newNode.Valid = false
+		}
+
+		p.NodeList = append(p.NodeList, *newNode)
+		p.CurrentNodes += 1
+	}
+
+}
+
+func SetupRandomNodes(p *Params) {
+	for i := 0; i < len(p.NodeEntryTimes); i++ {
+		if p.Iterations_used == p.NodeEntryTimes[i][2] {
+
+			newNode := InitializeNodeParameters(p, i)
+
+			xx := rangeInt(1, p.MaxX)
+			yy := rangeInt(1, p.MaxY)
+			for p.BoolGrid[xx][yy] == true {
+				xx = rangeInt(1, p.MaxX)
+				yy = rangeInt(1, p.MaxY)
+			}
+
+			newNode.X = xx
+			newNode.Y = yy
+
+			newNode.Valid = true
+
+			p.BoolGrid[xx][yy] = true
+
+			p.NodeList = append(p.NodeList, *newNode)
+			p.CurrentNodes += 1
+
+		}
+	}
+}
+
+
 // Fills the walls into the board based on the wall positions extrapolated from the file
 func FillInWallsToBoard(p *Params) {
 	for i := 0; i < len(p.Wpos); i++ {
-		p.BoardMap[p.Wpos[i][1]][p.Wpos[i][0]] = -1
+		p.BoardMap[p.Wpos[i][0]][p.Wpos[i][1]] = -1
 	}
 }
 
@@ -452,7 +476,7 @@ func FillInBufferCurrent(p *Params) {
 	bufferCurrent = [][]int{}
 	for i := 0; i < len(p.Poispos); i++ {
 		if p.Iterations_used >= p.Poispos[i][2] && p.Iterations_used < p.Poispos[i][3] {
-			bufferCurrent = append(bufferCurrent, []int{p.Poispos[i][1], p.Poispos[i][0]})
+			bufferCurrent = append(bufferCurrent, []int{p.Poispos[i][0], p.Poispos[i][1]})
 			//fmt.Println("1ho- ", iterations_used, "2ho", bufferCurrent)
 		}
 	}
@@ -466,98 +490,11 @@ func FillPointsToBoard(p *Params) {
 	}
 }
 
-// Fills in board map with the path finding values
-func FillInMap1(p *Params) {
-	/*start := time.Now()
-
-	defer func() {
-		elapsed := time.Since(start)
-		//fmt.Println("Board Map took", elapsed)
-	}()*/
-
-	for len(bufferFuture) > 0 {
-		bufferFuture = [][]int{}
-		for i := 0; i < len(bufferCurrent); i++ {
-			CheckLeft(i, p)
-			CheckRight(i, p)
-			CheckUp(i, p)
-			CheckDown(i, p)
-		}
-		bufferCurrent = [][]int{}
-		bufferCurrent = append(bufferCurrent, bufferFuture...)
-		starter += 1
-	}
-	starter = 1
-	bufferFuture = [][]int{{}}
-}
-
-func CheckLeft(i int, p *Params) {
-	defer func() {
-		recover()
-	}()
-	if
-	//bufferCurrent[i][0]-1 < len(p.BoardMap) &&
-	//bufferCurrent[i][1] < len(p.BoardMap[1]) &&
-	//bufferCurrent[i][0]-1 >= 0 &&
-	//bufferCurrent[i][1] >= 0 &&
-	p.BoardMap[bufferCurrent[i][0]-1][bufferCurrent[i][1]] == 0 {
-
-		p.BoardMap[bufferCurrent[i][0]-1][bufferCurrent[i][1]] = starter + 1
-		bufferFuture = append(bufferFuture, []int{bufferCurrent[i][0] - 1, bufferCurrent[i][1]})
-	}
-}
-
-func CheckRight(i int, p *Params) {
-	defer func() {
-		recover()
-	}()
-	if
-	//bufferCurrent[i][0]+1 < len(p.BoardMap) &&
-	//bufferCurrent[i][1] < len(p.BoardMap[1]) && // p.BoardMap[1] to
-	//bufferCurrent[i][0]+1 >= 0 &&
-	//bufferCurrent[i][1] >= 0 &&
-	p.BoardMap[bufferCurrent[i][0]+1][bufferCurrent[i][1]] == 0 {
-
-		p.BoardMap[bufferCurrent[i][0]+1][bufferCurrent[i][1]] = starter + 1
-		bufferFuture = append(bufferFuture, []int{bufferCurrent[i][0] + 1, bufferCurrent[i][1]})
-	}
-}
-func CheckUp(i int, p *Params) {
-	defer func() {
-		recover()
-	}()
-	if
-	//bufferCurrent[i][0] < len(p.BoardMap) &&
-	//bufferCurrent[i][1]+1 < len(p.BoardMap[1]) &&
-	//bufferCurrent[i][0] >= 0 &&
-	//bufferCurrent[i][1]+1 >= 0 &&
-	p.BoardMap[bufferCurrent[i][0]][bufferCurrent[i][1]+1] == 0 {
-
-		p.BoardMap[bufferCurrent[i][0]][bufferCurrent[i][1]+1] = starter + 1
-		bufferFuture = append(bufferFuture, []int{bufferCurrent[i][0], bufferCurrent[i][1] + 1})
-	}
-}
-func CheckDown(i int, p *Params) {
-	defer func() {
-		recover()
-	}()
-	if
-	//bufferCurrent[i][0] < len(p.BoardMap) &&
-	//bufferCurrent[i][1]-1 < len(p.BoardMap[1]) &&
-	//bufferCurrent[i][0] >= 0 &&
-	//bufferCurrent[i][1]-1 >= 0 &&
-	p.BoardMap[bufferCurrent[i][0]][bufferCurrent[i][1]-1] == 0 {
-
-		p.BoardMap[bufferCurrent[i][0]][bufferCurrent[i][1]-1] = starter + 1
-		bufferFuture = append(bufferFuture, []int{bufferCurrent[i][0], bufferCurrent[i][1] - 1})
-	}
-}
-
 func FillInMap(p *Params) {
-	/*start := time.Now()
+	/*start := Time.Now()
 
 	defer func() {
-		elapsed := time.Since(start)
+		elapsed := Time.Since(start)
 		//fmt.Println("Board Map took", elapsed)
 	}()*/
 
@@ -615,6 +552,19 @@ func FillInMap(p *Params) {
 	bufferFuture = [][]int{{}}
 }
 
+func MakeBoolGrid(p *Params) {
+	p.BoolGrid = make([][]bool, p.MaxX)
+	for i := range p.BoolGrid {
+		p.BoolGrid[i] = make([]bool, p.MaxY)
+	}
+	//Initializing the boolean field with values of false
+	for i := 0; i < p.MaxX; i++ {
+		for j := 0; j < p.MaxY; j++ {
+			p.BoolGrid[i][j] = false
+		}
+	}
+}
+
 func ReadMap(p *Params, r *RegionParams) {
 
 	CreateBoard(p.MaxX, p.MaxY, p)
@@ -654,25 +604,29 @@ func ReadMap(p *Params, r *RegionParams) {
 
 	img, _, err := image.Decode(imgfile)
 
-	for x := 0; x < p.Height; x++ {
-		r.Point_list2 = append(r.Point_list2, make([]bool, p.Width))
+	for x := 0; x < p.Width; x++ {
+		r.Point_list2 = append(r.Point_list2, make([]bool, p.Height))
 	}
 
-	for x := 0; x < p.Height; x++ {
-		for y := 0; y < p.Width; y++ {
+	for x := 0; x < p.Width; x++ {
+		for y := 0; y < p.Height; y++ {
 			rr, _, _, _ := img.At(x, y).RGBA()
-			if rr != 0 {
+			/*rr, gg, bb, _ := img.At(1599, 90).RGBA()
+			fmt.Printf("r: %d %d %d\n", rr, gg, bb)
+			rr, gg, bb, _ = img.At(1599, 89).RGBA()
+			fmt.Printf("r: %d %d %d\n", rr, gg, bb)*/
+			if rr >= 60000 {
 				r.Point_list2[x][y] = true
 				r.Point_dict[Tuple{x, y}] = true
 
 			} else {
 				r.Point_dict[Tuple{x, y}] = false
-				p.BoardMap[y][x] = -1
+				p.BoardMap[x][y] = -1
 				temp := make([]int, 2)
 				temp[0] = x
 				temp[1] = y
 				p.Wpos = append(p.Wpos, temp)
-				p.BoolGrid[y][x] = true
+				p.BoolGrid[x][y] = true
 			}
 		}
 	}
@@ -686,6 +640,7 @@ func ReadMap(p *Params, r *RegionParams) {
 }
 
 func SetupFiles(p *Params) {
+	fmt.Printf("Building Output Files\n")
 	dummy, err := os.Create("dummyFile.txt")
 	if err != nil {
 		log.Fatal("cannot create file", err)
@@ -711,7 +666,7 @@ func SetupFiles(p *Params) {
 	//defer p.DriftFile.Close()
 
 	//Printing parameters to driftFile
-	fmt.Fprintln(p.DriftFile, "Number of Nodes:", p.NumNodes)
+	fmt.Fprintln(p.DriftFile, "Number of Nodes:", p.TotalNodes)
 	fmt.Fprintln(p.DriftFile, "Rows:", p.SquareRowCM)
 	fmt.Fprintln(p.DriftFile, "Columns:", p.SquareColCM)
 	fmt.Fprintln(p.DriftFile, "Samples Stored by Node:", p.NumStoredSamples)
@@ -726,7 +681,8 @@ func SetupFiles(p *Params) {
 	fmt.Fprintln(p.DriftFile, "Input File Name:", p.InputFileNameCM)
 	fmt.Fprintln(p.DriftFile, "Output File Name:", p.OutputFileNameCM)
 	fmt.Fprintln(p.DriftFile, "Battery Natural Loss:", p.NaturalLossCM)
-	fmt.Fprintln(p.DriftFile, "Sensor Loss:", p.SensorSamplingLossCM, "\nGPS Loss:", p.GPSSamplingLossCM, "\nServer Loss:", p.ServerSamplingLossCM)
+	fmt.Fprintln(p.DriftFile, "Sensor Loss:", p.SamplingLossServerCM, "\nGPS Loss:", p.SamplingLossGPSCM, "\nServer Loss:", p.SamplingLossServerCM)
+	fmt.Fprintln(p.DriftFile, "BlueTooth Loss:", p.SamplingLossBTCM, "\nWiFi Loss:", p.SamplingLossWifiCM, "\n4G Loss:", p.SamplingLoss4GCM, "\nAccelerometer Loss:", p.SamplingLossAccelCM)
 	fmt.Fprintln(p.DriftFile, "Printing Position:", p.PositionPrint, "\nPrinting Energy:", p.EnergyPrint, "\nPrinting Nodes:", p.NodesPrint)
 	fmt.Fprintln(p.DriftFile, "Super Nodes:", p.NumSuperNodes, "\nSuper Node Type:", p.SuperNodeType, "\nSuper Node Speed:", p.SuperNodeSpeed, "\nSuper Node Radius:", p.SuperNodeRadius)
 	fmt.Fprintln(p.DriftFile, "Error Multiplier:", p.ErrorModifierCM)
@@ -770,7 +726,37 @@ func SetupFiles(p *Params) {
 	if err != nil {
 		log.Fatal("Cannot create file", err)
 	}
+
+	p.MoveReadingsFile, err = os.Create(p.OutputFileNameCM + "-movementReadings.txt")
+	if err != nil {
+		log.Fatal("Cannot create file", err)
+	}
+
 	//defer p.AttractionFile.Close()
+
+	p.ServerFile, err = os.Create(p.OutputFileNameCM + "-server.txt")
+	if err != nil {
+		log.Fatal("Cannot create file", err)
+	}
+	//defer p.ServerFile.Close()
+
+	p.NodeTest, err = os.Create(p.OutputFileNameCM + "-nodeTest.txt")
+	if err != nil {
+		log.Fatal("Cannot create file", err)
+	}
+	//defer p.ServerFile.Close()
+
+	p.NodeTest2, err = os.Create(p.OutputFileNameCM + "-nodeTest2.txt")
+	if err != nil {
+		log.Fatal("Cannot create file", err)
+	}
+	//defer p.ServerFile.Close()
+
+	p.DetectionFile, err = os.Create(p.OutputFileNameCM + "-detection.txt")
+	if err != nil {
+		log.Fatal("Cannot create file", err)
+	}
+	//defer p.ServerFile.Close()
 }
 
 func SetupParameters(p *Params) {
@@ -787,44 +773,52 @@ func SetupParameters(p *Params) {
 	p.Center.Y = p.MaxY / 2
 
 	p.TotalPercentBatteryToUse = float32(p.ThresholdBatteryToUseCM)
-	p.BatteryCharges = GetLinearBatteryValues(len(p.Npos))
-	p.BatteryLosses = GetLinearBatteryLossConstant(len(p.Npos), float32(p.NaturalLossCM))
-	p.BatteryLossesCheckingSensorScalar = GetLinearBatteryLossConstant(len(p.Npos), float32(p.SensorSamplingLossCM))
-	p.BatteryLossesCheckingGPSScalar = GetLinearBatteryLossConstant(len(p.Npos), float32(p.GPSSamplingLossCM))
-	p.BatteryLossesCheckingServerScalar = GetLinearBatteryLossConstant(len(p.Npos), float32(p.ServerSamplingLossCM))
+	p.BatteryCharges = GetLinearBatteryValues(len(p.NodeEntryTimes))
+	p.BatteryLosses = GetLinearBatteryLossConstant(len(p.NodeEntryTimes), float32(p.NaturalLossCM))
+
+	//updated because of the variable renaming to BatteryLosses__ and SamplingLoss__CM
+	p.BatteryLossesSensor = GetLinearBatteryLossConstant(len(p.NodeEntryTimes), float32(p.SamplingLossSensorCM))
+	p.BatteryLossesGPS = GetLinearBatteryLossConstant(len(p.NodeEntryTimes), float32(p.SamplingLossGPSCM))
+	p.BatteryLossesServer = GetLinearBatteryLossConstant(len(p.NodeEntryTimes), float32(p.SamplingLossServerCM))
+	//newly added for BlueTooth, Wifi, 4G, and Accelerometer battery usage
+	p.BatteryLossesBT = GetLinearBatteryLossConstant(len(p.NodeEntryTimes), float32(p.SamplingLossBTCM))
+	p.BatteryLossesWiFi = GetLinearBatteryLossConstant(len(p.NodeEntryTimes), float32(p.SamplingLossWifiCM))
+	p.BatteryLosses4G = GetLinearBatteryLossConstant(len(p.NodeEntryTimes), float32(p.SamplingLoss4GCM))
+	p.BatteryLossesAccelerometer = GetLinearBatteryLossConstant(len(p.NodeEntryTimes), float32((p.SamplingLossAccelCM)))
+
 	p.Attractions = make([]*Attraction, p.NumAtt)
 
-	//readCSV(p)
+	if p.CSVSensor {
+		readSensorCSV(p)
+	}
+	if p.CSVMovement {
+		readMovementCSV(p)
+	}
+
 
 }
 
-func readCSV(p *Params) {
+func readSensorCSV(p *Params) {
 
 	in, err := os.Open(p.SensorPath)
 	if err != nil {
 		println("error opening file")
 	}
 	defer in.Close()
-
+	fmt.Printf("Reading Sensor Files\n")
 	r := csv.NewReader(in)
 	r.FieldsPerRecord = -1
 	record, err := r.ReadAll()
 
-	reg, _ := regexp.Compile("t=([0-9]+)")
-	times := (reg.FindAllStringSubmatch(strings.Join(record[8], " "), -1))
+	reg, _ := regexp.Compile("([0-9]+)")
+	times := reg.FindAllStringSubmatch(strings.Join(record[0], " "), -1)
 
 	p.SensorTimes = make([]int, len(times))
 	for i := range times {
 		p.SensorTimes[i], _ = strconv.Atoi(times[i][1])
 	}
 
-	/*fmt.Println(err)
-	fmt.Println(len(record))*/
-	big := 0.0
-	topVal := 0.0
-	i := 9
-
-	numSamples := len(record[9]) - 2
+	numSamples := len(record[2]) - 2
 
 	p.SensorReadings = make([][][]float64, p.Width)
 	for i := range p.SensorReadings {
@@ -837,89 +831,82 @@ func readCSV(p *Params) {
 		}
 	}
 
-	averaged := make([][][]float64, p.Width)
-	for i := range averaged {
-		averaged[i] = make([][]float64, p.Height)
-		for j := range averaged[i] {
-			averaged[i][j] = make([]float64, numSamples)
-			for k := range averaged[i][j] {
-				averaged[i][j][k] = -1
-			}
-		}
-	}
 
+
+	i := 1
+	fmt.Printf("Sensor CSV Processing\n")
 	for i < len(record) {
-		//fmt.Println(record[i])
-		x, err := strconv.ParseFloat(record[i][0], 32)
-		/*if err == nil {
-			fmt.Println(Round(x, 0.5))
-		} else {
-			fmt.Println(err)
-		}*/
-		if x > big {
-			big = x
-		}
-		y, err := strconv.ParseFloat(record[i][1], 32)
-		/*if err == nil {
-			fmt.Println(Round(y, 0.5))
-		}*/
-		if y > big {
-			big = y
-		}
+
+
+		x, _ := strconv.ParseInt(record[i][0], 10, 32);
+		y, _ := strconv.ParseInt(record[i][1], 10, 32);
+
 		j := 2
-		/*fmt.Printf("%v %v\n", int(x*2), int(y*2))
-		fmt.Printf("%v\n", len(record[i]))*/
-		if int(x*2) < p.Width && int(y*2) < p.Height {
-			for j < len(record[i]) {
-				read1, _ := strconv.ParseFloat(record[i][j], 32)
-				if err == nil {
-					//fmt.Printf("%e ", read1)
-				}
 
-				//fmt.Printf("%v %v %v\n", int(x*2), int(y*2), j-2)
-				p.SensorReadings[int(x*2)][int(y*2)][j-2] = read1
-				if read1 > topVal {
-					topVal = read1
-				}
-
-				j += 1
-			}
+		for j < len(record[i]) {
+			read1, _ := strconv.ParseFloat(record[i][j], 32);
+			//fmt.Printf("x:%v, y:%v, j:%v\n",x,y,j)
+			p.SensorReadings[x][y][j-2] = read1
+			j += 1
 		}
-		//fmt.Println()
-		fmt.Printf("\r%d\\%d", i, len(record))
 		i++
-	}
 
-	fmt.Printf("\ntop: %v\n", topVal)
-
-	cw := 7
-	ch := 7
-	divider := 1.0 / float64(cw*ch)
-	radius := cw / 2
-
-	for k := range p.SensorReadings[0][0] {
-		for i := range p.SensorReadings {
-			for j := range p.SensorReadings[i] {
-				total := 0.0
-				for ci := radius; ci >= radius*-1; ci-- {
-					for cj := radius; cj >= radius*-1; cj-- {
-						if i+ci > 0 && i+ci < p.Width && j+cj > 0 && j+cj < p.Height {
-							total += p.SensorReadings[i+ci][j+cj][k] * divider
-						}
-					}
-				}
-				averaged[i][j][k] = total
-			}
+		if(i % 1000 == 0) {
+			prog := int(float32(i)/float32(len(record))*100)
+			fmt.Printf("\rProgress [%s%s] %d ", strings.Repeat("=", prog), strings.Repeat(".", 100-prog), prog)
 		}
 	}
+	fmt.Printf("\n")
+}
 
-	for k := range p.SensorReadings[0][0] {
-		for i := range p.SensorReadings {
-			for j := range p.SensorReadings[i] {
-				p.SensorReadings[i][j][k] = averaged[i][j][k]
-			}
+
+func readMovementCSV(p *Params) {
+
+	in, err := os.Open(p.MovementPath)
+	if err != nil {
+		println("error opening file")
+	}
+	defer in.Close()
+
+	r := csv.NewReader(in)
+	r.FieldsPerRecord = -1
+	record, err := r.ReadAll()
+
+
+	timeSteps := len(record)
+
+
+	p.NodeMovements = make([][]Tuple, p.TotalNodes)
+	for i := range p.NodeMovements {
+		p.NodeMovements[i] = make([]Tuple, timeSteps)
+	}
+
+
+	time := 0
+	fmt.Printf("Movement CSV Processing %d TimeSteps for %d Nodes  %d\n", len(record), len(record[0])/2, p.TotalNodes)
+	for time < len(record) {
+		iter := 0
+
+		for iter < len(record[time])-1 {
+			x, _ := strconv.ParseInt(record[time][iter], 10, 32);
+			y, _ := strconv.ParseInt(record[time][iter+1], 10, 32);
+
+			p.NodeMovements[iter/2][time] = Tuple{int(x), int(y)}
+			iter += 2
+		}
+		time++
+
+		if(time % 10 == 0) {
+			prog := int(float32(time)/float32(len(record))*100)
+			fmt.Printf("\rProgress [%s%s] %d ", strings.Repeat("=", prog), strings.Repeat(".", 100-prog), prog)
 		}
 	}
+	fmt.Printf("\n")
+}
+
+
+func RangeInt(min, max int) int { //returns a random number between max and min
+	return rand.Intn(max-min) + min
 }
 
 // This prints the board map to the terminal
@@ -933,9 +920,9 @@ func readCSV(p *Params) {
 /*
 // This prints board Map to a txt file.
 func writeBordMapToFile2() {
-	start := time.Now()
+	start := Time.Now()
 	defer func() {
-		elapsed := time.Since(start)
+		elapsed := Time.Since(start)
 		fmt.Println("Printing Board Map took", elapsed)
 	}()
 	Check(errBoard)
@@ -954,7 +941,7 @@ func writeBordMapToFile2() {
 }
 
 func writeBordMapToFile() {
-	//start := time.Now()
+	//start := Time.Now()
 	Check(errBoard)
 	w := bufio.NewWriter(fileBoard)
 	w.WriteString("\nt=" + strconv.Itoa(iterations_used) + "\n\n")
@@ -965,6 +952,150 @@ func writeBordMapToFile() {
 		w.WriteString("\n")
 	}
 	w.Flush()
-	//elapsed := time.Since(start)
+	//elapsed := Time.Since(start)
 	//fmt.Println("Printing Board Map took", elapsed)
 }*/
+func GetFlags(p *Params) {
+	//p = cps.Params{}
+
+	flag.StringVar(&p.CPUProfile, "cpuprofile", "", "write cpu profile to `file`")
+	flag.StringVar(&p.MemProfile, "memprofile", "", "write memory profile to `file`")
+
+	//fmt.Println(os.Args[1:], "\nhmmm? \n ") //C:\Users\Nick\Desktop\comand line experiments\src
+	flag.IntVar(&p.NegativeSittingStopThresholdCM, "negativeSittingStopThreshold", -10,
+		"Negative number sitting is set to when board map is reset")
+	flag.IntVar(&p.SittingStopThresholdCM, "sittingStopThreshold", 5,
+		"How long it takes for a node to stay seated")
+	flag.Float64Var(&p.GridCapacityPercentageCM, "GridCapacityPercentage", .9,
+		"Percent the sub-Grid can be filled")
+	flag.StringVar(&p.InputFileNameCM, "inputFileName", "Log1_in.txt",
+		"Name of the input text file")
+	flag.StringVar(&p.SensorPath, "sensorPath", "Circle_2D.csv", "Sensor Reading Inputs")
+	flag.StringVar(&p.MovementPath, "movementPath", "Circle_2D.csv", "Movement Inputs")
+	flag.StringVar(&p.OutputFileNameCM, "p.OutputFileName", "Log",
+		"Name of the output text file prefix")
+	flag.Float64Var(&p.NaturalLossCM, "naturalLoss", .005,
+		"battery loss due to natural causes")
+	flag.Float64Var(&p.SamplingLossSensorCM, "sensorSamplingLoss", .001,
+		"battery loss due to sensor sampling")
+	flag.Float64Var(&p.SamplingLossGPSCM, "GPSSamplingLoss", .005,
+		"battery loss due to GPS sampling")
+	flag.Float64Var(&p.SamplingLossSensorCM, "serverSamplingLoss", .01,
+		"battery loss due to server sampling")
+	flag.Float64Var(&p.SamplingLossBTCM, "SamplingLossBTCM", .0001,
+		"battery loss due to BlueTooth sampling")
+	flag.Float64Var(&p.SamplingLossWifiCM, "SamplingLossWifiCM", .001,
+		"battery loss due to WiFi sampling")
+	flag.Float64Var(&p.SamplingLoss4GCM, "SamplingLoss4GCM", .005,
+		"battery loss due to 4G sampling")
+	flag.Float64Var(&p.SamplingLossAccelCM, "SamplingLossAccelCM", .001,
+		"battery loss due to accelerometer sampling")
+	flag.IntVar(&p.ThresholdBatteryToHaveCM, "thresholdBatteryToHave", 30,
+		"Threshold battery phones should have")
+	flag.IntVar(&p.ThresholdBatteryToUseCM, "thresholdBatteryToUse", 10,
+		"Threshold of battery phones should consume from all forms of sampling")
+	flag.IntVar(&p.MovementSamplingSpeedCM, "movementSamplingSpeed", 20,
+		"the threshold of speed to increase sampling rate")
+	flag.IntVar(&p.MovementSamplingPeriodCM, "movementSamplingPeriod", 1,
+		"the threshold of speed to increase sampling rate")
+	flag.IntVar(&p.MaxBufferCapacityCM, "maxBufferCapacity", 25,
+		"maximum capacity for the buffer before it sends data to the server")
+	flag.StringVar(&p.EnergyModelCM, "energyModel", "variable",
+		"this determines the energy loss model that will be used")
+	flag.BoolVar(&p.NoEnergyModelCM, "noEnergy", false,
+		"Whether or not to ignore energy model for simulation")
+	flag.IntVar(&p.SensorSamplingPeriodCM, "sensorSamplingPeriod", 1000,
+		"rate of the sensor sampling period when custom energy model is chosen")
+	flag.IntVar(&p.GPSSamplingPeriodCM, "GPSSamplingPeriod", 1000,
+		"rate of the GridGPS sampling period when custom energy model is chosen")
+	flag.IntVar(&p.ServerSamplingPeriodCM, "serverSamplingPeriod", 1000,
+		"rate of the server sampling period when custom energy model is chosen")
+	flag.IntVar(&p.NumStoredSamplesCM, "nodeStoredSamples", 10,
+		"number of samples stored by individual nodes for averaging")
+	flag.IntVar(&p.GridStoredSamplesCM, "p.GridStoredSamples", 10,
+		"number of samples stored by p.Grid squares for averaging")
+	flag.Float64Var(&p.DetectionThresholdCM, "detectionThreshold", 10000.0, //11180.0,
+		"Value where if a node gets this reading or higher, it will trigger a detection")
+	flag.Float64Var(&p.ErrorModifierCM, "errorMultiplier", 1.0,
+		"Multiplier for error values in system")
+	flag.BoolVar(&p.CSVSensor, "csvSensor", true, "Read Sensor Values from CSV")
+	flag.BoolVar(&p.CSVMovement, "csvMove", true, "Read Movements from CSV")
+	flag.IntVar(&p.IterationsCM, "iterations", 200, "Read Movements from CSV")
+	//Range 1, 2, or 4
+	//Currently works for only a few numbers, can be easily expanded but is not currently dynamic
+	flag.IntVar(&p.NumSuperNodes, "numSuperNodes", 4, "the number of super nodes in the simulator")
+	flag.Float64Var(&p.CalibrationThresholdCM, "Recalibration Threshold", 3.0, "Value over grid average to recalibrate node")
+	flag.Float64Var(&p.StdDevThresholdCM, "StandardDeviationThreshold", 1.7, "Detection Threshold based on standard deviations from mean")
+
+	//Range: 0-2
+	//0: default routing algorithm, points added onto the end of the path and routed to in that order
+	//flag.IntVar(&p.SuperNodeType, "p.SuperNodeType", 0, "the type of super node used in the simulator")
+	//better descriptions incoming
+	//Range: 0-6
+	//	0: default routing algorithm, points added onto the end of the path and routed to in that order
+	//	1: sophisticated routing algorithm, begin in center, routed anywhere
+	//	2: sophisticated routing algorithm, begin inside circles located in the corners, only routed inside circle
+	//	3: sophisticated routing algorithm, begin inside circles located on the sides, only routed inside circle
+	//	4: sophisticated routing algorithm, being inside large circles located in the corners, only routed inside circle
+	//	5: sophisticated routing algorithm, begin inside regions, only routed inside region
+	//	6: regional return trip routing algorithm, routed inside region based on most points
+	//	7: regional return trip routing algorithm, routed inside region based on oldest point
+	flag.IntVar(&p.SuperNodeType, "p.SuperNodeType", 0, "the type of super node used in the simulator")
+
+	//Range: 0-...
+	//Theoretically could be as high as possible
+	//Realistically should remain around 10
+	flag.IntVar(&p.SuperNodeSpeed, "p.SuperNodeSpeed", 3, "the speed of the super node")
+
+	//Range: true/false
+	//Tells the simulator whether or not to optimize the path of all the super nodes
+	//Only works when multiple super nodes are active in the same area
+	flag.BoolVar(&p.DoOptimize, "doOptimize", false, "whether or not to optimize the simulator")
+
+	//Range: 0-4
+	//	0: begin in center, routed anywhere
+	//	1: begin inside circles located in the corners, only routed inside circle
+	//	2: begin inside circles located on the sides, only routed inside circle
+	//	3: being inside large circles located in the corners, only routed inside circle
+	//	4: begin inside regions, only routed inside region
+	//Only used for super nodes of type 1
+	//flag.IntVar(&p.SuperNodeVariation, "p.SuperNodeVariation", 3, "super nodes of type 1 have different variations")
+
+	flag.BoolVar(&p.PositionPrintCM, "logPosition", false, "Whether you want to write position info to a log file")
+	flag.BoolVar(&p.GridPrintCM, "logGrid", false, "Whether you want to write p.Grid info to a log file")
+	flag.BoolVar(&p.EnergyPrintCM, "logEnergy", false, "Whether you want to write energy into to a log file")
+	flag.BoolVar(&p.NodesPrintCM, "logNodes", false, "Whether you want to write node readings to a log file")
+	flag.IntVar(&p.SquareRowCM, "SquareRowCM", 50, "Number of rows of p.Grid squares, 1 through p.MaxX")
+	flag.IntVar(&p.SquareColCM, "SquareColCM", 50, "Number of columns of p.Grid squares, 1 through p.MaxY")
+
+	flag.StringVar(&p.ImageFileNameCM, "imageFileName", "circle_justWalls_x4.png", "Name of the input text file")
+	flag.StringVar(&p.StimFileNameCM, "stimFileName", "circle_0.txt", "Name of the stimulus text file")
+	flag.StringVar(&p.OutRoutingNameCM, "outRoutingName", "log.txt", "Name of the stimulus text file")
+	flag.StringVar(&p.OutRoutingStatsNameCM, "outRoutingStatsName", "routingStats.txt", "Name of the output file for stats")
+
+	flag.BoolVar(&p.RegionRouting, "regionRouting", true, "True if you want to use the new routing algorithm with regions and cutting")
+
+	flag.Parse()
+	fmt.Println("Natural Loss: ", p.NaturalLossCM)
+	fmt.Println("Sensor Sampling Loss: ", p.SamplingLossSensorCM)
+	fmt.Println("GPS sampling loss: ", p.SamplingLossGPSCM)
+	fmt.Println("Server sampling loss", p.SamplingLossServerCM)
+	fmt.Println("BlueTooth sampling loss", p.SamplingLossBTCM)
+	fmt.Println("WiFi Sampling Loss", p.SamplingLossWifiCM)
+	fmt.Println("4G Sampling Loss", p.SamplingLossWifiCM)
+	fmt.Println("Accelerometer Sampling Loss", p.SamplingLossAccelCM)
+	fmt.Println("Threshold Battery to use: ", p.ThresholdBatteryToUseCM)
+	fmt.Println("Threshold battery to have: ", p.ThresholdBatteryToHaveCM)
+	fmt.Println("Moving speed for incresed sampling: ", p.MovementSamplingSpeedCM)
+	fmt.Println("Period of extra sampling due to high speed: ", p.MovementSamplingPeriodCM)
+	fmt.Println("Maximum size of buffer posible: ", p.MaxBufferCapacityCM)
+	fmt.Println("Energy model type:", p.EnergyModelCM)
+	fmt.Println("Sensor Sampling Period:", p.SensorSamplingPeriodCM)
+	fmt.Println("GPS Sampling Period:", p.GPSSamplingPeriodCM)
+	fmt.Println("Server Sampling Period:", p.ServerSamplingPeriodCM)
+	fmt.Println("Number of Node Stored Samples:", p.NumStoredSamplesCM)
+	fmt.Println("Number of Grid Stored Samples:", p.GridStoredSamplesCM)
+	fmt.Println("Detection Threshold:", p.DetectionThresholdCM)
+
+	//fmt.Println("tail:", flag.Args())
+}

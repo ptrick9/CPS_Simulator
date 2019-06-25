@@ -28,6 +28,7 @@ type NodeParent interface {
 	GeoDist(b Bomb) float32         //returns distance from bomb (rather than reading of node)
 	GetID() int                     //returns ID of node
 	GetLoc() (x, y int)             //returns x and y values of node
+
 	//following functions set drifting parameters of nodes
 	SetS0(s0 float64)
 	SetS1(s1 float64)
@@ -46,7 +47,7 @@ type NodeParent interface {
 //NodeImpl is a struct that implements all the methods listed
 //	above in NodeParent
 type NodeImpl struct {
-	Id                              int      //id of node
+	Id                              int      //Id of node
 	OldX                            int      // for movement
 	OldY                            int      // for movement
 	Sitting                         int      // for movement
@@ -54,9 +55,15 @@ type NodeImpl struct {
 	Y                               int      //y pos of node
 	Battery                         float32  //battery of node
 	BatteryLossScalar               float32  //natural incremental battery loss of node
-	BatteryLossCheckingSensorScalar float32  //sensor based battery loss of node
-	BatteryLossGPSScalar            float32  //GPS based battery loss of node
-	BatteryLossCheckingServerScalar float32  //server communication based battery loss of node
+	BatteryLossSensor				float32  //sensor based battery loss of node
+	BatteryLossGPS		            float32  //GPS based battery loss of node
+	BatteryLossServer				float32  //server communication based battery loss of node
+
+	BatteryLossBT					float32
+	BatteryLossWifi					float32
+	BatteryLoss4G					float32
+	BatteryLossAccelerometer		float32
+
 	ToggleCheckIterator             int      //node's personal iterator mostly for cascading pings
 	HasCheckedSensor                bool     //did the node just ping the sensor?
 	TotalChecksSensor               int      //total sensor pings of node
@@ -113,6 +120,13 @@ type NodeImpl struct {
 	NodeTime           int
 	Sensitivity        float64
 	InitialSensitivity float64
+	Valid 			   bool
+
+	allReadings 	   [1000]float64
+	calibrateTimes 	   []int
+	calibrateReading   []float64
+	hasCalibrated 	   bool
+
 }
 
 //NodeMovement controls the movement of all the normal nodes
@@ -181,6 +195,15 @@ func (n *NodeImpl) Col(div int) int {
 	return n.X / div
 }
 
+func (n *NodeImpl) InBounds(p *Params) bool {
+	if n.X < p.Width && n.X >= 0 {
+		if n.Y < p.Height && n.Y >= 0 {
+			return true
+		}
+	}
+	return false
+}
+
 //Returns a float representing the detection of the bomb
 //	by the specific node depending on distance
 func (n *NodeImpl) Distance(b Bomb) float32 {
@@ -196,19 +219,19 @@ func (n *NodeImpl) Distance(b Bomb) float32 {
 
 // These are the toString methods for battery levels
 func (n Bn) String() string { // extra extra string statements
-	return fmt.Sprintf("x: %v y: %v Xspeed: %v Yspeed: %v id: %v battery: %v sensor checked: %v sensor checks: %v GPS checked: %v GPS checks: %v server checked: %v server checks: %v buffer: %v ", n.X, n.Y, n.X_speed, n.Y_speed, n.Id, n.Battery, n.HasCheckedSensor, n.TotalChecksSensor, n.HasCheckedGPS, n.TotalChecksGPS, n.HasCheckedServer, n.TotalChecksServer, n.BufferI)
+	return fmt.Sprintf("x: %v y: %v Xspeed: %v Yspeed: %v Id: %v battery: %v sensor checked: %v sensor checks: %v GPS checked: %v GPS checks: %v server checked: %v server checks: %v buffer: %v ", n.X, n.Y, n.X_speed, n.Y_speed, n.Id, n.Battery, n.HasCheckedSensor, n.TotalChecksSensor, n.HasCheckedGPS, n.TotalChecksGPS, n.HasCheckedServer, n.TotalChecksServer, n.BufferI)
 }
 
 func (n Wn) String() string {
-	return fmt.Sprintf("x: %v y: %v speed: %v dir: %v id: %v battery: %v sensor checked: %v sensor checks: %v GPS checked: %v GPS checks: %v server checked: %v server checks: %v buffer: %v ", n.X, n.Y, n.Speed, n.Dir, n.Id, n.Battery, n.HasCheckedSensor, n.TotalChecksSensor, n.HasCheckedGPS, n.TotalChecksGPS, n.HasCheckedServer, n.TotalChecksServer, n.BufferI)
+	return fmt.Sprintf("x: %v y: %v speed: %v dir: %v Id: %v battery: %v sensor checked: %v sensor checks: %v GPS checked: %v GPS checks: %v server checked: %v server checks: %v buffer: %v ", n.X, n.Y, n.Speed, n.Dir, n.Id, n.Battery, n.HasCheckedSensor, n.TotalChecksSensor, n.HasCheckedGPS, n.TotalChecksGPS, n.HasCheckedServer, n.TotalChecksServer, n.BufferI)
 }
 
 func (n Rn) String() string {
-	return fmt.Sprintf("x: %v y: %v id: %v battery: %v sensor checked: %v sensor checks: %v GPS checked: %v GPS checks: %v server checked: %v server checks: %v buffer: %v ", n.X, n.Y, n.Id, n.Battery, n.HasCheckedSensor, n.TotalChecksSensor, n.HasCheckedGPS, n.TotalChecksGPS, n.HasCheckedServer, n.TotalChecksServer, n.BufferI)
+	return fmt.Sprintf("x: %v y: %v Id: %v battery: %v sensor checked: %v sensor checks: %v GPS checked: %v GPS checks: %v server checked: %v server checks: %v buffer: %v ", n.X, n.Y, n.Id, n.Battery, n.HasCheckedSensor, n.TotalChecksSensor, n.HasCheckedGPS, n.TotalChecksGPS, n.HasCheckedServer, n.TotalChecksServer, n.BufferI)
 } // end extra extra string statements
 
 func (n NodeImpl) String() string {
-	//return fmt.Sprintf("x: %v y: %v id: %v battery: %v sensor checked: %v sensor checks: %v GPS checked: %v GPS checks: %v server checked: %v server checks: %v buffer: %v ", n.X, n.Y, n.Id, n.Battery, n.HasCheckedSensor, n.TotalChecksSensor, n.HasCheckedGPS, n.TotalChecksGPS, n.HasCheckedServer, n.TotalChecksServer,n.BufferI)
+	//return fmt.Sprintf("x: %v y: %v Id: %v battery: %v sensor checked: %v sensor checks: %v GPS checked: %v GPS checks: %v server checked: %v server checks: %v buffer: %v ", n.X, n.Y, n.Id, n.Battery, n.HasCheckedSensor, n.TotalChecksSensor, n.HasCheckedGPS, n.TotalChecksGPS, n.HasCheckedServer, n.TotalChecksServer,n.BufferI)
 	return fmt.Sprintf("battery: %v sensor checked: %v GPS checked: %v ", int(n.Battery), n.HasCheckedSensor, n.HasCheckedGPS)
 
 }
@@ -231,50 +254,50 @@ func (n *NodeImpl) Move(p *Params) {
 		//only add the ones that are valid to move to into the list
 		if n.Y-1 >= 0 &&
 			n.X >= 0 &&
-			n.X < len(p.BoardMap[n.Y-1]) &&
-			n.Y-1 < len(p.BoardMap) &&
+			n.X < p.Width &&
+			n.Y-1 < p.Height &&
 
-			p.BoardMap[n.Y-1][n.X] != -1 &&
-			p.BoolGrid[n.Y-1][n.X] == false { // &&
+			p.BoardMap[n.X][n.Y-1] != -1 &&
+			p.BoolGrid[n.X][n.Y-1] == false { // &&
 			//p.BoardMap[n.X][n.Y-1] <= p.BoardMap[n.X][n.Y] {
 
-			up := GridSpot{n.X, n.Y - 1, p.BoardMap[n.Y-1][n.X]}
+			up := GridSpot{n.X, n.Y - 1, p.BoardMap[n.X][n.Y-1]}
 			potentialSpots = append(potentialSpots, up)
 		}
-		if n.X+1 < len(p.BoardMap[n.Y]) &&
+		if n.X+1 < p.Width &&
 			n.X+1 >= 0 &&
-			n.Y < len(p.BoardMap) &&
+			n.Y < p.Height &&
 			n.Y >= 0 &&
 
-			p.BoardMap[n.Y][n.X+1] != -1 &&
-			p.BoolGrid[n.Y][n.X+1] == false { // &&
+			p.BoardMap[n.X+1][n.Y] != -1 &&
+			p.BoolGrid[n.X+1][n.Y] == false { // &&
 			//p.BoardMap[n.X+1][n.Y] <= p.BoardMap[n.X][n.Y] {
 
-			right := GridSpot{n.X + 1, n.Y, p.BoardMap[n.Y][n.X+1]}
+			right := GridSpot{n.X + 1, n.Y, p.BoardMap[n.X+1][n.Y]}
 			potentialSpots = append(potentialSpots, right)
 		}
-		if n.Y+1 < len(p.BoardMap) &&
+		if n.Y+1 < p.Height &&
 			n.Y+1 >= 0 &&
-			n.X < len(p.BoardMap[n.Y+1]) &&
+			n.X < p.Width &&
 			n.X >= 0 &&
 
-			p.BoardMap[n.Y+1][n.X] != -1 &&
-			p.BoolGrid[n.Y+1][n.X] == false { //&&
+			p.BoardMap[n.X][n.Y+1] != -1 &&
+			p.BoolGrid[n.X][n.Y+1] == false { //&&
 			//p.BoardMap[n.X][n.Y+1] <= p.BoardMap[n.X][n.Y] {
 
-			down := GridSpot{n.X, n.Y + 1, p.BoardMap[n.Y+1][n.X]}
+			down := GridSpot{n.X, n.Y + 1, p.BoardMap[n.X][n.Y+1]}
 			potentialSpots = append(potentialSpots, down)
 		}
 		if n.X-1 >= 0 &&
-			n.X-1 < len(p.BoardMap[n.Y]) &&
+			n.X-1 < p.Width &&
 			n.Y >= 0 &&
-			n.Y < len(p.BoardMap) &&
+			n.Y < p.Height &&
 
-			p.BoardMap[n.Y][n.X-1] != -1 &&
-			p.BoolGrid[n.Y][n.X-1] == false { // &&
+			p.BoardMap[n.X-1][n.Y] != -1 &&
+			p.BoolGrid[n.X-1][n.Y] == false { // &&
 			//p.BoardMap[n.X-1][n.Y] <= p.BoardMap[n.X][n.Y] {
 
-			left := GridSpot{n.X - 1, n.Y, p.BoardMap[n.Y][n.X-1]}
+			left := GridSpot{n.X - 1, n.Y, p.BoardMap[n.X-1][n.Y]}
 			potentialSpots = append(potentialSpots, left)
 		}
 
@@ -283,18 +306,27 @@ func (n *NodeImpl) Move(p *Params) {
 		sort.Sort(byRandom(potentialSpots))
 		sort.Sort(byValue(potentialSpots))
 
-		for i := 0; i < len(potentialSpots); i++ {
+		/*for i := 0; i < len(potentialSpots); i++ {
 			if p.Grid[potentialSpots[i].Y/p.YDiv][potentialSpots[i].X/p.XDiv].ActualNumNodes <= p.SquareCapacity {
 				n.X = potentialSpots[i].X
 				n.Y = potentialSpots[i].Y
 				break
 			}
+		}*/
+
+		//If there are no potential spots, do not move
+		if len(potentialSpots) > 0 {
+			n.X = potentialSpots[0].X
+			n.Y = potentialSpots[0].Y
 		}
 
-		if n.X/p.XDiv != n.OldX || n.Y/p.YDiv != n.OldY {
+		//Change number of nodes in square
+		/*if n.X/p.XDiv != n.OldX || n.Y/p.YDiv != n.OldY {
 			p.Grid[n.Y/p.YDiv][n.X/p.XDiv].ActualNumNodes = p.Grid[n.Y/p.YDiv][n.X/p.XDiv].ActualNumNodes + 1
 			p.Grid[n.OldY][n.OldX].ActualNumNodes = p.Grid[n.OldY][n.OldX].ActualNumNodes - 1
-		}
+		}*/
+
+		//p.Server.UpdateSquareNumNodes()
 		if n.Diffx == 0 && n.Diffy == 0 || n.Sitting < 0 {
 			n.Sitting = n.Sitting + 1
 		} else {
@@ -306,6 +338,8 @@ func (n *NodeImpl) Move(p *Params) {
 func (n *NodeImpl) Recalibrate() {
 	n.Sensitivity = n.InitialSensitivity
 	n.NodeTime = 0
+	//fmt.Printf("Node %v recalibrated!\n", n.Id)
+	n.hasCalibrated = true
 }
 
 //Moves the bouncing node
@@ -427,7 +461,7 @@ func Insert_array(arr1 []Coord, arr2 []Coord, n int) []Coord {
 }
 
 //Returns the array with the element at ind1 moved to ind2
-//ind1 must always bef urther in the array than ind2
+//ind1 must always be further in the array than ind2
 func Remove_and_insert(arr []Coord, ind1, ind2 int) []Coord {
 	arr1 := make([]Coord, 0)
 	c := arr[ind1]
@@ -475,10 +509,10 @@ func (n *NodeImpl) BatteryLossDynamic1(p *Params) {
 	// This is the predicted natural loss to prevent overages.
 	naturalLoss = n.Battery - (float32(p.Iterations_of_event-p.Iterations_used) * n.BatteryLossScalar)
 	// This is the algorithm that determines sampling rate's ratios
-	n.Pings = n.Battery * p.TotalPercentBatteryToUse / (n.BatteryLossCheckingSensorScalar + n.BatteryLossGPSScalar + n.BatteryLossCheckingServerScalar) // set percentage for consumption here, also '50' if no minus
-	n.InverseSensor = 1 / n.BatteryLossCheckingSensorScalar
-	n.InverseGPS = 1 / n.BatteryLossGPSScalar
-	n.InverseServer = 1 / n.BatteryLossCheckingServerScalar
+	n.Pings = n.Battery * p.TotalPercentBatteryToUse / (n.BatteryLossSensor + n.BatteryLossGPS + n.BatteryLossServer) // set percentage for consumption here, also '50' if no minus
+	n.InverseSensor = 1 / n.BatteryLossSensor
+	n.InverseGPS = 1 / n.BatteryLossGPS
+	n.InverseServer = 1 / n.BatteryLossServer
 	n.SensorPings = n.Pings * (n.InverseSensor / (n.InverseServer + n.InverseGPS + n.InverseGPS))
 	n.GPSPings = n.Pings * (n.InverseGPS / (n.InverseServer + n.InverseGPS + n.InverseGPS))
 	n.ServerPings = n.Pings * (n.InverseServer / (n.InverseServer + n.InverseGPS + n.InverseGPS))
@@ -490,7 +524,7 @@ func (n *NodeImpl) BatteryLossDynamic1(p *Params) {
 		}
 		// Checks to see if sensor is pinged
 		if (n.ToggleCheckIterator-n.Cascade)%int(n.SensorPingPeriod) == 0 && n.Battery > 1 {
-			n.Battery = n.Battery - n.BatteryLossCheckingSensorScalar
+			n.Battery = n.Battery - n.BatteryLossSensor
 			n.TotalChecksSensor = n.TotalChecksSensor + 1
 			n.HasCheckedSensor = true
 			n.Sense(p)
@@ -503,7 +537,7 @@ func (n *NodeImpl) BatteryLossDynamic1(p *Params) {
 			n.GPSPingPeriod = 1
 		}
 		if ((n.ToggleCheckIterator-n.Cascade)%int(n.GPSPingPeriod) == 0 && n.Battery > 1) || (n.Speed > float32(p.MovementSamplingSpeedCM) && n.ToggleCheckIterator%p.MovementSamplingPeriodCM == 0) { // && n.ToggleCheckIterator%n.SpeedGPSPeriod == 0
-			n.Battery = n.Battery - n.BatteryLossGPSScalar
+			n.Battery = n.Battery - n.BatteryLossGPS
 			n.TotalChecksGPS = n.TotalChecksGPS + 1
 			n.HasCheckedGPS = true
 			n.GPS(p)
@@ -514,7 +548,7 @@ func (n *NodeImpl) BatteryLossDynamic1(p *Params) {
 		// This is the 2 stage buffer based on battery percentages
 		if n.Battery >= 75 { //100 - 75 percent
 			if (n.ToggleCheckIterator-n.Cascade)%14 == 0 && n.Battery > 1 { // 1000/70 = 14
-				n.Battery = n.Battery - n.BatteryLossCheckingServerScalar
+				n.Battery = n.Battery - n.BatteryLossServer
 				n.TotalChecksServer = n.TotalChecksServer + 1
 				n.HasCheckedServer = true
 				n.Server()
@@ -523,7 +557,7 @@ func (n *NodeImpl) BatteryLossDynamic1(p *Params) {
 			}
 		} else if n.Battery >= 30 && n.Battery < 75 { //70 - 30 percent
 			if (n.ToggleCheckIterator-n.Cascade)%50 == 0 && n.Battery > 1 { //1000/20 = 50
-				n.Battery = n.Battery - n.BatteryLossCheckingServerScalar
+				n.Battery = n.Battery - n.BatteryLossServer
 				n.TotalChecksServer = n.TotalChecksServer + 1
 				n.HasCheckedServer = true
 				n.Server()
@@ -578,7 +612,7 @@ func (n *NodeImpl) BatteryLossTable(p *Params) {
 	// this is the battery loss based on checking the sensor, GPS, and server.
 	if naturalLoss > p.ThreshHoldBatteryToHave {
 		if (n.ToggleCheckIterator-n.Cascade)%p.SensorSamplingPeriodCM == 0 {
-			n.Battery = n.Battery - n.BatteryLossCheckingSensorScalar
+			n.Battery = n.Battery - n.BatteryLossSensor
 			n.TotalChecksSensor = n.TotalChecksSensor + 1
 			n.HasCheckedSensor = true
 			n.Sense(p)
@@ -586,7 +620,7 @@ func (n *NodeImpl) BatteryLossTable(p *Params) {
 			n.HasCheckedSensor = false
 		}
 		if (n.ToggleCheckIterator-n.Cascade)%p.GPSSamplingPeriodCM == 0 || (speed > float32(p.MovementSamplingSpeedCM) && n.ToggleCheckIterator%p.MovementSamplingPeriodCM == 0) { // && n.ToggleCheckIterator%n.SpeedGPSPeriod == 0
-			n.Battery = n.Battery - n.BatteryLossGPSScalar
+			n.Battery = n.Battery - n.BatteryLossGPS
 			n.TotalChecksGPS = n.TotalChecksGPS + 1
 			n.HasCheckedGPS = true
 			n.GPS(p)
@@ -596,7 +630,7 @@ func (n *NodeImpl) BatteryLossTable(p *Params) {
 
 		// Check to ping server
 		if (n.ToggleCheckIterator-n.Cascade)%p.ServerSamplingPeriodCM == 0 {
-			n.Battery = n.Battery - n.BatteryLossCheckingServerScalar
+			n.Battery = n.Battery - n.BatteryLossServer
 			n.TotalChecksServer = n.TotalChecksServer + 1
 			n.HasCheckedServer = true
 			n.Server()
@@ -646,17 +680,17 @@ func (n *NodeImpl) BatteryLossMostDynamic(p *Params) {
 	naturalLoss = n.Battery - (float32(p.Iterations_of_event) * n.BatteryLossScalar)
 
 	// This is the ratio algorithm used to determine the rate of pings
-	n.InverseSensor = 1 / n.BatteryLossCheckingSensorScalar
-	n.InverseGPS = 1 / n.BatteryLossGPSScalar
-	n.InverseServer = 1 / n.BatteryLossCheckingServerScalar
+	n.InverseSensor = 1 / n.BatteryLossSensor
+	n.InverseGPS = 1 / n.BatteryLossGPS
+	n.InverseServer = 1 / n.BatteryLossServer
 
 	//SensorBatteryToUse := (totalPercentBatteryToUse * (n.InverseSensor / (n.InverseServer + n.InverseGPS + n.InverseSensor)))
 	//GPSBatteryToUse := (totalPercentBatteryToUse * (n.InverseGPS / (n.InverseServer + n.InverseGPS + n.InverseSensor)))
 	//ServerBatteryToUse := (totalPercentBatteryToUse * (n.InverseServer / (n.InverseServer + n.InverseGPS + n.InverseSensor)))
 
-	n.SensorPings = (p.TotalPercentBatteryToUse * (n.InverseSensor / (n.InverseServer + n.InverseGPS + n.InverseSensor))) / n.BatteryLossCheckingSensorScalar
-	n.GPSPings = (p.TotalPercentBatteryToUse * (n.InverseGPS / (n.InverseServer + n.InverseGPS + n.InverseSensor))) / n.BatteryLossGPSScalar
-	n.ServerPings = (p.TotalPercentBatteryToUse * (n.InverseServer / (n.InverseServer + n.InverseGPS + n.InverseSensor))) / n.BatteryLossCheckingServerScalar
+	n.SensorPings = (p.TotalPercentBatteryToUse * (n.InverseSensor / (n.InverseServer + n.InverseGPS + n.InverseSensor))) / n.BatteryLossSensor
+	n.GPSPings = (p.TotalPercentBatteryToUse * (n.InverseGPS / (n.InverseServer + n.InverseGPS + n.InverseSensor))) / n.BatteryLossGPS
+	n.ServerPings = (p.TotalPercentBatteryToUse * (n.InverseServer / (n.InverseServer + n.InverseGPS + n.InverseSensor))) / n.BatteryLossServer
 
 	// this is the battery loss based on checking the sensor, GPS, and server.
 	if naturalLoss > p.ThreshHoldBatteryToHave {
@@ -666,7 +700,7 @@ func (n *NodeImpl) BatteryLossMostDynamic(p *Params) {
 		}
 		// Check to ping sensor
 		if (n.ToggleCheckIterator-n.Cascade)%int(n.SensorPingPeriod) == 0 && n.Battery > 1 {
-			n.Battery = n.Battery - n.BatteryLossCheckingSensorScalar
+			n.Battery = n.Battery - n.BatteryLossSensor
 			n.TotalChecksSensor = n.TotalChecksSensor + 1
 			n.HasCheckedSensor = true
 			n.Sense(p)
@@ -679,7 +713,7 @@ func (n *NodeImpl) BatteryLossMostDynamic(p *Params) {
 		}
 		// Check to ping GPS, also note the extra pings made by a high speed.
 		if ((n.ToggleCheckIterator-n.Cascade)%int(n.GPSPingPeriod) == 0 && n.Battery > 1) || (n.Speed > float32(p.MovementSamplingSpeedCM) && n.ToggleCheckIterator%p.MovementSamplingPeriodCM == 0) { // && n.ToggleCheckIterator%n.SpeedGPSPeriod == 0
-			n.Battery = n.Battery - n.BatteryLossGPSScalar
+			n.Battery = n.Battery - n.BatteryLossGPS
 			n.TotalChecksGPS = n.TotalChecksGPS + 1
 			n.HasCheckedGPS = true
 			n.GPS(p)
@@ -698,7 +732,7 @@ func (n *NodeImpl) BatteryLossMostDynamic(p *Params) {
 		// Check to ping server
 		//fmt.Println(n.ToggleCheckIterator,n.Cascade,n.ServerPingPeriod,n.Id, n.ServerPings,n.BatteryLossCheckingServerScalar, iterations_of_event,float32(iterations_of_event),int(float32(iterations_of_event)))
 		if (n.ToggleCheckIterator-n.Cascade)%int(n.ServerPingPeriod) == 0 && n.Battery > 1 {
-			n.Battery = n.Battery - n.BatteryLossCheckingServerScalar
+			n.Battery = n.Battery - n.BatteryLossServer
 			n.TotalChecksServer = n.TotalChecksServer + 1
 			n.HasCheckedServer = true
 			n.Server()
@@ -748,10 +782,10 @@ func (n *NodeImpl) BatteryLossDynamic(p *Params) {
 	naturalLoss = n.Battery - (float32(p.Iterations_of_event-p.Iterations_used) * n.BatteryLossScalar)
 
 	// This is the ratio algorithm used to determine the rate of pings
-	n.Pings = n.Battery * .5 / (n.BatteryLossCheckingSensorScalar + n.BatteryLossGPSScalar + n.BatteryLossCheckingServerScalar) // set percentage for consumption here, also '50' if no minus
-	n.InverseSensor = 1 / n.BatteryLossCheckingSensorScalar
-	n.InverseGPS = 1 / n.BatteryLossGPSScalar
-	n.InverseServer = 1 / n.BatteryLossCheckingServerScalar
+	n.Pings = n.Battery * .5 / (n.BatteryLossSensor + n.BatteryLossGPS + n.BatteryLossServer) // set percentage for consumption here, also '50' if no minus
+	n.InverseSensor = 1 / n.BatteryLossSensor
+	n.InverseGPS = 1 / n.BatteryLossGPS
+	n.InverseServer = 1 / n.BatteryLossServer
 	n.SensorPings = n.Pings * (n.InverseSensor / (n.InverseServer + n.InverseGPS + n.InverseGPS))
 	n.GPSPings = n.Pings * (n.InverseGPS / (n.InverseServer + n.InverseGPS + n.InverseGPS))
 	n.ServerPings = n.Pings * (n.InverseServer / (n.InverseServer + n.InverseGPS + n.InverseGPS))
@@ -764,7 +798,7 @@ func (n *NodeImpl) BatteryLossDynamic(p *Params) {
 		}
 		// Check to ping sensor
 		if (n.ToggleCheckIterator-n.Cascade)%int(n.SensorPingPeriod) == 0 && n.Battery > 1 {
-			n.Battery = n.Battery - n.BatteryLossCheckingSensorScalar
+			n.Battery = n.Battery - n.BatteryLossSensor
 			n.TotalChecksSensor = n.TotalChecksSensor + 1
 			n.HasCheckedSensor = true
 			n.Sense(p)
@@ -777,7 +811,7 @@ func (n *NodeImpl) BatteryLossDynamic(p *Params) {
 		}
 		// Check to ping GPS, also note the extra pings made by a high speed.
 		if ((n.ToggleCheckIterator-n.Cascade)%int(n.GPSPingPeriod) == 0 && n.Battery > 1) || (speed > float32(p.MovementSamplingSpeedCM) && n.ToggleCheckIterator%p.MovementSamplingPeriodCM == 0) { // && n.ToggleCheckIterator%n.SpeedGPSPeriod == 0
-			n.Battery = n.Battery - n.BatteryLossGPSScalar
+			n.Battery = n.Battery - n.BatteryLossGPS
 			n.TotalChecksGPS = n.TotalChecksGPS + 1
 			n.HasCheckedGPS = true
 			n.GPS(p)
@@ -790,7 +824,7 @@ func (n *NodeImpl) BatteryLossDynamic(p *Params) {
 		}
 		// Check to ping server
 		if (n.ToggleCheckIterator-n.Cascade)%int(n.ServerPingPeriod) == 0 && n.Battery > 1 {
-			n.Battery = n.Battery - n.BatteryLossCheckingServerScalar
+			n.Battery = n.Battery - n.BatteryLossServer
 			n.TotalChecksServer = n.TotalChecksServer + 1
 			n.HasCheckedServer = true
 			n.Server()
@@ -800,8 +834,40 @@ func (n *NodeImpl) BatteryLossDynamic(p *Params) {
 	}
 }
 
+
+//decrement battery due to transmitting/receiving over BlueTooth
+func (n *NodeImpl) DecrementPowerBT(packet int){
+	n.Battery = n.Battery - n.BatteryLossBT*n.Battery
+}
+
+//decrement battery due to transmitting/receiving over WiFi
+func (n *NodeImpl) DecrementPowerWifi(packet int){
+	n.Battery = n.Battery - n.BatteryLossWifi
+}
+
+//decrement battery due to transmitting/receiving over 4G
+func (n *NodeImpl) DecrementPower4G(packet int){
+	n.Battery = n.Battery - n.BatteryLoss4G*n.Battery
+}
+
+//decrement battery due to sampling Accelerometer
+func (n *NodeImpl) DecrementPowerAccel(){
+	n.Battery = n.Battery - n.BatteryLossAccelerometer*n.Battery
+}
+
+//decrement battery due to transmitting/receiving GPS
+func (n *NodeImpl) DecrementPowerGPS(){
+	n.Battery = n.Battery - n.BatteryLossGPS*n.Battery
+}
+
+//decrement battery due to using GPS
+func (n *NodeImpl) DecrementPowerSensor(){
+	n.Battery = n.Battery - n.BatteryLossSensor*n.Battery
+}
+
+
 /* updateHistory shifts all values in the sample history slice to the right and adds the value at the beginning
-Therefore, each time a node takes a sample in main, it also adds this sample to the beginning of the sample history.
+Therefore, each Time a node takes a sample in main, it also adds this sample to the beginning of the sample history.
 Each sample is only stored until ln more samples have been taken (this variable is in hello.go)
 */
 func (n *NodeImpl) UpdateHistory(newValue float32) {
@@ -837,6 +903,43 @@ func (n *NodeImpl) UpdateHistory(newValue float32) {
 		}
 	}
 	n.Avg = sum / float32(numSamples)
+}
+
+func (n *NodeImpl) getDriftSlope() (float32, float32){
+	var r float32
+	var slope float32
+
+	var sum float32
+	var yAvg float32 = 0.0
+	squareSumX := 0.0
+	squareSumY := 0.0
+
+	var xSum float32
+	var ySum float32
+	var xySum float32
+	var xSqrSum float32
+	//size := float32(len(n.SampleHistory))
+
+	for i:= range n.SampleHistory {
+		ySum += float32(i)
+	}
+	yAvg = ySum / float32(len(n.SampleHistory))
+	for i := range n.SampleHistory {
+		sum += (n.SampleHistory[i] - n.Avg) * (float32(i) - yAvg)
+		squareSumX += math.Pow( float64(n.SampleHistory[i] - n.Avg), 2)
+		squareSumY += math.Pow( float64(i - 1), 2)
+
+		xSum += n.SampleHistory[i]
+		xySum += n.SampleHistory[i] * float32(i)
+		xSqrSum += float32(math.Pow(float64(n.SampleHistory[i]), 2))
+	}
+	r = sum / float32(math.Sqrt(squareSumX * squareSumY))
+	//slope = ( (size * xySum) - (xSum * ySum) ) / ( (size * float32(xSqrSum)) - float32(math.Pow(float64(xSum), 2)) )
+	//slope = sum / float32(squareSumX)
+	if r > 1 || r < -1 {
+		fmt.Printf("Bad r value! Got %v\n", r)
+	}
+	return r, slope
 }
 
 /* this function increments a node's total number of samples by 1
@@ -984,231 +1087,253 @@ func (n *NodeImpl) GetValue(p *Params) int {
 //Takes cares of taking a node's readings and printing detections and stuff
 func (curNode *NodeImpl) GetReadings(p *Params) {
 
-	//driftFile.Sync()
-	//nodeFile.Sync()
-	//positionFile.Sync()
-	//test change
-	newX, newY := curNode.GetLoc()
 
-	newDist := curNode.Distance(*p.B) //this is the node's reported value without error
+	if curNode.Valid {  //Check if node should actually take readings or if it hasn't shown up yet
+		newX, newY := curNode.GetLoc()
 
-	//need to get the correct time reading value from system
-	//need to verify where we read from
+		newDist := curNode.Distance(*p.B) //this is the node's reported value without error
 
-	//Calculate error, sensitivity, and noise, as per the matlab code
-	S0, S1, S2, E0, E1, E2, ET1, ET2 := curNode.GetParams()
-	sError := (S0 + E0) + (S1+E1)*math.Exp(-float64(curNode.NodeTime)/(p.Tau1+ET1)) + (S2+E2)*math.Exp(-float64(curNode.NodeTime)/(p.Tau2+ET2))
-	curNode.Sensitivity = S0 + (S1)*math.Exp(-float64(curNode.NodeTime)/p.Tau1) + (S2)*math.Exp(-float64(curNode.NodeTime)/p.Tau2)
-	sNoise := rand.NormFloat64()*0.5*p.ErrorModifierCM + float64(newDist)*sError
+		//need to get the correct Time reading value from system
+		//need to verify where we read from
 
-	errorDist := sNoise / curNode.Sensitivity //this is the node's actual reading with error
+		//Calculate error, sensitivity, and noise, as per the matlab code
+		S0, S1, S2, E0, E1, E2, ET1, ET2 := curNode.GetParams()
+		sError := (S0 + E0) + (S1+E1)*math.Exp(-float64(curNode.NodeTime)/(p.Tau1+ET1)) + (S2+E2)*math.Exp(-float64(curNode.NodeTime)/(p.Tau2+ET2))
+		curNode.Sensitivity = S0 + (S1)*math.Exp(-float64(curNode.NodeTime)/p.Tau1) + (S2)*math.Exp(-float64(curNode.NodeTime)/p.Tau2)
+		sNoise := rand.NormFloat64()*0.5*p.ErrorModifierCM + float64(newDist)*sError
 
-	//increment node time
-	curNode.NodeTime++
+		errorDist := sNoise / curNode.Sensitivity //this is the node's actual reading with error
 
-	if curNode.HasCheckedSensor {
-		curNode.IncrementTotalSamples()
-		curNode.UpdateHistory(float32(errorDist))
-	}
+		//increment node Time
+		curNode.NodeTime++
 
-	//Detection of false positives or false negatives
-	if errorDist < p.DetectionThresholdCM && float64(newDist) >= p.DetectionThresholdCM {
-		//this is a node false negative due to drifitng
 		if curNode.HasCheckedSensor {
-			//just drifting
-			fmt.Fprintln(p.DriftFile, "Node False Negative (drifting) ID:", curNode.Id, "True Reading:", newDist, "Drifted Reading:",
+			curNode.IncrementTotalSamples()
+			curNode.UpdateHistory(float32(errorDist))
+		}
+
+		//Detection of false positives or false negatives
+		if errorDist < p.DetectionThresholdCM && float64(newDist) >= p.DetectionThresholdCM {
+			//this is a node false negative due to drifitng
+			if curNode.HasCheckedSensor {
+				//just drifting
+				fmt.Fprintln(p.DriftFile, "Node False Negative (drifting) ID:", curNode.Id, "True Reading:", newDist, "Drifted Reading:",
+					errorDist, "S0:", curNode.S0, "S1:", curNode.S1, "S2:", curNode.S2, "E0:", curNode.E0, "E1:", curNode.E1,
+					"E2:", curNode.E2, "ET1:", curNode.ET1, "ET2:", curNode.ET2, "Time since calibration:", curNode.NodeTime,
+					"Current Time (Iter):", p.Iterations_used, "Energy Level:", curNode.Battery, "Distance from bomb:", math.Sqrt(float64(curNode.GeoDist(*p.B))),
+					"x:", curNode.X, "y:", curNode.Y)
+			} else {
+				//both drifting and energy
+				fmt.Fprintln(p.DriftFile, "Node False Negative (both) ID:", curNode.Id, "True Reading:", newDist, "Drifted Reading:",
+					errorDist, "S0:", curNode.S0, "S1:", curNode.S1, "S2:", curNode.S2, "E0:", curNode.E0, "E1:", curNode.E1,
+					"E2:", curNode.E2, "ET1:", curNode.ET1, "ET2:", curNode.ET2, "Time since calibration:", curNode.NodeTime,
+					"Current Time (Iter):", p.Iterations_used, "Energy Level:", curNode.Battery, "Distance from bomb:", math.Sqrt(float64(curNode.GeoDist(*p.B))),
+					"x:", curNode.X, "y:", curNode.Y)
+			}
+		}
+
+		if errorDist >= p.DetectionThresholdCM && float64(newDist) >= p.DetectionThresholdCM && !curNode.HasCheckedSensor {
+			//false negative due solely to energy
+			fmt.Fprintln(p.DriftFile, "Node False Negative (energy) ID:", curNode.Id, "True Reading:", newDist, "Drifted Reading:",
 				errorDist, "S0:", curNode.S0, "S1:", curNode.S1, "S2:", curNode.S2, "E0:", curNode.E0, "E1:", curNode.E1,
-				"E2:", curNode.E2, "ET1:", curNode.ET1, "ET2:", curNode.ET2, "time since calibration:", curNode.NodeTime,
-				"Current Time (Iter):", p.Iterations_used, "Energy Level:", curNode.Battery, "Distance from bomb:", math.Sqrt(float64(curNode.GeoDist(*p.B))),
-				"x:", curNode.X, "y:", curNode.Y)
-		} else {
-			//both drifting and energy
-			fmt.Fprintln(p.DriftFile, "Node False Negative (both) ID:", curNode.Id, "True Reading:", newDist, "Drifted Reading:",
-				errorDist, "S0:", curNode.S0, "S1:", curNode.S1, "S2:", curNode.S2, "E0:", curNode.E0, "E1:", curNode.E1,
-				"E2:", curNode.E2, "ET1:", curNode.ET1, "ET2:", curNode.ET2, "time since calibration:", curNode.NodeTime,
+				"E2:", curNode.E2, "ET1:", curNode.ET1, "ET2:", curNode.ET2, "Time since calibration:", curNode.NodeTime,
 				"Current Time (Iter):", p.Iterations_used, "Energy Level:", curNode.Battery, "Distance from bomb:", math.Sqrt(float64(curNode.GeoDist(*p.B))),
 				"x:", curNode.X, "y:", curNode.Y)
 		}
-	}
 
-	if errorDist >= p.DetectionThresholdCM && float64(newDist) >= p.DetectionThresholdCM && !curNode.HasCheckedSensor {
-		//false negative due solely to energy
-		fmt.Fprintln(p.DriftFile, "Node False Negative (energy) ID:", curNode.Id, "True Reading:", newDist, "Drifted Reading:",
-			errorDist, "S0:", curNode.S0, "S1:", curNode.S1, "S2:", curNode.S2, "E0:", curNode.E0, "E1:", curNode.E1,
-			"E2:", curNode.E2, "ET1:", curNode.ET1, "ET2:", curNode.ET2, "time since calibration:", curNode.NodeTime,
-			"Current Time (Iter):", p.Iterations_used, "Energy Level:", curNode.Battery, "Distance from bomb:", math.Sqrt(float64(curNode.GeoDist(*p.B))),
-			"x:", curNode.X, "y:", curNode.Y)
-	}
-
-	if errorDist >= p.DetectionThresholdCM && float64(newDist) < p.DetectionThresholdCM {
-		//this if a false positive
-		//it must be due to drifting. Report relevant info to driftFile
-		fmt.Fprintln(p.DriftFile, "Node False Positive (drifting) ID:", curNode.Id, "True Reading:", newDist, "Drifted Reading:",
-			errorDist, "S0:", curNode.S0, "S1:", curNode.S1, "S2:", curNode.S2, "E0:", curNode.E0, "E1:", curNode.E1,
-			"E2:", curNode.E2, "ET1:", curNode.ET1, "ET2:", curNode.ET2, "time since calibration:", curNode.NodeTime,
-			"Current Time (Iter):", p.Iterations_used, "Energy Level:", curNode.Battery, "Distance from bomb:", math.Sqrt(float64(curNode.GeoDist(*p.B))),
-			"x:", curNode.X, "y:", curNode.Y)
-	}
-
-	if errorDist >= p.DetectionThresholdCM && float64(newDist) >= p.DetectionThresholdCM && curNode.HasCheckedSensor {
-		fmt.Fprintln(p.DriftFile, "Node True Positive ID:", curNode.Id, "True Reading:", newDist, "Drifted Reading:",
-			errorDist, "S0:", curNode.S0, "S1:", curNode.S1, "S2:", curNode.S2, "E0:", curNode.E0, "E1:", curNode.E1,
-			"E2:", curNode.E2, "ET1:", curNode.ET1, "ET2:", curNode.ET2, "time since calibration:", curNode.NodeTime,
-			"Current Time (Iter):", p.Iterations_used, "Energy Level:", curNode.Battery, "Distance from bomb:", math.Sqrt(float64(curNode.GeoDist(*p.B))),
-			"x:", curNode.X, "y:", curNode.Y)
-	}
-
-	//If the reading is more than 2 standard deviations away from the grid average, then recalibrate
-	gridAverage := p.Grid[curNode.Row(p.YDiv)][curNode.Col(p.XDiv)].Avg
-	//standDev := grid[curNode.Row(yDiv)][curNode.Col(xDiv)].StdDev
-
-	//New condition added: also recalibrate when the node's sensitivity is <= 1/10 of its original sensitvity
-	//New condition added: Check to make sure the sensor was pinged this iteration
-	if ((curNode.Sensitivity <= (curNode.InitialSensitivity / 2)) && (curNode.HasCheckedSensor)) && p.Iterations_used != 0 {
-		curNode.Recalibrate()
-		p.Recalibrate = true
-		curNode.IncrementNumResets()
-	}
-
-	//printing statements to log files, only if the sensor was pinged this iteration
-	//if curNode.HasCheckedSensor && nodesPrint{
-	if p.NodesPrint {
-		if p.Recalibrate {
-			fmt.Fprintln(p.NodeFile, "ID:", curNode.GetID(), "Average:", curNode.GetAvg(), "Reading:", newDist, "Error Reading:", errorDist, "Recalibrated")
-		} else {
-			fmt.Fprintln(p.NodeFile, "ID:", curNode.GetID(), "Average:", curNode.GetAvg(), "Reading:", newDist, "Error Reading:", errorDist)
+		if errorDist >= p.DetectionThresholdCM && float64(newDist) < p.DetectionThresholdCM {
+			//this if a false positive
+			//it must be due to drifting. Report relevant info to driftFile
+			fmt.Fprintln(p.DriftFile, "Node False Positive (drifting) ID:", curNode.Id, "True Reading:", newDist, "Drifted Reading:",
+				errorDist, "S0:", curNode.S0, "S1:", curNode.S1, "S2:", curNode.S2, "E0:", curNode.E0, "E1:", curNode.E1,
+				"E2:", curNode.E2, "ET1:", curNode.ET1, "ET2:", curNode.ET2, "Time since calibration:", curNode.NodeTime,
+				"Current Time (Iter):", p.Iterations_used, "Energy Level:", curNode.Battery, "Distance from bomb:", math.Sqrt(float64(curNode.GeoDist(*p.B))),
+				"x:", curNode.X, "y:", curNode.Y)
 		}
-		//fmt.Fprintln(nodeFile, "battery:", int(curNode.Battery),)
+
+		if errorDist >= p.DetectionThresholdCM && float64(newDist) >= p.DetectionThresholdCM && curNode.HasCheckedSensor {
+			fmt.Fprintln(p.DriftFile, "Node True Positive ID:", curNode.Id, "True Reading:", newDist, "Drifted Reading:",
+				errorDist, "S0:", curNode.S0, "S1:", curNode.S1, "S2:", curNode.S2, "E0:", curNode.E0, "E1:", curNode.E1,
+				"E2:", curNode.E2, "ET1:", curNode.ET1, "ET2:", curNode.ET2, "Time since calibration:", curNode.NodeTime,
+				"Current Time (Iter):", p.Iterations_used, "Energy Level:", curNode.Battery, "Distance from bomb:", math.Sqrt(float64(curNode.GeoDist(*p.B))),
+				"x:", curNode.X, "y:", curNode.Y)
+		}
+
+		//If the reading is more than 2 standard deviations away from the grid average, then recalibrate
+		//gridAverage := p.Grid[curNode.Row(p.YDiv)][curNode.Col(p.XDiv)].Avg
+		//standDev := grid[curNode.Row(yDiv)][curNode.Col(xDiv)].StdDev
+
+		//New condition added: also recalibrate when the node's sensitivity is <= 1/10 of its original sensitvity
+		//New condition added: Check to make sure the sensor was pinged this iteration
+		if ((curNode.Sensitivity <= (curNode.InitialSensitivity / 2)) && (curNode.HasCheckedSensor)) && p.Iterations_used != 0 {
+			curNode.Recalibrate()
+			p.Recalibrate = true
+			curNode.IncrementNumResets()
+		}
+
+		//printing statements to log files, only if the sensor was pinged this iteration
+		//if curNode.HasCheckedSensor && nodesPrint{
+		if p.NodesPrint {
+			if p.Recalibrate {
+				fmt.Fprintln(p.NodeFile, "ID:", curNode.GetID(), "Average:", curNode.GetAvg(), "Reading:", newDist, "Error Reading:", errorDist, "Recalibrated")
+			} else {
+				fmt.Fprintln(p.NodeFile, "ID:", curNode.GetID(), "Average:", curNode.GetAvg(), "Reading:", newDist, "Error Reading:", errorDist)
+			}
+			//fmt.Fprintln(nodeFile, "battery:", int(curNode.Battery),)
+		}
+
+		if p.PositionPrint {
+			fmt.Fprintln(p.PositionFile, "ID:", curNode.GetID(), "x:", newX, "y:", newY)
+		}
+
+		p.Recalibrate = false
+
+		//Receives the node's distance and calculates its running average
+		//for that square
+		//Only do this if the sensor was pinged this iteration
+		if curNode.HasCheckedSensor {
+			//p.Server.UpdateSquareAvg(*curNode, errorDist)
+			//p.Grid[curNode.Row(p.YDiv)][curNode.Col(p.XDiv)].TakeMeasurement(float32(errorDist))
+			//p.Grid[curNode.Row(p.YDiv)][curNode.Col(p.XDiv)].TotalNodes++
+			////subtract grid average from node average, square it, and add it to this variable
+			p.Server.Send(curNode, Reading{errorDist, newX, newY, p.Iterations_used, curNode.GetID()})
+			if curNode.Id == 1 {
+				curNode.allReadings[p.Iterations_used] = errorDist
+				fmt.Fprintln(p.NodeTest, "Val:", errorDist)
+				fmt.Fprintln(p.NodeTest, "Sensi:", curNode.Sensitivity)
+				fmt.Fprintln(p.NodeTest, "Noise:", sNoise)
+				fmt.Fprintln(p.NodeTest, "Error:", sError)
+			}
+			if curNode.Id == 1 && curNode.hasCalibrated == true {
+				curNode.calibrateTimes = append(curNode.calibrateTimes, p.Iterations_used)
+				curNode.calibrateReading = append(curNode.calibrateReading, errorDist)
+			}
+			if p.Iterations_used == 999 && curNode.Id == 1 {
+				fmt.Fprintln(p.NodeTest2, "", curNode.calibrateTimes)
+				fmt.Fprintln(p.NodeTest2, "", curNode.calibrateReading)
+			}
+			curNode.hasCalibrated = false
+			//slope, r := curNode.getDriftSlope()
+			//fmt.Printf("Node: %v, Slope: %v, R value: %v\n", curNode.Id, slope, r)
+			//p.Grid[curNode.Row(p.YDiv)][curNode.Col(p.XDiv)].SquareValues += math.Pow(float64(errorDist-float64(gridAverage)), 2)
+		}
 	}
 
-	if p.PositionPrint {
-		fmt.Fprintln(p.PositionFile, "ID:", curNode.GetID(), "x:", newX, "y:", newY)
-	}
-
-	p.Recalibrate = false
-
-	//Receives the node's distance and calculates its running average
-	//for that square
-	//Only do this if the sensor was pinged this iteration
-	if curNode.HasCheckedSensor {
-		p.Grid[curNode.Row(p.YDiv)][curNode.Col(p.XDiv)].TakeMeasurement(float32(errorDist))
-		p.Grid[curNode.Row(p.YDiv)][curNode.Col(p.XDiv)].NumNodes++
-		//subtract grid average from node average, square it, and add it to this variable
-		p.Grid[curNode.Row(p.YDiv)][curNode.Col(p.XDiv)].SquareValues += (math.Pow(float64(errorDist-float64(gridAverage)), 2))
-	}
 }
 
 //Takes cares of taking a node's readings and printing detections and stuff
 func (curNode *NodeImpl) GetReadingsCSV(p *Params) {
 
-	//driftFile.Sync()
-	//nodeFile.Sync()
-	//positionFile.Sync()
-	//test change
-	newX, newY := curNode.GetLoc()
+	if curNode.Valid { //check if node has shown up yet
+		newX, newY := curNode.GetLoc()
 
-	//newDist := curNode.Distance(*p.B) //this is the node's reported value without error
-	newDist := p.SensorReadings[newX][newY][p.CurrTime]
-	//Calculate error, sensitivity, and noise, as per the matlab code
-	S0, S1, S2, E0, E1, E2, ET1, ET2 := curNode.GetParams()
-	sError := (S0 + E0) + (S1+E1)*math.Exp(-float64(curNode.NodeTime)/(p.Tau1+ET1)) + (S2+E2)*math.Exp(-float64(curNode.NodeTime)/(p.Tau2+ET2))
-	curNode.Sensitivity = S0 + (S1)*math.Exp(-float64(curNode.NodeTime)/p.Tau1) + (S2)*math.Exp(-float64(curNode.NodeTime)/p.Tau2)
-	sNoise := rand.NormFloat64()*0.5*p.ErrorModifierCM + float64(newDist)*sError
+		//newDist := curNode.Distance(*p.B) //this is the node's reported value without error
+		newDist := p.SensorReadings[newX][newY][p.CurrTime]
+		//Calculate error, sensitivity, and noise, as per the matlab code
+		S0, S1, S2, E0, E1, E2, ET1, ET2 := curNode.GetParams()
+		sError := (S0 + E0) + (S1+E1)*math.Exp(-float64(curNode.NodeTime)/(p.Tau1+ET1)) + (S2+E2)*math.Exp(-float64(curNode.NodeTime)/(p.Tau2+ET2))
+		curNode.Sensitivity = S0 + (S1)*math.Exp(-float64(curNode.NodeTime)/p.Tau1) + (S2)*math.Exp(-float64(curNode.NodeTime)/p.Tau2)
+		sNoise := rand.NormFloat64()*0.5*p.ErrorModifierCM + float64(newDist)*sError
 
-	errorDist := sNoise / curNode.Sensitivity //this is the node's actual reading with error
+		clean := float64(newDist) / curNode.Sensitivity
+		errorDist := sNoise / curNode.Sensitivity //this is the node's actual reading with error
 
-	//increment node time
-	curNode.NodeTime++
+		//increment node Time
+		curNode.NodeTime++
 
-	if curNode.HasCheckedSensor {
-		curNode.IncrementTotalSamples()
-		curNode.UpdateHistory(float32(errorDist))
-	}
-
-	//Detection of false positives or false negatives
-	if errorDist < p.DetectionThresholdCM && float64(newDist) >= p.DetectionThresholdCM {
-		//this is a node false negative due to drifitng
 		if curNode.HasCheckedSensor {
-			//just drifting
-			fmt.Fprintln(p.DriftFile, "Node False Negative (drifting) ID:", curNode.Id, "True Reading:", newDist, "Drifted Reading:",
+			curNode.IncrementTotalSamples()
+			curNode.UpdateHistory(float32(errorDist))
+		}
+
+		fmt.Fprintln(p.MoveReadingsFile, "ID:", curNode.Id, "X:", newX, "Y:", newY, "Sense:", errorDist, "CleanSense:", clean, "Real:", newDist)
+
+		//Detection of false positives or false negatives
+		if errorDist < p.DetectionThresholdCM && float64(newDist) >= p.DetectionThresholdCM {
+			//this is a node false negative due to drifitng
+			if curNode.HasCheckedSensor {
+				//just drifting
+				fmt.Fprintln(p.DriftFile, "Node False Negative (drifting) ID:", curNode.Id, "True Reading:", newDist, "Drifted Reading:",
+					errorDist, "S0:", curNode.S0, "S1:", curNode.S1, "S2:", curNode.S2, "E0:", curNode.E0, "E1:", curNode.E1,
+					"E2:", curNode.E2, "ET1:", curNode.ET1, "ET2:", curNode.ET2, "Time since calibration:", curNode.NodeTime,
+					"Current Time (Iter):", p.Iterations_used, "Energy Level:", curNode.Battery, "Distance from bomb:", math.Sqrt(float64(curNode.GeoDist(*p.B))),
+					"x:", curNode.X, "y:", curNode.Y)
+			} else {
+				//both drifting and energy
+				fmt.Fprintln(p.DriftFile, "Node False Negative (both) ID:", curNode.Id, "True Reading:", newDist, "Drifted Reading:",
+					errorDist, "S0:", curNode.S0, "S1:", curNode.S1, "S2:", curNode.S2, "E0:", curNode.E0, "E1:", curNode.E1,
+					"E2:", curNode.E2, "ET1:", curNode.ET1, "ET2:", curNode.ET2, "Time since calibration:", curNode.NodeTime,
+					"Current Time (Iter):", p.Iterations_used, "Energy Level:", curNode.Battery, "Distance from bomb:", math.Sqrt(float64(curNode.GeoDist(*p.B))),
+					"x:", curNode.X, "y:", curNode.Y)
+			}
+		}
+
+		if errorDist >= p.DetectionThresholdCM && float64(newDist) >= p.DetectionThresholdCM && !curNode.HasCheckedSensor {
+			//false negative due solely to energy
+			fmt.Fprintln(p.DriftFile, "Node False Negative (energy) ID:", curNode.Id, "True Reading:", newDist, "Drifted Reading:",
 				errorDist, "S0:", curNode.S0, "S1:", curNode.S1, "S2:", curNode.S2, "E0:", curNode.E0, "E1:", curNode.E1,
-				"E2:", curNode.E2, "ET1:", curNode.ET1, "ET2:", curNode.ET2, "time since calibration:", curNode.NodeTime,
-				"Current Time (Iter):", p.Iterations_used, "Energy Level:", curNode.Battery, "Distance from bomb:", math.Sqrt(float64(curNode.GeoDist(*p.B))),
-				"x:", curNode.X, "y:", curNode.Y)
-		} else {
-			//both drifting and energy
-			fmt.Fprintln(p.DriftFile, "Node False Negative (both) ID:", curNode.Id, "True Reading:", newDist, "Drifted Reading:",
-				errorDist, "S0:", curNode.S0, "S1:", curNode.S1, "S2:", curNode.S2, "E0:", curNode.E0, "E1:", curNode.E1,
-				"E2:", curNode.E2, "ET1:", curNode.ET1, "ET2:", curNode.ET2, "time since calibration:", curNode.NodeTime,
+				"E2:", curNode.E2, "ET1:", curNode.ET1, "ET2:", curNode.ET2, "Time since calibration:", curNode.NodeTime,
 				"Current Time (Iter):", p.Iterations_used, "Energy Level:", curNode.Battery, "Distance from bomb:", math.Sqrt(float64(curNode.GeoDist(*p.B))),
 				"x:", curNode.X, "y:", curNode.Y)
 		}
-	}
 
-	if errorDist >= p.DetectionThresholdCM && float64(newDist) >= p.DetectionThresholdCM && !curNode.HasCheckedSensor {
-		//false negative due solely to energy
-		fmt.Fprintln(p.DriftFile, "Node False Negative (energy) ID:", curNode.Id, "True Reading:", newDist, "Drifted Reading:",
-			errorDist, "S0:", curNode.S0, "S1:", curNode.S1, "S2:", curNode.S2, "E0:", curNode.E0, "E1:", curNode.E1,
-			"E2:", curNode.E2, "ET1:", curNode.ET1, "ET2:", curNode.ET2, "time since calibration:", curNode.NodeTime,
-			"Current Time (Iter):", p.Iterations_used, "Energy Level:", curNode.Battery, "Distance from bomb:", math.Sqrt(float64(curNode.GeoDist(*p.B))),
-			"x:", curNode.X, "y:", curNode.Y)
-	}
-
-	if errorDist >= p.DetectionThresholdCM && float64(newDist) < p.DetectionThresholdCM {
-		//this if a false positive
-		//it must be due to drifting. Report relevant info to driftFile
-		fmt.Fprintln(p.DriftFile, "Node False Positive (drifting) ID:", curNode.Id, "True Reading:", newDist, "Drifted Reading:",
-			errorDist, "S0:", curNode.S0, "S1:", curNode.S1, "S2:", curNode.S2, "E0:", curNode.E0, "E1:", curNode.E1,
-			"E2:", curNode.E2, "ET1:", curNode.ET1, "ET2:", curNode.ET2, "time since calibration:", curNode.NodeTime,
-			"Current Time (Iter):", p.Iterations_used, "Energy Level:", curNode.Battery, "Distance from bomb:", math.Sqrt(float64(curNode.GeoDist(*p.B))),
-			"x:", curNode.X, "y:", curNode.Y)
-	}
-
-	if errorDist >= p.DetectionThresholdCM && float64(newDist) >= p.DetectionThresholdCM && curNode.HasCheckedSensor {
-		fmt.Fprintln(p.DriftFile, "Node True Positive ID:", curNode.Id, "True Reading:", newDist, "Drifted Reading:",
-			errorDist, "S0:", curNode.S0, "S1:", curNode.S1, "S2:", curNode.S2, "E0:", curNode.E0, "E1:", curNode.E1,
-			"E2:", curNode.E2, "ET1:", curNode.ET1, "ET2:", curNode.ET2, "time since calibration:", curNode.NodeTime,
-			"Current Time (Iter):", p.Iterations_used, "Energy Level:", curNode.Battery, "Distance from bomb:", math.Sqrt(float64(curNode.GeoDist(*p.B))),
-			"x:", curNode.X, "y:", curNode.Y)
-	}
-
-	//If the reading is more than 2 standard deviations away from the grid average, then recalibrate
-	gridAverage := p.Grid[curNode.Row(p.YDiv)][curNode.Col(p.XDiv)].Avg
-	//standDev := grid[curNode.Row(yDiv)][curNode.Col(xDiv)].StdDev
-
-	//New condition added: also recalibrate when the node's sensitivity is <= 1/10 of its original sensitvity
-	//New condition added: Check to make sure the sensor was pinged this iteration
-	if ((curNode.Sensitivity <= (curNode.InitialSensitivity / 2)) && (curNode.HasCheckedSensor)) && p.Iterations_used != 0 {
-		curNode.Recalibrate()
-		p.Recalibrate = true
-		curNode.IncrementNumResets()
-	}
-
-	//printing statements to log files, only if the sensor was pinged this iteration
-	//if curNode.HasCheckedSensor && nodesPrint{
-	if p.NodesPrint {
-		if p.Recalibrate {
-			fmt.Fprintln(p.NodeFile, "ID:", curNode.GetID(), "Average:", curNode.GetAvg(), "Reading:", newDist, "Error Reading:", errorDist, "Recalibrated")
-		} else {
-			fmt.Fprintln(p.NodeFile, "ID:", curNode.GetID(), "Average:", curNode.GetAvg(), "Reading:", newDist, "Error Reading:", errorDist)
+		if errorDist >= p.DetectionThresholdCM && float64(newDist) < p.DetectionThresholdCM {
+			//this if a false positive
+			//it must be due to drifting. Report relevant info to driftFile
+			fmt.Fprintln(p.DriftFile, "Node False Positive (drifting) ID:", curNode.Id, "True Reading:", newDist, "Drifted Reading:",
+				errorDist, "S0:", curNode.S0, "S1:", curNode.S1, "S2:", curNode.S2, "E0:", curNode.E0, "E1:", curNode.E1,
+				"E2:", curNode.E2, "ET1:", curNode.ET1, "ET2:", curNode.ET2, "Time since calibration:", curNode.NodeTime,
+				"Current Time (Iter):", p.Iterations_used, "Energy Level:", curNode.Battery, "Distance from bomb:", math.Sqrt(float64(curNode.GeoDist(*p.B))),
+				"x:", curNode.X, "y:", curNode.Y)
 		}
-		//fmt.Fprintln(nodeFile, "battery:", int(curNode.Battery),)
-	}
 
-	if p.PositionPrint {
-		fmt.Fprintln(p.PositionFile, "ID:", curNode.GetID(), "x:", newX, "y:", newY)
-	}
+		if errorDist >= p.DetectionThresholdCM && float64(newDist) >= p.DetectionThresholdCM && curNode.HasCheckedSensor {
+			fmt.Fprintln(p.DriftFile, "Node True Positive ID:", curNode.Id, "True Reading:", newDist, "Drifted Reading:",
+				errorDist, "S0:", curNode.S0, "S1:", curNode.S1, "S2:", curNode.S2, "E0:", curNode.E0, "E1:", curNode.E1,
+				"E2:", curNode.E2, "ET1:", curNode.ET1, "ET2:", curNode.ET2, "Time since calibration:", curNode.NodeTime,
+				"Current Time (Iter):", p.Iterations_used, "Energy Level:", curNode.Battery, "Distance from bomb:", math.Sqrt(float64(curNode.GeoDist(*p.B))),
+				"x:", curNode.X, "y:", curNode.Y)
+		}
 
-	p.Recalibrate = false
+		//If the reading is more than 2 standard deviations away from the grid average, then recalibrate
+		//gridAverage := p.Grid[curNode.Row(p.YDiv)][curNode.Col(p.XDiv)].Avg
+		//standDev := grid[curNode.Row(yDiv)][curNode.Col(xDiv)].StdDev
 
-	//Receives the node's distance and calculates its running average
-	//for that square
-	//Only do this if the sensor was pinged this iteration
-	if curNode.HasCheckedSensor {
-		p.Grid[curNode.Row(p.YDiv)][curNode.Col(p.XDiv)].TakeMeasurement(float32(errorDist))
-		p.Grid[curNode.Row(p.YDiv)][curNode.Col(p.XDiv)].NumNodes++
-		//subtract grid average from node average, square it, and add it to this variable
-		p.Grid[curNode.Row(p.YDiv)][curNode.Col(p.XDiv)].SquareValues += (math.Pow(float64(errorDist-float64(gridAverage)), 2))
+		//New condition added: also recalibrate when the node's sensitivity is <= 1/10 of its original sensitvity
+		//New condition added: Check to make sure the sensor was pinged this iteration
+		if ((curNode.Sensitivity <= (curNode.InitialSensitivity / 2)) && (curNode.HasCheckedSensor)) && p.Iterations_used != 0 {
+			curNode.Recalibrate()
+			p.Recalibrate = true
+			curNode.IncrementNumResets()
+		}
+
+		//printing statements to log files, only if the sensor was pinged this iteration
+		//if curNode.HasCheckedSensor && nodesPrint{
+		if p.NodesPrint {
+			if p.Recalibrate {
+				fmt.Fprintln(p.NodeFile, "ID:", curNode.GetID(), "Average:", curNode.GetAvg(), "Reading:", newDist, "Error Reading:", errorDist, "Recalibrated")
+			} else {
+				fmt.Fprintln(p.NodeFile, "ID:", curNode.GetID(), "Average:", curNode.GetAvg(), "Reading:", newDist, "Error Reading:", errorDist)
+			}
+			//fmt.Fprintln(nodeFile, "battery:", int(curNode.Battery),)
+		}
+
+		if p.PositionPrint {
+			fmt.Fprintln(p.PositionFile, "ID:", curNode.GetID(), "x:", newX, "y:", newY)
+		}
+
+		p.Recalibrate = false
+
+		//Receives the node's distance and calculates its running average
+		//for that square
+		//Only do this if the sensor was pinged this iteration
+		if curNode.HasCheckedSensor {
+			//p.Grid[curNode.Row(p.YDiv)][curNode.Col(p.XDiv)].TakeMeasurement(float32(errorDist))
+			//p.Grid[curNode.Row(p.YDiv)][curNode.Col(p.XDiv)].TotalNodes++
+			//subtract grid average from node average, square it, and add it to this variable
+			//p.Grid[curNode.Row(p.YDiv)][curNode.Col(p.XDiv)].SquareValues += (math.Pow(float64(errorDist-float64(gridAverage)), 2))
+			//p.Server.Send(Reading{errorDist, newX, newY, p.Iterations_used, curNode.GetID()})
+		}
 	}
 }
 
