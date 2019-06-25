@@ -126,7 +126,7 @@ func main() {
 	p.ThreshHoldBatteryToHave = 30.0 //This is the threshold battery to have for all phones
 
 	p.Iterations_used = 0
-	p.Iterations_of_event = 200
+	p.Iterations_of_event = p.IterationsCM
 	p.EstimatedPingsNeeded = 10200
 
 
