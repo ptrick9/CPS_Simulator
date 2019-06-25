@@ -33,6 +33,8 @@ type Square struct {
 	CanBeTravelledTo []bool
 	NodesInSquare	 map[Tuple]*NodeImpl;
 	Lock sync.Mutex
+
+	LastReadingTime int
 }
 
 //Adds a node to this Square, increasing its numNodes

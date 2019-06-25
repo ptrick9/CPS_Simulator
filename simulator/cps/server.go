@@ -68,7 +68,7 @@ func (s FusionCenter) MakeGrid() {
 
 			s.P.Grid[i][j] = &Square{i, j, 0.0, 0, make([]float32, s.P.NumGridSamples),
 				s.P.NumGridSamples, 0.0, 0, 0, false,
-				0.0, 0.0, false, travelList, map[Tuple]*NodeImpl{}, sync.Mutex{}}
+				0.0, 0.0, false, travelList, map[Tuple]*NodeImpl{}, sync.Mutex{}, 0}
 		}
 	}
 }
@@ -313,6 +313,7 @@ func (s *FusionCenter) Send(n *NodeImpl, rd Reading) {
 
 	s.UpdateSquareAvg(rd)
 	tile := s.P.Grid[rd.Xpos/s.P.XDiv][rd.YPos/s.P.YDiv]
+	tile.LastReadingTime = rd.Time
 	tile.SquareValues += math.Pow(float64(rd.SensorVal-float64(tile.Avg)), 2)
 	if rd.SensorVal > (float64(s.GetSquareAverage(s.P.Grid[rd.Xpos/s.P.XDiv][rd.YPos/s.P.YDiv])) + s.P.CalibrationThresholdCM){ //Check if x over grid avg
 		n.Recalibrate()
@@ -400,14 +401,36 @@ func (s FusionCenter) GetMedian(arr []float64) float64{
 	return median
 }
 
-/*func (s FusionCenter) getLeastDenseSquares() []*Square{
-	orderedSquares := make([]*Square, 0)
-	for x := 0; x < s.P.Width; x++ {
-		for y := 0; y < s.P.Height; y++ {
+func (s FusionCenter) GetLeastDenseSquares() Squares{
+	total := 0
+	orderedSquares := make(Squares, 0)
+	for x := 0; x < len(s.P.Grid); x++ {
+		for y := 0; y < len(s.P.Grid[x]); y++ {
 			orderedSquares = append(orderedSquares, s.P.Grid[x][y])
 		}
 	}
-}*/
+	sort.Sort(&orderedSquares)
+	for i:= range orderedSquares {
+		total+=orderedSquares[i].ActualNumNodes
+		fmt.Printf("X:%v, Y:%v, Density:%v, #%v\n", orderedSquares[i].X, orderedSquares[i].Y, orderedSquares[i].ActualNumNodes)
+	}
+	//fmt.Println("Total:", total)
+	return orderedSquares
+}
+
+type Squares []*Square
+
+func (s *Squares) Len() int{
+	return len(*s)
+}
+
+func (s *Squares) Swap(i, j int) {
+	(*s)[i], (*s)[j] = (*s)[j], (*s)[i]
+}
+
+func (s *Squares) Less(i, j int) bool{
+	return (*s)[i].ActualNumNodes < (*s)[j].ActualNumNodes
+}
 
 //PrintStats prints the mean, standard deviation, and variance for the whole map at every iteration
 func (s FusionCenter) PrintStats() {
@@ -418,6 +441,7 @@ func (s FusionCenter) PrintStats() {
 
 //PrintStatsFile outputs statistical and detection data to log files
 func (s FusionCenter) PrintStatsFile() {
+	s.GetLeastDenseSquares()
 	fmt.Fprintln(s.P.ServerFile, "Mean at each time:\n", s.P.Server.Mean)
 	fmt.Fprintln(s.P.ServerFile, "Standard Deviations at each time:\n", s.P.Server.StdDev)
 	fmt.Fprintln(s.P.ServerFile, "Variance at each time:\n", s.P.Server.Variance)
