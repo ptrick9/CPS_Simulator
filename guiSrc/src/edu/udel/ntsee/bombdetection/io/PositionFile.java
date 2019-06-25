@@ -13,7 +13,7 @@ import java.util.regex.Pattern;
 public class PositionFile extends LogFile<Node> {
 
     private static final Pattern HEADER = Pattern.compile("^t=  \\d+  amount=  (\\d+).*$");
-    private static final Pattern DATA = Pattern.compile("^ID: \\d+ x: (\\d+) y: (\\d+).*$");
+    private static final Pattern DATA = Pattern.compile("^ID: (\\d+) x: (\\d+) y: (\\d+).*$");
 
     public PositionFile(String path) throws IOException {
         super(path, HEADER, DATA);
@@ -57,8 +57,9 @@ public class PositionFile extends LogFile<Node> {
     @Override
     protected Node parseData(Matcher m) {
 
-        int x = Integer.parseInt(m.group(1));
-        int y = Integer.parseInt(m.group(2));
-        return new Node(x,  y);
+        int id = Integer.parseInt(m.group(1));
+        int x = Integer.parseInt(m.group(2));
+        int y = Integer.parseInt(m.group(3));
+        return new Node(id, x,  y);
     }
 }

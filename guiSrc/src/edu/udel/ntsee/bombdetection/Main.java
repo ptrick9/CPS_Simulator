@@ -1,5 +1,6 @@
 package edu.udel.ntsee.bombdetection;
 
+import edu.udel.ntsee.bombdetection.io.AdHocFile;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Group;
@@ -8,6 +9,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.stage.Stage;
 import java.io.IOException;
+import java.util.regex.Matcher;
 
 public class Main extends Application {
 
@@ -25,6 +27,8 @@ public class Main extends Application {
     }
 
     public static void openSimulator(Stage stage) {
+
+
 
         try {
             Parent root = FXMLLoader.load(Main.class.getResource("simulator/view.fxml"));

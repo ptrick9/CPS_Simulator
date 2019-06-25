@@ -22,6 +22,7 @@ public class FileManager {
     private PositionFile positions;
     private SamplesFile samples;
     private RoutesFile routes;
+    private AdHocFile adhocs;
     private GridFile sensorReadings;
     private Map<Integer, Grid> nodePath;
 
@@ -42,7 +43,7 @@ public class FileManager {
             properties[2] = Util.parseAmount(reader.readLine());
             int x = Util.parseAmount(reader.readLine());
             int y = Util.parseAmount(reader.readLine());
-            this.bomb = new Node(x, y);
+            this.bomb = new Node(-1, x, y);
             this.positions = new PositionFile(base + "-simulatorOutput.txt");
 
         } catch (IOException e) {
@@ -59,6 +60,12 @@ public class FileManager {
             this.routes = new RoutesFile(base + "-path.txt");
         } catch (IOException e) {
             this.routes = null;
+        }
+
+        try {
+            this.adhocs = new AdHocFile(base + "-adhoc.txt");
+        } catch (IOException e) {
+            this.adhocs = null;
         }
 
         try {
@@ -89,6 +96,10 @@ public class FileManager {
 
     public RoutesFile getRoutes() {
         return routes;
+    }
+
+    public AdHocFile getAdHocs() {
+        return adhocs;
     }
 
     public GridFile getSensorReadings() {
