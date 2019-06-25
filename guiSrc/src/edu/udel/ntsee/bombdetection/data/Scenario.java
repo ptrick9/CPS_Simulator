@@ -34,7 +34,7 @@ public class Scenario {
         this.superNodeType = 1;
         this.totalRandomNodes = 0;
 
-        this.bomb = new Node(0, 0);
+        this.bomb = new Node(-1, 0, 0);
         this.walls = FXCollections.observableArrayList();
         this.nodes = FXCollections.observableArrayList();
         this.attractions = FXCollections.observableArrayList();
@@ -57,16 +57,16 @@ public class Scenario {
 
         int bombX = Util.parseVariable(reader.readLine());
         int bombY = Util.parseVariable(reader.readLine());
-        scenario.bomb = new Node(bombX, bombY);
+        scenario.bomb = new Node(-1, bombX, bombY);
 
         int totalNodes = Util.parseAmount(reader.readLine());
         for (int i = 0; i < totalNodes; i++) {
-            scenario.nodes.add(TimedNode.fromString(reader.readLine()));
+            scenario.nodes.add(Parser.timedNodeFromString(reader.readLine()));
         }
 
         int totalWalls = Util.parseAmount(reader.readLine());
         for (int i = 0; i < totalWalls; i++) {
-            scenario.walls.add(Node.fromString(reader.readLine()));
+            scenario.walls.add(Parser.nodeFromString(reader.readLine()));
         }
 
         reader.readLine(); // s
@@ -74,7 +74,7 @@ public class Scenario {
 
         int totalAttractions = Util.parseAmount(reader.readLine());
         for (int i = 0; i < totalAttractions; i++) {
-            scenario.attractions.add(TemporaryNode.fromString(reader.readLine()));
+            scenario.attractions.add(Parser.temporaryNodeFromString(reader.readLine()));
         }
 
         return scenario;
