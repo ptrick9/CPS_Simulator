@@ -12,9 +12,15 @@ type Params struct {
 	OutputFileNameCM               string  // This is the prefix of the output text file
 	InputFileNameCM                string  // This must be the name of the input text file with ".txt"
 	NaturalLossCM                  float64 // This can be any number n: 0 < n < .1
-	SensorSamplingLossCM           float64 // This can be any number n: 0 < n < .1
-	GPSSamplingLossCM              float64 // This can be any number n: 0 < n < GPSSamplingLossCM < .1
-	ServerSamplingLossCM           float64 // This can be any number n: 0 < n < serverSamplingLossCM < .1
+
+	SamplingLossSensorCM           float64 // This can be any number n: 0 < n < .1
+	SamplingLossGPSCM              float64 // This can be any number n: 0 < n < GPSSamplingLossCM < .1
+	SamplingLossServerCM           float64 // This can be any number n: 0 < n < serverSamplingLossCM < .1
+	SamplingLossBTCM			   float64
+	SamplingLossWifiCM			   float64
+	SamplingLoss4GCM			   float64
+	SamplingLossAccelCM			   float64
+
 	ThresholdBatteryToHaveCM       int     // This can be any number n: 0 < n < 50
 	ThresholdBatteryToUseCM        int     // This can be any number n: 0 < n < 20 < 100-thresholdBatteryToHaveCM
 	MovementSamplingSpeedCM        int     // This can be any number n: 0 < n < 100
@@ -104,6 +110,7 @@ type Params struct {
 
 	ThreshHoldBatteryToHave  float32
 	TotalPercentBatteryToUse float32
+	IterationsCM		     int
 	Iterations_used          int
 	Iterations_of_event      int
 	EstimatedPingsNeeded     int
@@ -149,9 +156,13 @@ type Params struct {
 	BatteryCharges []float32
 	BatteryLosses  []float32
 
-	BatteryLossesCheckingSensorScalar []float32
-	BatteryLossesCheckingGPSScalar    []float32
-	BatteryLossesCheckingServerScalar []float32
+	BatteryLossesSensor				  []float32
+	BatteryLossesGPS 			      []float32
+	BatteryLossesServer 			  []float32
+	BatteryLossesBT					  []float32
+	BatteryLossesWiFi				  []float32
+	BatteryLosses4G					  []float32
+	BatteryLossesAccelerometer		  []float32
 
 	NumAtt      int
 	Attractions []*Attraction
@@ -164,6 +175,6 @@ type Params struct {
 	Server 			FusionCenter //Server object
 
 
-
+	NodePositionMap			map[Tuple]*NodeImpl
 
 }

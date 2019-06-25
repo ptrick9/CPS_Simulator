@@ -10,7 +10,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 
 public class GradientLegendKey extends VBox {
-
+    //--module-path=/usr/share/java/ --add-modules=javafx.controls,javafx.fxml
     private Label label;
     private HBox hbox;
     private Label minLabel;
