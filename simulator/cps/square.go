@@ -4,6 +4,7 @@ import (
 	"math"
 )
 
+//Square generated for pathfinding
 type RoutingSquare struct {
 	X1, X2, Y1, Y2 int
 	Can_cut        bool
@@ -11,10 +12,12 @@ type RoutingSquare struct {
 	Routers        []Tuple
 }
 
+//Square_equals is  comparator for two RoutingSquares
 func Square_equals(s1, s2 RoutingSquare) bool {
 	return (s1.X1 == s2.X1 && s1.X2 == s2.X2 && s1.Y1 == s2.Y1 && s1.Y2 == s2.Y2)
 }
 
+//Square_list_remove finds duplicate squares and removes them from the square list
 func Square_list_remove(s RoutingSquare, r *RegionParams) {
 	index := -1
 	for i, sq := range r.Square_list {
@@ -27,6 +30,7 @@ func Square_list_remove(s RoutingSquare, r *RegionParams) {
 	}
 }
 
+//Within returns whether or not a set of coordinates is within a square
 func Within(s RoutingSquare, p Tuple) bool {
 	return (p.X >= s.X1 && p.X <= s.X2 && p.Y >= s.Y1 && p.Y <= s.Y2)
 }

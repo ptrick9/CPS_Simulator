@@ -1,9 +1,12 @@
 package main
 
 import (
-	"../simulator/cps"
+	"CPS_Simulator/simulator/cps"
+	"flag"
+	"fmt"
 	"math"
 	"math/rand"
+	"reflect"
 	"sync"
 	"testing"
 )
@@ -137,14 +140,20 @@ func TestSend(t *testing.T) {
 	travelList := make([]bool, 0)
 	travelList = append(travelList, false)
 	p.NumGridSamples = 1
+	rd := cps.Reading{0,0,0,0,0}
+
 
 	squ := cps.Square{0, 0, 0.0, 1, make([]float32, p.NumGridSamples),
 		p.NumGridSamples, 0.0, 0, 0, false,
 		0.0, 0.0, false, travelList, sync.Mutex{}}
+	node := &cps.NodeImpl{X: 0, Y: 0, Id: len(p.NodeList), SampleHistory: []float32{}, Concentration: 0,
+		Cascade: 0, Battery: 0, BatteryLossScalar: 0,
+		BatteryLossCheckingSensorScalar: 0,
+		BatteryLossGPSScalar: 0, BatteryLossCheckingServerScalar: 0}
 
 	p.Grid = append(p.Grid, []*cps.Square{ &squ })
 
-	//srv.Send(rd)
+	srv.Send(node, rd)
 
 	if srv.Times[0] != true {
 		t.Errorf("Time 0 not included in packet, got %v, wanted true", srv.Times[0])
@@ -170,8 +179,11 @@ func TestCalcStats(t *testing.T) {
 	rd5 := cps.Reading{6,0,0,0,5}
 	rd6 := cps.Reading{8,0,0,0,6}
 
+	p.B = &cps.Bomb{0,0}
+
 	//srv.TimeBuckets = [][]float64{[]float64{1, 2, 3, 4}, []float64{2, 4, 6, 8}}
 	srv.TimeBuckets = [][]cps.Reading{[]cps.Reading{rd1, rd2, rd3, rd4}, []cps.Reading{rd2, rd4, rd5, rd6}}
+	srv.Times = map[int]bool{0:true, 1:true}
 	srv.CalcStats()
 
 	expectedMean := []float64{2.5, 5.0}
@@ -244,5 +256,171 @@ func makeNodesForTest(p *cps.Params) {
 			p.BoolGrid[xx][yy] = true
 		}
 	}
+}
+
+func TestMakeGrid(t *testing.T) {
+	p := cps.Params{}
+	p.SquareColCM = 5
+	p.SquareRowCM = 5
+	p.Server = cps.FusionCenter{&p,nil,nil,nil,nil,nil,nil}
+	srv := p.Server
+
+	srv.MakeGrid()
+	if len(p.Grid) * len(p.Grid[0]) != 25 {
+		t.Errorf("Incorrect grid size, got %v, wanted %v", len(p.Grid) * len(p.Grid[0]), 25)
+	}
+	for i := 0; i < 5; i++ {
+		for j := 0; j < 5; j++ {
+			if reflect.TypeOf(p.Grid[i][j]) != reflect.TypeOf(&cps.Square{}) {
+				t.Errorf("Square not generated correctly at x: %v, y: %v, got type %v, expected type %v", i, j, reflect.TypeOf(&cps.Square{}), reflect.TypeOf(p.Grid[i][j]))
+			}
+		}
+	}
+}
+
+func TestMakeSuperNodes(t *testing.T) {
+	p := cps.Params{}
+	p.Server = cps.FusionCenter{&p,nil,nil,nil,nil,nil,nil}
+	srv := p.Server
+
+	p.Height = 2
+	p.Width = 2
+	p.NumSuperNodes = 4
+
+	srv.MakeSuperNodes()
+
+	if p.NumSuperNodes != 4 {
+		t.Errorf("Incorrect number of super nodes, got %v, wanted %v", p.NumSuperNodes, 4)
+	}
+
+}
+
+func TestCheckDetections(t *testing.T) {
+	p := cps.Params{}
+	p.Server = cps.FusionCenter{&p,nil,nil,nil,nil,nil,nil}
+	srv := p.Server
+	getFlagsForTest(&p)
+	cps.SetupParameters(&p)
+
+	p.B = &cps.Bomb{1,1}
+
+	sch := &cps.Scheduler{}
+	p.NodeList = append(p.NodeList, cps.NodeImpl{X: 1, Y: 1, Id: len(p.NodeList), SampleHistory: []float32{}, Concentration: 0,
+		Cascade: 0, Battery: 0, BatteryLossScalar: 0,
+		BatteryLossCheckingSensorScalar: 0,
+		BatteryLossGPSScalar: 0, BatteryLossCheckingServerScalar: 0})
+	sch.SNodeList = append(sch.SNodeList, &cps.Sn_zero{&cps.Supern{&cps.NodeImpl{X: 0, Y: 0, Id: 0}, 1,
+		1, p.SuperNodeRadius, p.SuperNodeRadius, 0, make([]cps.Coord, 1), make([]cps.Coord, 0),
+		cps.Coord{X: 1, Y: 1}, 0, 0, 0, 0, 0, make([]cps.Coord, 0)}})
+
+	srv.MakeGrid()
+
+	p.Grid[0][0].Avg = 4
+	srv.CheckDetections(&p, sch)
+
+
+	if p.Grid[0][0].HasDetected {
+		t.Errorf("E")
+	}
+
+}
+
+func getFlagsForTest(p *cps.Params) {
+	flag.IntVar(&p.NumNodes, "NumNodes", 3, "number of nodes")
+	flag.IntVar(&p.MaxX, "MaxX", 10, "Maximum X value")
+	flag.IntVar(&p.MaxY, "MaxY", 10, "Maximum Y value")
+
+	flag.IntVar(&p.NegativeSittingStopThresholdCM, "negativeSittingStopThreshold", -10,
+		"Negative number sitting is set to when board map is reset")
+	flag.IntVar(&p.SittingStopThresholdCM, "sittingStopThreshold", 5,
+		"How long it takes for a node to stay seated")
+	flag.Float64Var(&p.GridCapacityPercentageCM, "GridCapacityPercentage", .9,
+		"Percent the sub-Grid can be filled")
+	flag.StringVar(&p.InputFileNameCM, "inputFileName", "Log1_in.txt",
+		"Name of the input text file")
+	flag.StringVar(&p.SensorPath, "sensorPath", "Circle_2D.csv", "Sensor Reading Inputs")
+	flag.StringVar(&p.OutputFileNameCM, "p.OutputFileName", "Log",
+		"Name of the output text file prefix")
+	flag.Float64Var(&p.NaturalLossCM, "naturalLoss", .005,
+		"battery loss due to natural causes")
+	flag.Float64Var(&p.SensorSamplingLossCM, "sensorSamplingLoss", .001,
+		"battery loss due to sensor sampling")
+	flag.Float64Var(&p.GPSSamplingLossCM, "GPSSamplingLoss", .005,
+		"battery loss due to GPS sampling")
+	flag.Float64Var(&p.ServerSamplingLossCM, "serverSamplingLoss", .01,
+		"battery loss due to server sampling")
+	flag.IntVar(&p.ThresholdBatteryToHaveCM, "thresholdBatteryToHave", 30,
+		"Threshold battery phones should have")
+	flag.IntVar(&p.ThresholdBatteryToUseCM, "thresholdBatteryToUse", 10,
+		"Threshold of battery phones should consume from all forms of sampling")
+	flag.IntVar(&p.MovementSamplingSpeedCM, "movementSamplingSpeed", 20,
+		"the threshold of speed to increase sampling rate")
+	flag.IntVar(&p.MovementSamplingPeriodCM, "movementSamplingPeriod", 1,
+		"the threshold of speed to increase sampling rate")
+	flag.IntVar(&p.MaxBufferCapacityCM, "maxBufferCapacity", 25,
+		"maximum capacity for the buffer before it sends data to the server")
+	flag.StringVar(&p.EnergyModelCM, "energyModel", "variable",
+		"this determines the energy loss model that will be used")
+	flag.BoolVar(&p.NoEnergyModelCM, "noEnergy", false,
+		"Whether or not to ignore energy model for simulation")
+	flag.IntVar(&p.SensorSamplingPeriodCM, "sensorSamplingPeriod", 1000,
+		"rate of the sensor sampling period when custom energy model is chosen")
+	flag.IntVar(&p.GPSSamplingPeriodCM, "GPSSamplingPeriod", 1000,
+		"rate of the GridGPS sampling period when custom energy model is chosen")
+	flag.IntVar(&p.ServerSamplingPeriodCM, "serverSamplingPeriod", 1000,
+		"rate of the server sampling period when custom energy model is chosen")
+	flag.IntVar(&p.NumStoredSamplesCM, "nodeStoredSamples", 10,
+		"number of samples stored by individual nodes for averaging")
+	flag.IntVar(&p.GridStoredSamplesCM, "p.GridStoredSamples", 10,
+		"number of samples stored by p.Grid squares for averaging")
+	flag.Float64Var(&p.DetectionThresholdCM, "detectionThreshold", 10000.0, //11180.0,
+		"Value where if a node gets this reading or higher, it will trigger a detection")
+	flag.Float64Var(&p.ErrorModifierCM, "errorMultiplier", 1.0,
+		"Multiplier for error values in system")
+
+	//Range 1, 2, or 4
+	//Currently works for only a few numbers, can be easily expanded but is not currently dynamic
+	flag.IntVar(&p.NumSuperNodes, "numSuperNodes", 4, "the number of super nodes in the simulator")
+	flag.Float64Var(&p.CalibrationThresholdCM, "Recalibration Threshold", 3.0, "Value over grid average to recalibrate node")
+	flag.Float64Var(&p.StdDevThresholdCM, "StandardDeviationThreshold", 1.7, "Detection Threshold based on standard deviations from mean")
+
+
+	flag.IntVar(&p.SuperNodeType, "p.SuperNodeType", 0, "the type of super node used in the simulator")
+
+	flag.IntVar(&p.SuperNodeSpeed, "p.SuperNodeSpeed", 3, "the speed of the super node")
+
+	flag.BoolVar(&p.DoOptimize, "doOptimize", false, "whether or not to optimize the simulator")
+
+	flag.BoolVar(&p.PositionPrintCM, "logPosition", false, "Whether you want to write position info to a log file")
+	flag.BoolVar(&p.GridPrintCM, "logGrid", false, "Whether you want to write p.Grid info to a log file")
+	flag.BoolVar(&p.EnergyPrintCM, "logEnergy", false, "Whether you want to write energy into to a log file")
+	flag.BoolVar(&p.NodesPrintCM, "logNodes", false, "Whether you want to write node readings to a log file")
+	flag.IntVar(&p.SquareRowCM, "SquareRowCM", 1, "Number of rows of p.Grid squares, 1 through p.MaxX")
+	flag.IntVar(&p.SquareColCM, "SquareColCM", 1, "Number of columns of p.Grid squares, 1 through p.MaxY")
+
+	flag.StringVar(&p.ImageFileNameCM, "imageFileName", "circle_justWalls_x4.png", "Name of the input text file")
+	flag.StringVar(&p.StimFileNameCM, "stimFileName", "circle_0.txt", "Name of the stimulus text file")
+	flag.StringVar(&p.OutRoutingNameCM, "outRoutingName", "log.txt", "Name of the stimulus text file")
+	flag.StringVar(&p.OutRoutingStatsNameCM, "outRoutingStatsName", "routingStats.txt", "Name of the output file for stats")
+
+	flag.BoolVar(&p.RegionRouting, "regionRouting", true, "True if you want to use the new routing algorithm with regions and cutting")
+
+	flag.Parse()
+	fmt.Println("Natural Loss: ", p.NaturalLossCM)
+	fmt.Println("Sensor Sampling Loss: ", p.SensorSamplingLossCM)
+	fmt.Println("GPS sampling loss: ", p.GPSSamplingLossCM)
+	fmt.Println("Server sampling loss", p.ServerSamplingLossCM)
+	fmt.Println("Threshold Battery to use: ", p.ThresholdBatteryToUseCM)
+	fmt.Println("Threshold battery to have: ", p.ThresholdBatteryToHaveCM)
+	fmt.Println("Moving speed for incresed sampling: ", p.MovementSamplingSpeedCM)
+	fmt.Println("Period of extra sampling due to high speed: ", p.MovementSamplingPeriodCM)
+	fmt.Println("Maximum size of buffer posible: ", p.MaxBufferCapacityCM)
+	fmt.Println("Energy model type:", p.EnergyModelCM)
+	fmt.Println("Sensor Sampling Period:", p.SensorSamplingPeriodCM)
+	fmt.Println("GPS Sampling Period:", p.GPSSamplingPeriodCM)
+	fmt.Println("Server Sampling Period:", p.ServerSamplingPeriodCM)
+	fmt.Println("Number of Node Stored Samples:", p.NumStoredSamplesCM)
+	fmt.Println("Number of Grid Stored Samples:", p.GridStoredSamplesCM)
+	fmt.Println("Detection Threshold:", p.DetectionThresholdCM)
 }
 

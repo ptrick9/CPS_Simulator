@@ -1,10 +1,10 @@
+//CPS contains the simulator
 package cps
 
 import (
 	"encoding/csv"
 	"math/rand"
 	"strings"
-
 	//"bufio"
 	"fmt"
 	"image"
@@ -43,14 +43,6 @@ var (
 		poispos [][]int // points of interest static
 	*/
 
-	//b []byte
-	b2 []byte
-	b3 []byte
-	b4 []byte
-	b5 []byte
-	b6 []byte
-	b7 []byte
-
 	//numNodeNodes               int
 	//numWallNodes               int
 	//numPoints                  int
@@ -62,50 +54,7 @@ var (
 	makeBoardMapFile = true
 )
 
-//func main() {
-//
-//	getListedInput()
-//
-//	squareRow := getDashedInput("squareRow")
-//	squareCol:= getDashedInput("squareCol")
-//	numNodes:= getDashedInput("numNodes")
-//	numStoredSamples:= getDashedInput("numStoredSamples")
-//	Tau1:= getDashedInput("Tau1")
-//	Tau2:= getDashedInput("Tau2")
-//	superNodeType:= getDashedInput("superNodeType")
-//	maxX:= getDashedInput("maxX")
-//	maxY:= getDashedInput("maxY")
-//	bombX:= getDashedInput("bombX")
-//	bombY:= getDashedInput("bombY")
-//	Tester:= getDashedInput("Tester")
-//
-//	fmt.Println(squareRow,
-//		squareCol,
-//		numNodes,
-//		numStoredSamples,
-//		Tau1,
-//		Tau2,
-//		superNodeType,
-//		maxX,
-//		maxY,
-//		bombX,
-//		bombY,
-//		Tester)
-//
-//	createBoard(maxX,maxY)
-//
-//	fillInWallsToBoard()
-//
-//	fillInBufferCurrent()
-//
-//	fillPointsToBoard()
-//
-//	fillInMap()
-//
-//	writeBordMapToFile()
-//
-//}
-
+//GetDashedInput
 func GetDashedInput(s string, p *Params) int {
 	b := ReadFromFile(p.FileName)
 	r := regexp.MustCompile(string(s + "-[0-9]+"))
@@ -117,112 +66,58 @@ func GetDashedInput(s string, p *Params) int {
 	return int(s1)
 }
 
+//getString reads the input file and extracts the data from the specified category
+//headExp is a regular expression to denote the label and dataExp is the form the data will take
+func getString(p *Params, bytes []byte, headExp string, dataExp string) ([][]int, []string){
+	regex := regexp.MustCompile(headExp)
+	text := regex.FindAllString(string(bytes), 10)
+	regex = regexp.MustCompile("[0-9]+")
+	text = regex.FindAllString(text[0], 10)
+	size, err := strconv.ParseInt(text[0], 10, 32)
+	Check(err)
+	regex = regexp.MustCompile(dataExp)
+	fai := regex.FindAllIndex(bytes, int(size))
+	text = regex.FindAllString(string(bytes), int(size))
+	return fai, text
+}
+
 func GetListedInput(p *Params) {
+	var temp []byte
 	dir, err := os.Getwd()
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println(dir)
-	var f = p.FileName
-	fmt.Println(f)
-	b := ReadFromFile(p.FileName)
-	r := regexp.MustCompile("N: [0-9]+")
-	w := r.FindAllString(string(b), 10)
-	r = regexp.MustCompile("[0-9]+")
-	w = r.FindAllString(w[0], 10)
-	s, err := strconv.ParseInt(w[0], 10, 32)
-	Check(err)
-	r = regexp.MustCompile("x:[0-9]+, y:[0-9]+, t:[0-9]+")
-	fai := r.FindAllIndex(b, int(s))
-	w = r.FindAllString(string(b), int(s))
-	if len(fai) > 0 {
-		b2 = b[fai[len(fai)-1][1]:]
-	} else {
-		b2 = b
-	}
-	//fmt.Println(w)
-	FillInts(w, 0, p)
-	//fmt.Println(npos)
+	fileBytes := ReadFromFile(p.FileName)
 
-	r = regexp.MustCompile("W: [0-9]+")
-	w = r.FindAllString(string(b2), 10)
-	r = regexp.MustCompile("[0-9]+")
-	w = r.FindAllString(w[0], 10)
-	s, err = strconv.ParseInt(w[0], 10, 32)
-	r = regexp.MustCompile("x:[0-9]+, y:[0-9]+")
-	Check(err)
-	fai = r.FindAllIndex(b2, int(s))
-	w = r.FindAllString(string(b2), int(s))
+	fai, text := getString(p, fileBytes, "N: [0-9]+", "x:[0-9]+, y:[0-9]+, t:[0-9]+")
 	if len(fai) > 0 {
-		b3 = b2[fai[len(fai)-1][1]:]
+		temp = fileBytes[fai[len(fai)-1][1]:]
 	} else {
-		b3 = b2
+		temp = fileBytes
 	}
-	//fmt.Println(w)
-	FillInts(w, 1, p)
-	//fmt.Println(wpos)
+	FillInts(text, 0, p)
 
-	r = regexp.MustCompile("S: [0-9]+")
-	w = r.FindAllString(string(b3), 10)
-	r = regexp.MustCompile("[0-9]+")
-	w = r.FindAllString(w[0], 10)
-	s, err = strconv.ParseInt(w[0], 10, 32)
-	r = regexp.MustCompile("x:[0-9]+, y:[0-9]+, t:[0-9]+")
-	Check(err)
-	fai = r.FindAllIndex(b3, int(s))
-	w = r.FindAllString(string(b3), int(s))
+	fai, text = getString(p, temp, "W: [0-9]+", "x:[0-9]+, y:[0-9]+")
 	if len(fai) > 0 {
-		b4 = b3[fai[len(fai)-1][1]:]
-	} else {
-		b4 = b3
+		temp = temp[fai[len(fai)-1][1]:]
 	}
-	//fmt.Println(w)
-	FillInts(w, 2, p)
-	//fmt.Println(spos)
+	FillInts(text, 1, p)
 
-	/*r = regexp.MustCompile("P: [0-9]+")
-	w = r.FindAllString(string(b4), 10)
-	r = regexp.MustCompile("[0-9]+")
-	w = r.FindAllString(w[0], 10)
-	s, err = strconv.ParseInt(w[0], 10, 32)
-	r = regexp.MustCompile("x:[0-9]+, y:[0-9]+, t:[0-9]+")
-	Check(err)
-	fai = r.FindAllIndex(b4, int(s))
-	w = r.FindAllString(string(b4), int(s))
+	fai, text = getString(p, temp, "S: [0-9]+", "x:[0-9]+, y:[0-9]+")
 	if len(fai) > 0 {
-		b5 = b4[fai[len(fai)-1][1]:]
-	} else {
-		b5 = b4
+		temp = temp[fai[len(fai)-1][1]:]
 	}
-	fmt.Println(w)
-	fillInts(w, 3)
-	fmt.Println(ppos)*/
+	FillInts(text, 2, p)
 
-	b5 = b4
-
-	r = regexp.MustCompile("POIS: [0-9]+")
-	w = r.FindAllString(string(b5), 10)
-	r = regexp.MustCompile("[0-9]+")
-	w = r.FindAllString(w[0], 10)
-	s, err = strconv.ParseInt(w[0], 10, 32)
-	r = regexp.MustCompile("x:[0-9]+, y:[0-9]+, ti:[0-9]+, to:[0-9]+")
-	Check(err)
-	fai = r.FindAllIndex(b5, int(s))
-	w = r.FindAllString(string(b5), int(s))
-	if len(fai) > 0 {
-		b6 = b5[fai[len(fai)-1][1]:]
-	} else {
-		b6 = b5
-	}
-	//fmt.Println(w)
-	FillInts(w, 5, p)
-	//fmt.Println(poispos)
+	fai, text = getString(p, temp, "POIS: [0-9]+", "x:[0-9]+, y:[0-9]+, ti:[0-9]+, to:[0-9]+")
+	FillInts(text, 5, p)
 
 	p.CurrentNodes = len(p.NodeEntryTimes)
 	p.NumWallNodes = len(p.Wpos)
 	//numPoints = len(ppos)
 	p.NumPointsOfInterestStatic = len(p.Poispos)
-	//fmt.Println(numNodeNodes, numWallNodes, numPoints, numPointsOfInterestKinetic, numPointsOfInterestStatic)
+	//fmt.Println(p.NumNodeNodes, p.NumWallNodes, p.NumPointsOfInterestStatic)
 }
 
 func FillInts(s []string, place int, p *Params) {
@@ -594,93 +489,6 @@ func FillPointsToBoard(p *Params) {
 	}
 }
 
-// Fills in board map with the path finding values
-func FillInMap1(p *Params) {
-	/*start := Time.Now()
-
-	defer func() {
-		elapsed := Time.Since(start)
-		//fmt.Println("Board Map took", elapsed)
-	}()*/
-
-	for len(bufferFuture) > 0 {
-		bufferFuture = [][]int{}
-		for i := 0; i < len(bufferCurrent); i++ {
-			CheckLeft(i, p)
-			CheckRight(i, p)
-			CheckUp(i, p)
-			CheckDown(i, p)
-		}
-		bufferCurrent = [][]int{}
-		bufferCurrent = append(bufferCurrent, bufferFuture...)
-		starter += 1
-	}
-	starter = 1
-	bufferFuture = [][]int{{}}
-}
-
-func CheckLeft(i int, p *Params) {
-	defer func() {
-		recover()
-	}()
-	if
-	//bufferCurrent[i][0]-1 < len(p.BoardMap) &&
-	//bufferCurrent[i][1] < len(p.BoardMap[1]) &&
-	//bufferCurrent[i][0]-1 >= 0 &&
-	//bufferCurrent[i][1] >= 0 &&
-	p.BoardMap[bufferCurrent[i][0]-1][bufferCurrent[i][1]] == 0 {
-
-		p.BoardMap[bufferCurrent[i][0]-1][bufferCurrent[i][1]] = starter + 1
-		bufferFuture = append(bufferFuture, []int{bufferCurrent[i][0] - 1, bufferCurrent[i][1]})
-	}
-}
-
-func CheckRight(i int, p *Params) {
-	defer func() {
-		recover()
-	}()
-	if
-	//bufferCurrent[i][0]+1 < len(p.BoardMap) &&
-	//bufferCurrent[i][1] < len(p.BoardMap[1]) && // p.BoardMap[1] to
-	//bufferCurrent[i][0]+1 >= 0 &&
-	//bufferCurrent[i][1] >= 0 &&
-	p.BoardMap[bufferCurrent[i][0]+1][bufferCurrent[i][1]] == 0 {
-
-		p.BoardMap[bufferCurrent[i][0]+1][bufferCurrent[i][1]] = starter + 1
-		bufferFuture = append(bufferFuture, []int{bufferCurrent[i][0] + 1, bufferCurrent[i][1]})
-	}
-}
-func CheckUp(i int, p *Params) {
-	defer func() {
-		recover()
-	}()
-	if
-	//bufferCurrent[i][0] < len(p.BoardMap) &&
-	//bufferCurrent[i][1]+1 < len(p.BoardMap[1]) &&
-	//bufferCurrent[i][0] >= 0 &&
-	//bufferCurrent[i][1]+1 >= 0 &&
-	p.BoardMap[bufferCurrent[i][0]][bufferCurrent[i][1]+1] == 0 {
-
-		p.BoardMap[bufferCurrent[i][0]][bufferCurrent[i][1]+1] = starter + 1
-		bufferFuture = append(bufferFuture, []int{bufferCurrent[i][0], bufferCurrent[i][1] + 1})
-	}
-}
-func CheckDown(i int, p *Params) {
-	defer func() {
-		recover()
-	}()
-	if
-	//bufferCurrent[i][0] < len(p.BoardMap) &&
-	//bufferCurrent[i][1]-1 < len(p.BoardMap[1]) &&
-	//bufferCurrent[i][0] >= 0 &&
-	//bufferCurrent[i][1]-1 >= 0 &&
-	p.BoardMap[bufferCurrent[i][0]][bufferCurrent[i][1]-1] == 0 {
-
-		p.BoardMap[bufferCurrent[i][0]][bufferCurrent[i][1]-1] = starter + 1
-		bufferFuture = append(bufferFuture, []int{bufferCurrent[i][0], bufferCurrent[i][1] - 1})
-	}
-}
-
 func FillInMap(p *Params) {
 	/*start := Time.Now()
 
@@ -741,6 +549,19 @@ func FillInMap(p *Params) {
 	}
 	starter = 1
 	bufferFuture = [][]int{{}}
+}
+
+func MakeBoolGrid(p *Params) {
+	p.BoolGrid = make([][]bool, p.MaxX)
+	for i := range p.BoolGrid {
+		p.BoolGrid[i] = make([]bool, p.MaxY)
+	}
+	//Initializing the boolean field with values of false
+	for i := 0; i < p.MaxX; i++ {
+		for j := 0; j < p.MaxY; j++ {
+			p.BoolGrid[i][j] = false
+		}
+	}
 }
 
 func ReadMap(p *Params, r *RegionParams) {
@@ -818,6 +639,7 @@ func ReadMap(p *Params, r *RegionParams) {
 }
 
 func SetupFiles(p *Params) {
+	fmt.Printf("Building Output Files\n")
 	dummy, err := os.Create("dummyFile.txt")
 	if err != nil {
 		log.Fatal("cannot create file", err)
@@ -966,7 +788,9 @@ func SetupParameters(p *Params) {
 	p.Attractions = make([]*Attraction, p.NumAtt)
 
 	readSensorCSV(p)
-	readMovementCSV(p)
+	if p.CSVMovement {
+		readMovementCSV(p)
+	}
 
 
 }
@@ -978,13 +802,13 @@ func readSensorCSV(p *Params) {
 		println("error opening file")
 	}
 	defer in.Close()
-
+	fmt.Printf("Reading Sensor Files\n")
 	r := csv.NewReader(in)
 	r.FieldsPerRecord = -1
 	record, err := r.ReadAll()
 
 	reg, _ := regexp.Compile("([0-9]+)")
-	times := (reg.FindAllStringSubmatch(strings.Join(record[0], " "), -1))
+	times := reg.FindAllStringSubmatch(strings.Join(record[0], " "), -1)
 
 	p.SensorTimes = make([]int, len(times))
 	for i := range times {
@@ -1018,7 +842,7 @@ func readSensorCSV(p *Params) {
 
 		for j < len(record[i]) {
 			read1, _ := strconv.ParseFloat(record[i][j], 32);
-
+			//fmt.Printf("x:%v, y:%v, j:%v\n",x,y,j)
 			p.SensorReadings[x][y][j-2] = read1
 			j += 1
 		}
@@ -1055,18 +879,17 @@ func readMovementCSV(p *Params) {
 	}
 
 
-
 	time := 0
-	fmt.Printf("Movement CSV Processing %d TimeSteps for %d Nodes\n", len(record), len(record[0])/2)
+	fmt.Printf("Movement CSV Processing %d TimeSteps for %d Nodes  %d\n", len(record), len(record[0])/2, p.TotalNodes)
 	for time < len(record) {
-		nodeID := 0
+		iter := 0
 
-		for nodeID < len(record[time])-1 {
-			x, _ := strconv.ParseInt(record[time][nodeID], 10, 32);
-			y, _ := strconv.ParseInt(record[time][nodeID+1], 10, 32);
+		for iter < len(record[time])-1 {
+			x, _ := strconv.ParseInt(record[time][iter], 10, 32);
+			y, _ := strconv.ParseInt(record[time][iter+1], 10, 32);
 
-			p.NodeMovements[nodeID][time] = Tuple{int(x), int(y)}
-			nodeID += 2
+			p.NodeMovements[iter/2][time] = Tuple{int(x), int(y)}
+			iter += 2
 		}
 		time++
 

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"../simulator/cps"
+	"CPS_Simulator/simulator/cps"
 	"sync"
 	"testing"
 	"time"

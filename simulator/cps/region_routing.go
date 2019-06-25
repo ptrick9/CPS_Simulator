@@ -227,7 +227,7 @@ func GenerateRouting(p *Params, r *RegionParams) {
 		//fmt.Println("end_r_square")
 		r.Square_list = append(r.Square_list, new_square)
 	}
-	fmt.Println("Built all squares")
+	//fmt.Println("Built all squares")
 	length := len(r.Square_list)
 	for y, _ := range r.Square_list {
 		square := r.Square_list[y]
@@ -279,6 +279,7 @@ func GenerateRouting(p *Params, r *RegionParams) {
 	//fmt.Println(r.Border_dict)
 
 	//Cutting takes place in this loop
+
 	for true {
 		rebuilt := false
 
