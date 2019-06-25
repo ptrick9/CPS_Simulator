@@ -30,7 +30,7 @@ type Region struct {
 //This function is called every tick
 //It adds Points to the super nodes routePoints and routePath lists
 //	and moves it along those paths
-func (n *Sn_two) Tick(p *Params, r *RegionParams) {
+func (n *Sn_two) Tick() {
 	//Increments the time of all the Points in the allPoints list
 	n.IncAllPoints()
 
@@ -39,12 +39,12 @@ func (n *Sn_two) Tick(p *Params, r *RegionParams) {
 	//		Move back to the Center
 	//		OR if already in the Center, plot a new path
 	if len(n.RoutePath) > 0 {
-		n.PathMove(p)
+		n.PathMove()
 	} else {
 		if (n.X == n.Center.X) && (n.Y == n.Center.Y) {
-			n.UpdatePath(p, r)
+			n.UpdatePath()
 		} else {
-			n.CentMove(p)
+			n.CentMove()
 		}
 	}
 }
@@ -58,7 +58,7 @@ func (n *Sn_two) Tick(p *Params, r *RegionParams) {
 //	back, intercepting Points along the way
 //Once a region has been visited it will not be visited again until all of the
 //	region have been visited or all the other regions are currently empty
-func (n *Sn_two) UpdatePath(p *Params, r *RegionParams) {
+func (n *Sn_two) UpdatePath() {
 
 	//If all the regions have been traversed then all regions may be looked at again
 	if len(n.RegionList) <= 0 {
@@ -92,7 +92,7 @@ func (n *Sn_two) UpdatePath(p *Params, r *RegionParams) {
 		//Finds the number of Points in the lower and upper halves of the region
 		//This allows the super node to visit Points on the way out and back towards the
 		//	Center, saving time on the return trip
-		lower_list, upper_list = n.Calc_triangle_tot(n.RegionList[high_ind], p)
+		lower_list, upper_list = n.Calc_triangle_tot(n.RegionList[high_ind])
 
 		start_list := make([]Coord, 0)
 		end_list := make([]Coord, 0)
@@ -121,7 +121,7 @@ func (n *Sn_two) UpdatePath(p *Params, r *RegionParams) {
 		//	Points it must visit in this part of the region
 		for len(dist_list) > 0 {
 			lowind := 0
-			lowdist := float64(p.MaxX * p.MaxY) //1000.0
+			lowdist := float64(n.P.MaxX * n.P.MaxY) //1000.0
 			for _, d := range dist_list {
 				if d.Dist < lowdist {
 					lowdist = d.Dist
@@ -133,7 +133,7 @@ func (n *Sn_two) UpdatePath(p *Params, r *RegionParams) {
 
 			//Finds the path to that selected point, then adds that path to the routePath
 			//	list, as well as adding the point itself
-			n.RoutePath = append(n.RoutePath, AStar(n.RoutePoints[start], n.RoutePoints[start+1], p)...)
+			n.RoutePath = append(n.RoutePath, AStar(n.RoutePoints[start], n.RoutePoints[start+1], n.P)...)
 
 			//Since the super node must visit this point the numDestinations is increased
 			n.NumDestinations++
@@ -185,7 +185,7 @@ func (n *Sn_two) UpdatePath(p *Params, r *RegionParams) {
 
 			//Adds the path between that point and the last point of the previous path
 			//	to the routePath list
-			n.RoutePath = append(n.RoutePath, AStar(n.RoutePoints[start], n.RoutePoints[start+1], p)...)
+			n.RoutePath = append(n.RoutePath, AStar(n.RoutePoints[start], n.RoutePoints[start+1], n.P)...)
 
 			//The index to add things into the routePoints list is incremented each iteration
 			start++
@@ -219,7 +219,7 @@ func (n *Sn_two) UpdatePath(p *Params, r *RegionParams) {
 
 				//Finds the path to that selected point, then adds that path to the routePath
 				//	list, as well as adding the point itself
-				n.RoutePath = append(n.RoutePath, AStar(n.RoutePoints[start], n.RoutePoints[start+1], p)...)
+				n.RoutePath = append(n.RoutePath, AStar(n.RoutePoints[start], n.RoutePoints[start+1], n.P)...)
 
 				//Since the super node must visit this point the numDestinations is increased
 				n.NumDestinations++
@@ -290,7 +290,7 @@ func Remove_region(arr []Region, n int) []Region {
 //	a regions lower and upper triangles
 //The region can be split into triangles either top-right to bottom-left
 //	or top-left to bottom-right
-func (n *Sn_two) Calc_triangle_tot(r Region, pp *Params) ([]Coord, []Coord) {
+func (n *Sn_two) Calc_triangle_tot(r Region) ([]Coord, []Coord) {
 	lower_coords := make([]Coord, 0)
 	upper_coords := make([]Coord, 0)
 
@@ -310,7 +310,7 @@ func (n *Sn_two) Calc_triangle_tot(r Region, pp *Params) ([]Coord, []Coord) {
 		//This loop determines whether the Points of interest within this Region
 		//	are in the upp triangle or the lower triangle
 		for p, _ := range r.Points {
-			if (r.Points[p].X + r.Points[p].Y) > (pp.MaxX / 2) {
+			if (r.Points[p].X + r.Points[p].Y) > (n.P.MaxX / 2) {
 				lower_coords = append(lower_coords, r.Points[p])
 			} else {
 				upper_coords = append(upper_coords, r.Points[p])
@@ -400,6 +400,6 @@ func Remove_coord_index(arr []Coord, n int) []Coord {
 //This function adds a point of interest to the allPoints list
 //This list is traversed and the point's regions are decided when
 // 	updating the path
-func (n *Sn_two) AddRoutePoint(c Coord, p *Params, r *RegionParams) {
+func (n *Sn_two) AddRoutePoint(c Coord) {
 	n.AllPoints = append(n.AllPoints, c)
 }

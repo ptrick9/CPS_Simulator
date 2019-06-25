@@ -16,9 +16,9 @@
 package main
 
 import (
+	"bytes"
 	//"./cps"
 	"../simulator/cps"
-	"bytes"
 	"fmt"
 	"log"
 	"math/rand"
@@ -50,7 +50,7 @@ func main() {
 	p = &cps.Params{}
 	r = &cps.RegionParams{}
 
-	p.Server = cps.FusionCenter{p, r, nil, nil, nil, nil, nil, nil}
+	p.Server = cps.FusionCenter{p, r, nil, nil, nil, nil, nil, nil, nil}
 
 	p.Tau1 = 10
 	p.Tau2 = 500
@@ -209,15 +209,15 @@ func main() {
 			//go func(i int) {
 			//	defer wg.Done()
 			if !p.NoEnergyModelCM {
-				p.NodeList[i].BatteryLossMostDynamic(p)
+				p.NodeList[i].BatteryLossMostDynamic()
 			} else {
 				p.NodeList[i].HasCheckedSensor = true
 				p.NodeList[i].Sitting = 0
 			}
 			if(p.CSVSensor) {
-				p.NodeList[i].GetReadingsCSV(p)
+				p.NodeList[i].GetReadingsCSV()
 			} else {
-				p.NodeList[i].GetReadings(p)
+				p.NodeList[i].GetReadings()
 			}
 			//}(i)
 		}

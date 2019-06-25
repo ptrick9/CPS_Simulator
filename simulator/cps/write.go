@@ -55,7 +55,8 @@ var (
 	makeBoardMapFile = true
 )
 
-//GetDashedInput
+//GetDashedInput reads numbers from a file which contain values
+//for elements like the number of nodes.
 func GetDashedInput(s string, p *Params) int {
 	b := ReadFromFile(p.FileName)
 	r := regexp.MustCompile(string(s + "-[0-9]+"))
@@ -82,6 +83,9 @@ func getString(p *Params, bytes []byte, headExp string, dataExp string) ([][]int
 	return fai, text
 }
 
+//GetListedInput reads from the Scenario file to determine the node number
+//the number and location of attractions, and other relevant data
+//that is stored in that text file.
 func GetListedInput(p *Params) {
 	var temp []byte
 	dir, err := os.Getwd()
@@ -121,6 +125,8 @@ func GetListedInput(p *Params) {
 	//fmt.Println(p.NumNodeNodes, p.NumWallNodes, p.NumPointsOfInterestStatic)
 }
 
+//FillInts reads the scenario file for the integer values containing the locations of
+//nodes, attractions, and their entry times
 func FillInts(s []string, place int, p *Params) {
 	if place == 0 {
 		for i := 0; i < len(s); i++ {
@@ -314,6 +320,7 @@ func CreateBoard(x int, y int, p *Params) {
 	}
 }
 
+//HandleMovement adjusts BoolGrid when nodes move around the map
 func HandleMovement(p *Params) {
 	for j := 0; j < len(p.NodeList); j++ {
 
@@ -338,7 +345,7 @@ func HandleMovement(p *Params) {
 	}
 }
 
-
+//HandleMovementCSV does the same as HandleMovement
 func HandleMovementCSV(p *Params) {
 	time := p.Iterations_used
 	for j := 0; j < len(p.NodeList); j++ {
@@ -378,13 +385,13 @@ func HandleMovementCSV(p *Params) {
 	}
 }
 
-
+//InitializeNodeParameters sets all the defaulted node values to semi-random values
 func InitializeNodeParameters(p *Params, nodeNum int) *NodeImpl{
 
 	var initHistory = make([]float32, p.NumStoredSamples)
 
 	//initialize nodes to invalid starting point as starting point will be selected after initialization
-	curNode := NodeImpl{X: -1, Y: -1, Id: len(p.NodeList), SampleHistory: initHistory, Concentration: 0,
+	curNode := NodeImpl{P: p, X: -1, Y: -1, Id: len(p.NodeList), SampleHistory: initHistory, Concentration: 0,
 		Cascade: nodeNum, Battery: p.BatteryCharges[nodeNum], BatteryLossScalar: p.BatteryLosses[nodeNum],
 		BatteryLossSensor:        p.BatteryLossesSensor[nodeNum],
 		BatteryLossGPS:           p.BatteryLossesGPS[nodeNum],
@@ -434,7 +441,7 @@ func SetupCSVNodes(p *Params) {
 	}
 
 }
-
+//SetupRandomNodes creates random nodes and appends them to the node list
 func SetupRandomNodes(p *Params) {
 	for i := 0; i < len(p.NodeEntryTimes); i++ {
 		if p.Iterations_used == p.NodeEntryTimes[i][2] {
@@ -490,6 +497,7 @@ func FillPointsToBoard(p *Params) {
 	}
 }
 
+//FillInMap fills BoardMap with the appropriate values
 func FillInMap(p *Params) {
 	/*start := Time.Now()
 
@@ -552,6 +560,7 @@ func FillInMap(p *Params) {
 	bufferFuture = [][]int{{}}
 }
 
+//MakeBoolGrid generates BoolGrid and initializes all of its values to false
 func MakeBoolGrid(p *Params) {
 	p.BoolGrid = make([][]bool, p.MaxX)
 	for i := range p.BoolGrid {
@@ -565,6 +574,8 @@ func MakeBoolGrid(p *Params) {
 	}
 }
 
+//ReadMap takes the proper values for the map and writes the walls
+//and nodes to the map
 func ReadMap(p *Params, r *RegionParams) {
 
 	CreateBoard(p.MaxX, p.MaxY, p)
@@ -639,6 +650,7 @@ func ReadMap(p *Params, r *RegionParams) {
 
 }
 
+//SetupFiles initilizes all of the output files to be used for the simulator
 func SetupFiles(p *Params) {
 	fmt.Printf("Building Output Files\n")
 	dummy, err := os.Create("dummyFile.txt")
@@ -798,6 +810,7 @@ func SetupParameters(p *Params) {
 
 }
 
+//readSensorCSV reads the sensor values from a file
 func readSensorCSV(p *Params) {
 
 	in, err := os.Open(p.SensorPath)
@@ -859,7 +872,7 @@ func readSensorCSV(p *Params) {
 	fmt.Printf("\n")
 }
 
-
+//readMovementCSV reads the movement parameters from a file
 func readMovementCSV(p *Params) {
 
 	in, err := os.Open(p.MovementPath)

@@ -13,18 +13,18 @@ type Sn_one struct {
 //This function is called every tick
 //It adds points to the super node's RoutePoints and RoutePath lists
 //	and moves it along the path
-func (n *Sn_one) Tick(p *Params, r *RegionParams) {
+func (n *Sn_one) Tick() {
 	//If there are still squares to visit the super node should move along
 	//	the path
 	if len(n.GetRoutePoints()) > 1 {
 		//If a new point of interest has been added the current path needs
 		//	to be updated
 		if n.GetNumDest() < len(n.GetRoutePoints())-1 {
-			n.UpdatePath(p, r)
+			n.UpdatePath()
 		}
 		//The super node should then follow the current path through the grid
 		if len(n.GetRoutePath()) > 0 {
-			n.PathMove(p)
+			n.PathMove()
 		}
 	}
 }
@@ -36,7 +36,7 @@ func (n *Sn_one) Tick(p *Params, r *RegionParams) {
 //This function adds points to the RoutePath list in order for
 //	for the super node to follow, it also inserts points into the
 //	RoutePath if a new point appears and qualifies for insertion
-func (n *Sn_one) UpdatePath(p *Params, r *RegionParams) {
+func (n *Sn_one) UpdatePath() {
 	//If NumDestinations is 0 then there are currently no points for the super
 	//	node to visit
 	//That means that all the points in the nodePoints list can be visited without
@@ -70,7 +70,7 @@ func (n *Sn_one) UpdatePath(p *Params, r *RegionParams) {
 		//Saves the destination index to be the startinf point for the next iteration
 		for len(dist_list) > 0 {
 			start := end
-			lowdist := float64(p.MaxX * p.MaxY) //1000.0
+			lowdist := float64(n.P.MaxX * n.P.MaxY) //1000.0
 			for _, d := range dist_list {
 				if d.X == start {
 					if d.Dist < lowdist {
@@ -86,7 +86,7 @@ func (n *Sn_one) UpdatePath(p *Params, r *RegionParams) {
 			}
 			//Adds the points of the path to the RoutePath list using the
 			//	Route function
-			n.RoutePath = append(n.RoutePath, AStar(n.RoutePoints[start], n.RoutePoints[end], p)...)
+			n.RoutePath = append(n.RoutePath, AStar(n.RoutePoints[start], n.RoutePoints[end], n.P)...)
 
 			//Once a point of interest's path is added to the RoutePath
 			//	the number of destination can be increased
@@ -179,8 +179,8 @@ func (n *Sn_one) UpdatePath(p *Params, r *RegionParams) {
 					//This separate array appends the two paths to make one path from
 					//	each RoutePath point to the new point
 					arr := make([]Coord, 0)
-					arr = AStar(n.RoutePoints[ind], n.RoutePoints[i], p)
-					arr = append(arr, AStar(n.RoutePoints[i], n.RoutePoints[ind+1], p)...)
+					arr = AStar(n.RoutePoints[ind], n.RoutePoints[i], n.P)
+					arr = append(arr, AStar(n.RoutePoints[i], n.RoutePoints[ind+1], n.P)...)
 
 					if ind != 0 {
 						start_ind += 1
@@ -210,7 +210,7 @@ func (n *Sn_one) UpdatePath(p *Params, r *RegionParams) {
 			//If the new point is not added anywhere in between the currently Routed points
 			//	it is added at the end of the current path
 			if notAdded {
-				n.RoutePath = append(n.RoutePath, AStar(n.RoutePoints[i-1], n.RoutePoints[i], p)...)
+				n.RoutePath = append(n.RoutePath, AStar(n.RoutePoints[i-1], n.RoutePoints[i], n.P)...)
 				n.NumDestinations++
 			}
 		}
@@ -218,6 +218,6 @@ func (n *Sn_one) UpdatePath(p *Params, r *RegionParams) {
 }
 
 //Adds a RoutePoint to the super node's RoutePoints
-func (n *Sn_one) AddRoutePoint(c Coord, p *Params, r *RegionParams) {
+func (n *Sn_one) AddRoutePoint(c Coord) {
 	n.RoutePoints = append(n.RoutePoints, c)
 }
