@@ -27,6 +27,7 @@ public class Room {
     private List<Node> positions;
     private List<Sample> samples;
     private List<SuperNode> superNodes;
+    private List<AdHoc> adhocs;
     private Grid sensorReadings;
     private Road road;
 
@@ -81,6 +82,30 @@ public class Room {
         return positions;
     }
 
+    public Node getNodeByID(int id) {
+
+        for (Node node : positions) {
+            if (node.getID() == id) {
+                return node;
+            }
+        }
+
+        return null;
+    }
+
+    public List<Node> getNodesByIDs(List<Integer> ids) {
+
+        List<Node> nodes = new ArrayList<>();
+        for (int id : ids) {
+            Node node = getNodeByID(id);
+            if (node != null) {
+                nodes.add(node);
+            }
+        }
+
+        return nodes;
+    }
+
     public List<Sample> getSamples() {
 
         return samples;
@@ -89,6 +114,10 @@ public class Room {
     public List<SuperNode> getSuperNodes() {
 
         return superNodes;
+    }
+
+    public List<AdHoc> getAdHocs() {
+        return adhocs;
     }
 
     public Grid getSensorReadings() {
@@ -113,6 +142,7 @@ public class Room {
         this.positions = fileManager.getPositions() != null ? fileManager.getPositions().getData(getIndex()) : null;
         this.samples = fileManager.getSamples() != null ? fileManager.getSamples().getData(getIndex()) : null;
         this.superNodes = fileManager.getRoutes() != null ? fileManager.getRoutes().getData(getIndex()) : null;
+        this.adhocs = fileManager.getAdHocs() != null ? fileManager.getAdHocs().getData(getIndex()) : null;
         this.sensorReadings = fileManager.getSensorReadings() != null ? fileManager.getSensorReadings().getGrid(getIndex()) : null;
     }
 
@@ -131,9 +161,14 @@ public class Room {
             fileManager.getRoutes().close();
         }
 
+        if (fileManager.getAdHocs() != null) {
+            fileManager.getAdHocs().close();
+        }
+
         if (fileManager.getSensorReadings() != null) {
             fileManager.getSensorReadings().close();
         }
+
     }
 
     public Node getBomb() {

@@ -257,13 +257,13 @@ public class BuilderController implements Drawable {
         }
 
         if (checkMenuNodes.isSelected()) {
-            for(Node node : scenario.getNodes()) {
+            for(TimedNode node : scenario.getNodes()) {
                 canvas.drawBlock(Color.BLUE, !checkMenuGridLines.isSelected(), node.getX(), node.getY());
             }
         }
 
         if (checkMenuAttractions.isSelected()) {
-            for(Node node: scenario.getAttractions()) {
+            for(TemporaryNode node: scenario.getAttractions()) {
                 canvas.drawBlock(Color.PLUM, !checkMenuGridLines.isSelected(), node.getX(), node.getY());
             }
         }
@@ -354,7 +354,7 @@ public class BuilderController implements Drawable {
         int y = canvas.getMouse().getY();
         if (x < 0 || x >= scenario.getMaxWidth() || y  < 0 || y  >= scenario.getMaxHeight()) return;
 
-        Node node = new Node(x, y);
+        Node node = new Node(-1, x, y);
         if (toggleButtonDelete.isSelected() && scenario.contains(node)) {
             scenario.remove(node);
         }

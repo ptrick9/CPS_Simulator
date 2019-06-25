@@ -34,6 +34,7 @@ public class SimulatorController implements Drawable {
     @FXML private CheckMenuItem checkMenuGridLines;
     @FXML private CheckMenuItem checkMenuQuadrants;
     @FXML private CheckMenuItem checkMenuSensorCoverage;
+    @FXML private CheckMenuItem checkMenuAdHoc;
 
     @FXML private ToggleGroup toggleGroupNodeColor;
     @FXML private RadioMenuItem radioMenuGPSReading;
@@ -82,6 +83,7 @@ public class SimulatorController implements Drawable {
         this.toggleGroupNodeColor.selectedToggleProperty().addListener(event -> draw());
         this.toggleGroupExtras.selectedToggleProperty().addListener(event -> draw());
         this.checkMenuItemShowText.selectedProperty().addListener(event-> draw());
+        this.checkMenuAdHoc.selectedProperty().addListener(event-> draw());
 
         this.canvas = new AdvancedCanvas(this);
         this.canvas.widthProperty().bind(containerCanvas.widthProperty());
@@ -147,6 +149,10 @@ public class SimulatorController implements Drawable {
             drawRoad(room.getRoad());
         }
 
+        if (checkMenuAdHoc.isSelected()) {
+            drawAdHocs(room.getAdHocs());
+        }
+
         drawNodes(room.getPositions(), room.getSamples());
         drawSuperNodes(room.getSuperNodes());
 
@@ -163,6 +169,19 @@ public class SimulatorController implements Drawable {
         }
 
         canvas.outline();
+    }
+
+    public void drawAdHocs(List<AdHoc> adhocs) {
+
+        if (adhocs == null) return;
+
+        for(AdHoc adhoc : adhocs) {
+            Node leader = room.getNodeByID(adhoc.getLeaderID());
+            List<Node> children = room.getNodesByIDs(adhoc.getChildrenIDs());
+            for(Node child : children) {
+                canvas.drawLine(leader.getX(), leader.getY(), child.getX(), child.getY());
+            }
+        }
     }
 
     public void drawNodes(List<Node> nodes, List<Sample> samples) {
@@ -211,7 +230,7 @@ public class SimulatorController implements Drawable {
         if (superNodes == null) { return; }
         for(SuperNode superNode : superNodes) {
 
-            for(Node node : superNode.getPath()) {
+            for(TimedNode node : superNode.getPath()) {
                 canvas.drawBlock(Color.WHITE, true, node.getX(), node.getY());
             }
 

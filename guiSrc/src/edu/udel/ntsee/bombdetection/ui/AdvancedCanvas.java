@@ -14,6 +14,10 @@ import javafx.scene.text.TextAlignment;
 
 import java.awt.*;
 
+/*
+ * Note: This class was designed so that the (0, 0) is top left.
+ * However, it transforms x,y so that (0, 0) is bottom left in render methods.
+ */
 public class AdvancedCanvas extends Canvas {
 
     private EventHandler<MouseEvent> mouseEventHandler;
@@ -54,8 +58,6 @@ public class AdvancedCanvas extends Canvas {
         gc.strokeText(String.valueOf(number), pixelX, pixelY, width * camera.getBlockSize());
     }
 
-
-
     public Node getMouse() {
         return mouseProperty.get();
     }
@@ -73,7 +75,7 @@ public class AdvancedCanvas extends Canvas {
         this.rows = 0;
         this.clickX = 0;
         this.clickY = 0;
-        this.mouseProperty = new SimpleObjectProperty<>(new Node(0, 0));
+        this.mouseProperty = new SimpleObjectProperty<>(new Node(-1, 0, 0));
 
         widthProperty().addListener((observable, oldValue, newValue) -> {
             this.camera.setWidth(newValue.doubleValue());
@@ -100,7 +102,7 @@ public class AdvancedCanvas extends Canvas {
         setOnMouseMoved(event -> {
             int x = (int)((event.getX() + camera.getOffsetX()) / camera.getBlockSize()) + getStartColumn();
             int y = (int)((event.getY() + camera.getOffsetY()) / camera.getBlockSize()) + getStartRow();
-            this.mouseProperty.set(new Node(x, y));
+            this.mouseProperty.set(new Node(-1, x, y));
         });
         setOnScroll(event -> {
 
@@ -239,8 +241,7 @@ public class AdvancedCanvas extends Canvas {
 
     public void drawCircle(Color color, double diameter, int x, int y) {
 
-        if (x < getStartColumn() || x >= getEndColumn() || y < getStartRow() || y >= getEndRow())
-            return;
+        y = rows - y - 1;
 
         GraphicsContext gc = getGraphicsContext2D();
         gc.setFill(color);
@@ -251,15 +252,53 @@ public class AdvancedCanvas extends Canvas {
 
     }
 
+    public void drawLine(int x1, int y1, int x2, int y2) {
+
+        y1 = rows - y1 - 1;
+        y2 = rows - y2 - 1;
+
+        GraphicsContext gc = getGraphicsContext2D();
+        gc.setLineWidth(.1);
+
+        double worldX1 = x1 - getStartColumn();
+        if (worldX1 < 0) {
+            worldX1 = 0;
+        }
+
+        double worldX2 = x2 - getStartColumn();
+        if (worldX2 < 0) {
+            worldX2 = 0;
+        }
+
+        double worldY1 = y1 - getStartRow();
+        if (worldY1 < 0) {
+            worldY1 = 0;
+        }
+
+        double worldY2 = y2 - getStartRow();
+        if (worldY2 < 0) {
+            worldY2 = 0;
+        }
+
+        double pixelX1 = -camera.getOffsetX() + worldX1 * camera.getBlockSize();
+        double pixelY1 = -camera.getOffsetY() + worldY1 * camera.getBlockSize();
+        double pixelX2 = -camera.getOffsetX() + worldX2 * camera.getBlockSize();
+        double pixelY2 = -camera.getOffsetY() + worldY2 * camera.getBlockSize();
+        gc.strokeLine(pixelX1, pixelY1, pixelX2, pixelY2);
+        gc.setLineWidth(1);
+    }
+
     public void drawBlock(Color color, boolean outline, int x, int y) {
 
-        if (x < getStartColumn() || x >= getEndColumn() || y < getStartRow() || y >= getEndRow())
-            return;
+        /*if (x < getStartColumn() || x >= getEndColumn() || y < getStartRow() || y >= getEndRow())
+            return;*/
 
         this.drawBlock(color, outline, x, y, 1);
     }
 
     public void drawBlock(Color color, boolean outline, int x, int y, int squares) {
+
+        y = rows - 1 - y; // transform coordinates so orgin is bottom left
 
         GraphicsContext gc = getGraphicsContext2D();
         gc.setFill(color);
@@ -293,7 +332,7 @@ public class AdvancedCanvas extends Canvas {
 
     public int getStartRow() {
 
-        return (int)Math.max(0, camera.getY() / camera.getBlockSize());
+        return (int)Math.max(0, (camera.getY() / camera.getBlockSize()));
     }
 
     public int getEndColumn() {

@@ -29,6 +29,7 @@
                   <Menu mnemonicParsing="false" text="Nodes">
                      <items>
                         <CheckMenuItem fx:id="checkMenuSensorCoverage" mnemonicParsing="false" text="Sensor Coverage" />
+                        <CheckMenuItem fx:id="checkMenuAdHoc" mnemonicParsing="false" text="Ad Hoc" />
                         <SeparatorMenuItem mnemonicParsing="false" />
                         <RadioMenuItem fx:id="radioMenuGPSReading" mnemonicParsing="false" selected="true" text="GPS Reading">
                            <toggleGroup>
