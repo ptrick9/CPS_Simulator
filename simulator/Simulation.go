@@ -142,8 +142,6 @@ func main() {
 
 	fmt.Println("xDiv is ", p.XDiv, " yDiv is ", p.YDiv, " square capacity is ", p.SquareCapacity)
 
-	//p.Server.MakeSuperNodes()
-
 	p.B = &cps.Bomb{X: p.BombX, Y: p.BombY}
 
 	p.WallNodeList = make([]cps.WallNodes, p.NumWallNodes)

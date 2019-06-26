@@ -85,6 +85,26 @@ func Search(prev_region, curr_region, end_region int, curr_path []int, r *Region
 	}
 }
 
+func ValidPath(reg int, endpoint Coord, r *RegionParams) bool{
+	//reg := RegionContaining(Tuple{n.GetX(), n.GetY()}, r)
+	if len(r.Border_dict[reg]) == 0 {
+		return false
+	} else {
+		//fmt.Printf("\nStarting region: %v\n", reg)
+		end := RegionContaining(Tuple{endpoint.X, endpoint.Y}, r)
+		//fmt.Printf("\nEnd region: %v\n", endpoint)
+
+		for i := 0; i < len(r.Border_dict[reg]); i++ {
+			if r.Border_dict[reg][i] == end {
+				return true
+			} else {
+				return ValidPath(r.Border_dict[reg][i], endpoint, r)
+			}
+		}
+	}
+	return false
+}
+
 func PossPaths(p1, p2 Tuple, r *RegionParams) {
 	start_region := RegionContaining(p1, r)
 	end_region := RegionContaining(p2, r)
