@@ -169,6 +169,9 @@ func (srv FusionCenter) Tick() {
 		//Resets the optimize flag
 		optimize = false
 	}
+	if srv.P.Iterations_used % 60 == 0 {
+		srv.GetLeastDenseSquares()
+	}
 	srv.CheckDetections()
 
 }
@@ -207,7 +210,7 @@ func (s FusionCenter) MakeSuperNodes() {
 				if x+y < tl_min {
 					tl_min = x + y
 					top_left_corner.X = x
-					top_left_corner.Y = s.P.Height - y
+					top_left_corner.Y = y
 				}
 				if x+y > tr_max {
 					tr_max = x + y
@@ -217,7 +220,7 @@ func (s FusionCenter) MakeSuperNodes() {
 				if y-x > bl_max {
 					bl_max = y - x
 					bot_left_corner.X = x
-					bot_left_corner.Y = s.P.Height - y
+					bot_left_corner.Y = y
 				}
 				if x-y > br_max {
 					br_max = x - y
@@ -404,7 +407,6 @@ func (s FusionCenter) GetMedian(arr []float64) float64{
 }
 
 func (s FusionCenter) GetLeastDenseSquares() Squares{
-	total := 0
 	orderedSquares := make(Squares, 0)
 	for x := 0; x < len(s.P.Grid); x++ {
 		for y := 0; y < len(s.P.Grid[x]); y++ {
@@ -412,11 +414,11 @@ func (s FusionCenter) GetLeastDenseSquares() Squares{
 		}
 	}
 	sort.Sort(&orderedSquares)
-	for i:= range orderedSquares {
-		total+=orderedSquares[i].ActualNumNodes
-		fmt.Printf("X:%v, Y:%v, Density:%v, #%v\n", orderedSquares[i].X, orderedSquares[i].Y, orderedSquares[i].ActualNumNodes)
-	}
-	//fmt.Println("Total:", total)
+	/*for i:= range orderedSquares {
+		//total+=orderedSquares[i].ActualNumNodes
+		//fmt.Printf("X:%v, Y:%v, Density:%v\n", orderedSquares[i].X, orderedSquares[i].Y, orderedSquares[i].ActualNumNodes)
+	}*/
+
 	return orderedSquares
 }
 
@@ -443,7 +445,6 @@ func (s FusionCenter) PrintStats() {
 
 //PrintStatsFile outputs statistical and detection data to log files
 func (s FusionCenter) PrintStatsFile() {
-	s.GetLeastDenseSquares()
 	fmt.Fprintln(s.P.ServerFile, "Mean at each time:\n", s.P.Server.Mean)
 	fmt.Fprintln(s.P.ServerFile, "Standard Deviations at each time:\n", s.P.Server.StdDev)
 	fmt.Fprintln(s.P.ServerFile, "Variance at each time:\n", s.P.Server.Variance)
