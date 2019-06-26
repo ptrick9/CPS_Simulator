@@ -665,6 +665,7 @@ func SetupFiles(p *Params) {
 	//defer p.PositionFile.Close()
 
 	//Print parameters to position file
+	fmt.Fprintln(p.PositionFile, "Image:", p.ImageFileNameCM)
 	fmt.Fprintln(p.PositionFile, "Width:", p.MaxX)
 	fmt.Fprintln(p.PositionFile, "Height:", p.MaxY)
 	fmt.Fprintf(p.PositionFile, "Amount: %-8v\n", p.Iterations_of_event)
