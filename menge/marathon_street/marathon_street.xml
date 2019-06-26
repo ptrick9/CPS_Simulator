@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+
+<Project 
+	scene="marathon_street/marathonS.xml" 
+	behavior="marathon_street/marathonB.xml" 
+	view="marathon_street/marathonV.xml" 
+	model="orca"
+	dumpPath="images/marathon"
+/>
