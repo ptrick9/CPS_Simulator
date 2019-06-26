@@ -644,6 +644,7 @@ func (curNode *NodeImpl) BatteryLossTable() {
 }
 
 func (curNode *NodeImpl) LogBatteryPower(t int){
+	//fmt.Println("entered function")
 	//t should be p.CurrTime
 	if(curNode.BatteryOverTime == nil){
 		curNode.BatteryOverTime = map[int]float32{}

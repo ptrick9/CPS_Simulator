@@ -80,6 +80,7 @@ type Params struct {
 	NodeTest	   *os.File
 	NodeTest2	   *os.File
 	DetectionFile  *os.File
+	BatteryFile    *os.File
 
 	SensorPath  string
 	MovementPath  string

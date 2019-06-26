@@ -209,8 +209,9 @@ func main() {
 			//go func(i int) {
 			//	defer wg.Done()
 			if !p.NoEnergyModelCM {
+				//fmt.Println("entered if statement")
 				p.NodeList[i].BatteryLossMostDynamic()
-				p.NodeList[i].LogBatteryPower(p.CurrTime) //added for logging battery
+				p.NodeList[i].LogBatteryPower(iters) //added for logging battery
 			} else {
 				p.NodeList[i].HasCheckedSensor = true
 				p.NodeList[i].Sitting = 0
@@ -222,6 +223,7 @@ func main() {
 			}
 			//}(i)
 		}
+
 		//wg.Wait()
 		p.DriftFile.Sync()
 		p.NodeFile.Sync()
@@ -270,14 +272,14 @@ func main() {
 		if p.NodesPrint {
 			fmt.Fprint(p.NodeFile, "----------------\n")
 		}
+
 		p.Iterations_used++
 		p.Server.CalcStats()
-	}
 
-	p.PositionFile.Seek(0, 0)
-	fmt.Fprintln(p.PositionFile, "Width:", p.MaxX)
-	fmt.Fprintln(p.PositionFile, "Height:", p.MaxY)
-	fmt.Fprintf(p.PositionFile, "Amount: %-8v\n", iters)
+		fmt.Printf("%d, %f\n", p.NodeList[10].Id, p.NodeList[10].BatteryOverTime[p.Iterations_of_event])
+
+	}
+	PrintNodeBatteryOverTime(p)
 
 	if iters < p.Iterations_of_event-1 {
 		fmt.Printf("\nFound bomb at iteration: %v \nSimulation Complete\n", iters)
@@ -301,7 +303,7 @@ func main() {
 		}
 	}
 	p.Server.PrintStatsFile()
-	PrintNodeBatteryOverTime(p)
+
 }
 
 //
@@ -481,28 +483,23 @@ func printSuperStats(SNodeList []cps.SuperNodeParent) bytes.Buffer {
 	return buffer
 }
 
-func PrintNodeBatteryOverTime(p * cps.Params) error {
-	file, err := os.Create("BatteryOverTime2.csv")
-	if err != nil {
-		return err
-	}
-	defer file.Close()
+func PrintNodeBatteryOverTime(p * cps.Params)  {
+	fmt.Println("Created file")
 
-
-	fmt.Fprint(file, "Time,")
+	fmt.Fprint(p.BatteryFile, "Time,")
 	for i := range p.NodeList{
 		n := p.NodeList[i]
-		fmt.Fprint(file, "Node",n.GetID(),",")
+		fmt.Fprint(p.BatteryFile, "Node",n.GetID(),",")
 	}
-	fmt.Fprint(file, "\n")
+	fmt.Fprint(p.BatteryFile, "\n")
 
 	for t:=0; t<p.Iterations_of_event; t++{
-		fmt.Fprint(file, t, ",")
+		fmt.Fprint(p.BatteryFile, t, ",")
 		for i := range p.NodeList{
 			n := p.NodeList[i]
-			fmt.Fprint(file, n.BatteryOverTime[t],",")
+			fmt.Fprint(p.BatteryFile, n.BatteryOverTime[t],",")
 		}
-		fmt.Fprint(file, "\n")
+		fmt.Fprint(p.BatteryFile, "\n")
 	}
-	return file.Sync()
+	p.BatteryFile.Sync()
 }

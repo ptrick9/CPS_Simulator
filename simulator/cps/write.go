@@ -459,7 +459,6 @@ func SetupRandomNodes(p *Params) {
 			newNode.Y = yy
 
 			newNode.Valid = true
-
 			p.BoolGrid[xx][yy] = true
 
 			p.NodeList = append(p.NodeList, *newNode)
@@ -721,6 +720,11 @@ func SetupFiles(p *Params) {
 		log.Fatal("Cannot create file", err)
 	}
 	//defer p.EnergyFile.Close()
+
+	p.BatteryFile, err = os.Create(p.OutputFileNameCM + "-batteryusage.txt")
+	if err != nil {
+		log.Fatal("Cannot create file", err)
+	}
 
 	p.RoutingFile, err = os.Create(p.OutputFileNameCM + "-path.txt")
 	if err != nil {
