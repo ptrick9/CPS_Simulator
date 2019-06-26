@@ -276,8 +276,6 @@ func main() {
 		p.Iterations_used++
 		p.Server.CalcStats()
 
-		fmt.Printf("%d, %f\n", p.NodeList[10].Id, p.NodeList[10].BatteryOverTime[p.Iterations_of_event])
-
 	}
 	PrintNodeBatteryOverTime(p)
 

@@ -130,6 +130,8 @@ type NodeImpl struct {
 
 	BatteryOverTime	   map[int]float32
 
+	TotalPacketsSent    int
+	TotalBytesSent		int
 }
 
 //NodeMovement controls the movement of all the normal nodes
@@ -651,14 +653,29 @@ func (curNode *NodeImpl) LogBatteryPower(t int){
 	}
 	curNode.BatteryOverTime[t] = curNode.Battery;
 	//used to test the log file writing and the python processing code
-	//if(curNode.Id >0 && curNode.Id<50){
-	//	curNode.DecrementPowerSensor()
-	//	curNode.DecrementPowerAccel()
-	//	curNode.DecrementPowerGPS()
-	//	curNode.DecrementPowerWifi(100)
-	//	curNode.DecrementPowerBT(100)
-	//	curNode.DecrementPower4G(100)
-	//}
+	if(curNode.Id%4==0){
+		curNode.DecrementPowerSensor()
+		curNode.DecrementPower4G(100)
+	}
+	if(curNode.Id%3==0){
+		curNode.DecrementPowerSensor()
+	}
+}
+
+func (curNode *NodeImpl) SendtoServer(packet int){
+	//int packet = num bytes in packet
+	curNode.TotalBytesSent += packet;
+	curNode.TotalPacketsSent += 1;
+
+	//code to send to server goes here
+}
+
+func (curNode *NodeImpl) SendtoClusterHead(packet int){
+	//int packet = num bytes in packet
+	curNode.TotalBytesSent += packet;
+	curNode.TotalPacketsSent += 1;
+
+	//code to send to cluster head goes here
 }
 
 //This is the battery loss function where the server sensor and GPS are pinged separately and by their own accord
