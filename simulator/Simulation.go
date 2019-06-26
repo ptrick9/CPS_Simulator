@@ -284,6 +284,7 @@ func main() {
 	}
 
 	p.PositionFile.Seek(0, 0)
+	fmt.Fprintln(p.PositionFile, "Image:", p.ImageFileNameCM)
 	fmt.Fprintln(p.PositionFile, "Width:", p.MaxX)
 	fmt.Fprintln(p.PositionFile, "Height:", p.MaxY)
 	fmt.Fprintf(p.PositionFile, "Amount: %-8v\n", iters)
