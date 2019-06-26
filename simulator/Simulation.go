@@ -168,6 +168,7 @@ func main() {
 		cps.SetupRandomNodes(p)
 	}
 
+	p.Iterations_used = 800
 	for iters = 0; iters < p.Iterations_of_event && !p.FoundBomb; iters++ {
 
 		for i := 0; i < len(p.SensorTimes); i++ {
