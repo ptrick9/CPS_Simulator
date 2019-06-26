@@ -28,8 +28,6 @@ public class Main extends Application {
 
     public static void openSimulator(Stage stage) {
 
-
-
         try {
             Parent root = FXMLLoader.load(Main.class.getResource("simulator/view.fxml"));
             stage.setTitle("Bomb Detection: Simulator");

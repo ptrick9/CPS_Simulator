@@ -43,4 +43,5 @@ public class Parser {
         return new TimedNode(x, y, t);
 
     }
+
 }

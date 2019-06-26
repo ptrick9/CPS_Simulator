@@ -33,6 +33,7 @@ public class SimulatorController implements Drawable {
     @FXML private MenuItem menuItemClose;
     @FXML private CheckMenuItem checkMenuGridLines;
     @FXML private CheckMenuItem checkMenuQuadrants;
+    @FXML private CheckMenuItem checkMenuWalls;
     @FXML private CheckMenuItem checkMenuSensorCoverage;
     @FXML private CheckMenuItem checkMenuAdHoc;
 
@@ -79,6 +80,7 @@ public class SimulatorController implements Drawable {
 
         this.checkMenuGridLines.selectedProperty().addListener(event -> draw());
         this.checkMenuQuadrants.selectedProperty().addListener(event -> draw());
+        this.checkMenuWalls.selectedProperty().addListener(event -> draw());
         this.checkMenuSensorCoverage.selectedProperty().addListener(event -> draw());
         this.toggleGroupNodeColor.selectedToggleProperty().addListener(event -> draw());
         this.toggleGroupExtras.selectedToggleProperty().addListener(event -> draw());
@@ -141,6 +143,10 @@ public class SimulatorController implements Drawable {
         if (room == null) return;
         canvas.clear();
 
+        if (checkMenuWalls.isSelected()) {
+            drawWalls(room.getWalls());
+        }
+
         if (radioMenuSensorReading.isSelected()) {
             drawSensorGrid(room.getSensorReadings());
         } else if (radioMenuNodePathing.isSelected()) {
@@ -169,6 +175,15 @@ public class SimulatorController implements Drawable {
         }
 
         canvas.outline();
+    }
+
+    public void drawWalls(List<Wall> walls) {
+
+        if (walls == null) return;
+
+        for (Wall wall : walls) {
+            canvas.drawBlock(Color.BLACK, false, wall.getX(), wall.getY());
+        }
     }
 
     public void drawAdHocs(List<AdHoc> adhocs) {
