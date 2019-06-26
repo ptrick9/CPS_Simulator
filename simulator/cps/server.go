@@ -30,9 +30,9 @@ type FusionCenter struct {
 //Init initializes the values for the server
 func (s *FusionCenter) Init(){
 	s.TimeBuckets = make([][]Reading, s.P.Iterations_used)
-	s.Mean = make([]float64, s.P.Iterations_used)
-	s.StdDev = make([]float64, s.P.Iterations_used)
-	s.Variance = make([]float64, s.P.Iterations_used)
+	s.Mean = make([]float64, s.P.Iterations_of_event)
+	s.StdDev = make([]float64, s.P.Iterations_of_event)
+	s.Variance = make([]float64, s.P.Iterations_of_event)
 	s.Times = make(map[int]bool, 0)
 
 	falsePositives = 0
@@ -284,7 +284,7 @@ func (s FusionCenter) UpdateSquareNumNodes() {
 	}
 
 	//Count number of nodes in each square
-	for i:=0; i < s.P.TotalNodes; i++ {
+	for i:=0; i < len(s.P.NodeList); i++ {
 		node = s.P.NodeList[i]
 		if node.Valid {
 			s.P.Grid[node.X/s.P.XDiv][node.Y/s.P.YDiv].ActualNumNodes += 1
@@ -303,7 +303,7 @@ func (s *FusionCenter) Send(n *NodeImpl, rd Reading) {
 		s.Times[rd.Time] = true
 	}
 
-	if len(s.TimeBuckets) <= rd.Time {
+	for len(s.TimeBuckets) <= rd.Time {
 		s.TimeBuckets = append(s.TimeBuckets, make([]Reading,0))
 	}
 	currBucket := (s.TimeBuckets)[rd.Time]
@@ -337,11 +337,11 @@ func (s *FusionCenter) CalcStats() ([]float64, []float64, []float64) {
 			sum += (s.TimeBuckets)[i][j].SensorVal
 			//fmt.Printf("Time : %v, Elements #: %v, Value: %v\n", i, j, s.TimeBuckets[i][j])
 		}
-		if len(s.Mean) <= i {
+		for len(s.Mean) <= i {
 			s.Mean = append(s.Mean, sum / float64( len(s.TimeBuckets[i]) ))
-		} else {
+		} /*else {
 			s.Mean[i] = sum / float64(len(s.TimeBuckets[i]))
-		}
+		}*/
 		sum = 0
 	}
 
@@ -358,11 +358,11 @@ func (s *FusionCenter) CalcStats() ([]float64, []float64, []float64) {
 			s.Variance[i] = sum / float64(len(s.TimeBuckets[i]))
 		}
 
-		if len(s.StdDev) <= i {
+		for len(s.StdDev) <= i {
 			s.StdDev = append(s.StdDev, math.Sqrt(sum / float64( len((s.TimeBuckets)[i])) ))
-		} else {
+		} /*else {
 			s.StdDev[i] = math.Sqrt(sum / float64( len((s.TimeBuckets)[i])) )
-		}
+		}*/
 
 		//Determine how many std deviations data is away from mean
 		for j:= range s.TimeBuckets[i] {

@@ -121,6 +121,7 @@ func InRegionRouting(p1, p2 Tuple) []Coord {
 }
 
 func GetPath(c1, c2 Coord, r *RegionParams) []Coord {
+	//fmt.Println(r.Possible_paths)
 	p1 := Tuple{c1.X, c1.Y}
 	p2 := Tuple{c2.X, c2.Y}
 
