@@ -650,6 +650,15 @@ func (curNode *NodeImpl) LogBatteryPower(t int){
 		curNode.BatteryOverTime = map[int]float32{}
 	}
 	curNode.BatteryOverTime[t] = curNode.Battery;
+	//used to test the log file writing and the python processing code
+	//if(curNode.Id >0 && curNode.Id<50){
+	//	curNode.DecrementPowerSensor()
+	//	curNode.DecrementPowerAccel()
+	//	curNode.DecrementPowerGPS()
+	//	curNode.DecrementPowerWifi(100)
+	//	curNode.DecrementPowerBT(100)
+	//	curNode.DecrementPower4G(100)
+	//}
 }
 
 //This is the battery loss function where the server sensor and GPS are pinged separately and by their own accord
