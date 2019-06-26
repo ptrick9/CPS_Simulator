@@ -92,6 +92,7 @@ func PossPaths(p1, p2 Tuple, r *RegionParams) {
 	r.Possible_paths = make([][]int, 0)
 
 	Search(-1, start_region, end_region, make([]int, 0), r)
+	fmt.Print(r.Possible_paths)
 }
 
 func InRegionRouting(p1, p2 Tuple) []Coord {
