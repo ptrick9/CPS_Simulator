@@ -5,8 +5,9 @@ import edu.udel.ntsee.bombdetection.exceptions.LogFormatException;
 import edu.udel.ntsee.bombdetection.io.FileManager;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
-import javafx.scene.layout.Pane;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -24,6 +25,7 @@ public class Room {
     private int runs;
 
     private Node bomb;
+    private List<Wall> walls;
     private List<Node> positions;
     private List<Sample> samples;
     private List<SuperNode> superNodes;
@@ -36,11 +38,21 @@ public class Room {
         BufferedReader reader = new BufferedReader(new FileReader(file));
         Room room = new Room();
         room.index = new SimpleIntegerProperty(0);
-        room.fileManager = new FileManager(file);
-        room.width = room.fileManager.getProperties()[0];
-        room.height = room.fileManager.getProperties()[1];
-        room.runs = room.fileManager.getProperties()[2];
-        room.bomb = room.fileManager.getBomb();
+
+        String imagePath = Util.parseString(reader.readLine());
+        BufferedImage image = ImageIO.read(new File(file.getParent() + "/" + imagePath));
+        room.walls = Util.createWallsFromImage(image);
+
+
+        room.width = Util.parseAmount(reader.readLine());
+        room.height = Util.parseAmount(reader.readLine());
+        room.runs = Util.parseAmount(reader.readLine());
+
+        int bx = Util.parseAmount(reader.readLine());
+        int by = Util.parseAmount(reader.readLine());
+        room.bomb = new Node(-1, bx, by);
+        room.fileManager = new FileManager(room, file);
+
         File f = new File(file.getParent() + "\\roadLog.txt");
         if (f.exists()) room.road = Road.fromFile(f);
         reader.close();
@@ -77,6 +89,10 @@ public class Room {
         return runs;
     }
 
+    public List<Wall> getWalls() {
+
+        return walls;
+    }
     public List<Node> getPositions() {
 
         return positions;

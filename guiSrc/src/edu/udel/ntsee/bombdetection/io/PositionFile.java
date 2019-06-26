@@ -22,7 +22,7 @@ public class PositionFile extends LogFile<Node> {
         this.lnr = new LineNumberReader(new FileReader(new File(path)));
 
         this.offsets = new HashMap<>();
-        this.offsets.put(0, 5);
+        this.offsets.put(0, 6);
     }
 
 

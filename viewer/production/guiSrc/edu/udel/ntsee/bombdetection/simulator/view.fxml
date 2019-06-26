@@ -26,6 +26,7 @@
                <items>
                   <CheckMenuItem fx:id="checkMenuGridLines" mnemonicParsing="false" text="Grid Lines" />
                   <CheckMenuItem fx:id="checkMenuQuadrants" mnemonicParsing="false" text="Quadrants" />
+                  <CheckMenuItem fx:id="checkMenuWalls" mnemonicParsing="false" selected="true" text="Walls" />
                   <Menu mnemonicParsing="false" text="Nodes">
                      <items>
                         <CheckMenuItem fx:id="checkMenuSensorCoverage" mnemonicParsing="false" text="Sensor Coverage" />
