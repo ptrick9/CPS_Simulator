@@ -108,6 +108,8 @@ func main() {
 	p.Server.MakeSuperNodes()
 	cps.GenerateRouting(p, r)
 
+	cps.FlipSquares(p, r)
+
 	//This is where the text file reading ends
 	Vn := make([]float64, 1000)
 	for i := 0; i < 1000; i++ {
