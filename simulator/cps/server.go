@@ -203,24 +203,24 @@ func (s FusionCenter) MakeSuperNodes() {
 
 	for x := 0; x < s.P.Width; x++ {
 		for y := 0; y < s.P.Height; y++ {
-			if s.R.Point_dict[Tuple{x, y}] {
+			if s.R.Point_dict[Tuple{x, s.P.Height - y}] {
 				if x+y < tl_min {
 					tl_min = x + y
 					top_left_corner.X = x
-					top_left_corner.Y = y
+					top_left_corner.Y = s.P.Height - y
 				}
-				if y-x > tr_max {
-					tr_max = y - x
+				if x+y > tr_max {
+					tr_max = x + y
 					top_right_corner.X = x
 					top_right_corner.Y = y
 				}
-				if x-y > bl_max {
-					bl_max = x - y
+				if y-x > bl_max {
+					bl_max = y - x
 					bot_left_corner.X = x
-					bot_left_corner.Y = y
+					bot_left_corner.Y = s.P.Height - y
 				}
-				if x+y > br_max {
-					br_max = x + y
+				if x-y > br_max {
+					br_max = x - y
 					bot_right_corner.X = x
 					bot_right_corner.Y = y
 				}
