@@ -1013,9 +1013,9 @@ func GetFlags(p *Params) {
 		"battery loss due to server sampling")
 	flag.Float64Var(&p.SamplingLossBTCM, "SamplingLossBTCM", .0001,
 		"battery loss due to BlueTooth sampling")
-	flag.Float64Var(&p.SamplingLossWifiCM, "SamplingLossWifiCM", .001,
+	flag.Float64Var(&p.SamplingLossWifiCM, "SamplingLossWifiCM", .0005,
 		"battery loss due to WiFi sampling")
-	flag.Float64Var(&p.SamplingLoss4GCM, "SamplingLoss4GCM", .005,
+	flag.Float64Var(&p.SamplingLoss4GCM, "SamplingLoss4GCM", .001,
 		"battery loss due to 4G sampling")
 	flag.Float64Var(&p.SamplingLossAccelCM, "SamplingLossAccelCM", .001,
 		"battery loss due to accelerometer sampling")
