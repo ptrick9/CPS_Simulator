@@ -76,24 +76,28 @@ func (s *Scheduler) AddRoutePoint0(c Coord) {
 	//Finds the super node closest to the newly added point
 	for n, _ := range s.SNodeList {
 		length := len(s.SNodeList[n].GetRoutePath())
+		reg := RegionContaining(Tuple{s.SNodeList[n].GetX(), s.SNodeList[n].GetY()}, s.R)
+		if ValidPath(reg, c, s.R) {
+			if length != 0 {
+				nodeDist = math.Sqrt(math.
+					Pow(float64(s.SNodeList[n].GetRoutePath()[length-1].X-c.X), 2.0) + math.
+					Pow(float64(s.SNodeList[n].GetRoutePath()[length-1].Y-c.Y), 2.0))
 
-		if length != 0 {
-			nodeDist = math.Sqrt(math.
-				Pow(float64(s.SNodeList[n].GetRoutePath()[length-1].X-c.X), 2.0) + math.
-				Pow(float64(s.SNodeList[n].GetRoutePath()[length-1].Y-c.Y), 2.0))
-
-			nodeDist += float64(length)
-		} else {
-			nodeDist = math.Sqrt(math.
-				Pow(float64(s.SNodeList[n].GetX()-c.X), 2.0) + math.
-				Pow(float64(s.SNodeList[n].GetY()-c.Y), 2.0))
-		}
-		if nodeDist < dist {
-			dist = nodeDist
-			closestNode = n
+				nodeDist += float64(length)
+			} else {
+				nodeDist = math.Sqrt(math.
+					Pow(float64(s.SNodeList[n].GetX()-c.X), 2.0) + math.
+					Pow(float64(s.SNodeList[n].GetY()-c.Y), 2.0))
+			}
+			if nodeDist < dist {
+				dist = nodeDist
+				closestNode = n
+			}
 		}
 	}
+	//fmt.Printf("\nClosest Node: %v\n", closestNode)
 	//Tells that super node to add that point
+	//fmt.Printf("\nAdded route point %v\n", c)
 	s.SNodeList[closestNode].AddRoutePoint(c)
 }
 

@@ -665,6 +665,7 @@ func SetupFiles(p *Params) {
 	//defer p.PositionFile.Close()
 
 	//Print parameters to position file
+	fmt.Fprintln(p.PositionFile, "Image:", p.ImageFileNameCM)
 	fmt.Fprintln(p.PositionFile, "Width:", p.MaxX)
 	fmt.Fprintln(p.PositionFile, "Height:", p.MaxY)
 	fmt.Fprintf(p.PositionFile, "Amount: %-8v\n", p.Iterations_of_event)
@@ -968,6 +969,15 @@ func writeBordMapToFile() {
 	//elapsed := Time.Since(start)
 	//fmt.Println("Printing Board Map took", elapsed)
 }*/
+
+
+func FlipSquares(p *Params, r *RegionParams) {
+	for i:= range(r.Square_list) {
+		r.Square_list[i].Y1 = p.Height - r.Square_list[i].Y2
+		r.Square_list[i].Y2 = p.Height - r.Square_list[i].Y1
+	}
+}
+
 func GetFlags(p *Params) {
 	//p = cps.Params{}
 

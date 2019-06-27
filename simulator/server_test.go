@@ -44,7 +44,7 @@ func TestGetSquareAverage(t *testing.T) {
 
 	squ := cps.Square{0, 0, 0.0, 0, make([]float32, p.NumGridSamples),
 		p.NumGridSamples, 0.0, 0, 0, false,
-		0.0, 0.0, false, travelList, sync.Mutex{}}
+		0.0, 0.0, false, travelList, map[cps.Tuple]*cps.NodeImpl{},sync.Mutex{},0}
 
 	testAvg := srv.GetSquareAverage(&squ)
 	if testAvg != 0.0 {
@@ -66,7 +66,7 @@ func TestUpdateSquareAvg(t *testing.T) {
 
 	squ := cps.Square{0, 0, 0.0, 1, make([]float32, p.NumGridSamples),
 		p.NumGridSamples, 0.0, 0, 0, false,
-		0.0, 0.0, false, travelList, sync.Mutex{}}
+		0.0, 0.0, false, travelList, map[cps.Tuple]*cps.NodeImpl{},sync.Mutex{},0}
 
 	p.Grid = append(p.Grid, []*cps.Square{ &squ })
 
@@ -98,19 +98,19 @@ func TestUpdateSquareNumNodes(t *testing.T) {
 	//Create 4 squares
 	test_squares[0] = &cps.Square{0, 0, 0.0, 0, make([]float32, p.NumGridSamples),
 		p.NumGridSamples, 0.0, 0, 0, false,
-		0.0, 0.0, false, travelList, sync.Mutex{}}
+		0.0, 0.0, false, travelList, map[cps.Tuple]*cps.NodeImpl{},sync.Mutex{},0}
 
 	test_squares[1] = &cps.Square{1, 0, 0.0, 0, make([]float32, p.NumGridSamples),
 		p.NumGridSamples, 0.0, 0, 0, false,
-		0.0, 0.0, false, travelList, sync.Mutex{}}
+		0.0, 0.0, false, travelList, map[cps.Tuple]*cps.NodeImpl{},sync.Mutex{},0}
 
 	test_squares[2] = &cps.Square{0, 1, 0.0, 0, make([]float32, p.NumGridSamples),
 		p.NumGridSamples, 0.0, 0, 0, false,
-		0.0, 0.0, false, travelList, sync.Mutex{}}
+		0.0, 0.0, false, travelList, map[cps.Tuple]*cps.NodeImpl{},sync.Mutex{},0}
 
 	test_squares[3] = &cps.Square{1, 1, 0.0, 0, make([]float32, p.NumGridSamples),
 		p.NumGridSamples, 0.0, 0, 0, false,
-		0.0, 0.0, false, travelList, sync.Mutex{}}
+		0.0, 0.0, false, travelList, map[cps.Tuple]*cps.NodeImpl{},sync.Mutex{},0}
 
 	p.Grid = append(p.Grid, test_squares[0:2])
 	p.Grid = append(p.Grid, test_squares[2:])
@@ -149,11 +149,9 @@ func TestSend(t *testing.T) {
 
 	squ := cps.Square{0, 0, 0.0, 1, make([]float32, p.NumGridSamples),
 		p.NumGridSamples, 0.0, 0, 0, false,
-		0.0, 0.0, false, travelList, sync.Mutex{}}
+		0.0, 0.0, false, travelList, map[cps.Tuple]*cps.NodeImpl{},sync.Mutex{},0}
 	node := &cps.NodeImpl{X: 0, Y: 0, Id: len(p.NodeList), SampleHistory: []float32{}, Concentration: 0,
-		Cascade: 0, Battery: 0, BatteryLossScalar: 0,
-		BatteryLossCheckingSensorScalar: 0,
-		BatteryLossGPSScalar: 0, BatteryLossCheckingServerScalar: 0}
+		Cascade: 0, Battery: 0, BatteryLossScalar: 0}
 
 	p.Grid = append(p.Grid, []*cps.Square{ &squ })
 
@@ -233,10 +231,7 @@ func makeNodesForTest(p *cps.Params) {
 			}
 
 			p.NodeList = append(p.NodeList, cps.NodeImpl{X: xx, Y: yy, Id: len(p.NodeList), SampleHistory: initHistory, Concentration: 0,
-				Cascade: i, Battery: p.BatteryCharges[i], BatteryLossScalar: p.BatteryLosses[i],
-				BatteryLossCheckingSensorScalar: p.BatteryLossesCheckingSensorScalar[i],
-				BatteryLossGPSScalar:            p.BatteryLossesCheckingGPSScalar[i],
-				BatteryLossCheckingServerScalar: p.BatteryLossesCheckingServerScalar[i]})
+				Cascade: i, Battery: p.BatteryCharges[i], BatteryLossScalar: p.BatteryLosses[i]})
 
 			p.NodeList[len(p.NodeList)-1].SetConcentration(((1000) / (math.Pow((float64(p.NodeList[len(p.NodeList)-1].GeoDist(*p.B))/0.2)*0.25, 1.5))))
 
@@ -322,9 +317,7 @@ func TestCheckDetections(t *testing.T) {
 
 	//sch := srv.Sch//sch := &cps.Scheduler{}
 	p.NodeList = append(p.NodeList, cps.NodeImpl{X: 1, Y: 1, Id: len(p.NodeList), SampleHistory: []float32{}, Concentration: 0,
-		Cascade: 0, Battery: 0, BatteryLossScalar: 0,
-		BatteryLossCheckingSensorScalar: 0,
-		BatteryLossGPSScalar: 0, BatteryLossCheckingServerScalar: 0})
+		Cascade: 0, Battery: 0, BatteryLossScalar: 0})
 	srv.Sch.SNodeList = append(srv.Sch.SNodeList, &cps.Sn_zero{&p,&r,&cps.Supern{&p,&r, &cps.NodeImpl{X: 0, Y: 0, Id: 0}, 1,
 		1, p.SuperNodeRadius, p.SuperNodeRadius, 0, make([]cps.Coord, 1), make([]cps.Coord, 0),
 		cps.Coord{X: 1, Y: 1}, 0, 0, 0, 0, 0, make([]cps.Coord, 0)}})
@@ -357,9 +350,8 @@ func TestGetMedian(t *testing.T) {
 }
 
 func getFlagsForTest(p *cps.Params) {
-	//flag.IntVar(&p.NumNodes, "NumNodes", 3, "number of nodes")
-	flag.IntVar(&p.MaxX, "MaxX", 10, "Maximum X value")
-	flag.IntVar(&p.MaxY, "MaxY", 10, "Maximum Y value")
+	flag.IntVar(&p.MaxX, "MaxX", 268, "Maximum X value")
+	flag.IntVar(&p.MaxY, "MaxY", 191, "Maximum Y value")
 
 	flag.IntVar(&p.NegativeSittingStopThresholdCM, "negativeSittingStopThreshold", -10,
 		"Negative number sitting is set to when board map is reset")
@@ -367,19 +359,12 @@ func getFlagsForTest(p *cps.Params) {
 		"How long it takes for a node to stay seated")
 	flag.Float64Var(&p.GridCapacityPercentageCM, "GridCapacityPercentage", .9,
 		"Percent the sub-Grid can be filled")
-	flag.StringVar(&p.InputFileNameCM, "inputFileName", "Log1_in.txt",
+	flag.StringVar(&p.InputFileNameCM, "inputFileName", "Scenario_4.txt",
 		"Name of the input text file")
-	flag.StringVar(&p.SensorPath, "sensorPath", "Circle_2D.csv", "Sensor Reading Inputs")
-	flag.StringVar(&p.OutputFileNameCM, "p.OutputFileName", "Log",
-		"Name of the output text file prefix")
+
 	flag.Float64Var(&p.NaturalLossCM, "naturalLoss", .005,
 		"battery loss due to natural causes")
-	flag.Float64Var(&p.SensorSamplingLossCM, "sensorSamplingLoss", .001,
-		"battery loss due to sensor sampling")
-	flag.Float64Var(&p.GPSSamplingLossCM, "GPSSamplingLoss", .005,
-		"battery loss due to GPS sampling")
-	flag.Float64Var(&p.ServerSamplingLossCM, "serverSamplingLoss", .01,
-		"battery loss due to server sampling")
+
 	flag.IntVar(&p.ThresholdBatteryToHaveCM, "thresholdBatteryToHave", 30,
 		"Threshold battery phones should have")
 	flag.IntVar(&p.ThresholdBatteryToUseCM, "thresholdBatteryToUse", 10,
@@ -429,7 +414,7 @@ func getFlagsForTest(p *cps.Params) {
 	flag.IntVar(&p.SquareRowCM, "SquareRowCM", 1, "Number of rows of p.Grid squares, 1 through p.MaxX")
 	flag.IntVar(&p.SquareColCM, "SquareColCM", 1, "Number of columns of p.Grid squares, 1 through p.MaxY")
 
-	flag.StringVar(&p.ImageFileNameCM, "imageFileName", "circle_justWalls_x4.png", "Name of the input text file")
+	flag.StringVar(&p.ImageFileNameCM, "imageFileName", "testMap.png", "Name of the input text file")
 	flag.StringVar(&p.StimFileNameCM, "stimFileName", "circle_0.txt", "Name of the stimulus text file")
 	flag.StringVar(&p.OutRoutingNameCM, "outRoutingName", "log.txt", "Name of the stimulus text file")
 	flag.StringVar(&p.OutRoutingStatsNameCM, "outRoutingStatsName", "routingStats.txt", "Name of the output file for stats")
@@ -440,12 +425,6 @@ func getFlagsForTest(p *cps.Params) {
 
 	flag.Parse()
 	fmt.Println("Natural Loss: ", p.NaturalLossCM)
-	fmt.Println("Sensor Sampling Loss: ", p.SensorSamplingLossCM)
-	fmt.Println("GPS sampling loss: ", p.GPSSamplingLossCM)
-	fmt.Println("Server sampling loss", p.ServerSamplingLossCM)
-	fmt.Println("Threshold Battery to use: ", p.ThresholdBatteryToUseCM)
-	fmt.Println("Threshold battery to have: ", p.ThresholdBatteryToHaveCM)
-	fmt.Println("Moving speed for incresed sampling: ", p.MovementSamplingSpeedCM)
 	fmt.Println("Period of extra sampling due to high speed: ", p.MovementSamplingPeriodCM)
 	fmt.Println("Maximum size of buffer posible: ", p.MaxBufferCapacityCM)
 	fmt.Println("Energy model type:", p.EnergyModelCM)

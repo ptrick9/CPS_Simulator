@@ -1,8 +1,7 @@
 package edu.udel.ntsee.bombdetection.io;
 
-import edu.udel.ntsee.bombdetection.Util;
 import edu.udel.ntsee.bombdetection.data.Grid;
-import edu.udel.ntsee.bombdetection.data.Node;
+import edu.udel.ntsee.bombdetection.data.Room;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -17,8 +16,7 @@ public class FileManager {
 
     private static final Pattern TIME_REGEX = Pattern.compile("^t=(\\d+)$");
 
-    private Node bomb;
-    private int[] properties;
+    private Room room;
     private PositionFile positions;
     private SamplesFile samples;
     private RoutesFile routes;
@@ -26,10 +24,11 @@ public class FileManager {
     private GridFile sensorReadings;
     private Map<Integer, Grid> nodePath;
 
-    public FileManager(File file) {
+    public FileManager(Room room, File file) {
 
-        this.properties = new int[3];
+        this.room = room;
         String base;
+
         try {
             base = file.getPath().substring(0, file.getPath().lastIndexOf("-"));
         } catch (StringIndexOutOfBoundsException e) {
@@ -37,13 +36,6 @@ public class FileManager {
         }
 
         try {
-            BufferedReader reader = new BufferedReader(new FileReader(base + "-simulatorOutput.txt"));
-            properties[0] = Util.parseAmount(reader.readLine());
-            properties[1] = Util.parseAmount(reader.readLine());
-            properties[2] = Util.parseAmount(reader.readLine());
-            int x = Util.parseAmount(reader.readLine());
-            int y = Util.parseAmount(reader.readLine());
-            this.bomb = new Node(-1, x, y);
             this.positions = new PositionFile(base + "-simulatorOutput.txt");
 
         } catch (IOException e) {
@@ -82,10 +74,6 @@ public class FileManager {
         }
     }
 
-    public int[] getProperties() {
-        return properties;
-    }
-
     public PositionFile getPositions() {
         return positions;
     }
@@ -121,8 +109,8 @@ public class FileManager {
             if (m.find()) {
                 reader.readLine();
                 int time = Integer.parseInt(m.group(1));
-                double[][] data = new double[properties[1]][properties[0]];
-                for(int i=0; i<properties[1]; i++) {
+                double[][] data = new double[room.getHeight()][room.getWidth()];
+                for(int i=0; i<room.getHeight(); i++) {
                     String[] rowVals = reader.readLine().split(" ");
                     double[] vals = new double[rowVals.length];
                     for (int j = 0; j < rowVals.length; j++) {
@@ -135,8 +123,5 @@ public class FileManager {
         }
     }
 
-    public Node getBomb() {
-        return bomb;
-    }
 
 }

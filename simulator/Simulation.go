@@ -108,6 +108,8 @@ func main() {
 	p.Server.MakeSuperNodes()
 	cps.GenerateRouting(p, r)
 
+	cps.FlipSquares(p, r)
+
 	//This is where the text file reading ends
 	Vn := make([]float64, 1000)
 	for i := 0; i < 1000; i++ {
@@ -139,8 +141,6 @@ func main() {
 	//fmt.Fprintln(p.GridFile, "Runs:", iterations_of_event)
 
 	fmt.Println("xDiv is ", p.XDiv, " yDiv is ", p.YDiv, " square capacity is ", p.SquareCapacity)
-
-	//p.Server.MakeSuperNodes()
 
 	p.B = &cps.Bomb{X: p.BombX, Y: p.BombY}
 
@@ -182,15 +182,7 @@ func main() {
 
 		//fmt.Println(iterations_used)
 		fmt.Printf("\rRunning Simulator iteration %d\\%v", iters, p.Iterations_of_event)
-		if p.PositionPrint {
-			amount:= 0
-			for i:= 0; i < p.TotalNodes; i++ {
-				if p.NodeList[i].Valid {
-					amount += 1
-				}
-			}
-			fmt.Fprintln(p.PositionFile, "t= ", p.Iterations_used, " amount= ", amount)
-		}
+
 		for i := 0; i < len(p.Poispos); i++ {
 			if p.Iterations_used == p.Poispos[i][2] || p.Iterations_used == p.Poispos[i][3] {
 				for i := 0; i < len(p.NodeList); i++ {
@@ -292,6 +284,7 @@ func main() {
 	}
 
 	p.PositionFile.Seek(0, 0)
+	fmt.Fprintln(p.PositionFile, "Image:", p.ImageFileNameCM)
 	fmt.Fprintln(p.PositionFile, "Width:", p.MaxX)
 	fmt.Fprintln(p.PositionFile, "Height:", p.MaxY)
 	fmt.Fprintf(p.PositionFile, "Amount: %-8v\n", iters)

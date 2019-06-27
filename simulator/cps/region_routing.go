@@ -51,7 +51,7 @@ func RemoveRoutingSquare(sq RoutingSquare, r *RegionParams) {
 
 func RegionContaining(p Tuple, r *RegionParams) int {
 	for i, s := range r.Square_list {
-		if p.X >= s.X1 && p.X <= s.X2 && p.Y >= s.Y1 && p.Y <= s.Y2 {
+		if p.X >= s.X1 && p.X <= s.X2 && p.Y <= s.Y1 && p.Y >= s.Y2 {
 			return i
 		}
 	}
@@ -85,6 +85,24 @@ func Search(prev_region, curr_region, end_region int, curr_path []int, r *Region
 	}
 }
 
+func ValidPath(reg int, endpoint Coord, r *RegionParams) bool{
+	if len(r.Border_dict[reg]) == 0 {
+		return false
+	} else {
+		end := RegionContaining(Tuple{endpoint.X, endpoint.Y}, r)
+		//fmt.Printf("\nEnd point is in region: %v\n", end)
+
+		for i := 0; i < len(r.Border_dict[reg]); i++ {
+			if r.Border_dict[reg][i] == end {
+				return true
+			} else {
+				return ValidPath(r.Border_dict[reg][i], endpoint, r)
+			}
+		}
+	}
+	return false
+}
+
 func PossPaths(p1, p2 Tuple, r *RegionParams) {
 	start_region := RegionContaining(p1, r)
 	end_region := RegionContaining(p2, r)
@@ -92,6 +110,7 @@ func PossPaths(p1, p2 Tuple, r *RegionParams) {
 	r.Possible_paths = make([][]int, 0)
 
 	Search(-1, start_region, end_region, make([]int, 0), r)
+	fmt.Printf("%v %v %v\n", start_region, end_region, r.Possible_paths)
 }
 
 func InRegionRouting(p1, p2 Tuple) []Coord {
@@ -121,6 +140,7 @@ func InRegionRouting(p1, p2 Tuple) []Coord {
 }
 
 func GetPath(c1, c2 Coord, r *RegionParams) []Coord {
+	//fmt.Println(r.Possible_paths)
 	p1 := Tuple{c1.X, c1.Y}
 	p2 := Tuple{c2.X, c2.Y}
 
@@ -128,7 +148,7 @@ func GetPath(c1, c2 Coord, r *RegionParams) []Coord {
 
 	min_dist := math.Pow(100, 100)
 	index := -1
-
+	fmt.Printf("%v %v %v\n", c1, c2, r.Possible_paths)
 	for i, path := range r.Possible_paths {
 		curr_dist := 0.0
 		for j, region := range path {
@@ -154,6 +174,7 @@ func GetPath(c1, c2 Coord, r *RegionParams) []Coord {
 
 	if len(r.Possible_paths[index]) == 1 {
 		ret_path = append(ret_path, InRegionRouting(p1, p2)...)
+		fmt.Println("here is the problem!!")
 	} else {
 		for i, s := range r.Possible_paths[index] {
 			if i == 0 {

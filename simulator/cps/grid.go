@@ -31,8 +31,11 @@ type Square struct {
 	HasDetected  bool
 
 	CanBeTravelledTo []bool
-	NodesInSquare	 map[Tuple]*NodeImpl;
+	NodesInSquare	 map[Tuple]*NodeImpl
 	Lock sync.Mutex
+
+	LastReadingTime int
+	//Visited		bool
 }
 
 //Adds a node to this Square, increasing its numNodes

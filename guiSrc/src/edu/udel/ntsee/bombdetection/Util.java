@@ -1,7 +1,11 @@
 package edu.udel.ntsee.bombdetection;
 
+import edu.udel.ntsee.bombdetection.data.Wall;
 import javafx.scene.paint.Color;
 
+import java.awt.image.BufferedImage;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -41,5 +45,39 @@ public class Util {
     public static double parseDouble(String string) {
         return Double.parseDouble(parseString(string));
     }
+
+    public static List<Wall> createWallsFromImage(BufferedImage image) {
+
+        List<Wall> walls = new ArrayList<>();
+        for (int y=0; y<image.getHeight(); y++) {
+            for (int x=0; x<image.getWidth(); x++) {
+                if (isBlackPixel(image.getRGB(x, y))) {
+
+                    // Check if corner pixel of adjacent pixel is not black
+                    if (x - 1 < 0
+                        || x + 1 >= image.getWidth()
+                        || y - 1 < 0
+                        || y + 1 >= image.getHeight()
+                        || !isBlackPixel(image.getRGB(x - 1, y))
+                        || !isBlackPixel(image.getRGB(x + 1, y))
+                        || !isBlackPixel(image.getRGB(x, y - 1))
+                        || !isBlackPixel(image.getRGB(x, y + 1))) {
+                        walls.add(new Wall(x, y));
+                    }
+
+                }
+
+            }
+        }
+
+        return walls;
+    }
+
+    private static boolean isBlackPixel(int rgb) {
+
+        java.awt.Color color = new java.awt.Color(rgb);
+        return color.equals(java.awt.Color.BLACK);
+    }
+
 
 }

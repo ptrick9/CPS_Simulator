@@ -289,16 +289,16 @@ public class AdvancedCanvas extends Canvas {
     }
 
     public void drawBlock(Color color, boolean outline, int x, int y) {
-
-        /*if (x < getStartColumn() || x >= getEndColumn() || y < getStartRow() || y >= getEndRow())
-            return;*/
-
         this.drawBlock(color, outline, x, y, 1);
     }
 
     public void drawBlock(Color color, boolean outline, int x, int y, int squares) {
 
-        y = rows - 1 - y; // transform coordinates so orgin is bottom left
+
+        if (x < getStartColumn() || x >= getEndColumn() || y < getStartRow() || y >= getEndRow())
+            return;
+
+        //y = rows - 1 - y; // transform coordinates so orgin is bottom left
 
         GraphicsContext gc = getGraphicsContext2D();
         gc.setFill(color);
