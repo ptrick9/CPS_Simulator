@@ -217,7 +217,13 @@ func main() {
 			//go func(i int) {
 			//	defer wg.Done()
 			if !p.NoEnergyModelCM {
-				p.NodeList[i].BatteryLossMostDynamic()
+				//fmt.Println("entered if statement")
+				//p.NodeList[i].BatteryLossMostDynamic()
+
+				//these two functions to replace batterylossmostdynamic
+				//p.NodeList[i].TrackAccelerometer()
+				p.NodeList[i].HandleBatteryLoss()
+				p.NodeList[i].LogBatteryPower(iters) //added for logging battery
 			} else {
 				p.NodeList[i].HasCheckedSensor = true
 				p.NodeList[i].Sitting = 0
@@ -229,7 +235,6 @@ func main() {
 			}
 			//}(i)
 		}
-
 
 		//wg.Wait()
 		p.DriftFile.Sync()
@@ -279,9 +284,12 @@ func main() {
 		if p.NodesPrint {
 			fmt.Fprint(p.NodeFile, "----------------\n")
 		}
+
 		p.Iterations_used++
 		p.Server.CalcStats()
+
 	}
+	PrintNodeBatteryOverTime(p)
 
 	p.PositionFile.Seek(0, 0)
 	fmt.Fprintln(p.PositionFile, "Image:", p.ImageFileNameCM)
@@ -311,6 +319,7 @@ func main() {
 		}
 	}
 	p.Server.PrintStatsFile()
+
 }
 
 //
@@ -488,4 +497,24 @@ func printSuperStats(SNodeList []cps.SuperNodeParent) bytes.Buffer {
 		buffer.WriteString(fmt.Sprintf("AvgResponseTime: %.2f\t", i.GetAvgResponseTime()))
 	}
 	return buffer
+}
+
+func PrintNodeBatteryOverTime(p * cps.Params)  {
+
+	fmt.Fprint(p.BatteryFile, "Time,")
+	for i := range p.NodeList{
+		n := p.NodeList[i]
+		fmt.Fprint(p.BatteryFile, "Node",n.GetID(),",")
+	}
+	fmt.Fprint(p.BatteryFile, "\n")
+
+	for t:=0; t<p.Iterations_of_event; t++{
+		fmt.Fprint(p.BatteryFile, t, ",")
+		for i := range p.NodeList{
+			n := p.NodeList[i]
+			fmt.Fprint(p.BatteryFile, n.BatteryOverTime[t],",")
+		}
+		fmt.Fprint(p.BatteryFile, "\n")
+	}
+	p.BatteryFile.Sync()
 }

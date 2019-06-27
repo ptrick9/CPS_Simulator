@@ -459,7 +459,6 @@ func SetupRandomNodes(p *Params) {
 			newNode.Y = yy
 
 			newNode.Valid = true
-
 			p.BoolGrid[xx][yy] = true
 
 			p.NodeList = append(p.NodeList, *newNode)
@@ -723,6 +722,11 @@ func SetupFiles(p *Params) {
 	}
 	//defer p.EnergyFile.Close()
 
+	p.BatteryFile, err = os.Create(p.OutputFileNameCM + "-batteryusage.txt")
+	if err != nil {
+		log.Fatal("Cannot create file", err)
+	}
+
 	p.RoutingFile, err = os.Create(p.OutputFileNameCM + "-path.txt")
 	if err != nil {
 		log.Fatal("Cannot create file", err)
@@ -786,7 +790,9 @@ func SetupParameters(p *Params) {
 	p.Center.Y = p.MaxY / 2
 
 	p.TotalPercentBatteryToUse = float32(p.ThresholdBatteryToUseCM)
-	p.BatteryCharges = GetLinearBatteryValues(len(p.NodeEntryTimes))
+	//p.BatteryCharges = GetLinearBatteryValues(len(p.NodeEntryTimes))
+	p.BatteryCharges = GetNormDistro(p.TotalNodes, 70.0, 15) //battery values come from normal distribution
+																		//mean = 70%, std = 15%
 	p.BatteryLosses = GetLinearBatteryLossConstant(len(p.NodeEntryTimes), float32(p.NaturalLossCM))
 
 	//updated because of the variable renaming to BatteryLosses__ and SamplingLoss__CM
