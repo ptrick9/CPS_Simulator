@@ -6,11 +6,14 @@
 -logEnergy=true
 -logNodes=false
 -noEnergy=true
--sensorPath=smoothed_marathon.csv
+-sensorPath=C:/Users/patrick/Dropbox/Patrick/udel/SUMMER2019/GitSimulator/smoothed_marathon.csv
 -SquareRowCM=60
 -SquareColCM=320
 -csvMove=true
--movementPath=C:/Users/patrick/Dropbox/Patrick/udel/SUMMER2019/GitSimulator/output.txt
+-movementPath=marathon_2k.txt
+-iterations=1000
+-csvSensor=true
+-detectionThreshold=4000.0
 */
 
 package main

@@ -1387,6 +1387,7 @@ func (curNode *NodeImpl) GetReadingsCSV() {
 				"E2:", curNode.E2, "ET1:", curNode.ET1, "ET2:", curNode.ET2, "Time since calibration:", curNode.NodeTime,
 				"Current Time (Iter):", curNode.P.Iterations_used, "Energy Level:", curNode.Battery, "Distance from bomb:", math.Sqrt(float64(curNode.GeoDist(*curNode.P.B))),
 				"x:", curNode.X, "y:", curNode.Y)
+			//fmt.Printf("\nSquare Average: %v\n", curNode.P.Grid[curNode.X/curNode.P.XDiv][curNode.Y/curNode.P.YDiv])
 		}
 
 		//If the reading is more than 2 standard deviations away from the grid average, then recalibrate
