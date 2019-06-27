@@ -215,14 +215,14 @@ public class SimulatorController implements Drawable {
                 Sample sample = samples.get(i);
                 if (sample.isSensorChecked()) {
                     canvas.drawCircle(Color.YELLOW,(2.34 / .5) * canvas.getCamera().getBlockSize(),
-                            node.getX(), room.getHeight() - node.getY());
+                            node.getX(), room.getHeight() - node.getY() - 1);
                 }
             }
         }
 
         // Bomb
         canvas.drawCircle(Color.RED, canvas.getCamera().getBlockSize(),
-                room.getBomb().getX(), room.getBomb().getY());
+                room.getBomb().getX(), room.getBomb().getY() - 1);
 
         // Nodes
         for (int i = 0; i < nodes.size(); i++) {
@@ -235,7 +235,7 @@ public class SimulatorController implements Drawable {
                 color = Util.gradient(Color.RED, Color.GREEN, (double)sample.getBattery()/100);
             }
 
-            canvas.drawBlock(color, true, node.getX(), room.getHeight() - node.getY());
+            canvas.drawBlock(color, true, node.getX(), room.getHeight() - node.getY() - 1);
         }
 
     }
@@ -246,20 +246,20 @@ public class SimulatorController implements Drawable {
         for(SuperNode superNode : superNodes) {
 
             for(TimedNode node : superNode.getPath()) {
-                canvas.drawBlock(Color.WHITE, true, node.getX(), room.getHeight() - node.getY());
+                canvas.drawBlock(Color.WHITE, true, node.getX(), room.getHeight() - node.getY() - 1);
             }
 
             for(TimedNode node : superNode.getUnvisitedPoints()) {
                 Color color = Util.gradient(Color.RED, Color.GREEN, (double)node.getTime()/120);
-                canvas.drawBlock(color, true, node.getX(), room.getHeight() - node.getY());
+                canvas.drawBlock(color, true, node.getX(), room.getHeight() - node.getY() - 1);
             }
 
             for(TimedNode node : superNode.getPoints()) {
                 Color color = Util.gradient(Color.RED, Color.GREEN, (double)node.getTime()/120);
-                canvas.drawBlock(color, true, node.getX(), room.getHeight() - node.getY());
+                canvas.drawBlock(color, true, node.getX(), room.getHeight() - node.getY() - 1);
             }
 
-            canvas.drawBlock(Color.PLUM, true, superNode.getX(), room.getHeight() - superNode.getY());
+            canvas.drawBlock(Color.PLUM, true, superNode.getX(), room.getHeight() - superNode.getY() - 1);
         }
     }
 
@@ -362,10 +362,10 @@ public class SimulatorController implements Drawable {
 
             } else if (node.getTime() == -1) {
                 Color color = Color.BLACK;//Util.gradient(Color.GREEN, Color.RED, (double)node.getTime() / road.getMax());
-                canvas.drawBlock(color, true, node.getX(), node.getY());
+                canvas.drawBlock(color, true, node.getX(), node.getY() - 1);
             } else {
                 Color color = Util.gradient(Color.GREEN, Color.RED, (double)node.getTime() / road.getMax());
-                canvas.drawBlock(color, true, node.getX(), node.getY());
+                canvas.drawBlock(color, true, node.getX(), node.getY() - 1);
             }
         }
     }
