@@ -31,7 +31,7 @@ type Square struct {
 	HasDetected  bool
 
 	CanBeTravelledTo []bool
-	NodesInSquare	 map[Tuple]*NodeImpl;
+	NodesInSquare	 map[Tuple]*NodeImpl
 	Lock sync.Mutex
 
 	LastReadingTime int

@@ -51,7 +51,7 @@ func RemoveRoutingSquare(sq RoutingSquare, r *RegionParams) {
 
 func RegionContaining(p Tuple, r *RegionParams) int {
 	for i, s := range r.Square_list {
-		if p.X >= s.X1 && p.X <= s.X2 && p.Y >= s.Y1 && p.Y <= s.Y2 {
+		if p.X >= s.X1 && p.X <= s.X2 && p.Y <= s.Y1 && p.Y >= s.Y2 {
 			return i
 		}
 	}
@@ -86,13 +86,11 @@ func Search(prev_region, curr_region, end_region int, curr_path []int, r *Region
 }
 
 func ValidPath(reg int, endpoint Coord, r *RegionParams) bool{
-	//reg := RegionContaining(Tuple{n.GetX(), n.GetY()}, r)
 	if len(r.Border_dict[reg]) == 0 {
 		return false
 	} else {
-		//fmt.Printf("\nStarting region: %v\n", reg)
 		end := RegionContaining(Tuple{endpoint.X, endpoint.Y}, r)
-		//fmt.Printf("\nEnd region: %v\n", endpoint)
+		//fmt.Printf("\nEnd point is in region: %v\n", end)
 
 		for i := 0; i < len(r.Border_dict[reg]); i++ {
 			if r.Border_dict[reg][i] == end {
