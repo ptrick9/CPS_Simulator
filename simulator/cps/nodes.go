@@ -132,6 +132,7 @@ type NodeImpl struct {
 
 	TotalPacketsSent    int
 	TotalBytesSent		int
+	IsClusterHead		bool
 }
 
 //NodeMovement controls the movement of all the normal nodes
@@ -653,12 +654,66 @@ func (curNode *NodeImpl) LogBatteryPower(t int){
 	}
 	curNode.BatteryOverTime[t] = curNode.Battery;
 	//used to test the log file writing and the python processing code
-	if(curNode.Id%4==0){
-		curNode.DecrementPowerSensor()
-		curNode.DecrementPower4G(100)
+	//if(curNode.Id%4==0){
+	//	curNode.DecrementPowerSensor()
+	//	curNode.DecrementPower4G(100)
+	//}
+	//if(curNode.Id%3==0){
+	//	curNode.DecrementPowerSensor()
+	//}
+}
+
+//from BatteryLossMostDynamic - broke down the funciton into simpler parts
+func (curNode *NodeImpl) TrackAccelerometer(){
+	// These are the nodes respective accelerometer positions
+	curNode.Current = curNode.ToggleCheckIterator % 3
+	curNode.Previous = (curNode.ToggleCheckIterator - 1) % 3
+
+	// this is the accelerometer's functions
+	if curNode.Current == 0 {
+		curNode.AccelerometerPosition[0][0] = curNode.X
+		curNode.AccelerometerPosition[1][0] = curNode.Y
+	} else if curNode.Current == 1 {
+		curNode.AccelerometerPosition[0][1] = curNode.X
+		curNode.AccelerometerPosition[1][1] = curNode.Y
+	} else if curNode.Current == 2 {
+		curNode.AccelerometerPosition[0][2] = curNode.X
+		curNode.AccelerometerPosition[1][2] = curNode.Y
 	}
-	if(curNode.Id%3==0){
+	curNode.Diffx = curNode.AccelerometerPosition[0][curNode.Current] - curNode.AccelerometerPosition[0][curNode.Previous]
+	curNode.Diffy = curNode.AccelerometerPosition[1][curNode.Current] - curNode.AccelerometerPosition[1][curNode.Previous]
+	// Speed as determined by accelerometer
+	curNode.Speed = float32(math.Sqrt(float64(curNode.Diffx*curNode.Diffx + curNode.Diffy*curNode.Diffy)))
+	// This keeps track of the accelerometer values
+	curNode.AccelerometerSpeed = append(curNode.AccelerometerSpeed, curNode.Speed)
+
+	//decrement power by using accelerometer
+	curNode.DecrementPowerAccel()
+}
+
+func (curNode *NodeImpl) HandleBatteryLoss(){
+	curNode.HasCheckedGPS = false
+	curNode.HasCheckedSensor = false
+	curNode.HasCheckedServer = false
+
+	//checks to see if the node is allowed to continue transmitting
+	if(curNode.Battery > curNode.P.ThreshHoldBatteryToHave){
+		//all nodes will check sensor and GPS if they have enough power to do so.
 		curNode.DecrementPowerSensor()
+		curNode.HasCheckedSensor = true
+
+		curNode.DecrementPowerGPS()
+		curNode.HasCheckedGPS = true
+
+		if(curNode.IsClusterHead){ //node is a cluster head, transmit over 4G-LTE to server (can be swapped for wifi)
+			//packet size will be based on the data from the nodes underneath the clusterhead
+			//10 for now as a default
+			curNode.DecrementPower4G(10)
+			curNode.HasCheckedServer = true
+		} else{ //node is cluster member, transmitts via bluetooth to its cluster head
+			//packet size as 10 for now as a default
+			curNode.DecrementPowerBT(10)
+		}
 	}
 }
 
@@ -693,6 +748,7 @@ func (curNode *NodeImpl) BatteryLossMostDynamic() {
 	// These are the nodes respective accelerometer positions
 	curNode.Current = curNode.ToggleCheckIterator % 3
 	curNode.Previous = (curNode.ToggleCheckIterator - 1) % 3
+
 	// this is the accelerometer's functions
 	if curNode.Current == 0 {
 		curNode.AccelerometerPosition[0][0] = curNode.X

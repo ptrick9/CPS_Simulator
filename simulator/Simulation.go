@@ -210,7 +210,11 @@ func main() {
 			//	defer wg.Done()
 			if !p.NoEnergyModelCM {
 				//fmt.Println("entered if statement")
-				p.NodeList[i].BatteryLossMostDynamic()
+				//p.NodeList[i].BatteryLossMostDynamic()
+
+				//these two functions to replace batterylossmostdynamic
+				//p.NodeList[i].TrackAccelerometer()
+				p.NodeList[i].HandleBatteryLoss()
 				p.NodeList[i].LogBatteryPower(iters) //added for logging battery
 			} else {
 				p.NodeList[i].HasCheckedSensor = true
