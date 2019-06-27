@@ -932,32 +932,32 @@ func (curNode *NodeImpl) BatteryLossDynamic() {
 
 //decrement battery due to transmitting/receiving over BlueTooth
 func (curNode *NodeImpl) DecrementPowerBT(packet int){
-	curNode.Battery = curNode.Battery - curNode.BatteryLossBT*curNode.Battery
+	curNode.Battery = curNode.Battery - float32(curNode.P.SamplingLossBTCM) *curNode.Battery
 }
 
 //decrement battery due to transmitting/receiving over WiFi
 func (curNode *NodeImpl) DecrementPowerWifi(packet int){
-	curNode.Battery = curNode.Battery - curNode.BatteryLossWifi
+	curNode.Battery = curNode.Battery - float32(curNode.P.SamplingLossWifiCM) *curNode.Battery
 }
 
 //decrement battery due to transmitting/receiving over 4G
 func (curNode *NodeImpl) DecrementPower4G(packet int){
-	curNode.Battery = curNode.Battery - curNode.BatteryLoss4G*curNode.Battery
+	curNode.Battery = curNode.Battery - float32(curNode.P.SamplingLoss4GCM) *curNode.Battery
 }
 
 //decrement battery due to sampling Accelerometer
 func (curNode *NodeImpl) DecrementPowerAccel(){
-	curNode.Battery = curNode.Battery - curNode.BatteryLossAccelerometer*curNode.Battery
+	curNode.Battery = curNode.Battery - float32(curNode.P.SamplingLossAccelCM) *curNode.Battery
 }
 
 //decrement battery due to transmitting/receiving GPS
 func (curNode *NodeImpl) DecrementPowerGPS(){
-	curNode.Battery = curNode.Battery - curNode.BatteryLossGPS*curNode.Battery
+	curNode.Battery = curNode.Battery - float32(curNode.P.SamplingLossGPSCM) *curNode.Battery
 }
 
 //decrement battery due to using GPS
 func (curNode *NodeImpl) DecrementPowerSensor(){
-	curNode.Battery = curNode.Battery - curNode.BatteryLossSensor*curNode.Battery
+	curNode.Battery = curNode.Battery - float32(curNode.P.SamplingLossSensorCM) *curNode.Battery
 }
 
 
