@@ -1,6 +1,9 @@
 package cps
 
-import "fmt"
+import (
+	"fmt"
+	"math"
+)
 
 // Quadtree - The quadtree data structure
 //based off https://github.com/JamesMilnerUK/quadtree-go/blob/master/quadtree.go
@@ -11,6 +14,7 @@ type Quadtree struct {
 	MaxLevels  int // Total max levels inside root Quadtree
 	Level      int // Depth level, required for SubTrees
 	Objects    []Bounds
+	ParentTree *Quadtree
 	SubTrees   []Quadtree
 	Total      int
 }
@@ -21,6 +25,8 @@ type Bounds struct {
 	Y      	float64
 	Width  	float64
 	Height 	float64
+	CurTree	*Quadtree //tree that this object is in
+	//curNode *NodeImpl
 }
 
 //IsPoint - Checks if a bounds object is a point or not (has no width or height)
@@ -97,64 +103,141 @@ func (qt *Quadtree) split() {
 	y := qt.Bounds.Y
 
 	//top right node (0)
-	qt.SubTrees = append(qt.SubTrees, Quadtree{
-		Bounds: Bounds{
-			X:      x + subWidth,
-			Y:      y,
-			Width:  subWidth,
-			Height: subHeight,
-		},
+	b0 := Bounds{
+		X:      x + subWidth,
+		Y:      y,
+		Width:  subWidth,
+		Height: subHeight,
+	}
+	sub0 :=  Quadtree{
+		Bounds: b0,
 		MaxObjects: qt.MaxObjects,
 		MaxLevels:  qt.MaxLevels,
 		Level:      nextLevel,
 		Objects:    make([]Bounds, 0),
-		SubTrees:      make([]Quadtree, 0, 4),
-	})
+		ParentTree: qt,
+		SubTrees:   make([]Quadtree, 0, 4),
+	}
+	sub0.Bounds.CurTree = &sub0
+	qt.SubTrees = append(qt.SubTrees, sub0)
+
+	//qt.SubTrees = append(qt.SubTrees, Quadtree{
+	//	Bounds: Bounds{
+	//		X:      x + subWidth,
+	//		Y:      y,
+	//		Width:  subWidth,
+	//		Height: subHeight,
+	//	},
+	//	MaxObjects: qt.MaxObjects,
+	//	MaxLevels:  qt.MaxLevels,
+	//	Level:      nextLevel,
+	//	Objects:    make([]Bounds, 0),
+	//	ParentTree: qt,
+	//	SubTrees:   make([]Quadtree, 0, 4),
+	//})
 
 	//top left node (1)
-	qt.SubTrees = append(qt.SubTrees, Quadtree{
-		Bounds: Bounds{
-			X:      x,
-			Y:      y,
-			Width:  subWidth,
-			Height: subHeight,
-		},
+	b1 := Bounds{
+		X:      x,
+		Y:      y,
+		Width:  subWidth,
+		Height: subHeight,
+	}
+	sub1 :=  Quadtree{
+		Bounds: b1,
 		MaxObjects: qt.MaxObjects,
 		MaxLevels:  qt.MaxLevels,
 		Level:      nextLevel,
 		Objects:    make([]Bounds, 0),
-		SubTrees:      make([]Quadtree, 0, 4),
-	})
+		ParentTree: qt,
+		SubTrees:   make([]Quadtree, 0, 4),
+	}
+	sub1.Bounds.CurTree = &sub1
+	qt.SubTrees = append(qt.SubTrees, sub1)
+
+	//qt.SubTrees = append(qt.SubTrees, Quadtree{
+	//	Bounds: Bounds{
+	//		X:      x,
+	//		Y:      y,
+	//		Width:  subWidth,
+	//		Height: subHeight,
+	//	},
+	//	MaxObjects: qt.MaxObjects,
+	//	MaxLevels:  qt.MaxLevels,
+	//	Level:      nextLevel,
+	//	Objects:    make([]Bounds, 0),
+	//	ParentTree: qt,
+	//	SubTrees:   make([]Quadtree, 0, 4),
+	//})
 
 	//bottom left node (2)
-	qt.SubTrees = append(qt.SubTrees, Quadtree{
-		Bounds: Bounds{
-			X:      x,
-			Y:      y + subHeight,
-			Width:  subWidth,
-			Height: subHeight,
-		},
+	b2 := Bounds{
+		X:      x,
+		Y:      y + subHeight,
+		Width:  subWidth,
+		Height: subHeight,
+	}
+	sub2 :=  Quadtree{
+		Bounds: b2,
 		MaxObjects: qt.MaxObjects,
 		MaxLevels:  qt.MaxLevels,
 		Level:      nextLevel,
 		Objects:    make([]Bounds, 0),
-		SubTrees:      make([]Quadtree, 0, 4),
-	})
+		ParentTree: qt,
+		SubTrees:   make([]Quadtree, 0, 4),
+	}
+	sub2.Bounds.CurTree = &sub2
+	qt.SubTrees = append(qt.SubTrees, sub2)
+
+	//qt.SubTrees = append(qt.SubTrees, Quadtree{
+	//	Bounds: Bounds{
+	//		X:      x,
+	//		Y:      y + subHeight,
+	//		Width:  subWidth,
+	//		Height: subHeight,
+	//	},
+	//	MaxObjects: qt.MaxObjects,
+	//	MaxLevels:  qt.MaxLevels,
+	//	Level:      nextLevel,
+	//	Objects:    make([]Bounds, 0),
+	//	ParentTree: qt,
+	//	SubTrees:   make([]Quadtree, 0, 4),
+	//})
 
 	//bottom right node (3)
-	qt.SubTrees = append(qt.SubTrees, Quadtree{
-		Bounds: Bounds{
-			X:      x + subWidth,
-			Y:      y + subHeight,
-			Width:  subWidth,
-			Height: subHeight,
-		},
+	b3 := Bounds{
+		X:      x + subWidth,
+		Y:      y + subHeight,
+		Width:  subWidth,
+		Height: subHeight,
+	}
+	sub3 :=  Quadtree{
+		Bounds: b3,
 		MaxObjects: qt.MaxObjects,
 		MaxLevels:  qt.MaxLevels,
 		Level:      nextLevel,
 		Objects:    make([]Bounds, 0),
-		SubTrees:      make([]Quadtree, 0, 4),
-	})
+		ParentTree: qt,
+		SubTrees:   make([]Quadtree, 0, 4),
+	}
+	sub3.Bounds.CurTree = &sub3
+	qt.SubTrees = append(qt.SubTrees, sub3)
+
+
+	//qt.SubTrees = append(qt.SubTrees, Quadtree{
+	//	Bounds: Bounds{
+	//		X:      x + subWidth,
+	//		Y:      y + subHeight,
+	//		Width:  subWidth,
+	//		Height: subHeight,
+	//	},
+	//	MaxObjects: qt.MaxObjects,
+	//	MaxLevels:  qt.MaxLevels,
+	//	Level:      nextLevel,
+	//	Objects:    make([]Bounds, 0),
+	//	ParentTree: qt,
+	//	SubTrees:   make([]Quadtree, 0, 4),
+	//})
 
 }
 
@@ -198,26 +281,27 @@ func (qt *Quadtree) getIndex(pRect Bounds) int {
 
 // Insert - Insert the object into the tree. If the tree exceeds the capacity,
 // it will split and add all objects to their corresponding SubTrees.
-func (qt *Quadtree) Insert(pRect Bounds) {
-
+func (qt *Quadtree) Insert(pRect * Bounds) {
+	pRect.CurTree = qt
 	qt.Total++
 
 	i := 0
 	var index int
 
 	// If we have SubTrees within the Quadtree
-	if len(qt.SubTrees) > 0 == true {
+	if (len(qt.SubTrees) > 0) {
 
-		index = qt.getIndex(pRect)
+		index = qt.getIndex(*pRect)
 
 		if index != -1 {
+			pRect.CurTree.ParentTree = qt
+			pRect.CurTree = &qt.SubTrees[index]
 			qt.SubTrees[index].Insert(pRect)
 			return
 		}
 	}
-
 	// If we don't SubTrees within the Quadtree
-	qt.Objects = append(qt.Objects, pRect)
+	qt.Objects = append(qt.Objects, *pRect)
 
 	// If total objects is greater than max objects and level is less than max levels
 	if (len(qt.Objects) > qt.MaxObjects) && (qt.Level < qt.MaxLevels) {
@@ -233,12 +317,9 @@ func (qt *Quadtree) Insert(pRect Bounds) {
 			index = qt.getIndex(qt.Objects[i])
 
 			if index != -1 {
-
 				splice := qt.Objects[i]                                  // Get the object out of the slice
 				qt.Objects = append(qt.Objects[:i], qt.Objects[i+1:]...) // Remove the object from the slice
-
-				qt.SubTrees[index].Insert(splice)
-
+				qt.SubTrees[index].Insert(&splice)
 			} else {
 
 				i++
@@ -248,6 +329,8 @@ func (qt *Quadtree) Insert(pRect Bounds) {
 		}
 
 	}
+
+
 
 }
 
@@ -347,4 +430,38 @@ func (qt * Quadtree) PrintTree(tab string){
 		}
 		fmt.Println()
 	}
+}
+
+func (b * Bounds) WithinDistance(radius float64) []Bounds{
+	var withinDist []Bounds
+
+	if(b.CurTree != nil) {
+		if (b.CurTree.Objects != nil) {
+			for i := 0; i < len(b.CurTree.Objects); i++ {
+				yDist := b.Y - b.CurTree.Objects[i].Y
+				xDist := b.X - b.CurTree.Objects[i].X
+				radDist := math.Sqrt(yDist*yDist + xDist*xDist)
+				if (radDist <= radius) {
+					withinDist = append(withinDist, b.CurTree.Objects[i])
+				}
+			}
+		}
+		if (b.CurTree.SubTrees != nil) {
+			for j := 0; j < len(b.CurTree.SubTrees); j++ {
+				yDist := b.Y - b.CurTree.SubTrees[j].Bounds.Y
+				xDist := b.X - b.CurTree.SubTrees[j].Bounds.X
+				radDist := math.Sqrt(yDist*yDist + xDist*xDist)
+				b.CurTree.SubTrees[j].Bounds.WithinDistance(math.Abs(radius - radDist))
+			}
+		}
+
+		if (b.CurTree.ParentTree != nil) {
+			yDist := b.Y - b.CurTree.ParentTree.Bounds.Y
+			xDist := b.X - b.CurTree.ParentTree.Bounds.Y
+			radDist := math.Sqrt(yDist*yDist + xDist*xDist)
+			b.CurTree.ParentTree.Bounds.WithinDistance(math.Abs(radius - radDist))
+		}
+	}
+
+	return withinDist
 }
