@@ -53,6 +53,7 @@ type Reading struct {
 
 //MakeGrid initializes a grid of Square objects according to the size of the map
 func (s FusionCenter) MakeGrid() {
+	navigable := true
 	s.P.Grid = make([][]*Square, s.P.SquareColCM) //this creates the p.Grid and only works if row is same size as column
 	for i := range s.P.Grid {
 		s.P.Grid[i] = make([]*Square, s.P.SquareRowCM)
@@ -65,10 +66,23 @@ func (s FusionCenter) MakeGrid() {
 			for k := 0; k < s.P.NumSuperNodes; k++ {
 				travelList = append(travelList, true)
 			}
+			//xLoc := (i * s.P.XDiv) + int(s.P.XDiv/2)
+			//yLoc := (j * s.P.YDiv) + int(s.P.YDiv/2)
+			xLoc := i * s.P.XDiv
+			yLoc := j * s.P.YDiv
+			navigable = true
+			for x:= xLoc; x < xLoc + s.P.XDiv; x++ {
+				for y := yLoc; y < yLoc + s.P.YDiv; y++ {
+					//fmt.Printf("X:%v, Y:%v, Region:%v\n", x, y, RegionContaining(Tuple{x, y}, s.R))
+					if RegionContaining(Tuple{x, y}, s.R) == -1 {
+						navigable = false
+					}
+				}
+			}
 
 			s.P.Grid[i][j] = &Square{i, j, 0.0, 0, make([]float32, s.P.NumGridSamples),
 				s.P.NumGridSamples, 0.0, 0, 0, false,
-				0.0, 0.0, false, travelList, map[Tuple]*NodeImpl{}, sync.Mutex{}, 0}
+				0.0, 0.0, false, travelList, map[Tuple]*NodeImpl{}, sync.Mutex{}, 0, navigable, false}
 		}
 	}
 }
@@ -122,6 +136,28 @@ func (s FusionCenter) CheckDetections() {
 //Tick is performed every iteration to move supernodes and check possible detections
 func (srv FusionCenter) Tick() {
 	optimize := false
+	for i := range srv.Sch.SNodeList {
+		srv.P.Grid[srv.Sch.SNodeList[i].GetX() / srv.P.XDiv][srv.Sch.SNodeList[i].GetY() / srv.P.YDiv].Visited = true
+	}
+	/*if srv.P.Iterations_used % 60 == 0 && srv.P.Iterations_used !=0{
+		DensitySquares := srv.GetLeastDenseSquares()
+		leastDense := DensitySquares[0]
+		for i:=0; i < len(DensitySquares); i++ {
+			if DensitySquares[i].Navigable {
+				leastDense = DensitySquares[i]
+				fmt.Printf("\nDestination Square: X:%v, Y:%v, Navigable: %v\n", leastDense.X, leastDense.Y, leastDense.Navigable)
+				break
+			}
+		}
+		if leastDense.Navigable {
+			xLoc := (leastDense.X * srv.P.XDiv) + int(srv.P.XDiv/2)
+			yLoc := (leastDense.Y * srv.P.YDiv) + int(srv.P.YDiv/2)
+			srv.P.CenterCoord = Coord{X: xLoc, Y: yLoc}
+			fmt.Printf("Destination Coordinate: %v\n",srv.P.CenterCoord)
+			fmt.Printf("Destination Region:%v\n",RegionContaining(Tuple{srv.P.CenterCoord.X, srv.P.CenterCoord.Y}, srv.R))
+			srv.Sch.AddRoutePoint(srv.P.CenterCoord)
+		}
+	}*/
 
 	for _, s := range srv.Sch.SNodeList {
 		//Saves the current length of the super node's list of routePoints
@@ -168,9 +204,6 @@ func (srv FusionCenter) Tick() {
 		srv.Sch.Optimize()
 		//Resets the optimize flag
 		optimize = false
-	}
-	if srv.P.Iterations_used % 60 == 0 {
-		srv.GetLeastDenseSquares()
 	}
 	srv.CheckDetections()
 
@@ -266,7 +299,7 @@ func (s FusionCenter) MakeSuperNodes() {
 
 	for x := 0; x < s.P.Width; x++ {
 		for y := 0; y < s.P.Height; y++ {
-			if s.R.Point_dict[Tuple{x, s.P.Height - y}] {
+			if s.R.Point_dict[Tuple{x, s.P.Height - y - 1}] { //
 				if x+y < tl_min {
 					tl_min = x + y
 					top_left_corner.X = x
@@ -470,7 +503,9 @@ func (s FusionCenter) GetLeastDenseSquares() Squares{
 	orderedSquares := make(Squares, 0)
 	for x := 0; x < len(s.P.Grid); x++ {
 		for y := 0; y < len(s.P.Grid[x]); y++ {
-			orderedSquares = append(orderedSquares, s.P.Grid[x][y])
+			if !s.P.Grid[x][y].Visited {
+				orderedSquares = append(orderedSquares, s.P.Grid[x][y])
+			}
 		}
 	}
 	sort.Sort(&orderedSquares)

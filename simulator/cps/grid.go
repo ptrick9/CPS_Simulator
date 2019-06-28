@@ -35,7 +35,8 @@ type Square struct {
 	Lock sync.Mutex
 
 	LastReadingTime int
-	//Visited		bool
+	Navigable		bool
+	Visited		bool
 }
 
 //Adds a node to this Square, increasing its numNodes

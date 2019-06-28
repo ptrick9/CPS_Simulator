@@ -77,6 +77,8 @@ func (s *Scheduler) AddRoutePoint0(c Coord) {
 	for n, _ := range s.SNodeList {
 		length := len(s.SNodeList[n].GetRoutePath())
 		reg := RegionContaining(Tuple{s.SNodeList[n].GetX(), s.SNodeList[n].GetY()}, s.R)
+		//fmt.Printf("\nSuper Node X:%v, Y:%v\n", s.SNodeList[n].GetX(), s.SNodeList[n].GetY())
+		//fmt.Printf("Starting region: %v\n", reg)
 		if ValidPath(reg, c, s.R) {
 			if length != 0 {
 				nodeDist = math.Sqrt(math.

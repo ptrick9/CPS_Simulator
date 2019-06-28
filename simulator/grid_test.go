@@ -18,11 +18,11 @@ func TestAddMeasurement(t *testing.T) {
 
 	test_squares[0] = cps.Square{0, 0, 0.0, 0, make([]float32, p.NumGridSamples),
 		p.NumGridSamples, 0.0, 0, 0, false,
-		0.0, 0.0, false, travelList, sync.Mutex{}}
+		0.0, 0.0, false, travelList, map[cps.Tuple]*cps.NodeImpl{},sync.Mutex{},0}
 
 	test_squares[1] = cps.Square{0, 0, 0.0, 0, make([]float32, p.NumGridSamples),
 		p.NumGridSamples, 0.0, 0, 0, false,
-		0.0, 0.0, false, travelList, sync.Mutex{}}
+		0.0, 0.0, false, travelList, map[cps.Tuple]*cps.NodeImpl{},sync.Mutex{},0}
 
 	var wg sync.WaitGroup
 
