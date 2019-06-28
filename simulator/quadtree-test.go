@@ -17,46 +17,59 @@ func main(){
 		MaxLevels:  4,
 		Level:      0,
 		Objects:    make([]cps.Bounds, 0),
+		ParentTree: nil,
 		SubTrees:   make([]cps.Quadtree, 0),
 	}
 
 	// Insert some boxes
-	qt.Insert(cps.Bounds{
+	qt.Insert(&cps.Bounds{
 		X:      1,
 		Y:      1,
-		Width:  10,
-		Height: 10,
+		Width:  0,
+		Height: 0,
+		CurTree: &qt,
 	})
-	qt.Insert(cps.Bounds{
+	qt.Insert(&cps.Bounds{
 		X:      5,
 		Y:      5,
-		Width:  10,
-		Height: 10,
+		Width:  0,
+		Height: 0,
+		CurTree: &qt,
 	})
-	qt.Insert(cps.Bounds{
+	qt.Insert(&cps.Bounds{
 		X:      10,
 		Y:      10,
-		Width:  10,
-		Height: 10,
+		Width:  0,
+		Height: 0,
+		CurTree: &qt,
 	})
-	qt.Insert(cps.Bounds{
+	qt.Insert(&cps.Bounds{
 		X:      3,
 		Y:      3,
-		Width:  7,
-		Height: 14,
+		Width:  0,
+		Height: 0,
+		CurTree: &qt,
 	})
-	qt.Insert(cps.Bounds{
+	qt.Insert(&cps.Bounds{
 		X:      15,
 		Y:      15,
-		Width:  10,
-		Height: 10,
+		Width:  0,
+		Height: 0,
+		CurTree: &qt,
 	})
-	qt.Insert(cps.Bounds{
+	qt.Insert(&cps.Bounds{
 		X:      2,
 		Y:      8,
-		Width:  3,
-		Height: 3,
+		Width:  0,
+		Height: 0,
+		CurTree: &qt,
 	})
+	fmt.Println("Print 1: ")
+	qt.PrintTree("")
+	bounds77 := cps.Bounds{X: 7,Y: 7,Width: 0,Height: 0, CurTree: &qt}
+	qt.Insert(&bounds77)
+	fmt.Println("Print 2: ")
+	qt.PrintTree("")
 
 
 	////Get all the intersections
@@ -67,15 +80,22 @@ func main(){
 	//	Height: 3,
 	//})
 
-	intersections := qt.RetrieveIntersections(cps.Bounds{10,12,10,10})
+	intersections := qt.RetrieveIntersections(cps.Bounds{10,12,0,0, &qt})
 
 	fmt.Println(intersections)
 	fmt.Println(qt.Objects)
 
-	qt.PrintTree("")
 
 
-	fmt.Println(qt.Retrieve(cps.Bounds{14, 14, 10, 10}))
+
+
+
+	fmt.Println(qt.Retrieve(cps.Bounds{14, 14, 10, 10, &qt}))
+	
+	fmt.Println(bounds77.CurTree.Bounds)
+	if bounds77.CurTree.ParentTree != nil{
+		fmt.Println(bounds77.CurTree.ParentTree.Bounds)
+	}
 
 	// Clear the Quadtree
 	qt.Clear()

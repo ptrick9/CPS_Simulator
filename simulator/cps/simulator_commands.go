@@ -177,5 +177,5 @@ type Params struct {
 
 
 	NodePositionMap			map[Tuple]*NodeImpl
-
+	NodeTree				* Quadtree
 }
