@@ -66,8 +66,8 @@ func main(){
 	})
 	fmt.Println("Print 1: ")
 	qt.PrintTree("")
-	bounds77 := cps.Bounds{X: 7,Y: 7,Width: 0,Height: 0, CurTree: &qt}
-	qt.Insert(&bounds77)
+	bounds77 := &cps.Bounds{X: 7,Y: 7,Width: 0,Height: 0, CurTree: &qt}
+	qt.Insert(bounds77)
 	fmt.Println("Print 2: ")
 	qt.PrintTree("")
 
@@ -91,12 +91,14 @@ func main(){
 
 
 	fmt.Println(qt.Retrieve(cps.Bounds{14, 14, 10, 10, &qt}))
-	
+
 	fmt.Println(bounds77.CurTree.Bounds)
 	if bounds77.CurTree.ParentTree != nil{
 		fmt.Println(bounds77.CurTree.ParentTree.Bounds)
 	}
 
+	within5of77 := bounds77.WithinDistance(5.0, bounds77)
+	fmt.Println("Within5 of 7,7:", within5of77)
 	// Clear the Quadtree
 	qt.Clear()
 }
