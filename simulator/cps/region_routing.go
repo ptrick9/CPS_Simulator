@@ -139,8 +139,10 @@ func PossPaths(p1, p2 Tuple, r *RegionParams) {
 
 	r.Possible_paths = make([][]int, 0)
 
-	Search(-1, start_region, end_region, make([]int, 0), r)
-	fmt.Printf("%v %v %v\n", start_region, end_region, r.Possible_paths)
+	if ValidPath(start_region, Coord{X:p2.X, Y:p2.Y}, r) {
+		Search(-1, start_region, end_region, make([]int, 0), r)
+		fmt.Printf("%v %v %v\n", start_region, end_region, r.Possible_paths)
+	}
 }
 
 func InRegionRouting(p1, p2 Tuple) []Coord {
@@ -178,7 +180,7 @@ func GetPath(c1, c2 Coord, r *RegionParams) []Coord {
 
 	min_dist := math.Pow(100, 100)
 	index := -1
-	fmt.Printf("%v %v %v\n", c1, c2, r.Possible_paths)
+	//fmt.Printf("%v %v %v\n", c1, c2, r.Possible_paths)
 	for i, path := range r.Possible_paths {
 		curr_dist := 0.0
 		for j, region := range path {

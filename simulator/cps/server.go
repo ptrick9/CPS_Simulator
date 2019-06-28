@@ -139,7 +139,7 @@ func (srv FusionCenter) Tick() {
 	for i := range srv.Sch.SNodeList {
 		srv.P.Grid[srv.Sch.SNodeList[i].GetX() / srv.P.XDiv][srv.Sch.SNodeList[i].GetY() / srv.P.YDiv].Visited = true
 	}
-	if srv.P.Iterations_used == 60 && srv.P.Iterations_used !=0{
+	/*if srv.P.Iterations_used % 60 == 0 && srv.P.Iterations_used !=0{
 		DensitySquares := srv.GetLeastDenseSquares()
 		leastDense := DensitySquares[0]
 		for i:=0; i < len(DensitySquares); i++ {
@@ -157,7 +157,7 @@ func (srv FusionCenter) Tick() {
 			fmt.Printf("Destination Region:%v\n",RegionContaining(Tuple{srv.P.CenterCoord.X, srv.P.CenterCoord.Y}, srv.R))
 			srv.Sch.AddRoutePoint(srv.P.CenterCoord)
 		}
-	}
+	}*/
 
 	for _, s := range srv.Sch.SNodeList {
 		//Saves the current length of the super node's list of routePoints
@@ -239,7 +239,7 @@ func (s FusionCenter) MakeSuperNodes() {
 
 	for x := 0; x < s.P.Width; x++ {
 		for y := 0; y < s.P.Height; y++ {
-			if s.R.Point_dict[Tuple{x, s.P.Height - y}] { //
+			if s.R.Point_dict[Tuple{x, s.P.Height - y - 1}] { //
 				if x+y < tl_min {
 					tl_min = x + y
 					top_left_corner.X = x

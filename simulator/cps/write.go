@@ -975,8 +975,11 @@ func FlipSquares(p *Params, r *RegionParams) {
 	//tmp := 0
 	for i:= range(r.Square_list) {
 		//tmp = r.Square_list[i].Y1
-		r.Square_list[i].Y1 = p.Height - r.Square_list[i].Y1
-		r.Square_list[i].Y2 = p.Height - r.Square_list[i].Y2
+		r.Square_list[i].Y1 = p.Height - r.Square_list[i].Y1 - 1
+		r.Square_list[i].Y2 = p.Height - r.Square_list[i].Y2 - 1
+		for j:= range r.Square_list[i].Routers {
+			r.Square_list[i].Routers[j].Y = p.Height - r.Square_list[i].Routers[j].Y - 1
+		}
 	}
 }
 
