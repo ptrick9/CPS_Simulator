@@ -89,7 +89,12 @@ func TestUpdateSquareNumNodes(t *testing.T) {
 	p.TotalNodes = 2
 	p.YDiv = 2
 	p.XDiv = 2
-	makeNodesForTest(&p)
+
+	cps.SetupRandomNodes(&p)
+	p.NodeList[0].Valid = true
+	p.NodeList[1].Valid = true
+	p.NodeList[1].X = 2
+	p.NodeList[1].Y = 2
 
 	test_squares := make([]*cps.Square, 4)
 	travelList := make([]bool, 0)
@@ -117,8 +122,8 @@ func TestUpdateSquareNumNodes(t *testing.T) {
 
 	srv.UpdateSquareNumNodes()
 
-	if p.Grid[0][0].ActualNumNodes != 2 {
-		t.Errorf("Number of nodes in square (%v,%v) updated incorrectly, got: %v, wanted %v", 0, 0, p.Grid[0][0].ActualNumNodes, 2)
+	if p.Grid[0][0].ActualNumNodes != 1 {
+		t.Errorf("Number of nodes in square (%v,%v) updated incorrectly, got: %v, wanted %v", 0, 0, p.Grid[0][0].ActualNumNodes, 1)
 	}
 	if p.Grid[0][1].ActualNumNodes != 0 {
 		t.Errorf("Number of nodes in square (%v,%v) updated incorrectly, got: %v, wanted %v", 0, 1, p.Grid[0][1].ActualNumNodes, 0)
@@ -126,8 +131,8 @@ func TestUpdateSquareNumNodes(t *testing.T) {
 	if p.Grid[1][0].ActualNumNodes != 0 {
 		t.Errorf("Number of nodes in square (%v,%v) updated incorrectly, got: %v, wanted %v", 1, 0, p.Grid[1][0].ActualNumNodes, 0)
 	}
-	if p.Grid[1][1].ActualNumNodes != 0 {
-		t.Errorf("Number of nodes in square (%v,%v) updated incorrectly, got: %v, wanted %v", 1, 1, p.Grid[1][1].ActualNumNodes, 0)
+	if p.Grid[1][1].ActualNumNodes != 1 {
+		t.Errorf("Number of nodes in square (%v,%v) updated incorrectly, got: %v, wanted %v", 1, 1, p.Grid[1][1].ActualNumNodes, 1)
 	}
 
 

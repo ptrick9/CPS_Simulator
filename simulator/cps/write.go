@@ -972,9 +972,11 @@ func writeBordMapToFile() {
 
 
 func FlipSquares(p *Params, r *RegionParams) {
+	//tmp := 0
 	for i:= range(r.Square_list) {
-		r.Square_list[i].Y1 = p.Height - r.Square_list[i].Y2
-		r.Square_list[i].Y2 = p.Height - r.Square_list[i].Y1
+		//tmp = r.Square_list[i].Y1
+		r.Square_list[i].Y1 = p.Height - r.Square_list[i].Y1
+		r.Square_list[i].Y2 = p.Height - r.Square_list[i].Y2
 	}
 }
 

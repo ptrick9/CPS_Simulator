@@ -25,6 +25,8 @@ type RegionParams struct {
 	Possible_paths [][]int
 
 	Stim_list map[int]Tuple
+
+	Checked		[]int
 }
 
 func Point_list_remove(point Tuple, r *RegionParams) {
@@ -84,24 +86,52 @@ func Search(prev_region, curr_region, end_region int, curr_path []int, r *Region
 		}
 	}
 }
-
+/*
 func ValidPath(reg int, endpoint Coord, r *RegionParams) bool{
 	if len(r.Border_dict[reg]) == 0 {
 		return false
-	} else {
+	} else if r.Border_dict[reg][0] == reg {
+		return false
+	}else {
 		end := RegionContaining(Tuple{endpoint.X, endpoint.Y}, r)
 		//fmt.Printf("\nEnd point is in region: %v\n", end)
 
 		for i := 0; i < len(r.Border_dict[reg]); i++ {
 			if r.Border_dict[reg][i] == end {
 				return true
-			} else {
+			}
+			if r.Border_dict[reg][i] != reg {
 				return ValidPath(r.Border_dict[reg][i], endpoint, r)
 			}
 		}
 	}
 	return false
 }
+*/
+
+func ValidPath(reg int, endpoint Coord, r *RegionParams) bool{
+	if len(r.Border_dict[reg]) == 0 {
+		return false
+	} else {
+		end := RegionContaining(Tuple{endpoint.X, endpoint.Y}, r)
+
+		for i := 0; i < len(r.Border_dict[reg]); i++ {
+			if r.Border_dict[reg][i] == end {
+				fmt.Printf("Found a path to region %v\n",r.Border_dict[reg][i])
+				return true
+			}
+			if r.Border_dict[reg][i] != reg && !Is_in(r.Border_dict[reg][i], r.Checked){
+				r.Checked = append(r.Checked, reg)
+				//fmt.Println(r.Checked)
+				if ValidPath(r.Border_dict[reg][i], endpoint, r) {
+					return true
+				}
+			}
+		}
+	}
+	return false
+}
+
 
 func PossPaths(p1, p2 Tuple, r *RegionParams) {
 	start_region := RegionContaining(p1, r)

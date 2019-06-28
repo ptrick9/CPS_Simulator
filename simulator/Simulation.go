@@ -18,7 +18,7 @@ package main
 import (
 	"bytes"
 	//"./cps"
-	"../simulator/cps"
+	"CPS_Simulator/simulator/cps"
 	"fmt"
 	"log"
 	"math/rand"
@@ -109,6 +109,8 @@ func main() {
 	cps.GenerateRouting(p, r)
 
 	cps.FlipSquares(p, r)
+	goal := 27
+	fmt.Printf("TL:%v, %v\nBR:%v, %v\n", r.Square_list[goal].X1,r.Square_list[goal].Y1,r.Square_list[goal].X2, r.Square_list[goal].Y2 )
 
 	//This is where the text file reading ends
 	Vn := make([]float64, 1000)
@@ -168,7 +170,7 @@ func main() {
 		cps.SetupRandomNodes(p)
 	}
 
-	p.Iterations_used = 800
+	p.Iterations_used = 0
 	for iters = 0; iters < p.Iterations_of_event && !p.FoundBomb; iters++ {
 
 		for i := 0; i < len(p.SensorTimes); i++ {
