@@ -15,7 +15,7 @@ type Quadtree struct {
 	Level      int // Depth level, required for SubTrees
 	Objects    []Bounds
 	ParentTree *Quadtree
-	SubTrees   []Quadtree
+	SubTrees   []*Quadtree
 	Total      int
 }
 
@@ -116,10 +116,10 @@ func (qt *Quadtree) split() {
 		Level:      nextLevel,
 		Objects:    make([]Bounds, 0),
 		ParentTree: qt,
-		SubTrees:   make([]Quadtree, 0, 4),
+		SubTrees:   make([]*Quadtree, 0, 4),
 	}
 	sub0.Bounds.CurTree = &sub0
-	qt.SubTrees = append(qt.SubTrees, sub0)
+	qt.SubTrees = append(qt.SubTrees, &sub0)
 
 	//qt.SubTrees = append(qt.SubTrees, Quadtree{
 	//	Bounds: Bounds{
@@ -150,10 +150,10 @@ func (qt *Quadtree) split() {
 		Level:      nextLevel,
 		Objects:    make([]Bounds, 0),
 		ParentTree: qt,
-		SubTrees:   make([]Quadtree, 0, 4),
+		SubTrees:   make([]*Quadtree, 0, 4),
 	}
 	sub1.Bounds.CurTree = &sub1
-	qt.SubTrees = append(qt.SubTrees, sub1)
+	qt.SubTrees = append(qt.SubTrees, &sub1)
 
 	//qt.SubTrees = append(qt.SubTrees, Quadtree{
 	//	Bounds: Bounds{
@@ -184,10 +184,10 @@ func (qt *Quadtree) split() {
 		Level:      nextLevel,
 		Objects:    make([]Bounds, 0),
 		ParentTree: qt,
-		SubTrees:   make([]Quadtree, 0, 4),
+		SubTrees:   make([]*Quadtree, 0, 4),
 	}
 	sub2.Bounds.CurTree = &sub2
-	qt.SubTrees = append(qt.SubTrees, sub2)
+	qt.SubTrees = append(qt.SubTrees, &sub2)
 
 	//qt.SubTrees = append(qt.SubTrees, Quadtree{
 	//	Bounds: Bounds{
@@ -218,10 +218,10 @@ func (qt *Quadtree) split() {
 		Level:      nextLevel,
 		Objects:    make([]Bounds, 0),
 		ParentTree: qt,
-		SubTrees:   make([]Quadtree, 0, 4),
+		SubTrees:   make([]*Quadtree, 0, 4),
 	}
 	sub3.Bounds.CurTree = &sub3
-	qt.SubTrees = append(qt.SubTrees, sub3)
+	qt.SubTrees = append(qt.SubTrees, &sub3)
 
 
 	//qt.SubTrees = append(qt.SubTrees, Quadtree{
@@ -294,7 +294,7 @@ func (qt *Quadtree) Insert(pRect * Bounds) {
 		index = qt.getIndex(*pRect)
 
 		if index != -1 {
-			pRect.CurTree = &qt.SubTrees[index]
+			pRect.CurTree = qt.SubTrees[index]
 			pRect.CurTree.ParentTree = qt
 			qt.SubTrees[index].Insert(pRect)
 			return
@@ -409,7 +409,7 @@ func (qt *Quadtree) Clear() {
 		}
 	}
 
-	qt.SubTrees = []Quadtree{}
+	qt.SubTrees = []*Quadtree{}
 	qt.Total = 0
 
 }
@@ -432,36 +432,43 @@ func (qt * Quadtree) PrintTree(tab string){
 	}
 }
 
-func (b * Bounds) WithinDistance(radius float64, centerBounds * Bounds) []Bounds{
-	var withinDist []Bounds
+func (b * Bounds) WithinDistance(radius float64, centerBounds * Bounds, withinDist []Bounds, callParent bool) []Bounds{
 
 	if(b.CurTree != nil) {
-		if (b.CurTree.Objects != nil) {
+
+		//moves up the tree until its reached a tree that contains the entire search area
+		curTreeWidth := b.CurTree.Bounds.Width
+		curTreeHeight := b.CurTree.Bounds.Height
+		maxSearchWidth := centerBounds.X +radius
+		maxSearchHeight := centerBounds.Y +radius
+
+		//if the search radius reaches outside of the current tree-bounds, move up a level
+		if((curTreeWidth < maxSearchWidth || curTreeHeight < maxSearchHeight)&&callParent){
+			withinDist = b.CurTree.ParentTree.Bounds.WithinDistance(radius, centerBounds, withinDist,false)
+			//only one call to parent so it doesn't cause stack overflow
+
+		//search radius is encompassed by tree-bounds, check distance in each subtree
+		} else if (b.CurTree.SubTrees != nil && len(b.CurTree.SubTrees)>0) {
+				for j := 0; j < len(b.CurTree.SubTrees); j++ {
+					//yDist := centerBounds.Y - b.CurTree.SubTrees[j].Bounds.Y
+					//xDist := centerBounds.X - b.CurTree.SubTrees[j].Bounds.X
+					//radDist := math.Sqrt(yDist*yDist + xDist*xDist)
+					withinDist = b.CurTree.SubTrees[j].Bounds.WithinDistance(radius, centerBounds, withinDist, callParent)
+				}
+
+		//check distance in each subtree by calculating distance and comparing to radius.
+		} else 	if (b.CurTree.Objects != nil) {
 			for i := 0; i < len(b.CurTree.Objects); i++ {
-				yDist := centerBounds.Y - b.CurTree.Objects[i].Y
-				xDist := centerBounds.X - b.CurTree.Objects[i].X
-				radDist := math.Sqrt(yDist*yDist + xDist*xDist)
-				if (radDist <= radius) {
-					withinDist = append(withinDist, b.CurTree.Objects[i])
+				if (b.CurTree.Objects[i] != *centerBounds) {
+					yDist := centerBounds.Y - b.CurTree.Objects[i].Y
+					xDist := centerBounds.X - b.CurTree.Objects[i].X
+					radDist := math.Sqrt(yDist*yDist + xDist*xDist)
+					if (radDist <= radius) {
+						withinDist = append(withinDist, b.CurTree.Objects[i])
+					}
 				}
 			}
 		}
-		if (b.CurTree.SubTrees != nil) {
-			for j := 0; j < len(b.CurTree.SubTrees); j++ {
-				//yDist := centerBounds.Y - b.CurTree.SubTrees[j].Bounds.Y
-				//xDist := centerBounds.X - b.CurTree.SubTrees[j].Bounds.X
-				//radDist := math.Sqrt(yDist*yDist + xDist*xDist)
-				b.CurTree.SubTrees[j].Bounds.WithinDistance(radius, centerBounds)
-			}
-		}
-
-		if (b.CurTree.ParentTree != nil) {
-			//yDist := centerBounds.Y - b.CurTree.ParentTree.Bounds.Y
-			//xDist := centerBounds.X - b.CurTree.ParentTree.Bounds.Y
-			//radDist := math.Sqrt(yDist*yDist + xDist*xDist)
-			b.CurTree.ParentTree.Bounds.WithinDistance(radius, centerBounds)
-		}
 	}
-
 	return withinDist
 }

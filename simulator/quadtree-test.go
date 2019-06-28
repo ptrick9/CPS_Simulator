@@ -18,7 +18,7 @@ func main(){
 		Level:      0,
 		Objects:    make([]cps.Bounds, 0),
 		ParentTree: nil,
-		SubTrees:   make([]cps.Quadtree, 0),
+		SubTrees:   make([]*cps.Quadtree, 0),
 	}
 
 	// Insert some boxes
@@ -97,7 +97,8 @@ func main(){
 		fmt.Println(bounds77.CurTree.ParentTree.Bounds)
 	}
 
-	within5of77 := bounds77.WithinDistance(5.0, bounds77)
+	withinDist := []cps.Bounds{}
+	within5of77 := bounds77.WithinDistance(5.0, bounds77, withinDist, true)
 	fmt.Println("Within5 of 7,7:", within5of77)
 	// Clear the Quadtree
 	qt.Clear()
