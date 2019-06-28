@@ -86,38 +86,18 @@ func Search(prev_region, curr_region, end_region int, curr_path []int, r *Region
 		}
 	}
 }
-/*
-func ValidPath(reg int, endpoint Coord, r *RegionParams) bool{
-	if len(r.Border_dict[reg]) == 0 {
-		return false
-	} else if r.Border_dict[reg][0] == reg {
-		return false
-	}else {
-		end := RegionContaining(Tuple{endpoint.X, endpoint.Y}, r)
-		//fmt.Printf("\nEnd point is in region: %v\n", end)
 
-		for i := 0; i < len(r.Border_dict[reg]); i++ {
-			if r.Border_dict[reg][i] == end {
-				return true
-			}
-			if r.Border_dict[reg][i] != reg {
-				return ValidPath(r.Border_dict[reg][i], endpoint, r)
-			}
-		}
+func ValidPath(reg int, endpoint Coord, r *RegionParams) bool{
+	end := RegionContaining(Tuple{endpoint.X, endpoint.Y}, r)
+	if reg == end {
+		return true
 	}
-	return false
-}
-*/
-
-func ValidPath(reg int, endpoint Coord, r *RegionParams) bool{
 	if len(r.Border_dict[reg]) == 0 {
 		return false
 	} else {
-		end := RegionContaining(Tuple{endpoint.X, endpoint.Y}, r)
-
 		for i := 0; i < len(r.Border_dict[reg]); i++ {
 			if r.Border_dict[reg][i] == end {
-				fmt.Printf("Found a path to region %v\n",r.Border_dict[reg][i])
+				//fmt.Printf("Found a path to region %v\n",r.Border_dict[reg][i])
 				return true
 			}
 			if r.Border_dict[reg][i] != reg && !Is_in(r.Border_dict[reg][i], r.Checked){
@@ -141,37 +121,57 @@ func PossPaths(p1, p2 Tuple, r *RegionParams) {
 
 	if ValidPath(start_region, Coord{X:p2.X, Y:p2.Y}, r) {
 		Search(-1, start_region, end_region, make([]int, 0), r)
-		fmt.Printf("%v %v %v\n", start_region, end_region, r.Possible_paths)
+		//fmt.Printf("%v %v %v\n", start_region, end_region, r.Possible_paths)
 	}
 }
 
-func InRegionRouting(p1, p2 Tuple) []Coord {
+func InRegionRouting(p1, p2 Tuple, r *RegionParams) []Coord {
+	square1 := r.Square_list[RegionContaining(p1, r)]
+	fmt.Printf("Region containing %v is %v", p2, RegionContaining(p2, r))
+	square2 := r.Square_list[RegionContaining(p2, r)]
+
+	val1_first := -1
+	val1_second := -1
+	val2_first := -1
+	val2_second := -1
+	if square2.X2 < square1.X1 || square2.X1 > square1.X2 {
+		val1_first = p1.Y
+		val1_second = p1.X
+		val2_first = p2.Y
+		val2_second = p2.X
+	} else if square2.Y2 < square1.Y1 || square2.Y1 > square1.Y2 {
+		val1_first = p1.X
+		val1_second = p1.Y
+		val2_first = p2.X
+		val2_second = p2.Y
+	}
+
 	ret_path := make([]Coord, 0)
 	end_x := -1
-	if p1.X < p2.X {
-		for val := p1.X; val <= p2.X; val++ {
-			ret_path = append(ret_path, Coord{X: val, Y: p1.Y})
+	if val1_first < val2_first {
+		for val := val1_first; val <= val2_first; val++ {
+			ret_path = append(ret_path, Coord{X: val, Y: val1_second})
 		}
-		end_x = p2.X
+		end_x = val2_first
 	} else {
-		for val := p1.X; val >= p2.X; val-- {
-			ret_path = append(ret_path, Coord{X: val, Y: p1.Y})
+		for val := val1_first; val >= val2_first; val-- {
+			ret_path = append(ret_path, Coord{X: val, Y: val1_second})
 		}
-		end_x = p2.X
+		end_x = val2_first
 	}
-	if p1.Y < p2.Y {
-		for val := p1.Y; val <= p2.Y; val++ {
+	if val1_second < val2_second {
+		for val := val1_second; val <= val2_second; val++ {
 			ret_path = append(ret_path, Coord{X: end_x, Y: val})
 		}
 	} else {
-		for val := p1.Y; val >= p2.Y; val-- {
+		for val := val1_second; val >= val2_second; val-- {
 			ret_path = append(ret_path, Coord{X: end_x, Y: val})
 		}
 	}
 	return ret_path
 }
 
-func GetPath(c1, c2 Coord, r *RegionParams) []Coord {
+func GetPath(c1, c2 Coord, r *RegionParams, p *Params) []Coord {
 	//fmt.Println(r.Possible_paths)
 	p1 := Tuple{c1.X, c1.Y}
 	p2 := Tuple{c2.X, c2.Y}
@@ -205,10 +205,10 @@ func GetPath(c1, c2 Coord, r *RegionParams) []Coord {
 	ret_path := make([]Coord, 0)
 
 	if len(r.Possible_paths[index]) == 1 {
-		ret_path = append(ret_path, InRegionRouting(p1, p2)...)
-		fmt.Println("here is the problem!!")
+		ret_path = append(ret_path, InRegionRouting(p1, p2, r)...)
+		//fmt.Println("here is the problem!!")
 	} else {
-		for i, s := range r.Possible_paths[index] {
+		/*for i, s := range r.Possible_paths[index] {
 			if i == 0 {
 				ret_path = append(ret_path, InRegionRouting(p1, r.Square_list[s].Routers[r.Possible_paths[index][i+1]])...)
 			} else if i == len(r.Possible_paths[index])-1 {
@@ -216,10 +216,47 @@ func GetPath(c1, c2 Coord, r *RegionParams) []Coord {
 			} else {
 				ret_path = append(ret_path, InRegionRouting(r.Square_list[s].Routers[r.Possible_paths[index][i-1]], r.Square_list[s].Routers[r.Possible_paths[index][i+1]])...)
 			}
+		}*/
+		start_point := p1
+		end_point := Tuple{X: 0, Y: 0}
+
+		for i, s := range r.Possible_paths[index] {
+			if i == len(r.Possible_paths[index])-1 {
+				ret_path = append(ret_path, InRegionRouting(start_point, p2,r)...)
+			} else {
+				end_point = ClosestToSquare(start_point, r.Square_list[s], p)
+				fmt.Printf("End point: %v", end_point)
+				ret_path = append(ret_path, InRegionRouting(start_point, end_point, r)...)
+				start_point = end_point
+			}
 		}
 	}
 
 	return ret_path
+}
+
+func ClosestToSquare(t Tuple, r RoutingSquare, p *Params) Tuple {
+	dist := float64(p.MaxX * p.MaxY)
+	newX := -1
+	newY := -1
+
+	//Loops through the list to find the closest Coord
+	for x := r.X1; x < r.X2; x++ {
+		for y := r.Y2; y < r.Y1; y++ {
+			p := Coord{X: x, Y: y}
+			newDist := math.Sqrt(math.
+				Pow(float64(p.X-t.X), 2.0) + math.
+				Pow(float64(p.Y-t.Y), 2.0))
+
+			//Saves the value of that smallest distance to return
+			if newDist < dist {
+				dist = newDist
+				newX = x
+				newY = y
+			}
+		}
+	}
+	return Tuple{X: newX, Y: newY}
 }
 
 func GenerateRouting(p *Params, r *RegionParams) {

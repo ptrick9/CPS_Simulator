@@ -36,7 +36,7 @@ func (n *Sn_zero) UpdatePath() {
 
 			//Adds the points of the path to the routePath list using the
 			//	route function
-			newPath := GetPath(n.RoutePoints[i], n.RoutePoints[i+1], n.R)
+			newPath := GetPath(n.RoutePoints[i], n.RoutePoints[i+1], n.R, n.P)
 			n.RoutePath = append(n.RoutePath, newPath...)
 
 			//Once a point of interest's path is added to the routePath
