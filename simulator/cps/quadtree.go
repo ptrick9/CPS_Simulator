@@ -282,7 +282,7 @@ func (qt *Quadtree) getIndex(pRect Bounds) int {
 // Insert - Insert the object into the tree. If the tree exceeds the capacity,
 // it will split and add all objects to their corresponding SubTrees.
 func (qt *Quadtree) Insert(pRect * Bounds) {
-	pRect.CurTree = qt
+	//pRect.CurTree = qt
 	qt.Total++
 
 	i := 0
@@ -294,8 +294,8 @@ func (qt *Quadtree) Insert(pRect * Bounds) {
 		index = qt.getIndex(*pRect)
 
 		if index != -1 {
-			pRect.CurTree.ParentTree = qt
 			pRect.CurTree = &qt.SubTrees[index]
+			pRect.CurTree.ParentTree = qt
 			qt.SubTrees[index].Insert(pRect)
 			return
 		}
@@ -432,14 +432,14 @@ func (qt * Quadtree) PrintTree(tab string){
 	}
 }
 
-func (b * Bounds) WithinDistance(radius float64) []Bounds{
+func (b * Bounds) WithinDistance(radius float64, centerBounds * Bounds) []Bounds{
 	var withinDist []Bounds
 
 	if(b.CurTree != nil) {
 		if (b.CurTree.Objects != nil) {
 			for i := 0; i < len(b.CurTree.Objects); i++ {
-				yDist := b.Y - b.CurTree.Objects[i].Y
-				xDist := b.X - b.CurTree.Objects[i].X
+				yDist := centerBounds.Y - b.CurTree.Objects[i].Y
+				xDist := centerBounds.X - b.CurTree.Objects[i].X
 				radDist := math.Sqrt(yDist*yDist + xDist*xDist)
 				if (radDist <= radius) {
 					withinDist = append(withinDist, b.CurTree.Objects[i])
@@ -448,18 +448,18 @@ func (b * Bounds) WithinDistance(radius float64) []Bounds{
 		}
 		if (b.CurTree.SubTrees != nil) {
 			for j := 0; j < len(b.CurTree.SubTrees); j++ {
-				yDist := b.Y - b.CurTree.SubTrees[j].Bounds.Y
-				xDist := b.X - b.CurTree.SubTrees[j].Bounds.X
-				radDist := math.Sqrt(yDist*yDist + xDist*xDist)
-				b.CurTree.SubTrees[j].Bounds.WithinDistance(math.Abs(radius - radDist))
+				//yDist := centerBounds.Y - b.CurTree.SubTrees[j].Bounds.Y
+				//xDist := centerBounds.X - b.CurTree.SubTrees[j].Bounds.X
+				//radDist := math.Sqrt(yDist*yDist + xDist*xDist)
+				b.CurTree.SubTrees[j].Bounds.WithinDistance(radius, centerBounds)
 			}
 		}
 
 		if (b.CurTree.ParentTree != nil) {
-			yDist := b.Y - b.CurTree.ParentTree.Bounds.Y
-			xDist := b.X - b.CurTree.ParentTree.Bounds.Y
-			radDist := math.Sqrt(yDist*yDist + xDist*xDist)
-			b.CurTree.ParentTree.Bounds.WithinDistance(math.Abs(radius - radDist))
+			//yDist := centerBounds.Y - b.CurTree.ParentTree.Bounds.Y
+			//xDist := centerBounds.X - b.CurTree.ParentTree.Bounds.Y
+			//radDist := math.Sqrt(yDist*yDist + xDist*xDist)
+			b.CurTree.ParentTree.Bounds.WithinDistance(radius, centerBounds)
 		}
 	}
 
