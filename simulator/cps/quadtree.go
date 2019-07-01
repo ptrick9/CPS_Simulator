@@ -373,10 +373,10 @@ func (qt * Quadtree) PrintTree(tab string){
 					qt.SubTrees[i].PrintTree(recursivetab)
 				} else {
 					fmt.Print(qt.SubTrees[i])
+					fmt.Println()
 				}
 			}
 		}
-		fmt.Println()
 	}
 }
 
