@@ -123,6 +123,21 @@ func main() {
 
 	cps.FlipSquares(p, r)
 
+	p.NodeTree = &cps.Quadtree{
+		Bounds: cps.Bounds{
+			X:      0,
+			Y:      0,
+			Width:  float64(p.MaxX),
+			Height: float64(p.MaxY),
+		},
+		MaxObjects: 4,
+		MaxLevels:  4,
+		Level:      0,
+		Objects:    make([]cps.Bounds, 0),
+		ParentTree: nil,
+		SubTrees:   make([]*cps.Quadtree, 0),
+	}
+
 	//This is where the text file reading ends
 	Vn := make([]float64, 1000)
 	for i := 0; i < 1000; i++ {

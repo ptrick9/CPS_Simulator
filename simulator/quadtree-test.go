@@ -22,13 +22,13 @@ func main(){
 	}
 
 	// Insert some boxes
-	qt.Insert(&cps.Bounds{
-		X:      1,
-		Y:      1,
-		Width:  0,
-		Height: 0,
-		CurTree: &qt,
-	})
+	//qt.Insert(&cps.Bounds{
+	//	X:      1,
+	//	Y:      1,
+	//	Width:  0,
+	//	Height: 0,
+	//	CurTree: &qt,
+	//})
 	qt.Insert(&cps.Bounds{
 		X:      5,
 		Y:      5,
@@ -85,21 +85,21 @@ func main(){
 	fmt.Println(intersections)
 	fmt.Println(qt.Objects)
 
-
-
-
-
-
 	fmt.Println(qt.Retrieve(cps.Bounds{14, 14, 10, 10, &qt}))
 
 	fmt.Println(bounds77.CurTree.Bounds)
 	if bounds77.CurTree.ParentTree != nil{
 		fmt.Println(bounds77.CurTree.ParentTree.Bounds)
 	}
-
+	//
 	withinDist := []cps.Bounds{}
 	within5of77 := bounds77.WithinDistance(5.0, bounds77, withinDist, true)
 	fmt.Println("Within5 of 7,7:", within5of77)
+
+	qt.Remove(bounds77)
+	fmt.Println("After removing (7,7)")
+	qt.PrintTree("")
+
 	// Clear the Quadtree
 	qt.Clear()
 }
