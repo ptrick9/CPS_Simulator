@@ -261,19 +261,14 @@ func (qt *Quadtree) Insert(pRect * Bounds) {
 				qt.Objects = append(qt.Objects[:i], qt.Objects[i+1:]...) // Remove the object from the slice
 				pRect.CurTree = qt.SubTrees[index]
 				pRect.CurTree.ParentTree = qt
+				splice.CurTree = qt.SubTrees[index]
+				splice.CurTree.ParentTree = qt
 				qt.SubTrees[index].Insert(&splice)
 			} else {
-
 				i++
-
 			}
-
 		}
-
 	}
-
-
-
 }
 
 // Retrieve - Return all objects that could collide with the given object
@@ -356,6 +351,8 @@ func (qt *Quadtree) Clear() {
 
 }
 
+//PrintTree - Prints the Tree, its SubTrees, and all objects in the subtree in a clean manner
+//			- helps see the hierarchy of the tree
 func (qt * Quadtree) PrintTree(tab string){
 	var recursivetab = tab
 	for i:=0; i<len(qt.SubTrees); i++{
@@ -380,6 +377,11 @@ func (qt * Quadtree) PrintTree(tab string){
 	}
 }
 
+
+//				qt.SubTrees[index].ParentTree = qt
+//				qt.SubTrees[index].Bounds.CurTree = qt.SubTrees[index]
+
+//WithinDistance - Finds all nodes (bounds) within a radial distance of the current node (bounds) by iterating through the tree
 func (b * Bounds) WithinDistance(radius float64, centerBounds * Bounds, withinDist []Bounds, callParent bool) []Bounds{
 
 	if(b.CurTree != nil) {
@@ -421,6 +423,7 @@ func (b * Bounds) WithinDistance(radius float64, centerBounds * Bounds, withinDi
 	return withinDist
 }
 
+//Remove - Removes a node (bounds) from the tree, reconfigures the tree if neccessary
 func (qt * Quadtree) Remove(pRect * Bounds) *Bounds{
 
 	for i:=0; i<len(pRect.CurTree.Objects); i++{
@@ -437,18 +440,21 @@ func (qt * Quadtree) Remove(pRect * Bounds) *Bounds{
 		curTree = curTree.ParentTree
 	}
 
-	//if parent holds four,
+	//if parent holds four, move all nodes up one level
 	parent := pRect.CurTree.ParentTree
 	if(parent.Total==4){
 		for i:=0; i<len(parent.SubTrees); i++{
 			for j:=0; j<len(parent.SubTrees[i].Objects); j++{
 				parent.Objects = append(parent.Objects, parent.SubTrees[i].Objects[j])
 			}
-			//parent.SubTrees[i] = nil
-			//parent.SubTrees[i].Total = 0
 		}
 	}
 	parent.SubTrees = []*Quadtree{}
+
+	//once all objects are in parent, update objects to hold pointer to new CurTree
+	for i:=0; i<len(parent.Objects); i++{
+		parent.Objects[i].CurTree = parent
+	}
 
 	return pRect
 }
