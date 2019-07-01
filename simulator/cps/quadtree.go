@@ -360,7 +360,7 @@ func (qt * Quadtree) PrintTree(tab string){
 	var recursivetab = tab
 	for i:=0; i<len(qt.SubTrees); i++{
 		fmt.Printf("%sSubtree %d: ", tab, i)
-		if(qt.SubTrees!=nil) {
+		if(qt.SubTrees!=nil && qt.SubTrees[i]!=nil) {
 			if (qt.SubTrees[i].SubTrees != nil) {
 				if (len(qt.SubTrees[i].SubTrees) > 0) {
 					fmt.Print(qt.SubTrees[i].Bounds)
@@ -444,10 +444,11 @@ func (qt * Quadtree) Remove(pRect * Bounds) *Bounds{
 			for j:=0; j<len(parent.SubTrees[i].Objects); j++{
 				parent.Objects = append(parent.Objects, parent.SubTrees[i].Objects[j])
 			}
-			parent.SubTrees[i].Objects = nil
-			parent.SubTrees[i].Total = 0
+			//parent.SubTrees[i] = nil
+			//parent.SubTrees[i].Total = 0
 		}
 	}
+	parent.SubTrees = []*Quadtree{}
 
 	return pRect
 }
