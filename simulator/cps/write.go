@@ -438,6 +438,11 @@ func SetupCSVNodes(p *Params) {
 
 		p.NodeList = append(p.NodeList, *newNode)
 		p.CurrentNodes += 1
+
+		if newNode.Valid{
+			bNewNode := Bounds{float64(newNode.X),float64(newNode.Y),0,0,p.NodeTree}
+			p.NodeTree.Insert(&bNewNode)
+		}
 	}
 
 }
@@ -463,6 +468,11 @@ func SetupRandomNodes(p *Params) {
 
 			p.NodeList = append(p.NodeList, *newNode)
 			p.CurrentNodes += 1
+
+			if newNode.Valid{
+				bNewNode := Bounds{float64(newNode.X),float64(newNode.Y),0,0,p.NodeTree}
+				p.NodeTree.Insert(&bNewNode)
+			}
 
 		}
 	}

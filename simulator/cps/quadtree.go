@@ -121,21 +121,6 @@ func (qt *Quadtree) split() {
 	sub0.Bounds.CurTree = &sub0
 	qt.SubTrees = append(qt.SubTrees, &sub0)
 
-	//qt.SubTrees = append(qt.SubTrees, Quadtree{
-	//	Bounds: Bounds{
-	//		X:      x + subWidth,
-	//		Y:      y,
-	//		Width:  subWidth,
-	//		Height: subHeight,
-	//	},
-	//	MaxObjects: qt.MaxObjects,
-	//	MaxLevels:  qt.MaxLevels,
-	//	Level:      nextLevel,
-	//	Objects:    make([]Bounds, 0),
-	//	ParentTree: qt,
-	//	SubTrees:   make([]Quadtree, 0, 4),
-	//})
-
 	//top left node (1)
 	b1 := Bounds{
 		X:      x,
@@ -155,20 +140,6 @@ func (qt *Quadtree) split() {
 	sub1.Bounds.CurTree = &sub1
 	qt.SubTrees = append(qt.SubTrees, &sub1)
 
-	//qt.SubTrees = append(qt.SubTrees, Quadtree{
-	//	Bounds: Bounds{
-	//		X:      x,
-	//		Y:      y,
-	//		Width:  subWidth,
-	//		Height: subHeight,
-	//	},
-	//	MaxObjects: qt.MaxObjects,
-	//	MaxLevels:  qt.MaxLevels,
-	//	Level:      nextLevel,
-	//	Objects:    make([]Bounds, 0),
-	//	ParentTree: qt,
-	//	SubTrees:   make([]Quadtree, 0, 4),
-	//})
 
 	//bottom left node (2)
 	b2 := Bounds{
@@ -189,21 +160,6 @@ func (qt *Quadtree) split() {
 	sub2.Bounds.CurTree = &sub2
 	qt.SubTrees = append(qt.SubTrees, &sub2)
 
-	//qt.SubTrees = append(qt.SubTrees, Quadtree{
-	//	Bounds: Bounds{
-	//		X:      x,
-	//		Y:      y + subHeight,
-	//		Width:  subWidth,
-	//		Height: subHeight,
-	//	},
-	//	MaxObjects: qt.MaxObjects,
-	//	MaxLevels:  qt.MaxLevels,
-	//	Level:      nextLevel,
-	//	Objects:    make([]Bounds, 0),
-	//	ParentTree: qt,
-	//	SubTrees:   make([]Quadtree, 0, 4),
-	//})
-
 	//bottom right node (3)
 	b3 := Bounds{
 		X:      x + subWidth,
@@ -222,22 +178,6 @@ func (qt *Quadtree) split() {
 	}
 	sub3.Bounds.CurTree = &sub3
 	qt.SubTrees = append(qt.SubTrees, &sub3)
-
-
-	//qt.SubTrees = append(qt.SubTrees, Quadtree{
-	//	Bounds: Bounds{
-	//		X:      x + subWidth,
-	//		Y:      y + subHeight,
-	//		Width:  subWidth,
-	//		Height: subHeight,
-	//	},
-	//	MaxObjects: qt.MaxObjects,
-	//	MaxLevels:  qt.MaxLevels,
-	//	Level:      nextLevel,
-	//	Objects:    make([]Bounds, 0),
-	//	ParentTree: qt,
-	//	SubTrees:   make([]Quadtree, 0, 4),
-	//})
 
 }
 
@@ -319,6 +259,8 @@ func (qt *Quadtree) Insert(pRect * Bounds) {
 			if index != -1 {
 				splice := qt.Objects[i]                                  // Get the object out of the slice
 				qt.Objects = append(qt.Objects[:i], qt.Objects[i+1:]...) // Remove the object from the slice
+				pRect.CurTree = qt.SubTrees[index]
+				pRect.CurTree.ParentTree = qt
 				qt.SubTrees[index].Insert(&splice)
 			} else {
 
@@ -418,15 +360,21 @@ func (qt * Quadtree) PrintTree(tab string){
 	var recursivetab = tab
 	for i:=0; i<len(qt.SubTrees); i++{
 		fmt.Printf("%sSubtree %d: ", tab, i)
-		if(len(qt.SubTrees[i].SubTrees)>0){
-			fmt.Print(qt.SubTrees[i].Bounds)
-			fmt.Print(" ")
-			fmt.Print(qt.SubTrees[i].Objects)
-			fmt.Println()
-			recursivetab = tab+"\t"
-			qt.SubTrees[i].PrintTree(recursivetab)
-		} else{
-			fmt.Print(qt.SubTrees[i])
+		if(qt.SubTrees!=nil) {
+			if (qt.SubTrees[i].SubTrees != nil) {
+				if (len(qt.SubTrees[i].SubTrees) > 0) {
+					fmt.Print(qt.SubTrees[i].Bounds)
+					fmt.Print(" ")
+					fmt.Print(qt.SubTrees[i].Objects)
+					fmt.Print()
+					fmt.Print(qt.SubTrees[i].Total)
+					fmt.Println()
+					recursivetab = tab + "\t"
+					qt.SubTrees[i].PrintTree(recursivetab)
+				} else {
+					fmt.Print(qt.SubTrees[i])
+				}
+			}
 		}
 		fmt.Println()
 	}
@@ -471,4 +419,35 @@ func (b * Bounds) WithinDistance(radius float64, centerBounds * Bounds, withinDi
 		}
 	}
 	return withinDist
+}
+
+func (qt * Quadtree) Remove(pRect * Bounds) *Bounds{
+
+	for i:=0; i<len(pRect.CurTree.Objects); i++{
+		if(pRect.CurTree.Objects[i].X == (*pRect).X && pRect.CurTree.Objects[i].Y == (*pRect).Y){
+			pRect.CurTree.Objects = append(pRect.CurTree.Objects[:i], pRect.CurTree.Objects[i+1:]...) //remove from objects
+			break
+		}
+	}
+
+	//update totals
+	curTree := pRect.CurTree
+	for curTree.ParentTree != nil{
+		curTree.Total = curTree.Total-1
+		curTree = curTree.ParentTree
+	}
+
+	//if parent holds four,
+	parent := pRect.CurTree.ParentTree
+	if(parent.Total==4){
+		for i:=0; i<len(parent.SubTrees); i++{
+			for j:=0; j<len(parent.SubTrees[i].Objects); j++{
+				parent.Objects = append(parent.Objects, parent.SubTrees[i].Objects[j])
+			}
+			parent.SubTrees[i].Objects = nil
+			parent.SubTrees[i].Total = 0
+		}
+	}
+
+	return pRect
 }
