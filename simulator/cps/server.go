@@ -137,25 +137,63 @@ func (s FusionCenter) CheckDetections() {
 func (srv FusionCenter) Tick() {
 	optimize := false
 	for i := range srv.Sch.SNodeList {
-		srv.P.Grid[srv.Sch.SNodeList[i].GetX() / srv.P.XDiv][srv.Sch.SNodeList[i].GetY() / srv.P.YDiv].Visited = true
-	}
-	if srv.P.Iterations_used % 60 == 0 && srv.P.Iterations_used !=0{
-		DensitySquares := srv.GetLeastDenseSquares()
-		leastDense := DensitySquares[0]
-		for i:=0; i < len(DensitySquares); i++ {
-			if DensitySquares[i].Navigable {
-				leastDense = DensitySquares[i]
-				fmt.Printf("\nDestination Square: X:%v, Y:%v, Navigable: %v\n", leastDense.X, leastDense.Y, leastDense.Navigable)
-				break
+		gridX := srv.Sch.SNodeList[i].GetX() / srv.P.XDiv
+		gridY := srv.Sch.SNodeList[i].GetY() / srv.P.YDiv
+		srv.P.Grid[gridX][gridY].Visited = true
+		if gridX - 1 > 0 {
+			srv.P.Grid[gridX-1][gridY].Visited = true
+			if gridY - 1 > 0 {
+				srv.P.Grid[gridX-1][gridY-1].Visited = true
+			}
+			if gridY + 1 < srv.P.Height/srv.P.Height {
+				srv.P.Grid[gridX-1][gridY+1].Visited = true
 			}
 		}
-		if leastDense.Navigable {
-			xLoc := (leastDense.X * srv.P.XDiv) + int(srv.P.XDiv/2)
-			yLoc := (leastDense.Y * srv.P.YDiv) + int(srv.P.YDiv/2)
-			srv.P.CenterCoord = Coord{X: xLoc, Y: yLoc}
-			fmt.Printf("Destination Coordinate: %v\n",srv.P.CenterCoord)
-			fmt.Printf("Destination Region:%v\n",RegionContaining(Tuple{srv.P.CenterCoord.X, srv.P.CenterCoord.Y}, srv.R))
-			srv.Sch.AddRoutePoint(srv.P.CenterCoord)
+		if gridX + 1 < srv.P.Width/srv.P.XDiv {
+			srv.P.Grid[gridX+1][gridY].Visited = true
+			if gridY - 1 > 0 {
+				srv.P.Grid[gridX+1][gridY-1].Visited = true
+			}
+			if gridY + 1 < srv.P.Height/srv.P.Height {
+				srv.P.Grid[gridX+1][gridY+1].Visited = true
+			}
+		}
+		if gridY - 1 > 0 {
+			srv.P.Grid[gridX][gridY-1].Visited = true
+		}
+		if gridY + 1 < srv.P.Height/srv.P.XDiv {
+			srv.P.Grid[gridX][gridY+1].Visited = true
+		}
+	}
+	if srv.P.Iterations_used % 60 == 0 && srv.P.Iterations_used !=0{
+		//srv.Sch.AddRoutePoint(Coord{X:167, Y:140})
+		//srv.Sch.AddRoutePoint(Coord{X:167, Y:145})
+		//srv.Sch.AddRoutePoint(Coord{X:270, Y:297})
+		leastDense := make(Squares, 0)
+		DensitySquares := srv.GetLeastDenseSquares()
+		numDestinations := 0
+		//leastDense[0] = DensitySquares[0]
+		for i:=0; i < len(DensitySquares); i++ {
+			if DensitySquares[i].Navigable {
+				if numDestinations <= 4 {
+					leastDense = append(leastDense, DensitySquares[i])
+					numDestinations++
+				} else {
+					break
+				}
+				//fmt.Printf("\nDestination Square: X:%v, Y:%v, Navigable: %v\n", leastDense.X, leastDense.Y, leastDense.Navigable)
+				//break
+			}
+		}
+		for j := range leastDense {
+			if leastDense[j].Navigable {
+				xLoc := (leastDense[j].X * srv.P.XDiv) + int(srv.P.XDiv/2)
+				yLoc := (leastDense[j].Y * srv.P.YDiv) + int(srv.P.YDiv/2)
+				srv.P.CenterCoord = Coord{X: xLoc, Y: yLoc}
+				fmt.Printf("Destination Coordinate: %v\n",srv.P.CenterCoord)
+				fmt.Printf("Destination Region:%v\n",RegionContaining(Tuple{srv.P.CenterCoord.X, srv.P.CenterCoord.Y}, srv.R))
+				srv.Sch.AddRoutePoint(srv.P.CenterCoord)
+			}
 		}
 	}
 

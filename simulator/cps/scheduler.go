@@ -69,7 +69,7 @@ func (s *Scheduler) AddRoutePoint(c Coord) {
 //	scheduler adds the new point of interest to the super node who's
 //	final destination is closest to the point
 func (s *Scheduler) AddRoutePoint0(c Coord) {
-	dist := 100000.0
+	dist := 1000000.0//100000.0
 	nodeDist := 100000.0
 	closestNode := -1
 
@@ -80,6 +80,7 @@ func (s *Scheduler) AddRoutePoint0(c Coord) {
 		//fmt.Printf("\nSuper Node X:%v, Y:%v\n", s.SNodeList[n].GetX(), s.SNodeList[n].GetY())
 		//fmt.Printf("Starting region: %v\n", reg)
 		if ValidPath(reg, c, s.R) {
+			//fmt.Printf("Valid path found for super node in region %v\n",reg)
 			if length != 0 {
 				nodeDist = math.Sqrt(math.
 					Pow(float64(s.SNodeList[n].GetRoutePath()[length-1].X-c.X), 2.0) + math.
@@ -100,6 +101,7 @@ func (s *Scheduler) AddRoutePoint0(c Coord) {
 	//fmt.Printf("\nClosest Node: %v\n", closestNode)
 	//Tells that super node to add that point
 	//fmt.Printf("\nAdded route point %v\n", c)
+	//fmt.Printf("Distance: %v\n", nodeDist)
 	s.SNodeList[closestNode].AddRoutePoint(c)
 }
 

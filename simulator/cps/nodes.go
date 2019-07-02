@@ -123,7 +123,7 @@ type NodeImpl struct {
 	InitialSensitivity float64
 	Valid 			   bool
 
-	allReadings 	   [1000]float64
+	allReadings 	   []float64
 	calibrateTimes 	   []int
 	calibrateReading   []float64
 	hasCalibrated 	   bool

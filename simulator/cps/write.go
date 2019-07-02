@@ -400,6 +400,7 @@ func InitializeNodeParameters(p *Params, nodeNum int) *NodeImpl{
 		BatteryLossAccelerometer: p.BatteryLossesAccelerometer[nodeNum],
 		BatteryLossWifi:		  p.BatteryLossesWiFi[nodeNum],
 		BatteryLossBT:			  p.BatteryLossesBT[nodeNum]}
+	curNode.allReadings = make([]float64, p.IterationsCM)
 
 	//values to determine coefficients
 	curNode.SetS0(rand.Float64()*0.2 + 0.1)
@@ -978,7 +979,9 @@ func FlipSquares(p *Params, r *RegionParams) {
 		r.Square_list[i].Y1 = p.Height - r.Square_list[i].Y1 - 1
 		r.Square_list[i].Y2 = p.Height - r.Square_list[i].Y2 - 1
 		for j:= range r.Square_list[i].Routers {
-			r.Square_list[i].Routers[j].Y = p.Height - r.Square_list[i].Routers[j].Y - 1
+			for k:= range r.Square_list[i].Routers[j] {
+				r.Square_list[i].Routers[j][k].Y = p.Height - r.Square_list[i].Routers[j][k].Y - 1
+			}
 		}
 	}
 }
