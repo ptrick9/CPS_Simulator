@@ -424,16 +424,18 @@ func (qt * Quadtree) WithinDistance(radius float64, centerBounds * Bounds, withi
 					xDist := centerBounds.X - qt.Objects[i].X
 					radDist := math.Sqrt(yDist*yDist + xDist*xDist)
 					exists := false
-					for j:=0; j<len(withinDist);j++{
-						if(withinDist[j]==*qt.Objects[i]){
-							exists = true
-							break
-						} else{
-							continue
+					if (radDist <= radius) {
+						for j:=0; j<len(withinDist);j++{
+							if(withinDist[j]==*qt.Objects[i]){
+								exists = true
+								break
+							} else{
+								continue
+							}
 						}
-					}
-					if (radDist <= radius && !exists) {
-						withinDist = append(withinDist, *qt.Objects[i])
+						if(!exists){
+							withinDist = append(withinDist, *qt.Objects[i])
+						}
 					}
 				}
 			}

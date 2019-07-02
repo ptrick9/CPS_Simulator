@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"math/rand"
+	"time"
 )
 
 func main(){
@@ -96,8 +97,8 @@ func main(){
 	//// Clear the Quadtree
 	//qt.Clear()
 
-	squareDim := 8.0
-	size := 10
+	squareDim := 200.0
+	size := 10000
 	qt := cps.Quadtree{
 		Bounds: cps.Bounds{
 			X:      0,
@@ -134,10 +135,16 @@ func main(){
 	iterativeResults := make([]int, size)
 	treeResults := make([]int, size)
 
+	treeStartTime := time.Now()
 	for i:=0; i<size; i++{
 		treeResults[i] = len(nodes[i].CurTree.WithinDistance(searchRadius, nodes[i], []cps.Bounds{}, true))
 	}
+	treeEndTime := time.Since(treeStartTime)
+	fmt.Print("Tree runtime: ")
+	fmt.Print(treeEndTime)
+	fmt.Println()
 
+	iterativeStartTime := time.Now()
 	for i:=0; i<size; i++{
 		searchingNode := nodes[i]
 		for j:=0; j<size; j++{
@@ -154,32 +161,36 @@ func main(){
 			}
 		}
 	}
+	iterativeEndTime := time.Since(iterativeStartTime)
+	fmt.Print("Iteration runtime: ")
+	fmt.Print(iterativeEndTime)
+	fmt.Println()
 
 	for i:=0; i<size; i++{
-		fmt.Printf("%d %d %d ", i, iterativeResults[i], treeResults[i])
 		if(iterativeResults[i] == treeResults[i]){
-			fmt.Print("\n")
+			//fmt.Print("\n")
 			continue
 		} else{
 			fmt.Print("Not equal")
-			//break
+			fmt.Printf("%d %d %d ", i, iterativeResults[i], treeResults[i])
+			break
 		}
-		fmt.Print("\n")
 	}
-	testInd := 3 //size-1
+	fmt.Println("Done checking ")
+	//testInd := 3 //size-1
+	//
+	//withinDist := []cps.Bounds{}
 
-	withinDist := []cps.Bounds{}
-
-	qt.PrintTree("")
-	fmt.Println()
-	fmt.Println(nodes[testInd])
-	fmt.Println(nodes[testInd].CurTree)
-	withinDist = nodes[testInd].CurTree.WithinDistance(searchRadius, nodes[testInd], withinDist, true)
-	withinDistNode0 := len(withinDist)
-	fmt.Println(withinDist)
-	fmt.Println(withinDistNode0)
-	fmt.Println()
-	for i:=0; i<len(nodes); i++{
-		fmt.Println(*(nodes[i]))
-	}
+	//qt.PrintTree("")
+	//fmt.Println()
+	//fmt.Println(nodes[testInd])
+	//fmt.Println(nodes[testInd].CurTree)
+	//withinDist = nodes[testInd].CurTree.WithinDistance(searchRadius, nodes[testInd], withinDist, true)
+	//withinDistNode0 := len(withinDist)
+	//fmt.Println(withinDist)
+	//fmt.Println(withinDistNode0)
+	//fmt.Println()
+	//for i:=0; i<len(nodes); i++{
+	//	fmt.Println(*(nodes[i]))
+	//}
 }
