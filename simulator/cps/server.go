@@ -165,9 +165,9 @@ func (srv FusionCenter) Tick() {
 			srv.P.Grid[gridX][gridY+1].Visited = true
 		}
 	}
-	if srv.P.Iterations_used % 60 == 0 && srv.P.Iterations_used !=0{
+	if srv.P.Iterations_used % 10 == 0 && srv.P.Iterations_used !=0{
 
-		/*if srv.P.Iterations_used == 30 {
+		if srv.P.Iterations_used == 30 {
 			srv.Sch.AddRoutePoint(Coord{X:167, Y:140})
 			srv.Sch.AddRoutePoint(Coord{X:167, Y:145})
 			//srv.Sch.AddRoutePoint(Coord{X:270, Y:297})
@@ -175,9 +175,13 @@ func (srv FusionCenter) Tick() {
 		}
 		if srv.P.Iterations_used == 50 {
 			srv.Sch.AddRoutePoint(Coord{X:10, Y:140})
-		}*/
+			srv.Sch.AddRoutePoint(Coord{X:270, Y:140})
+		}
+		if srv.P.Iterations_used == 140 {
+			srv.Sch.AddRoutePointUrgent(Coord{X:160, Y:100})
+		}
 
-		leastDense := make(Squares, 0)
+		/*leastDense := make(Squares, 0)
 		DensitySquares := srv.GetLeastDenseSquares()
 		numDestinations := 0
 		//leastDense[0] = DensitySquares[0]
@@ -202,7 +206,7 @@ func (srv FusionCenter) Tick() {
 				//fmt.Printf("Destination Region:%v\n",RegionContaining(Tuple{srv.P.CenterCoord.X, srv.P.CenterCoord.Y}, srv.R))
 				srv.Sch.AddRoutePoint(srv.P.CenterCoord)
 			}
-		}//
+		}*///
 	}
 
 	for _, s := range srv.Sch.SNodeList {

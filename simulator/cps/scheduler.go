@@ -52,7 +52,7 @@ func (s *Scheduler) Optimize() {
 //This function determines which super node adding method should be called
 func (s *Scheduler) AddRoutePoint(c Coord) {
 	if s.P.SuperNodeType == 0 {
-		s.AddRoutePoint0(c)
+		s.AddRoutePoint0(c, false)
 	} else if s.P.SuperNodeType == 1 {
 		s.AddRoutePoint1(c)
 	} else if s.P.SuperNodeType == 2 || s.P.SuperNodeType == 3 || s.P.SuperNodeType == 4 {
@@ -64,11 +64,15 @@ func (s *Scheduler) AddRoutePoint(c Coord) {
 	}
 }
 
+func (s *Scheduler) AddRoutePointUrgent(c Coord) {
+	s.AddRoutePoint0(c, true)
+}
+
 //Adds a point of interest to a super node of type 0
 //Since super node 0 operates on the default scheduling algorithm the
 //	scheduler adds the new point of interest to the super node who's
 //	final destination is closest to the point
-func (s *Scheduler) AddRoutePoint0(c Coord) {
+func (s *Scheduler) AddRoutePoint0(c Coord, urgent bool) {
 	dist := 1000000.0//100000.0
 	nodeDist := 100000.0
 	closestNode := -1
@@ -102,7 +106,11 @@ func (s *Scheduler) AddRoutePoint0(c Coord) {
 	//Tells that super node to add that point
 	//fmt.Printf("\nAdded route point %v\n", c)
 	//fmt.Printf("Distance: %v\n", nodeDist)
-	s.SNodeList[closestNode].AddRoutePoint(c)
+	if urgent {
+		s.SNodeList[closestNode].AddRoutePointUrgent(c)
+	} else {
+		s.SNodeList[closestNode].AddRoutePoint(c)
+	}
 }
 
 //Adds a point of interest to a super node of type 1

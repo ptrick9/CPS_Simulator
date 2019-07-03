@@ -221,3 +221,7 @@ func (n *Sn_one) UpdatePath() {
 func (n *Sn_one) AddRoutePoint(c Coord) {
 	n.RoutePoints = append(n.RoutePoints, c)
 }
+
+func (n *Sn_one) AddRoutePointUrgent(c Coord) {
+	n.RoutePoints = append(n.RoutePoints, c)
+}

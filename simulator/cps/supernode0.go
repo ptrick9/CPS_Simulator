@@ -61,6 +61,13 @@ func (n *Sn_zero) UpdatePath() {
 	}
 }
 
+func (n *Sn_zero) AddRoutePointUrgent(c Coord) {
+	n.RoutePoints = []Coord{ Coord{X: n.X, Y: n.Y}, c}
+	n.RoutePath = make([]Coord, 0)
+	n.NumDestinations = 0
+	n.UpdatePath()
+}
+
 //Adds a routePoint to the super node's routePoints
 func (n *Sn_zero) AddRoutePoint(c Coord) {
 	n.RoutePoints = append(n.RoutePoints, c)
