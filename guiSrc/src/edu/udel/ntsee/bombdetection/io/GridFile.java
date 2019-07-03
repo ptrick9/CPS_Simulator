@@ -40,23 +40,16 @@ public class GridFile implements Closeable {
         }
 
         double[][] data = new double[height][width];
-        for(int i=0; i<height; i++) {
-            data[i] = parseRow(lnr.readLine());
+        for(int j=0; j<height; j++) {
+            String[] vars = lnr.readLine().split("\t");
+            for (int i=0; i<width; i++) {
+                data[j][i] = Double.parseDouble(vars[i]);
+            }
         }
 
         return new Grid(data);
     }
 
-    private double[] parseRow(String row) {
-
-        double[] data = new double[width];
-        String[] vars = row.split("\t");
-        for (int i = 0; i < vars.length; i++) {
-            data[i] = Double.parseDouble(vars[i]);
-        }
-
-        return data;
-    }
 
 
     @Override

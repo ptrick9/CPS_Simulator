@@ -4,13 +4,27 @@ import java.util.Arrays;
 
 public class Grid {
 
+    private double minValue;
     private double maxValue;
     private double[][] values;
 
     public Grid(double[][] values) {
 
         this.values = values;
+        this.minValue = calculateMinValue();
         this.maxValue = calculateMaxValue();
+    }
+
+    private double calculateMinValue() {
+
+        double minValue = values[0][0];
+        for (int y=0; y<values.length; y++) {
+            for (int x=1; x<values[y].length; x++) {
+                minValue = Math.min(values[y][x], minValue);
+            }
+        }
+
+        return minValue;
     }
 
     private double calculateMaxValue() {
@@ -23,6 +37,10 @@ public class Grid {
         }
 
         return maxValue;
+    }
+
+    public double getMinValue() {
+        return minValue;
     }
 
     public double getMaxValue() {
@@ -61,7 +79,7 @@ public class Grid {
 
     @Override
     public String toString() {
-        String ret = String.format("--- Grid ---\nMax Vale: %f\n", maxValue);
+        String ret = String.format("--- Grid ---\nMin Value: %f\nMax Value: %f\n", minValue, maxValue);
         for(double[] row : values) {
             ret += Arrays.toString(row) + "\n";
         }
