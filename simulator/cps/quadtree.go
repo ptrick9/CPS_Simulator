@@ -49,28 +49,11 @@ func (b *Bounds) Intersects(a Bounds) bool {
 	bMaxY := b.Y + b.Height
 
 	// a is left of b
-	if aMaxX < b.X {
+	if aMaxX < b.X || a.X > bMaxX || aMaxY < b.Y || a.Y > bMaxY{
 		return false
+	}else {
+		return true
 	}
-
-	// a is right of b
-	if a.X > bMaxX {
-		return false
-	}
-
-	// a is above b
-	if aMaxY < b.Y {
-		return false
-	}
-
-	// a is below b
-	if a.Y > bMaxY {
-		return false
-	}
-
-	// The two overlap
-	return true
-
 }
 
 // TotalSubTrees - Retrieve the total number of sub-Quadtrees in a Quadtree
@@ -381,69 +364,6 @@ func (qt * Quadtree) PrintTree(tab string){
 //				qt.SubTrees[index].ParentTree = qt
 //				qt.SubTrees[index].Bounds.CurTree = qt.SubTrees[index]
 
-//WithinDistance - Finds all nodes (bounds) within a radial distance of the current node (bounds) by iterating through the tree
-func (qt * Quadtree) WithinDistance(radius float64, centerBounds * Bounds, withinDist []Bounds, callParent bool) []Bounds{
-
-	if(qt != nil) {
-
-		//moves up the tree until its reached a tree that contains the entire search area
-		curTreeWidth := qt.Bounds.Width
-		curTreeHeight := qt.Bounds.Height
-		maxSearchRight:= centerBounds.X +radius
-		maxSearchDown := centerBounds.Y +radius
-		maxSearchLeft := centerBounds.X - radius
-		maxSearchUp := centerBounds.Y - radius
-
-		//if the search radius reaches outside of the current tree-bounds, move up a level
-		if((curTreeWidth < maxSearchRight || curTreeHeight < maxSearchDown)&&callParent&&qt.ParentTree!=nil){
-
-			//Both True if the search radius in the X or Y direction is outside of the parent tree (need to traverse more than one parent)
-			outsideParentY := maxSearchUp < qt.ParentTree.Bounds.Y || maxSearchDown > qt.ParentTree.Bounds.Y+qt.ParentTree.Bounds.Height
-			outsideParentX := maxSearchLeft < qt.ParentTree.Bounds.X || maxSearchRight > qt.ParentTree.Bounds.X + qt.ParentTree.Bounds.Width
-
-			//continue to traverse up if one or both is true
-			traverseUp := outsideParentY||outsideParentX
-
-			//calls on parent if search tree goes past current tree
-			//outsideParentX/Y determine if the search radius goes past the parent tree. If so continue to the parent's parent
-			withinDist = qt.ParentTree.WithinDistance(radius, centerBounds, withinDist,traverseUp)
-
-		//search radius is encompassed by tree-bounds, check distance in each subtree
-		} else if (qt.SubTrees != nil && len(qt.SubTrees)>0) {
-				for j := 0; j < len(qt.SubTrees); j++ {
-					//once reaches subtree, call for each subtree
-					// no reason to traverse up, hence send false for calling parent
-					withinDist = qt.SubTrees[j].WithinDistance(radius, centerBounds, withinDist, false)
-				}
-
-		//check distance in each subtree by calculating distance and comparing to radius.
-		} else 	if (qt.Objects != nil) {
-			for i := 0; i < len(qt.Objects); i++ {
-				if (qt.Objects[i] != centerBounds) {
-					yDist := centerBounds.Y - qt.Objects[i].Y
-					xDist := centerBounds.X - qt.Objects[i].X
-					radDist := math.Sqrt(yDist*yDist + xDist*xDist)
-					exists := false
-					if (radDist <= radius) {
-						for j:=0; j<len(withinDist);j++{
-							if(withinDist[j]==*qt.Objects[i]){
-								exists = true
-								break
-							} else{
-								continue
-							}
-						}
-						if(!exists){
-							withinDist = append(withinDist, *qt.Objects[i])
-						}
-					}
-				}
-			}
-		}
-	}
-	return withinDist
-}
-
 //Remove - Removes a node (bounds) from the tree, reconfigures the tree if neccessary
 func (qt * Quadtree) Remove(pRect * Bounds) *Bounds{
 
@@ -478,4 +398,45 @@ func (qt * Quadtree) Remove(pRect * Bounds) *Bounds{
 	}
 
 	return pRect
+}
+
+//Creates Search-bounds for a Node/Bounds b with a given search radius
+//output of this function is used as input for WithinRadius()
+func (b * Bounds) GetSearchBounds(radius float64) Bounds{
+	searchBounds := Bounds{
+		X: b.X-radius,
+		Y: b.Y-radius,
+		Width: 2*radius,
+		Height: 2*radius,
+		CurTree: b.CurTree,
+	}
+	return searchBounds
+}
+
+//Traverses the tree finding all points that intersect with the searchBounds and also are within in a radius distance of center point
+func (qt * Quadtree) WithinRadius(radius float64, center * Bounds, searchBounds Bounds, withinDist []*Bounds) []*Bounds{
+
+	if(qt.SubTrees !=nil && len(qt.SubTrees) > 0){
+		for i:=0; i<len(qt.SubTrees);i++{
+			if(qt.SubTrees[i].Bounds.Intersects(searchBounds)){
+				withinDist = qt.SubTrees[i].WithinRadius(radius,center,searchBounds,withinDist)
+			}
+		}
+	} else{
+		if(qt.Objects != nil && len(qt.Objects)>0){
+			for i:=0; i<len(qt.Objects);i++{
+				if(qt.Objects[i].Intersects(searchBounds)){
+					if(qt.Objects[i]!=center){
+						yDist := center.Y - qt.Objects[i].Y
+						xDist := center.X - qt.Objects[i].X
+						radDist := math.Sqrt(yDist*yDist + xDist*xDist)
+						if(radDist <= radius){
+							withinDist = append(withinDist,qt.Objects[i])
+						}
+					}
+				}
+			}
+		}
+	}
+	return withinDist
 }
