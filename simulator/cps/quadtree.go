@@ -438,6 +438,5 @@ func (qt * Quadtree) WithinRadius(radius float64, center * Bounds, searchBounds 
 			}
 		}
 	}
-
 	return withinDist
 }
