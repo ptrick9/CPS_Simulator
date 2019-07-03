@@ -403,6 +403,8 @@ func (qt * Quadtree) Remove(pRect * Bounds) *Bounds{
 //Creates Search-bounds for a Node/Bounds b with a given search radius
 //output of this function is used as input for WithinRadius()
 func (b * Bounds) GetSearchBounds(radius float64) Bounds{
+	//returns Bounds that is a square of 2r x 2r, with a center at the Node (Bounds b)
+
 	searchBounds := Bounds{
 		X: b.X-radius,
 		Y: b.Y-radius,
@@ -416,20 +418,30 @@ func (b * Bounds) GetSearchBounds(radius float64) Bounds{
 //Traverses the tree finding all points that intersect with the searchBounds and also are within in a radius distance of center point
 func (qt * Quadtree) WithinRadius(radius float64, center * Bounds, searchBounds Bounds, withinDist []*Bounds) []*Bounds{
 
+	//First traverse through subtrees. If there are any subtrees there are no objects to check in the current tree
 	if(qt.SubTrees !=nil && len(qt.SubTrees) > 0){
 		for i:=0; i<len(qt.SubTrees);i++{
+			//Only move down a level if the tree bounds intersect with the search bounds
 			if(qt.SubTrees[i].Bounds.Intersects(searchBounds)){
 				withinDist = qt.SubTrees[i].WithinRadius(radius,center,searchBounds,withinDist)
 			}
 		}
+	//Traverse objects in the subtree.
 	} else{
 		if(qt.Objects != nil && len(qt.Objects)>0){
 			for i:=0; i<len(qt.Objects);i++{
+				//Only consider if the object intersects with the search bounds
 				if(qt.Objects[i].Intersects(searchBounds)){
 					if(qt.Objects[i]!=center){
+						//actual search area is a circle, search bounds is a square
+						//its very likely all points in the bounds are also in the area, but not always true
+						//so check with the distance formula
+
 						yDist := center.Y - qt.Objects[i].Y
 						xDist := center.X - qt.Objects[i].X
 						radDist := math.Sqrt(yDist*yDist + xDist*xDist)
+
+						//if the distance is less than the search radius then it is in the search area, thus add to array
 						if(radDist <= radius){
 							withinDist = append(withinDist,qt.Objects[i])
 						}
