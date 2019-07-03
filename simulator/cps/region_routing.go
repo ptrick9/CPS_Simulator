@@ -132,8 +132,8 @@ func PossPaths(p1, p2 Tuple, r *RegionParams) {
 func InRegionRouting(p1, p2 Tuple, r *RegionParams) []Coord {
 	square1 := r.Square_list[RegionContaining(p1, r)]
 	square2 := r.Square_list[RegionContaining(p2, r)]
-	fmt.Printf("Region containing %v is %v\n", p1, RegionContaining(p1, r))
-	fmt.Printf("Region containing %v is %v\n", p2, RegionContaining(p2, r))
+	//fmt.Printf("Region containing %v is %v\n", p1, RegionContaining(p1, r))
+	//fmt.Printf("Region containing %v is %v\n", p2, RegionContaining(p2, r))
 
 	val1_first := -1
 	val1_second := -1
