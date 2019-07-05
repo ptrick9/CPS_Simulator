@@ -165,13 +165,11 @@ func (srv FusionCenter) Tick() {
 			srv.P.Grid[gridX][gridY+1].Visited = true
 		}
 	}
-	if srv.P.Iterations_used % 10 == 0 && srv.P.Iterations_used !=0{
-
+	if srv.P.Iterations_used % 60 == 0 && srv.P.Iterations_used !=0{
+		/*var packet []Coord
 		if srv.P.Iterations_used == 30 {
-			srv.Sch.AddRoutePoint(Coord{X:167, Y:140})
-			srv.Sch.AddRoutePoint(Coord{X:167, Y:145})
-			//srv.Sch.AddRoutePoint(Coord{X:270, Y:297})
-			srv.Sch.AddRoutePoint(Coord{X:80, Y:140})
+			packet = []Coord{Coord{X: 167, Y: 140}, Coord{X:167, Y:145}, Coord{X:80, Y:140}}
+			srv.Sch.AddRoutePointArray(packet)
 		}
 		if srv.P.Iterations_used == 50 {
 			srv.Sch.AddRoutePoint(Coord{X:10, Y:140})
@@ -179,24 +177,23 @@ func (srv FusionCenter) Tick() {
 		}
 		if srv.P.Iterations_used == 140 {
 			srv.Sch.AddRoutePointUrgent(Coord{X:160, Y:100})
-		}
+		}*/
 
-		/*leastDense := make(Squares, 0)
+		leastDense := make(Squares, 0)
 		DensitySquares := srv.GetLeastDenseSquares()
 		numDestinations := 0
-		//leastDense[0] = DensitySquares[0]
-		for i:=0; i < len(DensitySquares); i++ {
-			if DensitySquares[i].Navigable {
-				if numDestinations <= 8 {
-					leastDense = append(leastDense, DensitySquares[i])
+		for i:=0; i < len(DensitySquares); i++{
+			for j:=0; j < len(DensitySquares[i]); j++ {
+				if numDestinations < 4 {
+					leastDense = append(leastDense, DensitySquares[i][j])
 					numDestinations++
-				} else {
-					break
 				}
-				//fmt.Printf("\nDestination Square: X:%v, Y:%v, Navigable: %v\n", leastDense.X, leastDense.Y, leastDense.Navigable)
-				//break
 			}
+			numDestinations = 0
 		}
+		fmt.Printf("Number of destinations: %v\n", len(leastDense))
+
+		destinations := make([]Coord, 0)
 		for j := range leastDense {
 			if leastDense[j].Navigable {
 				xLoc := (leastDense[j].X * srv.P.XDiv) + int(srv.P.XDiv/2)
@@ -204,9 +201,11 @@ func (srv FusionCenter) Tick() {
 				srv.P.CenterCoord = Coord{X: xLoc, Y: yLoc}
 				//fmt.Printf("Destination Coordinate: %v\n",srv.P.CenterCoord)
 				//fmt.Printf("Destination Region:%v\n",RegionContaining(Tuple{srv.P.CenterCoord.X, srv.P.CenterCoord.Y}, srv.R))
-				srv.Sch.AddRoutePoint(srv.P.CenterCoord)
+				//srv.Sch.AddRoutePoint(srv.P.CenterCoord)
+				destinations = append(destinations, srv.P.CenterCoord)
 			}
-		}*///
+			srv.Sch.AddRoutePointArray(destinations)
+		}//
 	}
 
 	for _, s := range srv.Sch.SNodeList {
@@ -489,21 +488,60 @@ func (s FusionCenter) GetMedian(arr []float64) float64{
 	return median
 }
 
-func (s FusionCenter) GetLeastDenseSquares() Squares{
-	orderedSquares := make(Squares, 0)
-	for x := 0; x < len(s.P.Grid); x++ {
+func (s FusionCenter) GetLeastDenseSquares() []Squares{
+	orderedSquares := make([]Squares, 4)
+	for i:= range  orderedSquares {
+		orderedSquares[i] = make(Squares, 0)
+	}
+	xMax := s.P.Width / s.P.XDiv
+	yMax := s.P.Height / s.P.YDiv
+
+
+	for x := 0; x < xMax / 2; x++ {
+		for y := 0; y < yMax / 2; y++ {
+			if !s.P.Grid[x][y].Visited && s.P.Grid[x][y].Navigable{
+				orderedSquares[0] = append(orderedSquares[0], s.P.Grid[x][y])
+			}
+		}
+	}
+
+	for x := 0; x < xMax / 2; x++ {
+		for y := yMax / 2; y < yMax; y++ {
+			if !s.P.Grid[x][y].Visited && s.P.Grid[x][y].Navigable{
+				orderedSquares[1] = append(orderedSquares[1], s.P.Grid[x][y])
+			}
+		}
+	}
+
+	for x := xMax / 2; x < xMax; x++ {
+		for y := 0; y < yMax / 2; y++ {
+			if !s.P.Grid[x][y].Visited && s.P.Grid[x][y].Navigable{
+				orderedSquares[2] = append(orderedSquares[2], s.P.Grid[x][y])
+			}
+		}
+	}
+
+	for x := xMax / 2; x < xMax; x++ {
+		for y := yMax / 2; y < yMax; y++ {
+			if !s.P.Grid[x][y].Visited && s.P.Grid[x][y].Navigable{
+				orderedSquares[3] = append(orderedSquares[3], s.P.Grid[x][y])
+			}
+		}
+	}
+
+	for i:= range orderedSquares {
+		sort.Sort(&orderedSquares[i])
+	}
+	/*for x := 0; x < len(s.P.Grid); x++ {
 		for y := 0; y < len(s.P.Grid[x]); y++ {
 			if !s.P.Grid[x][y].Visited {
 				orderedSquares = append(orderedSquares, s.P.Grid[x][y])
 			}
 		}
 	}
-	sort.Sort(&orderedSquares)
-	/*for i:= range orderedSquares {
-		//total+=orderedSquares[i].ActualNumNodes
-		//fmt.Printf("X:%v, Y:%v, Density:%v\n", orderedSquares[i].X, orderedSquares[i].Y, orderedSquares[i].ActualNumNodes)
-	}*/
-
+	sort.Sort(&orderedSquares)*/
+	//fmt.Printf("Least Dense:\nTop left: %v\nBottom left: %v\nTop right: %v\nBottom right: %v\n",
+	//	orderedSquares[0], orderedSquares[1], orderedSquares[2], orderedSquares[3])
 	return orderedSquares
 }
 

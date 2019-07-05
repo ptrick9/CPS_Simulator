@@ -64,6 +64,12 @@ func (s *Scheduler) AddRoutePoint(c Coord) {
 	}
 }
 
+func (s *Scheduler) AddRoutePointArray(c []Coord) {
+	for i:= range c {
+		s.AddRoutePoint0(c[i], false)
+	}
+}
+
 func (s *Scheduler) AddRoutePointUrgent(c Coord) {
 	s.AddRoutePoint0(c, true)
 }

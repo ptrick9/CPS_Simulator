@@ -235,7 +235,7 @@ func GetPath(c1, c2 Coord, r *RegionParams, p *Params) []Coord {
 				} else if i == len(r.Possible_paths[index])-1 {
 					ret_path = append(ret_path, InRegionRouting(r.Square_list[s].Routers[r.Possible_paths[index][i-1]][index2], p2,r)...)
 				} else {
-					fmt.Println(r.Square_list[s].Routers[r.Possible_paths[index][i-1]][index2])
+					//fmt.Println(r.Square_list[s].Routers[r.Possible_paths[index][i-1]][index2])
 					ret_path = append(ret_path, InRegionRouting(r.Square_list[s].Routers[r.Possible_paths[index][i-1]][index2], r.Square_list[s].Routers[r.Possible_paths[index][i+1]][index2],r)...)
 				}
 		}
