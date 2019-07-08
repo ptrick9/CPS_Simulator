@@ -123,7 +123,7 @@ func (s FusionCenter) CheckDetections() {
 				xLoc := (x * s.P.XDiv) + int(s.P.XDiv/2)
 				yLoc := (y * s.P.YDiv) + int(s.P.YDiv/2)
 				s.P.CenterCoord = Coord{X: xLoc, Y: yLoc}
-				s.Sch.AddRoutePoint(s.P.CenterCoord)
+				s.Sch.AddRoutePointUrgent(s.P.CenterCoord)
 				s.P.Grid[x][y].HasDetected = true
 			}
 
@@ -168,14 +168,24 @@ func (srv FusionCenter) Tick() {
 	if srv.P.Iterations_used % 60 == 0 && srv.P.Iterations_used !=0{
 		/*var packet []Coord
 		if srv.P.Iterations_used == 30 {
-			packet = []Coord{Coord{X: 167, Y: 140}, Coord{X:167, Y:145}, Coord{X:80, Y:140}}
+			//packet = []Coord{Coord{X: 167, Y: 140}, Coord{X:167, Y:145}, Coord{X:80, Y:140}, Coord{X: 273, Y:298 }}
+			packet = []Coord{{X: 37, Y: 137}, {X: 37, Y:142 }, {X:37, Y:222}, {X:797, Y:217}, {X:1567 , Y:132}, {X:1562, Y:132},
+				{X:1152, Y:232}, {X:1152, Y:217}}
 			srv.Sch.AddRoutePointArray(packet)
+			//srv.Sch.AddRoutePoint(Coord{X:906, Y:212})
+			//srv.Sch.AddRoutePoint(Coord{X:802, Y:212})
 		}
 		if srv.P.Iterations_used == 50 {
-			srv.Sch.AddRoutePoint(Coord{X:10, Y:140})
-			srv.Sch.AddRoutePoint(Coord{X:270, Y:140})
+			//srv.Sch.AddRoutePoint(Coord{X:10, Y:140})
+			//srv.Sch.AddRoutePoint(Coord{X:270, Y:140})
+			//srv.Sch.AddRoutePoint(Coord{X:2, Y:137})
+			//srv.Sch.AddRoutePoint(Coord{X:2, Y:212})
+			//srv.Sch.AddRoutePoint(Coord{X:802, Y:127})
+			srv.Sch.AddRoutePoint(Coord{X:797, Y:142})
 		}
 		if srv.P.Iterations_used == 140 {
+			//packet = []Coord{{X:2, Y:137}, {X:2, Y:212}, {X:802, Y:127}, {X:802, Y:212}}
+			//srv.Sch.AddRoutePointArray(packet)
 			srv.Sch.AddRoutePointUrgent(Coord{X:160, Y:100})
 		}*/
 
@@ -184,9 +194,11 @@ func (srv FusionCenter) Tick() {
 		numDestinations := 0
 		for i:=0; i < len(DensitySquares); i++{
 			for j:=0; j < len(DensitySquares[i]); j++ {
-				if numDestinations < 4 {
+				if numDestinations < 2 {
 					leastDense = append(leastDense, DensitySquares[i][j])
 					numDestinations++
+				} else {
+					//break
 				}
 			}
 			numDestinations = 0
@@ -195,17 +207,16 @@ func (srv FusionCenter) Tick() {
 
 		destinations := make([]Coord, 0)
 		for j := range leastDense {
-			if leastDense[j].Navigable {
-				xLoc := (leastDense[j].X * srv.P.XDiv) + int(srv.P.XDiv/2)
-				yLoc := (leastDense[j].Y * srv.P.YDiv) + int(srv.P.YDiv/2)
-				srv.P.CenterCoord = Coord{X: xLoc, Y: yLoc}
-				//fmt.Printf("Destination Coordinate: %v\n",srv.P.CenterCoord)
-				//fmt.Printf("Destination Region:%v\n",RegionContaining(Tuple{srv.P.CenterCoord.X, srv.P.CenterCoord.Y}, srv.R))
-				//srv.Sch.AddRoutePoint(srv.P.CenterCoord)
-				destinations = append(destinations, srv.P.CenterCoord)
-			}
-			srv.Sch.AddRoutePointArray(destinations)
+			xLoc := (leastDense[j].X * srv.P.XDiv) + int(srv.P.XDiv/2)
+			yLoc := (leastDense[j].Y * srv.P.YDiv) + int(srv.P.YDiv/2)
+			srv.P.CenterCoord = Coord{X: xLoc, Y: yLoc}
+			//fmt.Printf("Destination Coordinate: %v\n",srv.P.CenterCoord)
+			//fmt.Printf("Destination Region:%v\n",RegionContaining(Tuple{srv.P.CenterCoord.X, srv.P.CenterCoord.Y}, srv.R))
+			//srv.Sch.AddRoutePoint(srv.P.CenterCoord)
+			destinations = append(destinations, srv.P.CenterCoord)
 		}//
+		fmt.Printf("Destinations: %v\n", destinations)
+		srv.Sch.AddRoutePointArray(destinations)
 	}
 
 	for _, s := range srv.Sch.SNodeList {
@@ -513,7 +524,7 @@ func (s FusionCenter) GetLeastDenseSquares() []Squares{
 		}
 	}
 
-	for x := xMax / 2; x < xMax; x++ {
+	for x := xMax-1; x >= xMax / 2; x-- {
 		for y := 0; y < yMax / 2; y++ {
 			if !s.P.Grid[x][y].Visited && s.P.Grid[x][y].Navigable{
 				orderedSquares[2] = append(orderedSquares[2], s.P.Grid[x][y])
@@ -521,7 +532,7 @@ func (s FusionCenter) GetLeastDenseSquares() []Squares{
 		}
 	}
 
-	for x := xMax / 2; x < xMax; x++ {
+	for x := xMax-1; x >= xMax/2; x-- {
 		for y := yMax / 2; y < yMax; y++ {
 			if !s.P.Grid[x][y].Visited && s.P.Grid[x][y].Navigable{
 				orderedSquares[3] = append(orderedSquares[3], s.P.Grid[x][y])

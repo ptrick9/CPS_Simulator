@@ -28,7 +28,6 @@ func (n *Sn_zero) Tick() {
 
 //This super node just adds the newest point at the end of the current path
 func (n *Sn_zero) UpdatePath() {
-
 	if n.P.RegionRouting {
 		//Loops through all the points in the routePoints list that are currently not
 		//	destinations
@@ -71,7 +70,6 @@ func (n *Sn_zero) AddRoutePointUrgent(c Coord) {
 //Adds a routePoint to the super node's routePoints
 func (n *Sn_zero) AddRoutePoint(c Coord) {
 	n.RoutePoints = append(n.RoutePoints, c)
-
 	if len(n.RoutePoints) > 1 {
 		newRoute := make([]Coord, 0)
 		destinations := make([][]float64, len(n.RoutePoints))

@@ -130,7 +130,7 @@ func PossPaths(p1, p2 Tuple, r *RegionParams) {
 }
 
 func InRegionRouting(p1, p2 Tuple, r *RegionParams) []Coord {
-	square1 := r.Square_list[RegionContaining(p1, r)]
+	/*square1 := r.Square_list[RegionContaining(p1, r)]
 	square2 := r.Square_list[RegionContaining(p2, r)]
 	//fmt.Printf("Region containing %v is %v\n", p1, RegionContaining(p1, r))
 	//fmt.Printf("Region containing %v is %v\n", p2, RegionContaining(p2, r))
@@ -179,6 +179,31 @@ func InRegionRouting(p1, p2 Tuple, r *RegionParams) []Coord {
 		//fmt.Println("Moving down")
 		for val := val1_second; val >= val2_second; val-- {
 			//fmt.Printf("(%v,%v)\n",end_x,val)
+			ret_path = append(ret_path, Coord{X: end_x, Y: val})
+		}
+	}
+	fmt.Printf("Path Taken: %v\n", ret_path)
+	return ret_path*/
+
+	ret_path := make([]Coord, 0)
+	end_x := -1
+	if p1.X < p2.X {
+		for val := p1.X; val <= p2.X; val++ {
+			ret_path = append(ret_path, Coord{X: val, Y: p1.Y})
+		}
+		end_x = p2.X
+	} else {
+		for val := p1.X; val >= p2.X; val-- {
+			ret_path = append(ret_path, Coord{X: val, Y: p1.Y})
+		}
+		end_x = p2.X
+	}
+	if p1.Y < p2.Y {
+		for val := p1.Y; val <= p2.Y; val++ {
+			ret_path = append(ret_path, Coord{X: end_x, Y: val})
+		}
+	} else {
+		for val := p1.Y; val >= p2.Y; val-- {
 			ret_path = append(ret_path, Coord{X: end_x, Y: val})
 		}
 	}
@@ -254,7 +279,20 @@ func GetPath(c1, c2 Coord, r *RegionParams, p *Params) []Coord {
 			}
 		}*/
 	}
-
+	fmt.Println(ret_path)
+	var tmp Coord = ret_path[0]
+	for i := range ret_path {
+		if ret_path[i].X == -1 || ret_path[i].Y == -1 {
+			fmt.Println("Error in path finding!")
+		}
+		if ret_path[i].X - 1 > tmp.X || ret_path[i].X + 1 < tmp.X {
+			fmt.Println("Error in path finding! Node teleported on X")
+		}
+		if ret_path[i].Y - 1 > tmp.Y || ret_path[i].Y + 1 < tmp.Y {
+			fmt.Println("Error in path finding! Node teleported on Y")
+		}
+		tmp = ret_path[i]
+	}
 	return ret_path
 }
 

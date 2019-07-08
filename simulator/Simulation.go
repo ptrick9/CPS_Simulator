@@ -113,10 +113,10 @@ func main() {
 
 	cps.FlipSquares(p, r)
 
-	fmt.Println(cps.RegionContaining(cps.Tuple{430,30}, r))
-	fmt.Printf("Valid path from 27 to 44: %v\n", cps.ValidPath(27, cps.Coord{X:430,Y:30},r))
-	goal := 44
-	fmt.Printf("TL:%v, %v\nBR:%v, %v\n", r.Square_list[goal].X1,r.Square_list[goal].Y1,r.Square_list[goal].X2, r.Square_list[goal].Y2 )
+	//fmt.Println(cps.RegionContaining(cps.Tuple{430,30}, r))
+	//fmt.Printf("Valid path from 27 to 44: %v\n", cps.ValidPath(27, cps.Coord{X:430,Y:30},r))
+	//goal := 44
+	//fmt.Printf("TL:%v, %v\nBR:%v, %v\n", r.Square_list[goal].X1,r.Square_list[goal].Y1,r.Square_list[goal].X2, r.Square_list[goal].Y2 )
 
 	//This is where the text file reading ends
 	Vn := make([]float64, 1000)
@@ -176,7 +176,7 @@ func main() {
 		cps.SetupRandomNodes(p)
 	}
 
-	p.Iterations_used = 0
+	//p.Iterations_used = 0
 	for iters = 0; iters < p.Iterations_of_event && !p.FoundBomb; iters++ {
 
 		for i := 0; i < len(p.SensorTimes); i++ {
