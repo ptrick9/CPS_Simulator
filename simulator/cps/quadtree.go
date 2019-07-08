@@ -360,15 +360,54 @@ func (qt * Quadtree) PrintTree(tab string){
 	}
 }
 
+//Remove - removes a node (bounds) from the tree, DOES NOT reconfigure the tree
+func (qt * Quadtree) Remove(pRect * Bounds) * Bounds{
 
-//				qt.SubTrees[index].ParentTree = qt
-//				qt.SubTrees[index].Bounds.CurTree = qt.SubTrees[index]
+	//remove from Objects in Current Tree
+	for i:=0; i<len(pRect.CurTree.Objects); i++{
+		if(pRect.CurTree.Objects[i] == pRect){
+			pRect.CurTree.Objects = append(pRect.CurTree.Objects[:i], pRect.CurTree.Objects[i+1:]...) //remove from objects
+			break
+		}
+	}
 
-//Remove - Removes a node (bounds) from the tree, reconfigures the tree if neccessary
-func (qt * Quadtree) Remove(pRect * Bounds) *Bounds{
+	//update totals in current tree and all parent trees
+	curTree := pRect.CurTree
+	for curTree.ParentTree != nil{
+		curTree.Total = curTree.Total-1
+		curTree = curTree.ParentTree
+	}
+
+	return pRect
+}
+
+func (qt * Quadtree) CleanUp(){
+	if(len(qt.SubTrees)==4){
+		if(qt.Total > 4){ //traverse downward
+			qt.SubTrees[0].CleanUp()
+			qt.SubTrees[1].CleanUp()
+			qt.SubTrees[2].CleanUp()
+			qt.SubTrees[3].CleanUp()
+		}else if(qt.Total <=4 && qt.Total>0){
+			//if parent holds between 1 to 4 nodes and has 4 subtrees, move objects up one level (subtrees are redundant)
+			for i:=0; i<len(qt.SubTrees); i++{
+				for j:=0; j<len(qt.SubTrees[i].Objects); j++{
+					qt.Objects = append(qt.Objects, qt.SubTrees[i].Objects[j])
+				}
+			}
+			qt.SubTrees = []*Quadtree{}
+		} else if (qt.Total == 0){
+			//all objects were removed from the subtrees, so subtrees can be removed
+			qt.SubTrees = []*Quadtree{}
+		}
+	}
+}
+
+//RemoveAndCleanup - Removes a node (bounds) from the tree, reconfigures the tree if neccessary
+func (qt * Quadtree) RemoveAndCleanup(pRect * Bounds) *Bounds{
 
 	for i:=0; i<len(pRect.CurTree.Objects); i++{
-		if(pRect.CurTree.Objects[i].X == (*pRect).X && pRect.CurTree.Objects[i].Y == (*pRect).Y){
+		if(pRect.CurTree.Objects[i] == pRect){
 			pRect.CurTree.Objects = append(pRect.CurTree.Objects[:i], pRect.CurTree.Objects[i+1:]...) //remove from objects
 			break
 		}

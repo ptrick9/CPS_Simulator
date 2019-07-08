@@ -226,4 +226,188 @@ func main(){
 	//for i:=0; i<len(nodes); i++{
 	//	fmt.Println(*(nodes[i]))
 	//}
+	fmt.Println()
+	fmt.Println("Beginning remove/inserting test...")
+	qt.Clear()
+
+	qt = cps.Quadtree{
+		Bounds: cps.Bounds{
+			X:      0,
+			Y:      0,
+			Width:  16,
+			Height: 16,
+		},
+		MaxObjects: 4,
+		MaxLevels:  4,
+		Level:      0,
+		Objects:    make([]*cps.Bounds, 0),
+		ParentTree: nil,
+		SubTrees:   make([]*cps.Quadtree, 0),
+	}
+
+	nodeXValues := [7]float64{1,9,10,12.5,13,13,13}
+	nodeYValues := [7]float64{1,3,2,6.5,1,1.5,3}
+
+	for i:=0; i<7; i++{
+		b := cps.Bounds{
+			X:	nodeXValues[i],
+			Y:	nodeYValues[i],
+			Width:	0,
+			Height: 0,
+			CurTree: &qt,
+		}
+		qt.Insert(&b)
+	}
+
+	node1 := cps.Bounds{
+		X:	1,
+		Y:	9,
+		Width:	0,
+		Height: 0,
+		CurTree: &qt,
+	}
+
+	node2 := cps.Bounds{
+		X:	7,
+		Y:	7,
+		Width:	0,
+		Height: 0,
+		CurTree: &qt,
+	}
+
+	node3 := cps.Bounds{
+		X:	15.5,
+		Y:	1.5,
+		Width:	0,
+		Height: 0,
+		CurTree: &qt,
+	}
+
+	node4 := cps.Bounds{
+		X:	15,
+		Y:	3,
+		Width:	0,
+		Height: 0,
+		CurTree: &qt,
+	}
+
+	node5 := cps.Bounds{
+		X:	9,
+		Y:	9,
+		Width:	0,
+		Height: 0,
+		CurTree: &qt,
+	}
+
+	node6 := cps.Bounds{
+		X:	15,
+		Y:	9,
+		Width:	0,
+		Height: 0,
+		CurTree: &qt,
+	}
+
+	node7 := cps.Bounds{
+		X:	15,
+		Y:	15,
+		Width:	0,
+		Height: 0,
+		CurTree: &qt,
+	}
+
+	node8 := cps.Bounds{
+		X:	9,
+		Y:	15,
+		Width:	0,
+		Height: 0,
+		CurTree: &qt,
+	}
+
+	node9 := cps.Bounds{
+		X:	9,
+		Y:	15.1,
+		Width:	0,
+		Height: 0,
+		CurTree: &qt,
+	}
+
+	qt.Insert(&node1) //(1,9) to (1,7)
+	qt.Insert(&node2) //7,7 to 7,9
+	qt.Insert(&node3) //15.5,1.5 to 15.5,3
+	qt.Insert(&node4) //15,3 to 15,1.5
+	qt.Insert(&node5)
+	qt.Insert(&node6)
+	qt.Insert(&node7)
+	qt.Insert(&node8)
+	qt.Insert(&node9)
+
+	fmt.Println()
+	fmt.Println("Nodes of interest:")
+	fmt.Print("Node 1: ",node1)
+	fmt.Printf("\t%p\n",&node1)
+	fmt.Print("Node 2: ",node2)
+	fmt.Printf("\t%p\n",&node2)
+	fmt.Print("Node 3: ",node3)
+	fmt.Printf("\t%p\n",&node3)
+	fmt.Print("Node 4: ",node4)
+	fmt.Printf("\t%p\n",&node4)
+	fmt.Print("Node 5: ",node5)
+	fmt.Printf("\t%p\n",&node5)
+	fmt.Print("Node 6: ",node6)
+	fmt.Printf("\t%p\n",&node6)
+	fmt.Print("Node 7: ",node7)
+	fmt.Printf("\t%p\n",&node7)
+	fmt.Print("Node 8: ",node8)
+	fmt.Printf("\t%p\n",&node8)
+	fmt.Print("Node 9: ",node9)
+	fmt.Printf("\t%p\n",&node9)
+
+	fmt.Println()
+	fmt.Println("Tree before removing:")
+	qt.PrintTree("")
+
+	qt.Remove(&node1)
+	//qt.Remove(&node2)
+	qt.Remove(&node3)
+	qt.Remove(&node4)
+	qt.Remove(&node5)
+	qt.Remove(&node6)
+	qt.Remove(&node7)
+	qt.Remove(&node8)
+	qt.Remove(&node9)
+
+	fmt.Println()
+	fmt.Println("Tree after simple-remove:")
+	qt.PrintTree("")
+
+	node1.Y = 7.0
+	//node2.Y = 9.0
+	node3.X = 3.0
+	node4.Y = 1.5
+
+	node5.X = node5.X-8
+	node6.X = node6.X-8
+	node7.X = node7.X-8
+	node8.X = node8.X-8
+	node9.X = node9.X-8
+
+	qt.Insert(&node1)
+	//qt.Insert(&node2)
+	qt.Insert(&node3)
+	qt.Insert(&node4)
+	qt.Insert(&node5)
+	qt.Insert(&node6)
+	qt.Insert(&node7)
+	qt.Insert(&node8)
+	qt.Insert(&node9)
+
+	fmt.Println()
+	fmt.Println("Tree after moving nodes, before cleanup: ")
+	qt.PrintTree("")
+
+	qt.CleanUp()
+	fmt.Println()
+	fmt.Println("Tree after cleanup: ")
+	qt.PrintTree("")
+
 }
