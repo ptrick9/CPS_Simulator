@@ -366,6 +366,17 @@ func main(){
 	fmt.Println("Tree before removing:")
 	qt.PrintTree("")
 
+	node1.Y = 7.0
+	//node2.Y = 9.0
+	node3.X = 3.0
+	node4.Y = 1.5
+
+	node5.X = node5.X-8
+	node6.X = node6.X-8
+	node7.X = node7.X-8
+	node8.X = node8.X-8
+	node9.X = node9.X-8
+
 	qt.Remove(&node1)
 	//qt.Remove(&node2)
 	qt.Remove(&node3)
@@ -379,17 +390,6 @@ func main(){
 	fmt.Println()
 	fmt.Println("Tree after simple-remove:")
 	qt.PrintTree("")
-
-	node1.Y = 7.0
-	//node2.Y = 9.0
-	node3.X = 3.0
-	node4.Y = 1.5
-
-	node5.X = node5.X-8
-	node6.X = node6.X-8
-	node7.X = node7.X-8
-	node8.X = node8.X-8
-	node9.X = node9.X-8
 
 	qt.Insert(&node1)
 	//qt.Insert(&node2)

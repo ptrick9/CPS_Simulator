@@ -25,8 +25,8 @@ type Bounds struct {
 	Y      	float64
 	Width  	float64
 	Height 	float64
-	CurTree	*Quadtree //tree that this object is in
-	//curNode *NodeImpl
+	CurTree	*Quadtree 	//tree that this object is in
+	curNode *NodeImpl	//pointer to current Node it represents
 }
 
 //IsPoint - Checks if a bounds object is a point or not (has no width or height)
@@ -53,6 +53,14 @@ func (b *Bounds) Intersects(a Bounds) bool {
 		return false
 	}else {
 		return true
+	}
+}
+
+func (qt *Quadtree) NodeMovement(newX float64, newY float64, movingNode * Bounds){
+	inSameTree := newX>movingNode.CurTree.Bounds.X && newX<movingNode.CurTree.Bounds.X+movingNode.CurTree.Bounds.Width && newY>movingNode.CurTree.Bounds.Y && newY<movingNode.CurTree.Bounds.Y+movingNode.CurTree.Bounds.Width
+	if(!inSameTree){
+		qt.Remove(movingNode)
+		qt.Insert(movingNode)
 	}
 }
 
