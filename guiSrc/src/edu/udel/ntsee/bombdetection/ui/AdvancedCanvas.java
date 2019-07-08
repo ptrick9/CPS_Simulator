@@ -241,8 +241,6 @@ public class AdvancedCanvas extends Canvas {
 
     public void drawCircle(Color color, double diameter, int x, int y) {
 
-        y = rows - y - 1;
-
         GraphicsContext gc = getGraphicsContext2D();
         gc.setFill(color);
 
@@ -253,9 +251,6 @@ public class AdvancedCanvas extends Canvas {
     }
 
     public void drawLine(int x1, int y1, int x2, int y2) {
-
-        y1 = rows - y1 - 1;
-        y2 = rows - y2 - 1;
 
         GraphicsContext gc = getGraphicsContext2D();
         gc.setLineWidth(.1);
@@ -289,16 +284,14 @@ public class AdvancedCanvas extends Canvas {
     }
 
     public void drawBlock(Color color, boolean outline, int x, int y) {
+
+        //if (x < getStartColumn() || x >= getEndColumn() || y < getStartRow() || y >= getEndRow())
+        //    return;
+
         this.drawBlock(color, outline, x, y, 1);
     }
 
     public void drawBlock(Color color, boolean outline, int x, int y, int squares) {
-
-
-        if (x < getStartColumn() || x >= getEndColumn() || y < getStartRow() || y >= getEndRow())
-            return;
-
-        //y = rows - 1 - y; // transform coordinates so orgin is bottom left
 
         GraphicsContext gc = getGraphicsContext2D();
         gc.setFill(color);

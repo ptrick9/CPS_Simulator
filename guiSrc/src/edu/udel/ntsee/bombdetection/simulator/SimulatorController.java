@@ -143,9 +143,6 @@ public class SimulatorController implements Drawable {
         if (room == null) return;
         canvas.clear();
 
-        if (checkMenuWalls.isSelected()) {
-            drawWalls(room.getWalls());
-        }
 
         if (radioMenuSensorReading.isSelected()) {
             drawSensorGrid(room.getSensorReadings());
@@ -157,6 +154,10 @@ public class SimulatorController implements Drawable {
 
         if (checkMenuAdHoc.isSelected()) {
             drawAdHocs(room.getAdHocs());
+        }
+
+        if (checkMenuWalls.isSelected()) {
+            drawWalls(room.getWalls());
         }
 
         drawNodes(room.getPositions(), room.getSamples());
@@ -192,9 +193,11 @@ public class SimulatorController implements Drawable {
 
         for(AdHoc adhoc : adhocs) {
             Node leader = room.getNodeByID(adhoc.getLeaderID());
+            int lY = Math.min(room.getHeight() - leader.getY(), room.getHeight() - 1);
             List<Node> children = room.getNodesByIDs(adhoc.getChildrenIDs());
             for(Node child : children) {
-                canvas.drawLine(leader.getX(), leader.getY(), child.getX(), child.getY());
+                int cY = Math.min(room.getHeight() - child.getY(), room.getHeight() - 1);
+                canvas.drawLine(leader.getX(), lY, child.getX(), cY);
             }
         }
     }
@@ -214,28 +217,30 @@ public class SimulatorController implements Drawable {
                 Node node = nodes.get(i);
                 Sample sample = samples.get(i);
                 if (sample.isSensorChecked()) {
+                    int y = Math.min(room.getHeight() - node.getY(), room.getHeight() - 1);
                     canvas.drawCircle(Color.YELLOW,(2.34 / .5) * canvas.getCamera().getBlockSize(),
-                            node.getX(), room.getHeight() - node.getY() - 1);
+                            node.getX(), y);
                 }
             }
         }
 
         // Bomb
+        int by = Math.min(room.getHeight() - room.getBomb().getY(), room.getHeight() - 1);
         canvas.drawCircle(Color.RED, canvas.getCamera().getBlockSize(),
-                room.getBomb().getX(), room.getBomb().getY() - 1);
+                room.getBomb().getX(), by);
 
         // Nodes
         for (int i = 0; i < nodes.size(); i++) {
 
             Node node = nodes.get(i);
-
+            int y = Math.min(room.getHeight() - node.getY(), room.getHeight() - 1);
             Color color = Color.BLUE;
             if(samples != null && radioMenuBatteryLevel.isSelected()) {
                 Sample sample = samples.get(i);
                 color = Util.gradient(Color.RED, Color.GREEN, (double)sample.getBattery()/100);
             }
 
-            canvas.drawBlock(color, true, node.getX(), room.getHeight() - node.getY() - 1);
+            canvas.drawBlock(color, true, node.getX(), y);
         }
 
     }
@@ -246,20 +251,24 @@ public class SimulatorController implements Drawable {
         for(SuperNode superNode : superNodes) {
 
             for(TimedNode node : superNode.getPath()) {
-                canvas.drawBlock(Color.WHITE, true, node.getX(), room.getHeight() - node.getY() - 1);
+                int y = Math.min(room.getHeight() - node.getY(), room.getHeight() - 1);
+                canvas.drawBlock(Color.WHITE, true, node.getX(), y);
             }
 
             for(TimedNode node : superNode.getUnvisitedPoints()) {
+                int y = Math.min(room.getHeight() - node.getY(), room.getHeight() - 1);
                 Color color = Util.gradient(Color.RED, Color.GREEN, (double)node.getTime()/120);
-                canvas.drawBlock(color, true, node.getX(), room.getHeight() - node.getY() - 1);
+                canvas.drawBlock(color, true, node.getX(), y);
             }
 
             for(TimedNode node : superNode.getPoints()) {
+                int y = Math.min(room.getHeight() - node.getY(), room.getHeight() - 1);
                 Color color = Util.gradient(Color.RED, Color.GREEN, (double)node.getTime()/120);
-                canvas.drawBlock(color, true, node.getX(), room.getHeight() - node.getY() - 1);
+                canvas.drawBlock(color, true, node.getX(), y);
             }
 
-            canvas.drawBlock(Color.PLUM, true, superNode.getX(), room.getHeight() - superNode.getY() - 1);
+            int y = Math.min(room.getHeight() - superNode.getY(), room.getHeight() - 1);
+            canvas.drawBlock(Color.PLUM, true, superNode.getX(), y);
         }
     }
 
@@ -272,38 +281,45 @@ public class SimulatorController implements Drawable {
             return;
         }
 
+        //System.out.println(grid);
+
         canvas.getGraphicsContext2D().save();
-        int squares = room.getWidth() / grid.getValues().length;
-        int yStart = canvas.getStartRow()/squares;
-        int yEnd = (int)Math.ceil((double)canvas.getEndRow() / squares);
-        yEnd = Math.min(yEnd, grid.getValues().length - 1);
-        for(int y=yStart; y<=yEnd; y++) {
-            int xStart = canvas.getStartColumn()/squares;
-            int xEnd = (int)Math.ceil((double)canvas.getEndColumn() / squares);
-            xEnd = Math.min(xEnd, grid.getValues()[y].length - 1);
-            for(int x=xStart; x<=xEnd; x++) {
-                double percentage = grid.getValues()[y][x] / grid.getMaxValue();
-                canvas.getGraphicsContext2D().setGlobalAlpha(percentage);
-                canvas.drawBlock(Color.RED, true, x, y, squares);
+        int squares = room.getHeight() / grid.getValues().length;
+
+        int yStart = canvas.getStartRow() / squares;
+        int yEnd = Math.min(canvas.getEndRow() / squares, room.getHeight() / squares - 1);
+        int xStart = canvas.getStartColumn() / squares;
+        int xEnd = Math.min(canvas.getEndColumn() / squares, room.getWidth() / squares - 1);
+        for (int y=yStart; y<=yEnd; y++) {
+
+            int renderY = Math.min(grid.getValues().length - y, grid.getValues().length - 1);
+            for (int x=xStart; x<=xEnd; x++) {
+
+                double reading = grid.getValues()[y][x];
+                if (reading > 0) {
+                    double amount = reading - grid.getMinValue();
+                    double max = Math.max(grid.getMaxValue(), 20);
+                    canvas.getGraphicsContext2D().setGlobalAlpha(amount / max);
+                    canvas.drawBlock(Color.RED, true, x, renderY, squares);
+                }
             }
         }
 
         canvas.getGraphicsContext2D().restore();
-
-        // update legend
         sensorGridLegend.setMax(grid.getMaxValue());
     }
 
     public void drawSensorNumbers(Grid grid) {
 
-        if (grid == null) {
-            radioMenuSensorReading.setSelected(false);
-            radioMenuNone.setSelected(true);
-            Main.showErrorDialog(new LogFormatException("Sensor Reading log is unavailable."));
+        if (grid == null || grid != null) {
+            //radioMenuSensorReading.setSelected(false);
+            //radioMenuNone.setSelected(true);
+            //Main.showErrorDialog(new LogFormatException("Sensor Reading log is unavailable."));
             return;
         }
+
         canvas.getGraphicsContext2D().save();
-        int squares = room.getWidth() / grid.getValues().length;
+        int squares = room.getHeight() / grid.getValues().length;
         int yStart = canvas.getStartRow()/squares;
         int yEnd = (int)Math.ceil((double)canvas.getEndRow() / squares);
         yEnd = Math.min(yEnd, grid.getValues().length - 1);
@@ -318,6 +334,7 @@ public class SimulatorController implements Drawable {
 
         canvas.getGraphicsContext2D().restore();
     }
+
     private void drawNodePathing(Grid grid) {
 
         if (grid == null) {
@@ -362,10 +379,10 @@ public class SimulatorController implements Drawable {
 
             } else if (node.getTime() == -1) {
                 Color color = Color.BLACK;//Util.gradient(Color.GREEN, Color.RED, (double)node.getTime() / road.getMax());
-                canvas.drawBlock(color, true, node.getX(), node.getY() - 1);
+                canvas.drawBlock(color, true, node.getX(), node.getY());
             } else {
                 Color color = Util.gradient(Color.GREEN, Color.RED, (double)node.getTime() / road.getMax());
-                canvas.drawBlock(color, true, node.getX(), node.getY() - 1);
+                canvas.drawBlock(color, true, node.getX(), node.getY());
             }
         }
     }

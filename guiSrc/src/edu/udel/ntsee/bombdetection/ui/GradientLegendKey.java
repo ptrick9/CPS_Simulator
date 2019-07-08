@@ -42,6 +42,10 @@ public class GradientLegendKey extends VBox {
         }
     }
 
+    public void setText(String text) {
+        this.label.setText(text);
+    }
+
     public void setMin(double min) {
         this.minLabel.setText(String.valueOf(min));
     }
