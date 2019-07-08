@@ -368,6 +368,9 @@ func HandleMovementCSV(p *Params) {
 		//set the new location in the boolean field to true
 		newX, newY := p.NodeList[j].GetLoc()
 
+		//sync the QuadTree
+		p.NodeTree.NodeMovement(float64(newX), float64(newY), p.NodeList[j].NodeBounds)
+
 		if p.NodeList[j].InBounds(p) {
 			p.NodeList[j].Valid = true
 		} else {
