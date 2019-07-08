@@ -159,7 +159,7 @@ func main() {
 
 	p.WallNodeList = make([]cps.WallNodes, p.NumWallNodes)
 
-	p.NodeList = make([]cps.NodeImpl, 0)
+	p.NodeList = make([]*cps.NodeImpl, 0)
 
 	for i := 0; i < p.NumWallNodes; i++ {
 		p.WallNodeList[i] = cps.WallNodes{Node: &cps.NodeImpl{X: float32(p.Wpos[i][0]), Y: float32(p.Wpos[i][1])}}
@@ -185,10 +185,10 @@ func main() {
 	p.Events.Push(&cps.Event{nil, cps.POSITION, 999, 0})
 
 	p.CurrentTime = 0
-	for len(p.Events) > 0 && p.CurrentTime < 50000{
+	for len(p.Events) > 0 && p.CurrentTime < 100000{
 		event := heap.Pop(&p.Events).(*cps.Event)
-		fmt.Println(event)
-		fmt.Println(p.CurrentNodes)
+		//fmt.Println(event)
+		//fmt.Println(p.CurrentNodes)
 		p.CurrentTime = event.Time
 		if event.Node != nil {
 			if event.Instruction == cps.SENSE {
@@ -212,12 +212,12 @@ func main() {
 				if p.PositionPrint {
 					amount := 0
 					for i := 0; i < p.CurrentNodes; i ++ {
-						fmt.Printf("%v\n", p.NodeList[i].Valid)
+						//fmt.Printf("%v\n", p.NodeList[i].Valid)
 						if p.NodeList[i].Valid {
 							amount += 1
 						}
 					}
-					fmt.Fprintln(p.PositionFile, "t= ", p.Iterations_used, " amount= ", amount)
+					fmt.Fprintln(p.PositionFile, "t= ", int(p.CurrentTime/1000), " amount= ", amount)
 
 					for i := 0; i < p.CurrentNodes; i ++ {
 						if p.NodeList[i].Valid {
@@ -375,10 +375,10 @@ func main() {
 	fmt.Fprintln(p.PositionFile, "Image:", p.ImageFileNameCM)
 	fmt.Fprintln(p.PositionFile, "Width:", p.MaxX)
 	fmt.Fprintln(p.PositionFile, "Height:", p.MaxY)
-	fmt.Fprintf(p.PositionFile, "Amount: %-8v\n", iters)
+	fmt.Fprintf(p.PositionFile, "Amount: %-8v\n", int(p.CurrentTime/1000))
 
 	if iters < p.Iterations_of_event-1 {
-		fmt.Printf("\nFound bomb at iteration: %v \nSimulation Complete\n", iters)
+		fmt.Printf("\nFound bomb at iteration: %v \nSimulation Complete\n", int(p.CurrentTime/1000))
 	} else {
 		fmt.Println("\nSimulation Complete")
 	}

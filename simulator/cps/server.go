@@ -383,7 +383,7 @@ func (s FusionCenter) UpdateSquareNumNodes() {
 
 	//Count number of nodes in each square
 	for i:=0; i < len(s.P.NodeList); i++ {
-		node = s.P.NodeList[i]
+		node = *s.P.NodeList[i]
 		if node.Valid {
 			s.P.Grid[int(node.X)/s.P.XDiv][int(node.Y)/s.P.YDiv].ActualNumNodes += 1
 		}

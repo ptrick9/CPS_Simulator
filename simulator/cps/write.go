@@ -436,7 +436,7 @@ func SetupCSVNodes(p *Params) {
 			newNode.Valid = false
 		}
 
-		p.NodeList = append(p.NodeList, *newNode)
+		p.NodeList = append(p.NodeList, newNode)
 		p.CurrentNodes += 1
 		p.Events.Push(&Event{newNode, SENSE, 0, 0})
 	}
@@ -462,7 +462,7 @@ func SetupRandomNodes(p *Params) {
 			newNode.Valid = true
 			p.BoolGrid[xx][yy] = true
 
-			p.NodeList = append(p.NodeList, *newNode)
+			p.NodeList = append(p.NodeList, newNode)
 			p.CurrentNodes += 1
 
 		}
