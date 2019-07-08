@@ -12,7 +12,7 @@ import java.util.regex.Pattern;
 public class RoutesFile extends LogFile<SuperNode> {
 
     private static final Pattern HEADER = Pattern.compile("^Amount: (\\d+).*$");
-    private static final Pattern DATA = Pattern.compile("^x: (\\d+) y: (\\d+) RoutePoints: \\[((\\{\\d+ \\d+ \\d+\\} ?)*)\\] Path: \\[((\\{\\d+ \\d+ \\d+\\} ?)*)\\] UnvisitedPoints: \\[((\\{\\d+ \\d+ \\d+\\} ?)*)\\].*$");
+    private static final Pattern DATA = Pattern.compile("^x: (\\d+) y: (\\d+) RoutePoints: \\[((\\{\\d+ \\d+ \\d+\\} ?)*+)\\] Path: \\[((\\{\\d+ \\d+ \\d+\\} ?)*+)\\] UnvisitedPoints: \\[((\\{\\d+ \\d+ \\d+\\} ?)*)\\].*$");
 
     public RoutesFile(String path) throws IOException {
         super(path, HEADER, DATA);
