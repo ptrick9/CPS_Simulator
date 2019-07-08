@@ -369,7 +369,6 @@ func HandleMovementCSV(p *Params) {
 
 		//sync the QuadTree
 		p.NodeTree.NodeMovement(float64(newX), float64(newY), p.NodeList[j].NodeBounds)
-
 		if p.NodeList[j].InBounds(p) {
 			p.NodeList[j].Valid = true
 		} else {

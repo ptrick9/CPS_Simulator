@@ -135,6 +135,7 @@ type NodeImpl struct {
 	IsClusterHead		bool
 	CurTree				*Quadtree //tree that this object is in
 	NodeBounds			*Bounds //the node's representative bounds object
+	ClusterHeadId                  int //id of cluster head
 }
 
 //NodeMovement controls the movement of all the normal nodes
@@ -1438,4 +1439,27 @@ func (curNode *NodeImpl) GetReadingsCSV() {
 
 func rangeInt(min, max int) int { //returns a random number between max and min
 	return rand.Intn(max-min) + min
+}
+
+//Computes the cluster score (higher the score the better chance a node beccomes a cluster head)
+func (curNode * NodeImpl) ComputeClusterScore(searchRange float64, penalty float64) (score float64){
+	withinDist := []*Bounds{}
+	withinDist = curNode.P.NodeTree.WithinRadius(searchRange,curNode.NodeBounds,curNode.NodeBounds.GetSearchBounds(searchRange),withinDist)
+	degree := float64(len(withinDist))
+	battery := float64(curNode.Battery)
+
+	//weighted sum, 60% from degree (# of nodes withinin distance), 40% from its battery life
+	// penalty can be used to decrease for a given reason (isolated, not moving, etc)
+	return ((0.6*degree + 0.4*battery)*penalty)
+}
+
+//Generates Hello Message for node to form/maintain clusters. Returns message as a string
+func (curNode * NodeImpl)GenerateHello(searchRange float64) (message string){
+	mh_id := curNode.Id //ID of the current node
+	ch_id := curNode.ClusterHeadId	//ID of the current node's cluster head
+	chc := curNode.ComputeClusterScore(searchRange, 0)	//the node's cluster score
+	option := 0	//option for joining a cluster
+	bp := 0.2 //broadcast period (hello period) 0.2 s
+	message = fmt.Sprintf("%g-%g-%g-%d-%g",mh_id,ch_id,chc,option,bp)
+	return message
 }
