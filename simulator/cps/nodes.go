@@ -133,6 +133,8 @@ type NodeImpl struct {
 	TotalPacketsSent    int
 	TotalBytesSent		int
 	IsClusterHead		bool
+	CurTree				*Quadtree //tree that this object is in
+	NodeBounds			*Bounds //the node's representative bounds object
 }
 
 //NodeMovement controls the movement of all the normal nodes

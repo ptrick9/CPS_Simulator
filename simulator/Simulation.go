@@ -133,7 +133,7 @@ func main() {
 		MaxObjects: 4,
 		MaxLevels:  4,
 		Level:      0,
-		Objects:    make([]cps.Bounds, 0),
+		Objects:    make([]*cps.Bounds, 0),
 		ParentTree: nil,
 		SubTrees:   make([]*cps.Quadtree, 0),
 	}
@@ -375,6 +375,7 @@ func main() {
 		} else {
 			cps.HandleMovement(p)
 		}
+		p.NodeTree.CleanUp() //clean the tree after movement
 
 		fmt.Fprintln(p.RoutingFile, "Amount:", p.NumSuperNodes)
 
