@@ -325,14 +325,14 @@ func HandleMovement(p *Params) {
 	for j := 0; j < len(p.NodeList); j++ {
 
 		oldX, oldY := p.NodeList[j].GetLoc()
-		p.BoolGrid[oldX][oldY] = false //set the old spot false since the node will now move away
+		p.BoolGrid[int(oldX)][int(oldY)] = false //set the old spot false since the node will now move away
 
 		//move the node to its new location
 		p.NodeList[j].Move(p)
 
 		//set the new location in the boolean field to true
 		newX, newY := p.NodeList[j].GetLoc()
-		p.BoolGrid[newX][newY] = true
+		p.BoolGrid[int(newX)][int(newY)] = true
 
 		//writes the node information to the file
 		if p.EnergyPrint {
@@ -352,14 +352,14 @@ func HandleMovementCSV(p *Params) {
 
 		if p.NodeList[j].Valid {
 			oldX, oldY := p.NodeList[j].GetLoc()
-			p.BoolGrid[oldX][oldY] = false //set the old spot false since the node will now move away
+			p.BoolGrid[int(oldX)][int(oldY)] = false //set the old spot false since the node will now move away
 		}
 		//move the node to its new location
 		//p.NodeList[j].Move(p)
 
 		id := p.NodeList[j].GetID()
-		p.NodeList[j].X = p.NodeMovements[id][time].X
-		p.NodeList[j].Y = p.NodeMovements[id][time].Y
+		p.NodeList[j].X = float32(p.NodeMovements[id][time].X)
+		p.NodeList[j].Y = float32(p.NodeMovements[id][time].Y)
 
 
 		//set the new location in the boolean field to true
@@ -371,7 +371,7 @@ func HandleMovementCSV(p *Params) {
 			p.NodeList[j].Valid = false
 		}
 		if p.NodeList[j].Valid {
-			p.BoolGrid[newX][newY] = true
+			p.BoolGrid[int(newX)][int(newY)] = true
 		}
 
 		//writes the node information to the file
@@ -414,7 +414,7 @@ func InitializeNodeParameters(p *Params, nodeNum int) *NodeImpl{
 	curNode.SetET1(p.Tau1 * rand.Float64() * p.ErrorModifierCM * 0.05)
 	curNode.SetET2(p.Tau1 * rand.Float64() * p.ErrorModifierCM * 0.05)
 
-	//set node time and initial sensitivity
+	//set node Time and initial sensitivity
 	curNode.NodeTime = 0
 	curNode.InitialSensitivity = s0 + (s1)*math.Exp(-float64(curNode.NodeTime)/p.Tau1) + (s2)*math.Exp(-float64(curNode.NodeTime)/p.Tau2)
 	curNode.Sensitivity = curNode.InitialSensitivity
@@ -426,18 +426,19 @@ func SetupCSVNodes(p *Params) {
 	for i := 0; i < p.TotalNodes; i++ {
 		newNode := InitializeNodeParameters(p, i)
 
-		newNode.X = p.NodeMovements[i][0].X
-		newNode.Y = p.NodeMovements[i][1].Y
+		newNode.X = float32(p.NodeMovements[i][0].X)
+		newNode.Y = float32(p.NodeMovements[i][1].Y)
 
 		if newNode.InBounds(p) {
 			newNode.Valid = true
-			p.BoolGrid[newNode.X][newNode.Y] = true
+			p.BoolGrid[int(newNode.X)][int(newNode.Y)] = true
 		} else {
 			newNode.Valid = false
 		}
 
 		p.NodeList = append(p.NodeList, *newNode)
 		p.CurrentNodes += 1
+		p.Events.Push(&Event{newNode, SENSE, 0, 0})
 	}
 
 }
@@ -455,8 +456,8 @@ func SetupRandomNodes(p *Params) {
 				yy = rangeInt(1, p.MaxY)
 			}
 
-			newNode.X = xx
-			newNode.Y = yy
+			newNode.X = float32(xx)
+			newNode.Y = float32(yy)
 
 			newNode.Valid = true
 			p.BoolGrid[xx][yy] = true
@@ -837,6 +838,7 @@ func readSensorCSV(p *Params) {
 	for i := range times {
 		p.SensorTimes[i], _ = strconv.Atoi(times[i][1])
 	}
+	p.MaxTimeStep = len(times)
 
 	numSamples := len(record[2]) - 2
 
@@ -907,7 +909,7 @@ func readMovementCSV(p *Params) {
 	for time < len(record) {
 		iter := 0
 
-		for iter < len(record[time])-1 {
+		for iter < len(record[time])-1 && iter/2 < p.TotalNodes {
 			x, _ := strconv.ParseInt(record[time][iter], 10, 32);
 			y, _ := strconv.ParseInt(record[time][iter+1], 10, 32);
 
@@ -1054,6 +1056,7 @@ func GetFlags(p *Params) {
 		"Multiplier for error values in system")
 	flag.BoolVar(&p.CSVSensor, "csvSensor", true, "Read Sensor Values from CSV")
 	flag.BoolVar(&p.CSVMovement, "csvMove", true, "Read Movements from CSV")
+	flag.BoolVar(&p.SuperNodes, "superNodes", true, "Enable SuperNodes")
 	flag.IntVar(&p.IterationsCM, "iterations", 200, "Read Movements from CSV")
 	//Range 1, 2, or 4
 	//Currently works for only a few numbers, can be easily expanded but is not currently dynamic

@@ -49,7 +49,7 @@ func GetLinearBatteryValues(numNodes int) (y []float32) {
 	return
 }
 
-//Returns a constant value for a uniform battery loss for all the nodes
+//Returns a constant Value for a uniform battery loss for all the nodes
 func GetLinearBatteryLossConstant(numNodes int, lossConst float32) (y []float32) {
 	for numNodes >= 1 {
 		y = append(y, lossConst)
@@ -120,7 +120,7 @@ func GetInitialChargeSuperDynamic(numNodes int, scalar float32) (y []float32) {
 	return Shuffle(y)
 }
 
-//returns index of int in array
+//returns Index of int in array
 func GetIndexInt(slice []int, element int) int {
 	for i := 0; i < len(slice); i++ {
 		if slice[i] == element {
@@ -130,7 +130,7 @@ func GetIndexInt(slice []int, element int) int {
 	return -1
 }
 
-//removes index from array
+//removes Index from array
 func RemoveFloat32(slice []float32, s int) []float32 {
 	return append(slice[:s], slice[s+1:]...)
 }

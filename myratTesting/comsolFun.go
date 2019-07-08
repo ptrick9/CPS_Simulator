@@ -160,7 +160,7 @@ func main() {
 	fmt.Printf("Running Simulator iteration %d\\%v", 0, p.Iterations_of_event)
 
 	iters := 0
-	p.CurrTime = 0
+	p.TimeStep = 0
 
 
 	if p.CSVMovement {
@@ -173,10 +173,10 @@ func main() {
 
 		for i := 0; i < len(p.SensorTimes); i++ {
 			if p.Iterations_used == p.SensorTimes[i] {
-				p.CurrTime = i
+				p.TimeStep = i
 			}
 		}
-		fmt.Printf("Current time: %d\n", p.CurrTime)
+		fmt.Printf("Current time: %d\n", p.TimeStep)
 
 
 

@@ -27,7 +27,7 @@ type NodeParent interface {
 	SetConcentration(conc float64)  //sets the concentration of a node
 	GeoDist(b Bomb) float32         //returns distance from bomb (rather than reading of node)
 	GetID() int                     //returns ID of node
-	GetLoc() (x, y int)             //returns x and y values of node
+	GetLoc() (x, y float32)             //returns x and y values of node
 
 	//following functions set drifting parameters of nodes
 	SetS0(s0 float64)
@@ -47,13 +47,13 @@ type NodeParent interface {
 //NodeImpl is a struct that implements all the methods listed
 //	above in NodeParent
 type NodeImpl struct {
-	P *Params
+	P 								*Params
 	Id                              int      //Id of node
 	OldX                            int      // for movement
 	OldY                            int      // for movement
 	Sitting                         int      // for movement
-	X                               int      //x pos of node
-	Y                               int      //y pos of node
+	X                               float32      //x pos of node
+	Y                               float32      //y pos of node
 	Battery                         float32  //battery of node
 	BatteryLossScalar               float32  //natural incremental battery loss of node
 	BatteryLossSensor				float32  //sensor based battery loss of node
@@ -82,9 +82,9 @@ type NodeImpl struct {
 	ServerPings                     float32  //This is the total server pings to be made
 	Cascade                         int      //This cascades the pings of the nodes
 	BufferI                         int      //This is to keep track of the node's buffer size
-	XPos                            [100]int //x pos buffer of node
-	YPos                            [100]int //y pos buffer of node
-	Value                           [100]int //value buffer of node
+	XPos                            [100]float32 //x pos buffer of node
+	YPos                            [100]float32 //y pos buffer of node
+	Value                           [100]int //Value buffer of node
 	AccelerometerSpeedServer        [100]int //Accelerometer speed history of node
 	Time                            [100]int //This keeps track of when specific pings are made
 	//speedGPSPeriod int //This is a special period for speed based GPS pings but it is not used and may never be
@@ -189,21 +189,21 @@ type Path struct {
 	Dist float64
 }
 
-//Returns the x index of the square in which the specific
+//Returns the x Index of the square in which the specific
 //	node currently resides
 func (curNode *NodeImpl) Row(div int) int {
-	return curNode.Y / div
+	return int(curNode.Y) / div
 }
 
-//Returns the y index of the square in which the specific
+//Returns the y Index of the square in which the specific
 //	node currently resides
 func (curNode *NodeImpl) Col(div int) int {
-	return curNode.X / div
+	return int(curNode.X) / div
 }
 
 func (curNode *NodeImpl) InBounds(p *Params) bool {
-	if curNode.X < curNode.P.Width && curNode.X >= 0 {
-		if curNode.Y < curNode.P.Height && curNode.Y >= 0 {
+	if int(curNode.X) < curNode.P.Width && int(curNode.X) >= 0 {
+		if int(curNode.Y) < curNode.P.Height && curNode.Y >= 0 {
 			return true
 		}
 	}
@@ -237,8 +237,8 @@ func (curNode Rn) String() string {
 } // end extra extra string statements
 
 func (curNode NodeImpl) String() string {
-	//return fmt.Sprintf("x: %v y: %v Id: %v battery: %v sensor checked: %v sensor checks: %v GPS checked: %v GPS checks: %v server checked: %v server checks: %v buffer: %v ", curNode.X, curNode.Y, curNode.Id, curNode.Battery, curNode.HasCheckedSensor, curNode.TotalChecksSensor, curNode.HasCheckedGPS, curNode.TotalChecksGPS, curNode.HasCheckedServer, curNode.TotalChecksServer,curNode.BufferI)
-	return fmt.Sprintf("battery: %v sensor checked: %v GPS checked: %v ", int(curNode.Battery), curNode.HasCheckedSensor, curNode.HasCheckedGPS)
+	//return fmt.Sprintf("x: %v y: %v Id: %v battery: %v sensor checked: %v sensor checks: %v GPS checked: %v GPS checks: %v server checked: %v server checks: %v buffer: %v ", int(curNode.X), curNode.Y, curNode.Id, curNode.Battery, curNode.HasCheckedSensor, curNode.TotalChecksSensor, curNode.HasCheckedGPS, curNode.TotalChecksGPS, curNode.HasCheckedServer, curNode.TotalChecksServer,curNode.BufferI)
+	return fmt.Sprintf("x: %v y: %v valid: %v", int(curNode.X), int(curNode.Y), curNode.Valid)
 
 }
 
@@ -252,58 +252,58 @@ func (c Coord) Equals(c2 Coord) bool {
 
 func (curNode *NodeImpl) Move(p *Params) {
 	if curNode.Sitting <= curNode.P.SittingStopThresholdCM {
-		curNode.OldX = curNode.X / curNode.P.XDiv
-		curNode.OldY = curNode.Y / curNode.P.XDiv
+		curNode.OldX = int(curNode.X) / curNode.P.XDiv
+		curNode.OldY = int(curNode.Y) / curNode.P.YDiv
 
 		var potentialSpots []GridSpot
 
 		//only add the ones that are valid to move to into the list
-		if curNode.Y-1 >= 0 &&
-			curNode.X >= 0 &&
-			curNode.X < curNode.P.Width &&
-			curNode.Y-1 < curNode.P.Height &&
+		if int(curNode.Y)-1 >= 0 &&
+			int(curNode.X) >= 0 &&
+			int(curNode.X) < curNode.P.Width &&
+			int(curNode.Y)-1 < curNode.P.Height &&
 
-			curNode.P.BoardMap[curNode.X][curNode.Y-1] != -1 &&
-			curNode.P.BoolGrid[curNode.X][curNode.Y-1] == false { // &&
-			//curNode.P.BoardMap[curNode.X][curNode.Y-1] <= curNode.P.BoardMap[curNode.X][curNode.Y] {
+			curNode.P.BoardMap[int(curNode.X)][int(curNode.Y)-1] != -1 &&
+			curNode.P.BoolGrid[int(curNode.X)][int(curNode.Y)-1] == false { // &&
+			//curNode.P.BoardMap[int(curNode.X)][curNode.Y-1] <= curNode.P.BoardMap[int(curNode.X)][curNode.Y] {
 
-			up := GridSpot{curNode.X, curNode.Y - 1, curNode.P.BoardMap[curNode.X][curNode.Y-1]}
+			up := GridSpot{int(curNode.X), int(curNode.Y) - 1, curNode.P.BoardMap[int(curNode.X)][int(curNode.Y)-1]}
 			potentialSpots = append(potentialSpots, up)
 		}
-		if curNode.X+1 < curNode.P.Width &&
-			curNode.X+1 >= 0 &&
-			curNode.Y < curNode.P.Height &&
+		if int(curNode.X)+1 < curNode.P.Width &&
+			int(curNode.X)+1 >= 0 &&
+			int(curNode.Y) < curNode.P.Height &&
 			curNode.Y >= 0 &&
 
-			curNode.P.BoardMap[curNode.X+1][curNode.Y] != -1 &&
-			curNode.P.BoolGrid[curNode.X+1][curNode.Y] == false { // &&
-			//curNode.P.BoardMap[curNode.X+1][curNode.Y] <= curNode.P.BoardMap[curNode.X][curNode.Y] {
+			curNode.P.BoardMap[int(curNode.X)+1][int(curNode.Y)] != -1 &&
+			curNode.P.BoolGrid[int(curNode.X)+1][int(curNode.Y)] == false { // &&
+			//curNode.P.BoardMap[int(curNode.X)+1][curNode.Y] <= curNode.P.BoardMap[int(curNode.X)][curNode.Y] {
 
-			right := GridSpot{curNode.X + 1, curNode.Y, curNode.P.BoardMap[curNode.X+1][curNode.Y]}
+			right := GridSpot{int(curNode.X) + 1, int(curNode.Y), curNode.P.BoardMap[int(curNode.X)+1][int(curNode.Y)]}
 			potentialSpots = append(potentialSpots, right)
 		}
-		if curNode.Y+1 < curNode.P.Height &&
+		if int(curNode.Y)+1 < curNode.P.Height &&
 			curNode.Y+1 >= 0 &&
-			curNode.X < curNode.P.Width &&
-			curNode.X >= 0 &&
+			int(curNode.X) < curNode.P.Width &&
+			int(curNode.X) >= 0 &&
 
-			curNode.P.BoardMap[curNode.X][curNode.Y+1] != -1 &&
-			curNode.P.BoolGrid[curNode.X][curNode.Y+1] == false { //&&
-			//curNode.P.BoardMap[curNode.X][curNode.Y+1] <= curNode.P.BoardMap[curNode.X][curNode.Y] {
+			curNode.P.BoardMap[int(curNode.X)][int(curNode.Y)+1] != -1 &&
+			curNode.P.BoolGrid[int(curNode.X)][int(curNode.Y)+1] == false { //&&
+			//curNode.P.BoardMap[int(curNode.X)][curNode.Y+1] <= curNode.P.BoardMap[int(curNode.X)][curNode.Y] {
 
-			down := GridSpot{curNode.X, curNode.Y + 1, curNode.P.BoardMap[curNode.X][curNode.Y+1]}
+			down := GridSpot{int(curNode.X), int(curNode.Y) + 1, curNode.P.BoardMap[int(curNode.X)][int(curNode.Y)+1]}
 			potentialSpots = append(potentialSpots, down)
 		}
-		if curNode.X-1 >= 0 &&
-			curNode.X-1 < curNode.P.Width &&
+		if int(curNode.X)-1 >= 0 &&
+			int(curNode.X)-1 < curNode.P.Width &&
 			curNode.Y >= 0 &&
-			curNode.Y < curNode.P.Height &&
+			int(curNode.Y) < curNode.P.Height &&
 
-			curNode.P.BoardMap[curNode.X-1][curNode.Y] != -1 &&
-			curNode.P.BoolGrid[curNode.X-1][curNode.Y] == false { // &&
-			//curNode.P.BoardMap[curNode.X-1][curNode.Y] <= curNode.P.BoardMap[curNode.X][curNode.Y] {
+			curNode.P.BoardMap[int(curNode.X)-1][int(curNode.Y)] != -1 &&
+			curNode.P.BoolGrid[int(curNode.X)-1][int(curNode.Y)] == false { // &&
+			//curNode.P.BoardMap[int(curNode.X)-1][curNode.Y] <= curNode.P.BoardMap[int(curNode.X)][curNode.Y] {
 
-			left := GridSpot{curNode.X - 1, curNode.Y, curNode.P.BoardMap[curNode.X-1][curNode.Y]}
+			left := GridSpot{int(curNode.X) - 1, int(curNode.Y), curNode.P.BoardMap[int(curNode.X)-1][int(curNode.Y)]}
 			potentialSpots = append(potentialSpots, left)
 		}
 
@@ -314,7 +314,7 @@ func (curNode *NodeImpl) Move(p *Params) {
 
 		/*for i := 0; i < len(potentialSpots); i++ {
 			if curNode.P.Grid[potentialSpots[i].Y/curNode.P.YDiv][potentialSpots[i].X/curNode.P.XDiv].ActualNumNodes <= curNode.P.SquareCapacity {
-				curNode.X = potentialSpots[i].X
+				int(curNode.X) = potentialSpots[i].X
 				curNode.Y = potentialSpots[i].Y
 				break
 			}
@@ -322,13 +322,13 @@ func (curNode *NodeImpl) Move(p *Params) {
 
 		//If there are no potential spots, do not move
 		if len(potentialSpots) > 0 {
-			curNode.X = potentialSpots[0].X
-			curNode.Y = potentialSpots[0].Y
+			curNode.X = float32(potentialSpots[0].X)
+			curNode.Y = float32(potentialSpots[0].Y)
 		}
 
 		//Change number of nodes in square
-		/*if curNode.X/curNode.P.XDiv != curNode.OldX || curNode.Y/curNode.P.YDiv != curNode.OldY {
-			curNode.P.Grid[curNode.Y/curNode.P.YDiv][curNode.X/curNode.P.XDiv].ActualNumNodes = curNode.P.Grid[curNode.Y/curNode.P.YDiv][curNode.X/curNode.P.XDiv].ActualNumNodes + 1
+		/*if int(curNode.X)/curNode.P.XDiv != curNode.OldX || curNode.Y/curNode.P.YDiv != curNode.OldY {
+			curNode.P.Grid[curNode.Y/curNode.P.YDiv][int(curNode.X)/curNode.P.XDiv].ActualNumNodes = curNode.P.Grid[curNode.Y/curNode.P.YDiv][int(curNode.X)/curNode.P.XDiv].ActualNumNodes + 1
 			curNode.P.Grid[curNode.OldY][curNode.OldX].ActualNumNodes = curNode.P.Grid[curNode.OldY][curNode.OldX].ActualNumNodes - 1
 		}*/
 
@@ -347,7 +347,7 @@ func (curNode *NodeImpl) Recalibrate() {
 	//fmt.Printf("Node %v recalibrated!\curNode", curNode.Id)
 	curNode.hasCalibrated = true
 }
-
+/*
 //Moves the bouncing node
 func (curNode *Bn) Move(p *Params) {
 	//Boundary conditions
@@ -356,7 +356,7 @@ func (curNode *Bn) Move(p *Params) {
 	} else {
 		if curNode.X+curNode.X_speed >= curNode.P.MaxX {
 			curNode.X = curNode.X - (curNode.X_speed - (curNode.P.MaxX - 1 - curNode.X))
-			curNode.X_speed = curNode.X_speed * -1
+			curNode.X_speed = int(curNode.X)_speed * -1
 		} else {
 			curNode.X = (curNode.X_speed + curNode.X) * -1
 			curNode.X_speed = curNode.X_speed * -1
@@ -430,13 +430,13 @@ func (curNode *Rn) Move(p *Params) {
 		}
 	}
 }
-
-//Returns the arr with the element at index curNode removed
+*/
+//Returns the arr with the element at Index curNode removed
 func Remove_index(arr []Path, curNode int) []Path {
 	return arr[:curNode+copy(arr[curNode:], arr[curNode+1:])]
 }
 
-//Returns the array with the range of elements from index
+//Returns the array with the range of elements from Index
 //	a to b removed
 func Remove_range(arr []Coord, a, b int) []Coord {
 	if b > a {
@@ -457,7 +457,7 @@ func Remove_range(arr []Coord, a, b int) []Coord {
 }
 
 //Returns the array with the specified array inserted inside at
-//	index curNode
+//	Index curNode
 func Insert_array(arr1 []Coord, arr2 []Coord, curNode int) []Coord {
 	if len(arr1) == 0 {
 		return arr2
@@ -492,14 +492,14 @@ func (curNode *NodeImpl) BatteryLossDynamic1() {
 	curNode.Current = curNode.ToggleCheckIterator % 3
 	curNode.Previous = (curNode.ToggleCheckIterator - 1) % 3
 	if curNode.Current == 0 {
-		curNode.AccelerometerPosition[0][0] = curNode.X
-		curNode.AccelerometerPosition[1][0] = curNode.Y
+		curNode.AccelerometerPosition[0][0] = int(curNode.X)
+		curNode.AccelerometerPosition[1][0] = int(curNode.Y)
 	} else if curNode.Current == 1 {
-		curNode.AccelerometerPosition[0][1] = curNode.X
-		curNode.AccelerometerPosition[1][1] = curNode.Y
+		curNode.AccelerometerPosition[0][1] = int(curNode.X)
+		curNode.AccelerometerPosition[1][1] = int(curNode.Y)
 	} else if curNode.Current == 2 {
-		curNode.AccelerometerPosition[0][2] = curNode.X
-		curNode.AccelerometerPosition[1][2] = curNode.Y
+		curNode.AccelerometerPosition[0][2] = int(curNode.X)
+		curNode.AccelerometerPosition[1][2] = int(curNode.Y)
 	}
 	curNode.Diffx = curNode.AccelerometerPosition[0][curNode.Current] - curNode.AccelerometerPosition[0][curNode.Previous]
 	curNode.Diffy = curNode.AccelerometerPosition[1][curNode.Current] - curNode.AccelerometerPosition[1][curNode.Previous]
@@ -593,14 +593,14 @@ func (curNode *NodeImpl) BatteryLossTable() {
 	curNode.Previous = (curNode.ToggleCheckIterator - 1) % 3
 	// this is the accelerometer's functions
 	if curNode.Current == 0 {
-		curNode.AccelerometerPosition[0][0] = curNode.X
-		curNode.AccelerometerPosition[1][0] = curNode.Y
+		curNode.AccelerometerPosition[0][0] = int(curNode.X)
+		curNode.AccelerometerPosition[1][0] = int(curNode.Y)
 	} else if curNode.Current == 1 {
-		curNode.AccelerometerPosition[0][1] = curNode.X
-		curNode.AccelerometerPosition[1][1] = curNode.Y
+		curNode.AccelerometerPosition[0][1] = int(curNode.X)
+		curNode.AccelerometerPosition[1][1] = int(curNode.Y)
 	} else if curNode.Current == 2 {
-		curNode.AccelerometerPosition[0][2] = curNode.X
-		curNode.AccelerometerPosition[1][2] = curNode.Y
+		curNode.AccelerometerPosition[0][2] = int(curNode.X)
+		curNode.AccelerometerPosition[1][2] = int(curNode.Y)
 	}
 	curNode.Diffx = curNode.AccelerometerPosition[0][curNode.Current] - curNode.AccelerometerPosition[0][curNode.Previous]
 	curNode.Diffy = curNode.AccelerometerPosition[1][curNode.Current] - curNode.AccelerometerPosition[1][curNode.Previous]
@@ -648,7 +648,7 @@ func (curNode *NodeImpl) BatteryLossTable() {
 
 func (curNode *NodeImpl) LogBatteryPower(t int){
 	//fmt.Println("entered function")
-	//t should be p.CurrTime
+	//t should be p.TimeStep
 	if(curNode.BatteryOverTime == nil){
 		curNode.BatteryOverTime = map[int]float32{}
 	}
@@ -671,14 +671,14 @@ func (curNode *NodeImpl) TrackAccelerometer(){
 
 	// this is the accelerometer's functions
 	if curNode.Current == 0 {
-		curNode.AccelerometerPosition[0][0] = curNode.X
-		curNode.AccelerometerPosition[1][0] = curNode.Y
+		curNode.AccelerometerPosition[0][0] = int(curNode.X)
+		curNode.AccelerometerPosition[1][0] = int(curNode.Y)
 	} else if curNode.Current == 1 {
-		curNode.AccelerometerPosition[0][1] = curNode.X
-		curNode.AccelerometerPosition[1][1] = curNode.Y
+		curNode.AccelerometerPosition[0][1] = int(curNode.X)
+		curNode.AccelerometerPosition[1][1] = int(curNode.Y)
 	} else if curNode.Current == 2 {
-		curNode.AccelerometerPosition[0][2] = curNode.X
-		curNode.AccelerometerPosition[1][2] = curNode.Y
+		curNode.AccelerometerPosition[0][2] = int(curNode.X)
+		curNode.AccelerometerPosition[1][2] = int(curNode.Y)
 	}
 	curNode.Diffx = curNode.AccelerometerPosition[0][curNode.Current] - curNode.AccelerometerPosition[0][curNode.Previous]
 	curNode.Diffy = curNode.AccelerometerPosition[1][curNode.Current] - curNode.AccelerometerPosition[1][curNode.Previous]
@@ -751,14 +751,14 @@ func (curNode *NodeImpl) BatteryLossMostDynamic() {
 
 	// this is the accelerometer's functions
 	if curNode.Current == 0 {
-		curNode.AccelerometerPosition[0][0] = curNode.X
-		curNode.AccelerometerPosition[1][0] = curNode.Y
+		curNode.AccelerometerPosition[0][0] = int(curNode.X)
+		curNode.AccelerometerPosition[1][0] = int(curNode.Y)
 	} else if curNode.Current == 1 {
-		curNode.AccelerometerPosition[0][1] = curNode.X
-		curNode.AccelerometerPosition[1][1] = curNode.Y
+		curNode.AccelerometerPosition[0][1] = int(curNode.X)
+		curNode.AccelerometerPosition[1][1] = int(curNode.Y)
 	} else if curNode.Current == 2 {
-		curNode.AccelerometerPosition[0][2] = curNode.X
-		curNode.AccelerometerPosition[1][2] = curNode.Y
+		curNode.AccelerometerPosition[0][2] = int(curNode.X)
+		curNode.AccelerometerPosition[1][2] = int(curNode.Y)
 	}
 	curNode.Diffx = curNode.AccelerometerPosition[0][curNode.Current] - curNode.AccelerometerPosition[0][curNode.Previous]
 	curNode.Diffy = curNode.AccelerometerPosition[1][curNode.Current] - curNode.AccelerometerPosition[1][curNode.Previous]
@@ -853,14 +853,14 @@ func (curNode *NodeImpl) BatteryLossDynamic() {
 	previous := (curNode.ToggleCheckIterator - 1) % 3
 	// this is the accelerometer's functions
 	if current == 0 {
-		curNode.AccelerometerPosition[0][0] = curNode.X
-		curNode.AccelerometerPosition[1][0] = curNode.Y
+		curNode.AccelerometerPosition[0][0] = int(curNode.X)
+		curNode.AccelerometerPosition[1][0] = int(curNode.Y)
 	} else if current == 1 {
-		curNode.AccelerometerPosition[0][1] = curNode.X
-		curNode.AccelerometerPosition[1][1] = curNode.Y
+		curNode.AccelerometerPosition[0][1] = int(curNode.X)
+		curNode.AccelerometerPosition[1][1] = int(curNode.Y)
 	} else if current == 2 {
-		curNode.AccelerometerPosition[0][2] = curNode.X
-		curNode.AccelerometerPosition[1][2] = curNode.Y
+		curNode.AccelerometerPosition[0][2] = int(curNode.X)
+		curNode.AccelerometerPosition[1][2] = int(curNode.Y)
 	}
 	diffx := curNode.AccelerometerPosition[0][current] - curNode.AccelerometerPosition[0][previous]
 	diffy := curNode.AccelerometerPosition[1][current] - curNode.AccelerometerPosition[1][previous]
@@ -960,18 +960,18 @@ func (curNode *NodeImpl) DecrementPowerSensor(){
 }
 
 
-/* updateHistory shifts all values in the sample history slice to the right and adds the value at the beginning
+/* updateHistory shifts all values in the sample history slice to the right and adds the Value at the beginning
 Therefore, each Time a node takes a sample in main, it also adds this sample to the beginning of the sample history.
 Each sample is only stored until ln more samples have been taken (this variable is in hello.go)
 */
 func (curNode *NodeImpl) UpdateHistory(newValue float32) {
 
-	//loop through the sample history slice in reverse order, excluding 0th index
+	//loop through the sample history slice in reverse order, excluding 0th Index
 	for i := len(curNode.SampleHistory) - 1; i > 0; i-- {
-		curNode.SampleHistory[i] = curNode.SampleHistory[i-1] //set the current index equal to the value of the previous index
+		curNode.SampleHistory[i] = curNode.SampleHistory[i-1] //set the current Index equal to the Value of the previous Index
 	}
 
-	curNode.SampleHistory[0] = newValue //set 0th index to new measured value
+	curNode.SampleHistory[0] = newValue //set 0th Index to new measured Value
 
 	/* Now calculate the weighted average of the sample history. Note that if a node is stationary, all values
 	averaged over are weighted equally. The faster the node is moving, the less the older values are worth when
@@ -1031,7 +1031,7 @@ func (curNode *NodeImpl) getDriftSlope() (float32, float32){
 	//slope = ( (size * xySum) - (xSum * ySum) ) / ( (size * float32(xSqrSum)) - float32(math.Pow(float64(xSum), 2)) )
 	//slope = sum / float32(squareSumX)
 	if r > 1 || r < -1 {
-		fmt.Printf("Bad r value! Got %v\n", r)
+		fmt.Printf("Bad r Value! Got %v\n", r)
 	}
 	return r, slope
 }
@@ -1063,7 +1063,7 @@ func (curNode *NodeImpl) GetID() int {
 }
 
 //getter function for x and y locations
-func (curNode *NodeImpl) GetLoc() (int, int) {
+func (curNode *NodeImpl) GetLoc() (float32, float32) {
 	return curNode.X, curNode.Y
 }
 
@@ -1118,12 +1118,12 @@ func (curNode *NodeImpl) GetCoefficients() (float64, float64, float64) {
 }
 
 //getter function for x
-func (curNode *NodeImpl) GetX() int {
+func (curNode *NodeImpl) GetX() float32 {
 	return curNode.X
 }
 
 //getter function for y
-func (curNode *NodeImpl) GetY() int {
+func (curNode *NodeImpl) GetY() float32 {
 	return curNode.Y
 }
 
@@ -1175,7 +1175,7 @@ func (curNode *NodeImpl) GetSpeed() []float32 {
 
 //Returns a different version of the distance to the bomb
 func (curNode *NodeImpl) GetValue() int {
-	return int(math.Sqrt(math.Pow(float64(curNode.X-curNode.P.B.X), 2) + math.Pow(float64(curNode.Y-curNode.P.B.Y), 2)))
+	return int(math.Sqrt(math.Pow(float64(int(curNode.X)-curNode.P.B.X), 2) + math.Pow(float64(curNode.Y-float32(curNode.P.B.Y)), 2)))
 }
 
 //Takes cares of taking a node's readings and printing detections and stuff
@@ -1185,9 +1185,9 @@ func (curNode *NodeImpl) GetReadings() {
 	if curNode.Valid { //Check if node should actually take readings or if it hasn't shown up yet
 		newX, newY := curNode.GetLoc()
 
-		newDist := curNode.Distance(*curNode.P.B) //this is the node's reported value without error
+		newDist := curNode.Distance(*curNode.P.B) //this is the node's reported Value without error
 
-		//need to get the correct Time reading value from system
+		//need to get the correct Time reading Value from system
 		//need to verify where we read from
 
 		//Calculate error, sensitivity, and noise, as per the matlab code
@@ -1276,9 +1276,7 @@ func (curNode *NodeImpl) GetReadings() {
 			//fmt.Fprintln(nodeFile, "battery:", int(curNode.Battery),)
 		}
 
-		if curNode.P.PositionPrint {
-			fmt.Fprintln(curNode.P.PositionFile, "ID:", curNode.GetID(), "x:", newX, "y:", newY)
-		}
+
 
 		curNode.P.Recalibrate = false
 
@@ -1308,21 +1306,75 @@ func (curNode *NodeImpl) GetReadings() {
 			}
 			curNode.hasCalibrated = false
 			//slope, r := curNode.getDriftSlope()
-			//fmt.Printf("Node: %v, Slope: %v, R value: %v\curNode", curNode.Id, slope, r)
+			//fmt.Printf("Node: %v, Slope: %v, R Value: %v\curNode", curNode.Id, slope, r)
 			//curNode.P.Grid[curNode.Row(curNode.P.YDiv)][curNode.Col(curNode.P.XDiv)].SquareValues += math.Pow(float64(errorDist-float64(gridAverage)), 2)
 		}
 	}
+	curNode.P.Events.Push(Event{curNode, SENSE, curNode.P.CurrentTime + 1000, 0})
 
+
+}
+
+func interpolateReading(x , y float32, time, timeStep int, p *Params) float32{
+	oldX := int(x)
+	oldY := int(y)
+	nextX := int(math.Ceil(float64(x)))
+	nextY := int(math.Ceil(float64(y)))
+
+
+	//calculate reading at last 'even' position
+	oldReadingA := p.SensorReadings[oldX][oldY][timeStep]
+	futureReadingA := p.SensorReadings[oldX][oldY][timeStep]
+	if(timeStep < p.MaxTimeStep) {
+		futureReadingA = p.SensorReadings[oldX][oldY][timeStep+1]
+	}
+
+	//calculate reading at next 'even' position
+	oldReadingB := p.SensorReadings[nextX][nextY][timeStep]
+	futureReadingB := p.SensorReadings[nextX][nextY][timeStep]
+	if(timeStep < p.MaxTimeStep) {
+		futureReadingB = p.SensorReadings[nextX][nextY][timeStep+1]
+	}
+
+	totalDistance := float32(math.Sqrt(math.Pow(math.Abs(float64(nextX - oldX)), 2) + math.Pow(math.Abs(float64(nextY - oldY)), 2)))
+	partialDist := float32((math.Sqrt(math.Pow(math.Abs(float64(float32(nextX) - x)), 2) + math.Pow(math.Abs(float64(float32(nextY) - y)), 2))))
+
+	//determine distance we have covered between the two positions
+	portionDist := partialDist / totalDistance
+
+
+
+	oldReading := (float32(oldReadingA - oldReadingB) * portionDist + float32(oldReadingA))  //t = 0 original and next position average
+	futureReading := (float32(futureReadingA - futureReadingB) * portionDist + float32(futureReadingA)) //t = 1 original and next position average
+
+
+	floatTime := float32(time)/1000
+	oldTime := p.SensorTimes[timeStep]
+	nextTime := p.SensorTimes[timeStep]
+	if(timeStep < p.MaxTimeStep) {
+		nextTime = p.SensorTimes[timeStep + 1]
+	}
+	portionTime := (floatTime - float32(oldTime))/float32(nextTime - oldTime)
+
+
+	return (oldReading-futureReading)*portionTime + oldReading
 }
 
 //Takes cares of taking a node's readings and printing detections and stuff
 func (curNode *NodeImpl) GetReadingsCSV() {
 
 	if curNode.Valid { //check if node has shown up yet
+
+
+
+
 		newX, newY := curNode.GetLoc()
 
-		//newDist := curNode.Distance(*curNode.P.B) //this is the node's reported value without error
-		newDist := curNode.P.SensorReadings[newX][newY][curNode.P.CurrTime]
+		newDist := interpolateReading(newX, newY, curNode.P.CurrentTime, curNode.P.TimeStep, curNode.P)
+
+		//newDist := curNode.Distance(*curNode.P.B) //this is the node's reported Value without error
+
+		//newDist := curNode.P.SensorReadings[newX][newY][curNode.P.TimeStep]
 		//Calculate error, sensitivity, and noise, as per the matlab code
 		S0, S1, S2, E0, E1, E2, ET1, ET2 := curNode.GetParams()
 		sError := (S0 + E0) + (S1+E1)*math.Exp(-float64(curNode.NodeTime)/(curNode.P.Tau1+ET1)) + (S2+E2)*math.Exp(-float64(curNode.NodeTime)/(curNode.P.Tau2+ET2))
@@ -1413,9 +1465,7 @@ func (curNode *NodeImpl) GetReadingsCSV() {
 			//fmt.Fprintln(nodeFile, "battery:", int(curNode.Battery),)
 		}
 
-		if curNode.P.PositionPrint {
-			fmt.Fprintln(curNode.P.PositionFile, "ID:", curNode.GetID(), "x:", newX, "y:", newY)
-		}
+
 
 		curNode.P.Recalibrate = false
 
@@ -1433,6 +1483,74 @@ func (curNode *NodeImpl) GetReadingsCSV() {
 			//curNode.P.Server.Send(curNode, Reading{errorDist, newX, newY, curNode.P.Iterations_used, curNode.GetID()})
 		}
 	}
+	curNode.P.Events.Push(&Event{curNode, SENSE, curNode.P.CurrentTime + 1000, 0})
+}
+
+func interpolate (start int, end int, portion float32) float32{
+	return (float32(start - end) * portion + float32(end))
+}
+
+//HandleMovementCSV does the same as HandleMovement
+func (curNode *NodeImpl) MoveCSV(p *Params) {
+	//time := p.Iterations_used
+	floatTemp := float32(p.CurrentTime)
+	intTime := int(floatTemp/1000)
+	portion := (floatTemp / 1000) - float32(intTime)
+
+	if curNode.Valid {
+		oldX, oldY := curNode.GetLoc()
+		p.BoolGrid[int(oldX)][int(oldY)] = false //set the old spot false since the node will now move away
+	}
+	//move the node to its new location
+	//curNode.Move(p)
+
+	id := curNode.GetID()
+
+	curNode.X = interpolate(p.NodeMovements[id][intTime].X, p.NodeMovements[id][intTime+1].X, portion)
+	curNode.Y = interpolate(p.NodeMovements[id][intTime].Y, p.NodeMovements[id][intTime+1].Y, portion)
+
+
+	/*curNode.X = p.NodeMovements[id][time].X
+	curNode.Y = p.NodeMovements[id][time].Y*/
+
+
+	//set the new location in the boolean field to true
+	newX, newY := curNode.GetLoc()
+
+	if curNode.InBounds(p) {
+		curNode.Valid = true
+	} else {
+		curNode.Valid = false
+	}
+	if curNode.Valid {
+		p.BoolGrid[int(newX)][int(newY)] = true
+	}
+
+
+	//Add the node into its new Square's p.TotalNodes
+	//If the node hasn't left the square, that Square's p.TotalNodes will
+	//remain the same after these calculations
+}
+
+//HandleMovement adjusts BoolGrid when nodes move around the map
+func (curNode *NodeImpl) MoveNormal(p *Params) {
+
+	oldX, oldY := curNode.GetLoc()
+	p.BoolGrid[int(oldX)][int(oldY)] = false //set the old spot false since the node will now move away
+
+	//move the node to its new location
+	curNode.Move(p)
+
+	//set the new location in the boolean field to true
+	newX, newY := curNode.GetLoc()
+	p.BoolGrid[int(newX)][int(newY)] = true
+
+
+
+	//Add the node into its new Square's p.TotalNodes
+	//If the node hasn't left the square, that Square's p.TotalNodes will
+	//remain the same after these calculations
+
 }
 
 func rangeInt(min, max int) int { //returns a random number between max and min

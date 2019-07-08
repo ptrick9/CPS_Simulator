@@ -41,7 +41,7 @@ type Square struct {
 
 //Adds a node to this Square, increasing its numNodes
 func (s *Square) AddNode(n * NodeImpl) {
-	s.NodesInSquare[Tuple{n.X,n.Y}] = n;
+	s.NodesInSquare[Tuple{int(n.X),int(n.Y)}] = n;
 	s.NumNodes += 1
 }
 
@@ -52,9 +52,9 @@ func (s *Square) nearbyNodes () (map[Tuple]*NodeImpl){
 
 //Removes a node from this Square, decreasing its numNodes
 func (s *Square) RemoveNode(n * NodeImpl) {
-	var s_temp = s.NodesInSquare[Tuple{n.X,n.Y}]
+	var s_temp = s.NodesInSquare[Tuple{int(n.X),int(n.Y)}]
 	if s_temp == n{ //checks if node is in Square before deleting from square, avoids exception
-		delete(s.NodesInSquare, Tuple{n.X,n.Y});
+		delete(s.NodesInSquare, Tuple{int(n.X),int(n.Y)});
 		s.NumNodes -= 1
 	}
 }
@@ -67,7 +67,7 @@ func (s *Square) Reset() {
 }
 
 //This function takes a measurement from a node inside that
-//	Square and adds its value to the value list and calculates
+//	Square and adds its Value to the Value list and calculates
 //	the new average
 func (s *Square) TakeMeasurement(x float32) {
 	s.Lock.Lock()

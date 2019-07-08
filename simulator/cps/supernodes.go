@@ -82,11 +82,11 @@ func (n Supern) String() string {
 //	once they have been visited by the super node
 func (n *Supern) PathMove() {
 
-	//Increase the time of the points that are being travelled to
+	//Increase the Time of the points that are being travelled to
 	for p, _ := range n.RoutePoints {
 		n.RoutePoints[p].Time += 1
 	}
-	//The index of the point the super node is moving to
+	//The Index of the point the super node is moving to
 	//When the superNodeSpeed is greater than 1, the removal_index is used
 	//	in the remove_range function
 	removal_index := -1
@@ -96,16 +96,16 @@ func (n *Supern) PathMove() {
 	//If there are not enough Coords in the RoutePath list, the super node will move
 	//	as far as possible
 	if len(n.RoutePath) >= n.P.SuperNodeSpeed {
-		n.X = n.RoutePath[n.P.SuperNodeSpeed-1].X
-		n.Y = n.RoutePath[n.P.SuperNodeSpeed-1].Y
+		n.X = float32(n.RoutePath[n.P.SuperNodeSpeed-1].X)
+		n.Y = float32(n.RoutePath[n.P.SuperNodeSpeed-1].Y)
 
-		//Saves the value of the index to remove the Coords
+		//Saves the Value of the Index to remove the Coords
 		removal_index = n.P.SuperNodeSpeed
 	} else {
-		n.X = n.RoutePath[len(n.RoutePath)-1].X
-		n.Y = n.RoutePath[len(n.RoutePath)-1].Y
+		n.X = float32(n.RoutePath[len(n.RoutePath)-1].X)
+		n.Y = float32(n.RoutePath[len(n.RoutePath)-1].Y)
 
-		//Saves the value of the index to remove the Coords
+		//Saves the Value of the Index to remove the Coords
 		removal_index = len(n.RoutePath)
 	}
 	//The first element in the RoutePoints list is always the current location
@@ -237,8 +237,8 @@ func (n *Supern) CentMove() {
 //Updates the location of the super node within the gird
 //Determines what square it's in not the exact x,y
 func (n *Supern) UpdateLoc() {
-	n.RoutePoints[0].X = n.X
-	n.RoutePoints[0].Y = n.Y
+	n.RoutePoints[0].X = int(n.X)
+	n.RoutePoints[0].Y = int(n.Y)
 }
 
 //This function helps keep track of the amount of squares the
@@ -248,7 +248,7 @@ func (n *Supern) IncSquareMoved(num int) {
 	n.SquaresMoved += num
 }
 
-//Increments the time of all points not currently being visited
+//Increments the Time of all points not currently being visited
 //	byt the super node
 func (n *Supern) IncAllPoints() {
 	for p, _ := range n.AllPoints {
@@ -314,7 +314,7 @@ func MakeCenter1(sNodeNum int, p *Params) (Coord, int, int) {
 	//	the gird
 	if p.NumSuperNodes != 1 {
 		//Determining the angle at which to separate the super nodes
-		//This value is multiplied by the current number of this super node
+		//This Value is multiplied by the current number of this super node
 		//For example if there are 3 super nodes, they should be separated by
 		//	120 degress around the center point of the grid
 		angle := (2 * math.Pi) / float64(p.NumSuperNodes) * float64(sNodeNum)
@@ -486,10 +486,10 @@ func (n *Supern) GetAllPoints() []Coord {
 	return n.AllPoints
 }
 func (n *Supern) GetX() int {
-	return n.X
+	return int(n.X)
 }
 func (n *Supern) GetY() int {
-	return n.Y
+	return int(n.Y)
 }
 
 //Various setters for super node attributes to be

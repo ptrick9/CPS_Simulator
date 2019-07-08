@@ -21,12 +21,14 @@ package main
 import (
 	"./cps"
 	"bytes"
+	"container/heap"
+	"runtime"
+
 	//"CPS_Simulator/simulator/cps"
 	"fmt"
 	"log"
 	"math/rand"
 	"os"
-	"runtime"
 	"runtime/pprof"
 	"time"
 
@@ -50,9 +52,14 @@ func init() {
 
 func main() {
 
+	Events := make(cps.PriorityQueue, 0)
+
+	heap.Init(&Events)
+
 	p = &cps.Params{}
 	r = &cps.RegionParams{}
 
+	p.Events = Events
 	p.Server = cps.FusionCenter{p, r, nil, nil, nil, nil, nil, nil, nil}
 
 	p.Tau1 = 10
@@ -108,7 +115,10 @@ func main() {
 	cps.MakeBoolGrid(p)
 	p.Server.Init()
 	cps.ReadMap(p, r)
-	p.Server.MakeSuperNodes()
+	if (p.SuperNodes) {
+		p.Server.MakeSuperNodes()
+	}
+
 	cps.GenerateRouting(p, r)
 
 	cps.FlipSquares(p, r)
@@ -152,7 +162,7 @@ func main() {
 	p.NodeList = make([]cps.NodeImpl, 0)
 
 	for i := 0; i < p.NumWallNodes; i++ {
-		p.WallNodeList[i] = cps.WallNodes{Node: &cps.NodeImpl{X: p.Wpos[i][0], Y: p.Wpos[i][1]}}
+		p.WallNodeList[i] = cps.WallNodes{Node: &cps.NodeImpl{X: float32(p.Wpos[i][0]), Y: float32(p.Wpos[i][1])}}
 	}
 
 	p.Server.MakeGrid()
@@ -162,7 +172,7 @@ func main() {
 	fmt.Printf("Running Simulator iteration %d\\%v", 0, p.Iterations_of_event)
 
 	iters := 0
-	p.CurrTime = 0
+	p.TimeStep = 0
 
 
 	if p.CSVMovement {
@@ -171,15 +181,79 @@ func main() {
 		cps.SetupRandomNodes(p)
 	}
 
+	//p.Events.Push(&cps.Event{&p.NodeList[0], "sense", 0, 0})
+	p.Events.Push(&cps.Event{nil, cps.POSITION, 999, 0})
+
+	p.CurrentTime = 0
+	for len(p.Events) > 0 && p.CurrentTime < 50000{
+		event := heap.Pop(&p.Events).(*cps.Event)
+		fmt.Println(event)
+		fmt.Println(p.CurrentNodes)
+		p.CurrentTime = event.Time
+		if event.Node != nil {
+			if event.Instruction == cps.SENSE {
+
+				if(p.CSVMovement) {
+					event.Node.MoveCSV(p)
+				} else {
+					event.Node.MoveNormal(p)
+				}
+
+				if(p.CSVSensor) {
+					event.Node.GetReadingsCSV()
+				} else {
+					event.Node.GetReadings()
+				}
+
+			}
+		} else {
+			if event.Instruction == cps.POSITION {
+				fmt.Printf("Current Time: %v \n", p.CurrentTime)
+				if p.PositionPrint {
+					amount := 0
+					for i := 0; i < p.CurrentNodes; i ++ {
+						fmt.Printf("%v\n", p.NodeList[i].Valid)
+						if p.NodeList[i].Valid {
+							amount += 1
+						}
+					}
+					fmt.Fprintln(p.PositionFile, "t= ", p.Iterations_used, " amount= ", amount)
+
+					for i := 0; i < p.CurrentNodes; i ++ {
+						if p.NodeList[i].Valid {
+							fmt.Fprintln(p.PositionFile, "ID:", p.NodeList[i].GetID(), "x:", int(p.NodeList[i].GetX()), "y:", int(p.NodeList[i].GetX()))
+						}
+					}
+					p.Events.Push(&cps.Event{nil, cps.POSITION, p.CurrentTime + 1000, 0})
+				}
+			} else if event.Instruction == cps.SERVER {
+
+			} else if event.Instruction == cps.TIME {
+				current := int(p.CurrentTime/1000)
+				for i := 0; i < len(p.SensorTimes); i++ {
+					if current == p.SensorTimes[i] {
+						p.TimeStep = i
+						break
+					}
+
+				}
+			}
+		}
+
+	}
+
+/*
+
 	//p.Iterations_used = 800
 	for iters = 0; iters < p.Iterations_of_event && !p.FoundBomb; iters++ {
 
 		for i := 0; i < len(p.SensorTimes); i++ {
 			if p.Iterations_used == p.SensorTimes[i] {
-				p.CurrTime = i
+				p.TimeStep = i
 			}
+
 		}
-		//fmt.Printf("Current time: %d\n", p.CurrTime)
+		//fmt.Printf("Current time: %d\n", p.TimeStep)
 
 
 
@@ -293,6 +367,8 @@ func main() {
 		p.Server.CalcStats()
 
 	}
+
+ */
 	PrintNodeBatteryOverTime(p)
 
 	p.PositionFile.Seek(0, 0)

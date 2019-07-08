@@ -45,8 +45,8 @@ func (s *FusionCenter) Init(){
 //Reading packages the data sent by a node
 type Reading struct {
 	SensorVal float64
-	Xpos      int
-	YPos      int
+	Xpos      float32
+	YPos      float32
 	Time      int //Time represented by iteration number
 	Id        int //Node Id number
 }
@@ -226,11 +226,11 @@ func (s* FusionCenter) NodesInRadius(curNode * NodeImpl, radius int)(map[Tuple]*
 				continue
 			}
 
-			var testX = curNode.X + col					//test X value
-			var testY = curNode.Y + row					//test Y value
+			var testX = int(curNode.X) + col					//test X Value
+			var testY = int(curNode.Y) + row					//test Y Value
 			var testTup = Tuple{testX, testY}	//create Tuple from test X and Y values
-			if(testX < gridMaxX && testX >= 0){			//if the testX value is on the grid, continue
-				if(testY < gridMaxY && testY >= 0){		//if the testY value is on the grid, continue
+			if(testX < gridMaxX && testX >= 0){			//if the testX Value is on the grid, continue
+				if(testY < gridMaxY && testY >= 0){		//if the testY Value is on the grid, continue
 					if(s.P.NodePositionMap[testTup] != nil){	//if the test position has a Node, continue
 						nodesInRadius[testTup] = s.P.NodePositionMap[testTup]	//add the node to the nodesInRadius map
 					}
@@ -241,21 +241,23 @@ func (s* FusionCenter) NodesInRadius(curNode * NodeImpl, radius int)(map[Tuple]*
 	return nodesInRadius
 }
 
+
+//--XY ERROR?--
 //returns all of the nodes dist squares away from the current node
 func (s* FusionCenter) NodesWithinDistance(curNode * NodeImpl, dist int)(map[Tuple]*NodeImpl){
 	var gridMaxX = s.P.MaxX;
 	var gridMaxY = s.P.MaxY;
-	var nodesWithinDist = s.P.Grid[curNode.Y][curNode.X].NodesInSquare //initialize to nodes in current square
+	var nodesWithinDist = s.P.Grid[int(curNode.Y)][int(curNode.X)].NodesInSquare //initialize to nodes in current square
 	var negDist = -1*dist;
 
 	for row := negDist; row<=dist; row++ {
 		for col := negDist; col <= dist; col++ {
 
-			var testX = s.P.Grid[curNode.Y][curNode.X].X + col		//X value of test Square
-			var testY = s.P.Grid[curNode.Y][curNode.X].Y + row		//Y value of test Square
+			var testX = s.P.Grid[int(curNode.Y)][int(curNode.X)].X + col		//X Value of test Square
+			var testY = s.P.Grid[int(curNode.Y)][int(curNode.X)].Y + row		//Y Value of test Square
 
-			if(testX < gridMaxX && testX >= 0){			//if the testX value is on the grid, continue
-				if(testY < gridMaxY && testY >= 0){		//if the testY value is on the grid, continue
+			if(testX < gridMaxX && testX >= 0){			//if the testX Value is on the grid, continue
+				if(testY < gridMaxY && testY >= 0){		//if the testY Value is on the grid, continue
 					var testSquare =  s.P.Grid[testY][testX] 			//create Square from test X and Y values
 					if(testSquare != nil){					//if the test Square is not null, continue
 						for ind,val := range testSquare.NodesInSquare{	//iterate through nodes in square map adding each to the
@@ -348,7 +350,7 @@ func (s FusionCenter) MakeSuperNodes() {
 		x_val, y_val := starting_locs[i].X, starting_locs[i].Y
 		nodeCenter := Coord{X: x_val, Y: y_val}
 
-		s.Sch.SNodeList[i] = &Sn_zero{s.P, s.R,&Supern{s.P,s.R,&NodeImpl{X: x_val, Y: y_val, Id: i}, 1,
+		s.Sch.SNodeList[i] = &Sn_zero{s.P, s.R,&Supern{s.P,s.R,&NodeImpl{X: float32(x_val), Y: float32(y_val), Id: i}, 1,
 			1, s.P.SuperNodeRadius, s.P.SuperNodeRadius, 0, snode_points, snode_path,
 			nodeCenter, 0, 0, 0, 0, 0, all_points}}
 
@@ -364,7 +366,7 @@ func (s FusionCenter) GetSquareAverage(tile *Square) float32 {
 
 //UpdateSquareAvg takes a node reading and updates the parameters in the Square the node took the reading in
 func (s FusionCenter) UpdateSquareAvg(rd Reading) {
-	tile := s.P.Grid[rd.Xpos/s.P.XDiv][rd.YPos/s.P.YDiv]
+	tile := s.P.Grid[int(rd.Xpos)/s.P.XDiv][int(rd.YPos)/s.P.YDiv]
 	tile.TakeMeasurement(float32(rd.SensorVal))
 }
 
@@ -383,13 +385,13 @@ func (s FusionCenter) UpdateSquareNumNodes() {
 	for i:=0; i < len(s.P.NodeList); i++ {
 		node = s.P.NodeList[i]
 		if node.Valid {
-			s.P.Grid[node.X/s.P.XDiv][node.Y/s.P.YDiv].ActualNumNodes += 1
+			s.P.Grid[int(node.X)/s.P.XDiv][int(node.Y)/s.P.YDiv].ActualNumNodes += 1
 		}
 	}
 }
 
 //Send is called by a node to deliver a reading to the server.
-// Statistics are calculated each time data is received
+// Statistics are calculated each Time data is received
 func (s *FusionCenter) Send(n *NodeImpl, rd Reading) {
 	//fmt.Printf("Sending to server:\nTime: %v, ID: %v, X: %v, Y: %v, Sensor Value: %v\n", rd.Time, rd.Id, rd.Xpos, rd.YPos, rd.SensorVal)
 	s.Times = make(map[int]bool, 0)
@@ -410,17 +412,17 @@ func (s *FusionCenter) Send(n *NodeImpl, rd Reading) {
 	}
 
 	s.UpdateSquareAvg(rd)
-	tile := s.P.Grid[rd.Xpos/s.P.XDiv][rd.YPos/s.P.YDiv]
+	tile := s.P.Grid[int(rd.Xpos)/s.P.XDiv][int(rd.YPos)/s.P.YDiv]
 	tile.LastReadingTime = rd.Time
 	tile.SquareValues += math.Pow(float64(rd.SensorVal-float64(tile.Avg)), 2)
-	if rd.SensorVal > (float64(s.GetSquareAverage(s.P.Grid[rd.Xpos/s.P.XDiv][rd.YPos/s.P.YDiv])) + s.P.CalibrationThresholdCM){ //Check if x over grid avg
+	if rd.SensorVal > (float64(s.GetSquareAverage(s.P.Grid[int(rd.Xpos)/s.P.XDiv][int(rd.YPos)/s.P.YDiv])) + s.P.CalibrationThresholdCM){ //Check if x over grid avg
 		n.Recalibrate()
 		s.LastRecal[n.Id] = s.P.Iterations_used
 		//fmt.Println(s.LastRecal)
 	}
 }
 
-//CalcStats calculates the mean, standard deviation and variance of the entire area at one time
+//CalcStats calculates the mean, standard deviation and variance of the entire area at one Time
 func (s *FusionCenter) CalcStats() ([]float64, []float64, []float64) {
 	//fmt.Printf("Calculating stats for times: %v", s.times)
 	s.UpdateSquareNumNodes()
@@ -489,7 +491,7 @@ func (s FusionCenter) GetMedian(arr []float64) float64{
 	size := 0.0
 	median := 0.0
 	size = float64(len(arr))
-	//index := 0
+	//Index := 0
 	//Check if even
 	if int(size) % 2 == 0 {
 		median = (arr[int(size / 2.0)] + arr[int(size / 2.0 - 1)] ) / 2
@@ -540,9 +542,9 @@ func (s FusionCenter) PrintStats() {
 
 //PrintStatsFile outputs statistical and detection data to log files
 func (s FusionCenter) PrintStatsFile() {
-	fmt.Fprintln(s.P.ServerFile, "Mean at each time:\n", s.P.Server.Mean)
-	fmt.Fprintln(s.P.ServerFile, "Standard Deviations at each time:\n", s.P.Server.StdDev)
-	fmt.Fprintln(s.P.ServerFile, "Variance at each time:\n", s.P.Server.Variance)
+	fmt.Fprintln(s.P.ServerFile, "Mean at each Time:\n", s.P.Server.Mean)
+	fmt.Fprintln(s.P.ServerFile, "Standard Deviations at each Time:\n", s.P.Server.StdDev)
+	fmt.Fprintln(s.P.ServerFile, "Variance at each Time:\n", s.P.Server.Variance)
 	fmt.Fprintf(s.P.DetectionFile, "Number of detections:%v\n", falsePositives + truePositives)
 	fmt.Fprintf(s.P.DetectionFile, "Number of false positives:%v\n", falsePositives)
 	fmt.Fprintf(s.P.DetectionFile, "Number of true positives:%v\n", truePositives)

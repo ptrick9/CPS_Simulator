@@ -5,8 +5,11 @@ import (
 )
 
 type Params struct {
+	Events 						   PriorityQueue
+	CurrentTime					   int
+
 	NegativeSittingStopThresholdCM int     // This is a negative number for the sitting to be set to when map is reset
-	SittingStopThresholdCM         int     // This is the threshold for the longest time a node can sit before no longer moving
+	SittingStopThresholdCM         int     // This is the threshold for the longest Time a node can sit before no longer moving
 	GridCapacityPercentageCM       float64 // This is the percent of a subgrid that can be filled with nodes, between 0.0 and 1.0
 	ErrorModifierCM                float64 // Multiplier for error model
 	OutputFileNameCM               string  // This is the prefix of the output text file
@@ -33,7 +36,7 @@ type Params struct {
 	ServerSamplingPeriodCM         int     // This can be any int n: 1 <= n < GPSSamplingPeriodCM <= 100
 	NumStoredSamplesCM             int     // This can be any int n: 5 <= n <= 25
 	GridStoredSamplesCM            int     // This can be any int n: 5 <= n <= 25
-	DetectionThresholdCM           float64 //This is whatever value 1-1000 we determine should constitute a "detection" of a bomb
+	DetectionThresholdCM           float64 //This is whatever Value 1-1000 we determine should constitute a "detection" of a bomb
 	PositionPrintCM                bool    //This is either true or false for whether to print positions to log file
 	EnergyPrintCM                  bool    //This is either true or false for whether to print energy info to log file
 	NodesPrintCM                   bool    //This is either true or false for whether to print node readings/averages to log file
@@ -86,7 +89,8 @@ type Params struct {
 	MovementPath  string
 
 	SensorTimes []int
-	CurrTime    int
+	TimeStep    int
+	MaxTimeStep int
 
 	FoundBomb bool
 	Err       error
@@ -129,6 +133,7 @@ type Params struct {
 	AStarRouting  bool
 	CSVMovement   bool
 	CSVSensor     bool
+	SuperNodes     bool
 
 	CurrentNodes               int
 	NumWallNodes               int
@@ -152,7 +157,7 @@ type Params struct {
 	NumGridSamples   int
 
 	WallNodeList []WallNodes
-	NodeList     []NodeImpl
+	NodeList     []*NodeImpl
 
 	BatteryCharges []float32
 	BatteryLosses  []float32

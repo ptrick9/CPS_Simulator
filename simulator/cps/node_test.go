@@ -77,7 +77,7 @@ func TestRecalibrate(t *testing.T) {
 			n.initialSensitivity, n.sensitivity)
 	}
 	if n.nodeTime != 0.0 {
-		t.Errorf("Recalibrate didn't fix node time, should be: %d, is: %d",
+		t.Errorf("Recalibrate didn't fix node Time, should be: %d, is: %d",
 			0, n.nodeTime)
 	}
 }
