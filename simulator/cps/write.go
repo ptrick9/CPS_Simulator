@@ -434,6 +434,8 @@ func SetupCSVNodes(p *Params) {
 		newNode.X = float32(p.NodeMovements[i][0].X)
 		newNode.Y = float32(p.NodeMovements[i][1].Y)
 
+		newNode.ClusterHeadId = -1 //negative number Cluster Head ID signifies having no cluster head
+
 		if newNode.InBounds(p) {
 			newNode.Valid = true
 			p.BoolGrid[int(newNode.X)][int(newNode.Y)] = true
@@ -459,6 +461,8 @@ func SetupRandomNodes(p *Params) {
 		if p.Iterations_used == p.NodeEntryTimes[i][2] {
 
 			newNode := InitializeNodeParameters(p, i)
+
+			newNode.ClusterHeadId = -1 //negative number Cluster Head ID signifies having no cluster head
 
 			xx := rangeInt(1, p.MaxX)
 			yy := rangeInt(1, p.MaxY)
