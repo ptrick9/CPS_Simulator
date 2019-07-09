@@ -11,6 +11,8 @@ const (
 	POSITION
 	TIME
 	SERVER
+	ENERGYPRINT
+	GRID
 
 )
 

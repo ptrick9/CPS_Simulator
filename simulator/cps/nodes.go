@@ -238,7 +238,8 @@ func (curNode Rn) String() string {
 
 func (curNode NodeImpl) String() string {
 	//return fmt.Sprintf("x: %v y: %v Id: %v battery: %v sensor checked: %v sensor checks: %v GPS checked: %v GPS checks: %v server checked: %v server checks: %v buffer: %v ", int(curNode.X), curNode.Y, curNode.Id, curNode.Battery, curNode.HasCheckedSensor, curNode.TotalChecksSensor, curNode.HasCheckedGPS, curNode.TotalChecksGPS, curNode.HasCheckedServer, curNode.TotalChecksServer,curNode.BufferI)
-	return fmt.Sprintf("x: %v y: %v valid: %v", int(curNode.X), int(curNode.Y), curNode.Valid)
+	//return fmt.Sprintf("x: %v y: %v valid: %v", int(curNode.X), int(curNode.Y), curNode.Valid)
+	return fmt.Sprintf("battery: %v sensor checked: %v GPS checked: %v ", int(curNode.Battery), curNode.HasCheckedSensor, curNode.HasCheckedGPS)
 
 }
 
@@ -1364,9 +1365,6 @@ func interpolateReading(x , y float32, time, timeStep int, p *Params) float32{
 func (curNode *NodeImpl) GetReadingsCSV() {
 
 	if curNode.Valid { //check if node has shown up yet
-
-
-
 
 		newX, newY := curNode.GetLoc()
 
