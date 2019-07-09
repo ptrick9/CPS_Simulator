@@ -14,6 +14,7 @@ const (
 	ENERGYPRINT
 	GRID
 
+
 )
 
 type Event struct {

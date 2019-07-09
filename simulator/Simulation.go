@@ -186,6 +186,7 @@ func main() {
 	p.Events.Push(&cps.Event{nil, cps.ENERGYPRINT, 999, 0})
 	p.Events.Push(&cps.Event{nil, cps.SERVER, 999, 0})
 	p.Events.Push(&cps.Event{nil, cps.GRID, 999, 0})
+	p.Events.Push(&cps.Event{nil, cps.TIME, -1, 0})
 
 
 
@@ -245,6 +246,10 @@ func main() {
 						break
 					}
 				}
+				if (p.TimeStep < len(p.SensorTimes)) {
+					p.Events.Push(&cps.Event{nil, cps.TIME, p.SensorTimes[p.TimeStep+1]*1000, 0})
+				}
+				//fmt.Printf("\nSetting timestep to %v at %v next event at %v\n", p.SensorTimes[p.TimeStep], p.CurrentTime, p.SensorTimes[p.TimeStep+1]*1000)
 			} else if event.Instruction == cps.ENERGYPRINT {
 				fmt.Fprintln(p.EnergyFile, "Amount:", len(p.NodeList))
 				for i := 0; i < p.CurrentNodes; i ++ {

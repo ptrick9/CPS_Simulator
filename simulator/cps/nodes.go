@@ -1370,7 +1370,6 @@ func (curNode *NodeImpl) GetReadingsCSV() {
 
 		newDist := interpolateReading(newX, newY, curNode.P.CurrentTime, curNode.P.TimeStep, curNode.P)
 
-		//newDist := curNode.Distance(*curNode.P.B) //this is the node's reported Value without error
 
 		//newDist := curNode.P.SensorReadings[newX][newY][curNode.P.TimeStep]
 		//Calculate error, sensitivity, and noise, as per the matlab code
@@ -1515,11 +1514,15 @@ func (curNode *NodeImpl) MoveCSV(p *Params) {
 	//set the new location in the boolean field to true
 	newX, newY := curNode.GetLoc()
 
-	if curNode.InBounds(p) {
+	if !curNode.Valid {
+		curNode.Valid = curNode.InBounds(p)
+	}
+
+	/*if curNode.InBounds(p) {
 		curNode.Valid = true
 	} else {
 		curNode.Valid = false
-	}
+	}*/
 	if curNode.Valid {
 		p.BoolGrid[int(newX)][int(newY)] = true
 	}
