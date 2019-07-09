@@ -132,7 +132,10 @@ type NodeImpl struct {
 
 	TotalPacketsSent    int
 	TotalBytesSent		int
-	IsClusterHead		bool //boolean for is a clusterhead
+	IsClusterHead		bool
+
+	NodeBounds			*Bounds //the node's representative bounds object
+	ClusterHeadId                  int //id of cluster head
 }
 
 //NodeMovement controls the movement of all the normal nodes
@@ -932,32 +935,32 @@ func (curNode *NodeImpl) BatteryLossDynamic() {
 
 //decrement battery due to transmitting/receiving over BlueTooth
 func (curNode *NodeImpl) DecrementPowerBT(packet int){
-	curNode.Battery = curNode.Battery - curNode.BatteryLossBT*curNode.Battery
+	curNode.Battery = curNode.Battery - float32(curNode.P.SamplingLossBTCM) *curNode.Battery
 }
 
 //decrement battery due to transmitting/receiving over WiFi
 func (curNode *NodeImpl) DecrementPowerWifi(packet int){
-	curNode.Battery = curNode.Battery - curNode.BatteryLossWifi
+	curNode.Battery = curNode.Battery - float32(curNode.P.SamplingLossWifiCM) *curNode.Battery
 }
 
 //decrement battery due to transmitting/receiving over 4G
 func (curNode *NodeImpl) DecrementPower4G(packet int){
-	curNode.Battery = curNode.Battery - curNode.BatteryLoss4G*curNode.Battery
+	curNode.Battery = curNode.Battery - float32(curNode.P.SamplingLoss4GCM) *curNode.Battery
 }
 
 //decrement battery due to sampling Accelerometer
 func (curNode *NodeImpl) DecrementPowerAccel(){
-	curNode.Battery = curNode.Battery - curNode.BatteryLossAccelerometer*curNode.Battery
+	curNode.Battery = curNode.Battery - float32(curNode.P.SamplingLossAccelCM) *curNode.Battery
 }
 
 //decrement battery due to transmitting/receiving GPS
 func (curNode *NodeImpl) DecrementPowerGPS(){
-	curNode.Battery = curNode.Battery - curNode.BatteryLossGPS*curNode.Battery
+	curNode.Battery = curNode.Battery - float32(curNode.P.SamplingLossGPSCM) *curNode.Battery
 }
 
 //decrement battery due to using GPS
 func (curNode *NodeImpl) DecrementPowerSensor(){
-	curNode.Battery = curNode.Battery - curNode.BatteryLossSensor*curNode.Battery
+	curNode.Battery = curNode.Battery - float32(curNode.P.SamplingLossSensorCM) *curNode.Battery
 }
 
 
@@ -1556,4 +1559,28 @@ func (curNode *NodeImpl) MoveNormal(p *Params) {
 
 func rangeInt(min, max int) int { //returns a random number between max and min
 	return rand.Intn(max-min) + min
+}
+
+//Computes the cluster score (higher the score the better chance a node beccomes a cluster head)
+func (curNode * NodeImpl) ComputeClusterScore(searchRange float64, penalty float64) (score float64){
+	withinDist := []*Bounds{}
+	withinDist = curNode.P.NodeTree.WithinRadius(searchRange,curNode.NodeBounds,curNode.NodeBounds.GetSearchBounds(searchRange),withinDist)
+	degree := float64(len(withinDist))
+	battery := float64(curNode.Battery)
+
+	//weighted sum, 60% from degree (# of nodes withinin distance), 40% from its battery life
+	// penalty can be used to decrease for a given reason (isolated, not moving, etc)
+	return ((0.6*degree + 0.4*battery)*penalty)
+}
+
+//Generates Hello Message for node to form/maintain clusters. Returns message as a string
+//option: 0 if regular node, if a cluster head this is the # of nodes in the cluster
+//option used to manage cluster sizes
+func (curNode * NodeImpl)GenerateHello(searchRange float64, option int) (message string){
+	mh_id := curNode.Id //ID of the current node
+	ch_id := curNode.ClusterHeadId	//ID of the current node's cluster head
+	chc := curNode.ComputeClusterScore(searchRange, 0)	//the node's cluster score
+	bp := 0.2 //broadcast period (hello period) 0.2 s
+	message = fmt.Sprintf("%g-%g-%g-%d-%g",mh_id,ch_id,chc,option,bp)
+	return message
 }

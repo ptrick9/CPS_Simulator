@@ -334,6 +334,9 @@ func HandleMovement(p *Params) {
 		newX, newY := p.NodeList[j].GetLoc()
 		p.BoolGrid[int(newX)][int(newY)] = true
 
+		//sync the QuadTree
+		p.NodeTree.NodeMovement(float64(newX), float64(newY), p.NodeList[j].NodeBounds)
+
 		//writes the node information to the file
 		if p.EnergyPrint {
 			fmt.Fprintln(p.EnergyFile, p.NodeList[j])
@@ -365,6 +368,8 @@ func HandleMovementCSV(p *Params) {
 		//set the new location in the boolean field to true
 		newX, newY := p.NodeList[j].GetLoc()
 
+		//sync the QuadTree
+		p.NodeTree.NodeMovement(float64(newX), float64(newY), p.NodeList[j].NodeBounds)
 		if p.NodeList[j].InBounds(p) {
 			p.NodeList[j].Valid = true
 		} else {
@@ -439,6 +444,12 @@ func SetupCSVNodes(p *Params) {
 		p.NodeList = append(p.NodeList, newNode)
 		p.CurrentNodes += 1
 		p.Events.Push(&Event{newNode, SENSE, 0, 0})
+
+		if newNode.Valid{
+			bNewNode := Bounds{float64(newNode.X),float64(newNode.Y),0,0,p.NodeTree, newNode}
+			p.NodeList[len(p.NodeList)-1].NodeBounds = &bNewNode
+			p.NodeTree.Insert(&bNewNode)
+		}
 	}
 
 }
@@ -464,6 +475,12 @@ func SetupRandomNodes(p *Params) {
 
 			p.NodeList = append(p.NodeList, newNode)
 			p.CurrentNodes += 1
+
+			if newNode.Valid{
+				bNewNode := Bounds{float64(newNode.X),float64(newNode.Y),0,0,p.NodeTree, newNode}
+				p.NodeList[len(p.NodeList)-1].NodeBounds = &bNewNode
+				p.NodeTree.Insert(&bNewNode)
+			}
 
 		}
 	}
@@ -1020,9 +1037,9 @@ func GetFlags(p *Params) {
 		"battery loss due to server sampling")
 	flag.Float64Var(&p.SamplingLossBTCM, "SamplingLossBTCM", .0001,
 		"battery loss due to BlueTooth sampling")
-	flag.Float64Var(&p.SamplingLossWifiCM, "SamplingLossWifiCM", .001,
+	flag.Float64Var(&p.SamplingLossWifiCM, "SamplingLossWifiCM", .0005,
 		"battery loss due to WiFi sampling")
-	flag.Float64Var(&p.SamplingLoss4GCM, "SamplingLoss4GCM", .005,
+	flag.Float64Var(&p.SamplingLoss4GCM, "SamplingLoss4GCM", .001,
 		"battery loss due to 4G sampling")
 	flag.Float64Var(&p.SamplingLossAccelCM, "SamplingLossAccelCM", .001,
 		"battery loss due to accelerometer sampling")
