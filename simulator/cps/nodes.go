@@ -1528,7 +1528,6 @@ func (curNode *NodeImpl) MoveCSV(p *Params) {
 	curNode.Y = interpolate(p.NodeMovements[id][intTime].Y, p.NodeMovements[id][intTime+1].Y, portion)
 	//fmt.Printf("%v %v\n", curNode.X, curNode.Y)
 
-
 	/*curNode.X = p.NodeMovements[id][time].X
 	curNode.Y = p.NodeMovements[id][time].Y*/
 
