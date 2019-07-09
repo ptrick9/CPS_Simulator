@@ -1289,7 +1289,7 @@ func (curNode *NodeImpl) GetReadings() {
 			//curNode.P.Grid[curNode.Row(curNode.P.YDiv)][curNode.Col(curNode.P.XDiv)].TakeMeasurement(float32(errorDist))
 			//curNode.P.Grid[curNode.Row(curNode.P.YDiv)][curNode.Col(curNode.P.XDiv)].TotalNodes++
 			////subtract grid average from node average, square it, and add it to this variable
-			curNode.P.Server.Send(curNode, Reading{errorDist, newX, newY, curNode.P.Iterations_used, curNode.GetID()})
+			curNode.P.Server.Send(curNode, Reading{errorDist, newX, newY, curNode.P.CurrentTime, curNode.GetID()})
 			if curNode.Id == 1 {
 				curNode.allReadings[curNode.P.Iterations_used] = errorDist
 				fmt.Fprintln(curNode.P.NodeTest, "Val:", errorDist)
@@ -1488,7 +1488,7 @@ func (curNode *NodeImpl) GetReadingsCSV() {
 			//subtract grid average from node average, square it, and add it to this variable
 			//curNode.P.Grid[curNode.Row(curNode.P.YDiv)][curNode.Col(curNode.P.XDiv)].SquareValues += (math.Pow(float64(errorDist-float64(gridAverage)), 2))
 			if curNode.Valid {
-				curNode.P.Server.Send(curNode, Reading{errorDist, newX, newY, curNode.P.Iterations_used, curNode.GetID()})
+				curNode.P.Server.Send(curNode, Reading{errorDist, newX, newY, curNode.P.CurrentTime, curNode.GetID()})
 			}
 			//curNode.P.Server.Send(curNode, Reading{errorDist, newX, newY, curNode.P.Iterations_used, curNode.GetID()})
 		//}

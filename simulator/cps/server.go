@@ -205,6 +205,42 @@ func (srv FusionCenter) Tick() {
 		//Resets the optimize flag
 		optimize = false
 	}
+	var radius float32 = 5.0
+	DetectionThreshold := 4000.0
+	validated := false
+	time := srv.P.CurrentTime / 1000
+	for z := range srv.TimeBuckets {
+		if len(srv.TimeBuckets[z]) > 0 {
+			rd := srv.TimeBuckets[z][len(srv.TimeBuckets[z]) - 1]
+			if rd.SensorVal > DetectionThreshold {
+				fmt.Println("\nPossible Detection!")
+				if time > 60 {
+					avg := 0.0
+					count := 0
+					for t:= time - 60; t < time; t++ {
+						for r := range srv.TimeBuckets[t] {
+							if srv.TimeBuckets[t][r].Xpos > rd.Xpos - radius && srv.TimeBuckets[t][r].Xpos < rd.Xpos + radius {
+								if srv.TimeBuckets[t][r].YPos > rd.YPos - radius && srv.TimeBuckets[t][r].YPos < rd.YPos + radius {
+									if srv.TimeBuckets[t][r].SensorVal > DetectionThreshold {
+										validated = true
+									}
+									avg += srv.TimeBuckets[t][r].SensorVal
+									count++
+								}
+							}
+						}
+					}
+					avg = avg / float64(count)
+					if validated {
+						fmt.Println("Detection Validated!")
+					} else {
+						fmt.Println("False Positive!")
+					}
+				}
+			}
+		}
+	}
+
 	srv.CheckDetections()
 
 }
@@ -394,7 +430,6 @@ func (s FusionCenter) UpdateSquareNumNodes() {
 // Statistics are calculated each Time data is received
 func (s *FusionCenter) Send(n *NodeImpl, rd Reading) {
 	//fmt.Printf("Sending to server:\nTime: %v, ID: %v, X: %v, Y: %v, Sensor Value: %v\n", rd.Time, rd.Id, rd.Xpos, rd.YPos, rd.SensorVal)
-	var radius float32 = 5.0
 	s.Times = make(map[int]bool, 0)
 	time := rd.Time / 1000
 	if s.Times[time] {
@@ -421,26 +456,6 @@ func (s *FusionCenter) Send(n *NodeImpl, rd Reading) {
 		n.Recalibrate()
 		s.LastRecal[n.Id] = s.P.Iterations_used
 		//fmt.Println(s.LastRecal)
-	}
-
-	if time > 60 {
-		avg := 0.0
-		count := 0
-		for t:= time - 60; t < time; t++ {
-			for r := range s.TimeBuckets[t] {
-				if s.TimeBuckets[t][r].Xpos > rd.Xpos - radius && s.TimeBuckets[t][r].Xpos < rd.Xpos + radius {
-					if s.TimeBuckets[t][r].YPos > rd.YPos - radius && s.TimeBuckets[t][r].YPos < rd.YPos + radius {
-						avg += s.TimeBuckets[t][r].SensorVal
-						count++
-					}
-				}
-			}
-		}
-		avg = avg / float64(count)
-		fmt.Println(avg)
-		if rd.SensorVal > avg * 1.2 {
-			fmt.Println("Detection!")
-		}
 	}
 }
 
