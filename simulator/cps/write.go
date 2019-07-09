@@ -446,6 +446,8 @@ func SetupCSVNodes(p *Params) {
 		p.NodeList = append(p.NodeList, newNode)
 		p.CurrentNodes += 1
 		p.Events.Push(&Event{newNode, SENSE, 0, 0})
+		p.Events.Push(&Event{newNode, MOVE, 0, 0})
+
 
 		if newNode.Valid{
 			bNewNode := Bounds{float64(newNode.X),float64(newNode.Y),0,0,p.NodeTree, newNode}
@@ -831,7 +833,15 @@ func SetupParameters(p *Params) {
 
 	if p.CSVSensor {
 		readSensorCSV(p)
+	} else {
+		p.MaxRaw = 1000
+		p.EdgeRaw = 36
+		p.MaxADC = 4095
+		p.EdgeADC = 5
+		p.ADCWidth = p.MaxRaw/p.MaxADC
+		p.ADCOffset = p.EdgeRaw - p.EdgeADC * p.ADCWidth
 	}
+
 	if p.CSVMovement {
 		readMovementCSV(p)
 	}

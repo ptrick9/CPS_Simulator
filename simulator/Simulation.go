@@ -226,6 +226,13 @@ func main() {
 					event.Node.GetReadings()
 				}
 
+			} else if event.Instruction == cps.MOVE {
+				if(p.CSVMovement) {
+					event.Node.MoveCSV(p)
+				} else {
+					event.Node.MoveNormal(p)
+				}
+				p.Events.Push(&cps.Event{event.Node, cps.MOVE, p.CurrentTime+100, 0})
 			}
 		} else {
 			if event.Instruction == cps.POSITION {

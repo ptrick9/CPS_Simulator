@@ -180,6 +180,13 @@ type Params struct {
 	Height 			int
 	Server 			FusionCenter //Server object
 
+	MaxRaw 			float32
+	EdgeRaw 		float32
+	MaxADC 			float32
+	EdgeADC 		float32
+	ADCWidth 		float32
+	ADCOffset		float32
+
 
 	NodePositionMap			map[Tuple]*NodeImpl
 	NodeTree				* Quadtree
