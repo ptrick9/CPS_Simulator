@@ -1370,7 +1370,6 @@ func (curNode *NodeImpl) GetReadingsCSV() {
 
 		newDist := interpolateReading(newX, newY, curNode.P.CurrentTime, curNode.P.TimeStep, curNode.P)
 
-		//newDist := curNode.Distance(*curNode.P.B) //this is the node's reported Value without error
 
 		//newDist := curNode.P.SensorReadings[newX][newY][curNode.P.TimeStep]
 		//Calculate error, sensitivity, and noise, as per the matlab code
