@@ -133,7 +133,7 @@ type NodeImpl struct {
 	TotalPacketsSent    int
 	TotalBytesSent		int
 	IsClusterHead		bool
-	CurTree				*Quadtree //tree that this object is in
+
 	NodeBounds			*Bounds //the node's representative bounds object
 	ClusterHeadId                  int //id of cluster head
 }
@@ -1595,11 +1595,12 @@ func (curNode * NodeImpl) ComputeClusterScore(searchRange float64, penalty float
 }
 
 //Generates Hello Message for node to form/maintain clusters. Returns message as a string
-func (curNode * NodeImpl)GenerateHello(searchRange float64) (message string){
+//option: 0 if regular node, if a cluster head this is the # of nodes in the cluster
+//option used to manage cluster sizes
+func (curNode * NodeImpl)GenerateHello(searchRange float64, option int) (message string){
 	mh_id := curNode.Id //ID of the current node
 	ch_id := curNode.ClusterHeadId	//ID of the current node's cluster head
 	chc := curNode.ComputeClusterScore(searchRange, 0)	//the node's cluster score
-	option := 0	//option for joining a cluster
 	bp := 0.2 //broadcast period (hello period) 0.2 s
 	message = fmt.Sprintf("%g-%g-%g-%d-%g",mh_id,ch_id,chc,option,bp)
 	return message
