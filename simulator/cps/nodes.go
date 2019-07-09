@@ -1322,7 +1322,7 @@ func interpolateReading(x , y float32, time, timeStep int, p *Params) float32{
 	nextX := int(math.Ceil(float64(x)))
 	nextY := int(math.Ceil(float64(y)))
 
-
+	//fmt.Printf("%v %v %v %v\n", oldX, oldY, nextX, nextY)
 	//calculate reading at last 'even' position
 	oldReadingA := p.SensorReadings[oldX][oldY][timeStep]
 	futureReadingA := p.SensorReadings[oldX][oldY][timeStep]
@@ -1337,17 +1337,23 @@ func interpolateReading(x , y float32, time, timeStep int, p *Params) float32{
 		futureReadingB = p.SensorReadings[nextX][nextY][timeStep+1]
 	}
 
+	//fmt.Printf("%v %v %v %v\n", oldReadingA, oldReadingB, futureReadingA, futureReadingB)
 	totalDistance := float32(math.Sqrt(math.Pow(math.Abs(float64(nextX - oldX)), 2) + math.Pow(math.Abs(float64(nextY - oldY)), 2)))
 	partialDist := float32((math.Sqrt(math.Pow(math.Abs(float64(float32(nextX) - x)), 2) + math.Pow(math.Abs(float64(float32(nextY) - y)), 2))))
 
+
 	//determine distance we have covered between the two positions
 	portionDist := partialDist / totalDistance
+	if (totalDistance == 0) {
+		portionDist = 1.0
+	}
 
+	//fmt.Printf("%v %v %v\n", totalDistance, partialDist, portionDist)
 
 
 	oldReading := (float32(oldReadingA - oldReadingB) * portionDist + float32(oldReadingA))  //t = 0 original and next position average
 	futureReading := (float32(futureReadingA - futureReadingB) * portionDist + float32(futureReadingA)) //t = 1 original and next position average
-
+	//fmt.Printf("%v %v\n", oldReading, futureReading)
 
 	floatTime := float32(time)/1000
 	oldTime := p.SensorTimes[timeStep]
@@ -1355,10 +1361,15 @@ func interpolateReading(x , y float32, time, timeStep int, p *Params) float32{
 	if(timeStep < p.MaxTimeStep) {
 		nextTime = p.SensorTimes[timeStep + 1]
 	}
+
+
 	portionTime := (floatTime - float32(oldTime))/float32(nextTime - oldTime)
+	if(oldTime == nextTime) {
+		portionTime = 1.0
+	}
+	//fmt.Printf("%v %v %v %v\n", floatTime, oldTime, nextTime, portionTime)
 
-
-	return (oldReading-futureReading)*portionTime + oldReading
+	return (futureReading - oldReading)*portionTime + oldReading
 }
 
 //Takes cares of taking a node's readings and printing detections and stuff
@@ -1370,6 +1381,8 @@ func (curNode *NodeImpl) GetReadingsCSV() {
 
 		newDist := interpolateReading(newX, newY, curNode.P.CurrentTime, curNode.P.TimeStep, curNode.P)
 
+		//fmt.Printf("%v %v\n", curNode.Id, newDist)
+		//fmt.Println("-----------------------")
 
 		//newDist := curNode.P.SensorReadings[newX][newY][curNode.P.TimeStep]
 		//Calculate error, sensitivity, and noise, as per the matlab code
@@ -1469,7 +1482,7 @@ func (curNode *NodeImpl) GetReadingsCSV() {
 		//Receives the node's distance and calculates its running average
 		//for that square
 		//Only do this if the sensor was pinged this iteration
-		if curNode.HasCheckedSensor {
+		//if curNode.HasCheckedSensor {
 			//curNode.P.Grid[curNode.Row(curNode.P.YDiv)][curNode.Col(curNode.P.XDiv)].TakeMeasurement(float32(errorDist))
 			//curNode.P.Grid[curNode.Row(curNode.P.YDiv)][curNode.Col(curNode.P.XDiv)].TotalNodes++
 			//subtract grid average from node average, square it, and add it to this variable
@@ -1478,13 +1491,13 @@ func (curNode *NodeImpl) GetReadingsCSV() {
 				curNode.P.Server.Send(curNode, Reading{errorDist, newX, newY, curNode.P.Iterations_used, curNode.GetID()})
 			}
 			//curNode.P.Server.Send(curNode, Reading{errorDist, newX, newY, curNode.P.Iterations_used, curNode.GetID()})
-		}
+		//}
 	}
-	curNode.P.Events.Push(&Event{curNode, SENSE, curNode.P.CurrentTime + 1000, 0})
+	curNode.P.Events.Push(&Event{curNode, SENSE, curNode.P.CurrentTime + 500, 0})
 }
 
 func interpolate (start int, end int, portion float32) float32{
-	return (float32(start - end) * portion + float32(end))
+	return (float32(end-start) * portion + float32(start))
 }
 
 //HandleMovementCSV does the same as HandleMovement
@@ -1503,8 +1516,15 @@ func (curNode *NodeImpl) MoveCSV(p *Params) {
 
 	id := curNode.GetID()
 
+	//fmt.Printf("----\n%v %v %v %v\n", curNode.Id, floatTemp, intTime, portion)
+	//fmt.Printf("%v %v\n", curNode.X, curNode.Y)
+	/*if (intTime > 0) {
+		fmt.Printf("%v %v %v %v %v %v\n", p.NodeMovements[id][intTime-1].X, p.NodeMovements[id][intTime-1].Y, p.NodeMovements[id][intTime].X, p.NodeMovements[id][intTime].Y, p.NodeMovements[id][intTime+1].X, p.NodeMovements[id][intTime+1].Y)
+	}*/
 	curNode.X = interpolate(p.NodeMovements[id][intTime].X, p.NodeMovements[id][intTime+1].X, portion)
 	curNode.Y = interpolate(p.NodeMovements[id][intTime].Y, p.NodeMovements[id][intTime+1].Y, portion)
+	//fmt.Printf("%v %v\n", curNode.X, curNode.Y)
+
 
 
 	/*curNode.X = p.NodeMovements[id][time].X
@@ -1518,6 +1538,7 @@ func (curNode *NodeImpl) MoveCSV(p *Params) {
 		curNode.Valid = curNode.InBounds(p)
 	}
 
+	//fmt.Printf("%v %v %v %v %v %v %v\n", newX, newY, int(newX), int(newY), p.Width, p.Height, curNode.Valid)
 	/*if curNode.InBounds(p) {
 		curNode.Valid = true
 	} else {
