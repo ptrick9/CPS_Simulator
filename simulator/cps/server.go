@@ -29,7 +29,7 @@ type FusionCenter struct {
 
 //Init initializes the values for the server
 func (s *FusionCenter) Init(){
-	s.TimeBuckets = make([][]Reading, s.P.Iterations_used)
+	s.TimeBuckets = make([][]Reading, 0)
 	s.Mean = make([]float64, s.P.Iterations_of_event)
 	s.StdDev = make([]float64, s.P.Iterations_of_event)
 	s.Variance = make([]float64, s.P.Iterations_of_event)
@@ -394,21 +394,23 @@ func (s FusionCenter) UpdateSquareNumNodes() {
 // Statistics are calculated each Time data is received
 func (s *FusionCenter) Send(n *NodeImpl, rd Reading) {
 	//fmt.Printf("Sending to server:\nTime: %v, ID: %v, X: %v, Y: %v, Sensor Value: %v\n", rd.Time, rd.Id, rd.Xpos, rd.YPos, rd.SensorVal)
+	var radius float32 = 5.0
 	s.Times = make(map[int]bool, 0)
-	if s.Times[rd.Time] {
+	time := rd.Time / 1000
+	if s.Times[time] {
 
 	} else {
-		s.Times[rd.Time] = true
+		s.Times[time] = true
 	}
 
-	for len(s.TimeBuckets) <= rd.Time {
+	for len(s.TimeBuckets) <= time {
 		s.TimeBuckets = append(s.TimeBuckets, make([]Reading,0))
 	}
-	currBucket := (s.TimeBuckets)[rd.Time]
+	currBucket := (s.TimeBuckets)[time]
 	if len(currBucket) != 0 { //currBucket != nil
-		(s.TimeBuckets)[rd.Time] = append(currBucket, rd)
+		(s.TimeBuckets)[time] = append(currBucket, rd)
 	} else {
-		(s.TimeBuckets)[rd.Time] = append((s.TimeBuckets)[rd.Time], rd) //s.TimeBuckets[rd.Time] = []float64{rd.sensorVal}
+		(s.TimeBuckets)[time] = append((s.TimeBuckets)[time], rd) //s.TimeBuckets[rd.Time] = []float64{rd.sensorVal}
 	}
 
 	s.UpdateSquareAvg(rd)
@@ -419,6 +421,26 @@ func (s *FusionCenter) Send(n *NodeImpl, rd Reading) {
 		n.Recalibrate()
 		s.LastRecal[n.Id] = s.P.Iterations_used
 		//fmt.Println(s.LastRecal)
+	}
+
+	if time > 60 {
+		avg := 0.0
+		count := 0
+		for t:= time - 60; t < time; t++ {
+			for r := range s.TimeBuckets[t] {
+				if s.TimeBuckets[t][r].Xpos > rd.Xpos - radius && s.TimeBuckets[t][r].Xpos < rd.Xpos + radius {
+					if s.TimeBuckets[t][r].YPos > rd.YPos - radius && s.TimeBuckets[t][r].YPos < rd.YPos + radius {
+						avg += s.TimeBuckets[t][r].SensorVal
+						count++
+					}
+				}
+			}
+		}
+		avg = avg / float64(count)
+		fmt.Println(avg)
+		if rd.SensorVal > avg * 1.2 {
+			fmt.Println("Detection!")
+		}
 	}
 }
 
