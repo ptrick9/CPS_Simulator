@@ -132,7 +132,7 @@ type NodeImpl struct {
 
 	TotalPacketsSent    int
 	TotalBytesSent		int
-	IsClusterHead		bool
+	IsClusterHead		bool //boolean for is a clusterhead
 }
 
 //NodeMovement controls the movement of all the normal nodes
