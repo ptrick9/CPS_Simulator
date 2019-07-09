@@ -1509,7 +1509,6 @@ func (curNode *NodeImpl) MoveCSV(p *Params) {
 	curNode.X = interpolate(p.NodeMovements[id][intTime].X, p.NodeMovements[id][intTime+1].X, portion)
 	curNode.Y = interpolate(p.NodeMovements[id][intTime].Y, p.NodeMovements[id][intTime+1].Y, portion)
 
-
 	/*curNode.X = p.NodeMovements[id][time].X
 	curNode.Y = p.NodeMovements[id][time].Y*/
 
@@ -1530,6 +1529,8 @@ func (curNode *NodeImpl) MoveCSV(p *Params) {
 		p.BoolGrid[int(newX)][int(newY)] = true
 	}
 
+	//Handle movement in the tree (remove and reinsert if neccessary)
+	curNode.P.NodeTree.NodeMovement(float64(newX),float64(newY),curNode.NodeBounds)
 
 	//Add the node into its new Square's p.TotalNodes
 	//If the node hasn't left the square, that Square's p.TotalNodes will
@@ -1549,7 +1550,8 @@ func (curNode *NodeImpl) MoveNormal(p *Params) {
 	newX, newY := curNode.GetLoc()
 	p.BoolGrid[int(newX)][int(newY)] = true
 
-
+	//Handle movement in the tree (remove and reinsert if neccessary)
+	curNode.P.NodeTree.NodeMovement(float64(newX),float64(newY),curNode.NodeBounds)
 
 	//Add the node into its new Square's p.TotalNodes
 	//If the node hasn't left the square, that Square's p.TotalNodes will

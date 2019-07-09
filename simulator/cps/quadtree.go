@@ -59,7 +59,7 @@ func (b *Bounds) Intersects(a Bounds) bool {
 func (qt *Quadtree) NodeMovement(newX float64, newY float64, movingNode * Bounds){
 	inSameTree := newX>movingNode.CurTree.Bounds.X && newX<movingNode.CurTree.Bounds.X+movingNode.CurTree.Bounds.Width && newY>movingNode.CurTree.Bounds.Y && newY<movingNode.CurTree.Bounds.Y+movingNode.CurTree.Bounds.Width
 	if(!inSameTree){
-		qt.Remove(movingNode)
+		qt.RemoveAndCleanup(movingNode)
 		qt.Insert(movingNode)
 	}
 }
