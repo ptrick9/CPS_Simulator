@@ -126,13 +126,13 @@ type NodeImpl struct {
 	allReadings 	   [1000]float64
 	calibrateTimes 	   []int
 	calibrateReading   []float64
-	hasCalibrated 	   bool
 
 	BatteryOverTime	   map[int]float32
 
 	TotalPacketsSent    int
 	TotalBytesSent		int
 	IsClusterHead		bool
+	Recalibrated 		bool
 }
 
 //NodeMovement controls the movement of all the normal nodes
@@ -336,7 +336,7 @@ func (curNode *NodeImpl) Recalibrate() {
 	curNode.Sensitivity = curNode.InitialSensitivity
 	curNode.NodeTime = 0
 	//fmt.Printf("Node %v recalibrated!\curNode", curNode.Id)
-	curNode.hasCalibrated = true
+	curNode.Recalibrated = true
 }
 
 //Returns the arr with the element at Index curNode removed
@@ -639,10 +639,14 @@ func (curNode *NodeImpl) GetValue() int {
 }
 
 
+func (curNode *NodeImpl) Distance(b Bomb) float32 {
+	return float32(math.Sqrt(math.Pow(float64(math.Abs(float64(curNode.X)-float64(b.X))),2) + math.Pow(float64(math.Abs(float64(curNode.Y)-float64(b.Y))),2)))
+}
+
 //Returns a float representing the detection of the bomb
 //	by the specific node depending on distance
-func (curNode *NodeImpl) Distance(b Bomb) float32 {
-	dist := float32(math.Sqrt(math.Pow(float64(math.Abs(float64(curNode.X)-float64(b.X))),2) + math.Pow(float64(math.Abs(float64(curNode.Y)-float64(b.Y))),2)))
+func (curNode *NodeImpl) RawConcentration(b Bomb) float32 {
+	dist := curNode.Distance(b)
 	//dist := float32(math.Pow(float64(math.Abs(float64(curNode.X)-float64(b.X))), 2) + math.Pow(float64(math.Abs(float64(curNode.Y)-float64(b.Y))), 2))
 
 	if dist < .1 {
@@ -665,7 +669,7 @@ func (curNode *NodeImpl) GetReadings() {
 	if curNode.Valid { //Check if node should actually take readings or if it hasn't shown up yet
 		newX, newY := curNode.GetLoc()
 
-		newDist := curNode.Distance(*curNode.P.B) //this is the node's reported Value without error
+		RawConcentration := curNode.RawConcentration(*curNode.P.B) //this is the node's reported Value without error
 
 		//need to get the correct Time reading Value from system
 		//need to verify where we read from
@@ -674,11 +678,20 @@ func (curNode *NodeImpl) GetReadings() {
 		S0, S1, S2, E0, E1, E2, ET1, ET2 := curNode.GetParams()
 		sError := (S0 + E0) + (S1+E1)*math.Exp(-float64(curNode.NodeTime)/(curNode.P.Tau1+ET1)) + (S2+E2)*math.Exp(-float64(curNode.NodeTime)/(curNode.P.Tau2+ET2))
 		curNode.Sensitivity = S0 + (S1)*math.Exp(-float64(curNode.NodeTime)/curNode.P.Tau1) + (S2)*math.Exp(-float64(curNode.NodeTime)/curNode.P.Tau2)
-		sNoise := rand.NormFloat64()*0.5*curNode.P.ErrorModifierCM + float64(newDist)*sError
+		sNoise := rand.NormFloat64()*0.5*curNode.P.ErrorModifierCM + float64(RawConcentration)*sError
 
 		errorDist := sNoise / curNode.Sensitivity //this is the node's actual reading with error
+		clean := float64(RawConcentration) / curNode.Sensitivity
 
-		errorDist = float64(curNode.ADCReading(float32(errorDist)))
+
+		ADCRead := float64(curNode.ADCReading(float32(errorDist)))
+		ADCClean := float64(curNode.ADCReading(float32(clean)))
+
+		d := curNode.Distance(*curNode.P.B)
+		if d < 10 {
+			fmt.Fprintln(curNode.P.MoveReadingsFile, "Time:", curNode.P.CurrentTime/1000, "ID:", curNode.Id, "X:", newX, "Y:",  newY, "Dist:", d, "ADCClean:", ADCClean, "ADCError:", ADCRead, "CleanSense:", clean, "Error:", errorDist, "Raw:", RawConcentration)
+		}
+
 
 		//increment node Time
 		curNode.NodeTime++
@@ -690,44 +703,30 @@ func (curNode *NodeImpl) GetReadings() {
 		//gridAverage := curNode.P.Grid[curNode.Row(curNode.P.YDiv)][curNode.Col(curNode.P.XDiv)].Avg
 		//standDev := grid[curNode.Row(yDiv)][curNode.Col(xDiv)].StdDev
 
-		//New condition added: also recalibrate when the node's sensitivity is <= 1/10 of its original sensitvity
+		//New condition added: also recalibrate when the node's sensitivity is <= 1/2 of its original sensitvity
 		//New condition added: Check to make sure the sensor was pinged this iteration
 		if ((curNode.Sensitivity <= (curNode.InitialSensitivity / 2)) && curNode.P.Iterations_used != 0) {
 			curNode.Recalibrate()
-			curNode.P.Recalibrate = true
+			curNode.Recalibrated = true
 			curNode.IncrementNumResets()
 		}
 
 		//printing statements to log files, only if the sensor was pinged this iteration
 		//if curNode.HasCheckedSensor && nodesPrint{
 		if curNode.P.NodesPrint {
-			if curNode.P.Recalibrate {
-				fmt.Fprintln(curNode.P.NodeFile, "ID:", curNode.GetID(), "Average:", curNode.GetAvg(), "Reading:", newDist, "Error Reading:", errorDist, "Recalibrated")
+			if curNode.Recalibrated {
+				fmt.Fprintln(curNode.P.NodeFile, "ID:", curNode.GetID(), "Average:", curNode.GetAvg(), "Reading:", RawConcentration, "Error Reading:", errorDist, "Recalibrated")
 			} else {
-				fmt.Fprintln(curNode.P.NodeFile, "ID:", curNode.GetID(), "Average:", curNode.GetAvg(), "Reading:", newDist, "Error Reading:", errorDist)
+				fmt.Fprintln(curNode.P.NodeFile, "ID:", curNode.GetID(), "Average:", curNode.GetAvg(), "Reading:", RawConcentration, "Error Reading:", errorDist)
 			}
 			//fmt.Fprintln(nodeFile, "battery:", int(curNode.Battery),)
+			curNode.Recalibrated = false
 		}
 
 
+		curNode.P.Server.Send(curNode, Reading{errorDist, newX, newY, curNode.P.Iterations_used, curNode.GetID()})
 
-		curNode.P.Recalibrate = false
 
-		//Receives the node's distance and calculates its running average
-		//for that square
-		//Only do this if the sensor was pinged this iteration
-		//if curNode.HasCheckedSensor {
-			//curNode.P.Server.UpdateSquareAvg(*curNode, errorDist)
-			//curNode.P.Grid[curNode.Row(curNode.P.YDiv)][curNode.Col(curNode.P.XDiv)].TakeMeasurement(float32(errorDist))
-			//curNode.P.Grid[curNode.Row(curNode.P.YDiv)][curNode.Col(curNode.P.XDiv)].TotalNodes++
-			////subtract grid average from node average, square it, and add it to this variable
-			curNode.P.Server.Send(curNode, Reading{errorDist, newX, newY, curNode.P.Iterations_used, curNode.GetID()})
-
-			curNode.hasCalibrated = false
-			//slope, r := curNode.getDriftSlope()
-			//fmt.Printf("Node: %v, Slope: %v, R Value: %v\curNode", curNode.Id, slope, r)
-			//curNode.P.Grid[curNode.Row(curNode.P.YDiv)][curNode.Col(curNode.P.XDiv)].SquareValues += math.Pow(float64(errorDist-float64(gridAverage)), 2)
-		//}
 	}
 	curNode.P.Events.Push(&Event{curNode, SENSE, curNode.P.CurrentTime + 1000, 0})
 
@@ -831,24 +830,25 @@ func (curNode *NodeImpl) GetReadingsCSV() {
 		//New condition added: Check to make sure the sensor was pinged this iteration
 		if ((curNode.Sensitivity <= (curNode.InitialSensitivity / 2))  && curNode.P.Iterations_used != 0) {
 			curNode.Recalibrate()
-			curNode.P.Recalibrate = true
+			curNode.Recalibrated = true
 			curNode.IncrementNumResets()
 		}
 
 		//printing statements to log files, only if the sensor was pinged this iteration
 		//if curNode.HasCheckedSensor && nodesPrint{
 		if curNode.P.NodesPrint {
-			if curNode.P.Recalibrate {
+			if curNode.Recalibrated {
 				fmt.Fprintln(curNode.P.NodeFile, "ID:", curNode.GetID(), "Average:", curNode.GetAvg(), "Reading:", newDist, "Error Reading:", errorDist, "Recalibrated")
 			} else {
 				fmt.Fprintln(curNode.P.NodeFile, "ID:", curNode.GetID(), "Average:", curNode.GetAvg(), "Reading:", newDist, "Error Reading:", errorDist)
 			}
 			//fmt.Fprintln(nodeFile, "battery:", int(curNode.Battery),)
+			curNode.Recalibrated = false
 		}
 
 
 
-		curNode.P.Recalibrate = false
+
 
 		//Receives the node's distance and calculates its running average
 		//for that square

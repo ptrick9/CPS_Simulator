@@ -125,7 +125,6 @@ type Params struct {
 	Tau1 float64
 	Tau2 float64
 
-	Recalibrate bool
 
 	FileName string
 

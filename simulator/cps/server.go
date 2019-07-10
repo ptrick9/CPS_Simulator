@@ -112,7 +112,9 @@ func (s FusionCenter) CheckDetections() {
 				xLoc := (x * s.P.XDiv) + int(s.P.XDiv/2)
 				yLoc := (y * s.P.YDiv) + int(s.P.YDiv/2)
 				s.P.CenterCoord = Coord{X: xLoc, Y: yLoc}
-				s.Sch.AddRoutePoint(s.P.CenterCoord)
+				if s.P.SuperNodes {
+					s.Sch.AddRoutePoint(s.P.CenterCoord)
+				}
 				s.P.Grid[x][y].HasDetected = true
 			}
 
@@ -123,7 +125,9 @@ func (s FusionCenter) CheckDetections() {
 				xLoc := (x * s.P.XDiv) + int(s.P.XDiv/2)
 				yLoc := (y * s.P.YDiv) + int(s.P.YDiv/2)
 				s.P.CenterCoord = Coord{X: xLoc, Y: yLoc}
-				s.Sch.AddRoutePoint(s.P.CenterCoord)
+				if s.P.SuperNodes {
+					s.Sch.AddRoutePoint(s.P.CenterCoord)
+				}
 				s.P.Grid[x][y].HasDetected = true
 			}
 
