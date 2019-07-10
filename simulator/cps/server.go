@@ -29,7 +29,7 @@ type FusionCenter struct {
 
 //Init initializes the values for the server
 func (s *FusionCenter) Init(){
-	s.TimeBuckets = make([][]Reading, 0)
+	s.TimeBuckets = make([][]Reading, s.P.Iterations_of_event)
 	s.Mean = make([]float64, s.P.Iterations_of_event)
 	s.StdDev = make([]float64, s.P.Iterations_of_event)
 	s.Variance = make([]float64, s.P.Iterations_of_event)
@@ -206,7 +206,7 @@ func (srv FusionCenter) Tick() {
 		optimize = false
 	}
 	var radius float32 = 5.0
-	DetectionThreshold := 4000.0
+	DetectionThreshold := srv.P.DetectionThreshold
 	validated := false
 	time := srv.P.CurrentTime / 1000
 	for z := range srv.TimeBuckets {
@@ -218,6 +218,7 @@ func (srv FusionCenter) Tick() {
 					avg := 0.0
 					count := 0
 					for t:= time - 60; t < time; t++ {
+						//fmt.Printf("Length of time bucket %v is %v\n", t, len(srv.TimeBuckets[t]))
 						for r := range srv.TimeBuckets[t] {
 							if srv.TimeBuckets[t][r].Xpos > rd.Xpos - radius && srv.TimeBuckets[t][r].Xpos < rd.Xpos + radius {
 								if srv.TimeBuckets[t][r].YPos > rd.YPos - radius && srv.TimeBuckets[t][r].YPos < rd.YPos + radius {

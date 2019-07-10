@@ -721,7 +721,7 @@ func (curNode *NodeImpl) GetReadings() {
 			//curNode.P.Grid[curNode.Row(curNode.P.YDiv)][curNode.Col(curNode.P.XDiv)].TakeMeasurement(float32(errorDist))
 			//curNode.P.Grid[curNode.Row(curNode.P.YDiv)][curNode.Col(curNode.P.XDiv)].TotalNodes++
 			////subtract grid average from node average, square it, and add it to this variable
-			curNode.P.Server.Send(curNode, Reading{errorDist, newX, newY, curNode.P.Iterations_used, curNode.GetID()})
+			curNode.P.Server.Send(curNode, Reading{errorDist, newX, newY, curNode.P.CurrentTime, curNode.GetID()})
 
 			curNode.hasCalibrated = false
 			//slope, r := curNode.getDriftSlope()
@@ -855,7 +855,7 @@ func (curNode *NodeImpl) GetReadingsCSV() {
 		//Only do this if the sensor was pinged this iteration
 
 		if curNode.Valid {
-			curNode.P.Server.Send(curNode, Reading{errorDist, newX, newY, curNode.P.Iterations_used, curNode.GetID()})
+			curNode.P.Server.Send(curNode, Reading{errorDist, newX, newY, curNode.P.CurrentTime, curNode.GetID()})
 		}
 
 	}
