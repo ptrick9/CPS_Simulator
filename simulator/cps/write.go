@@ -828,6 +828,10 @@ func SetupParameters(p *Params) {
 
 }
 
+func InterpolateFloat (start float32, end float32, portion float32) float32{
+	return (float32(end-start) * portion + float32(start))
+}
+
 //readSensorCSV reads the sensor values from a file
 func readSensorCSV(p *Params) {
 
@@ -867,6 +871,10 @@ func readSensorCSV(p *Params) {
 
 	i := 1
 	fmt.Printf("Sensor CSV Processing\n")
+	maxReading := 0.0
+	/*maxLocX := 0
+	maxLocY := 0
+	maxTime := 0*/
 	for i < len(record) {
 
 
@@ -877,9 +885,21 @@ func readSensorCSV(p *Params) {
 
 		for j < len(record[i]) {
 			read1, _ := strconv.ParseFloat(record[i][j], 32);
+			if read1 < 0 {
+				read1 = 0
+			}
 			//fmt.Printf("x:%v, y:%v, j:%v\n",x,y,j)
 			p.SensorReadings[x][y][j-2] = read1
+
+			if read1 > maxReading {
+				maxReading = read1
+				/*maxLocX = int(x)
+				maxLocY = int(y)
+				maxTime = j-2*/
+			}
+
 			j += 1
+
 		}
 		i++
 
@@ -888,7 +908,14 @@ func readSensorCSV(p *Params) {
 			fmt.Printf("\rProgress [%s%s] %d ", strings.Repeat("=", prog), strings.Repeat(".", 100-prog), prog)
 		}
 	}
+
+
+
+
 	fmt.Printf("\n")
+
+
+
 }
 
 //readMovementCSV reads the movement parameters from a file
