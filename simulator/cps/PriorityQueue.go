@@ -8,6 +8,7 @@ type Message int
 const (
 	_ = iota
 	SENSE Message = iota + 1
+	MOVE
 	POSITION
 	TIME
 	SERVER
