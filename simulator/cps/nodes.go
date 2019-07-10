@@ -212,7 +212,7 @@ func (curNode *NodeImpl) InBounds(p *Params) bool {
 
 
 
-func (curNode *NodeImpl) ADCReading(raw float32) float32 {
+func (curNode *NodeImpl) ADCReading(raw float32) int {
 
 	level := (raw - curNode.P.ADCOffset)/curNode.P.ADCWidth
 
@@ -222,7 +222,7 @@ func (curNode *NodeImpl) ADCReading(raw float32) float32 {
 		level = 0
 	}
 
-	return level
+	return int(level)
 }
 
 func (curNode NodeImpl) String() string {
@@ -724,7 +724,7 @@ func (curNode *NodeImpl) GetReadings() {
 		}
 
 
-		curNode.P.Server.Send(curNode, Reading{errorDist, newX, newY, curNode.P.Iterations_used, curNode.GetID()})
+		curNode.P.Server.Send(curNode, Reading{ADCRead, newX, newY, curNode.P.Iterations_used, curNode.GetID()})
 
 
 	}
