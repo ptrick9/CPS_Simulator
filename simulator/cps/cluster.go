@@ -51,36 +51,31 @@ func (curNode * NodeImpl)GenerateHello(searchRange float64, score float64) {
 	curNode.NodeClusterParams.ThisNodeHello = message
 }
 
-func GenerateClusters(p * Params, transmitRange float64){
-	//Step 1: send hello messages from all nodes to all their neighbors
-	for i:=0; i<len(p.NodeList); i++{
-		p.NodeList[i].SendHelloMessage(transmitRange)
-	}
+func (curNode * NodeImpl)GenerateClusters(transmitRange float64){
+	//assumes hello messages have already been generated
 
-	//Step 2: assign clusterheads and form clusters
-	for i:=0; i<len(p.NodeList); i++{
+	//Assign clusterheads and form clusters
 		//node already is a cluster head OR is already in a cluster
-		if(p.NodeList[i].IsClusterHead || p.NodeList[i].ClusterHead != nil){
-			continue
-		}else{
-			//node is not a cluster head and is not in a cluster
-			for j:=0; j<len(p.NodeList[i].NodeClusterParams.RecvMsgs); j++{
-				//if received a message from a cluster head
-				if(p.NodeList[i].NodeClusterParams.RecvMsgs[j].Sender == p.NodeList[i].NodeClusterParams.RecvMsgs[j].ClusterHead){
-					//join cluster
-					p.NodeList[i].NodeClusterParams.CurrentCluster.ClusterHead = p.NodeList[i].NodeClusterParams.RecvMsgs[j].Sender
-					p.NodeList[i].NodeClusterParams.CurrentCluster.Total++
-					break
-				}
+	if(curNode.IsClusterHead || curNode.ClusterHead != nil){
+		return
+	}else{
+		//node is not a cluster head and is not in a cluster
+		for j:=0; j<len(curNode.NodeClusterParams.RecvMsgs); j++{
+			//if received a message from a cluster head
+			if(curNode.NodeClusterParams.RecvMsgs[j].Sender == curNode.NodeClusterParams.RecvMsgs[j].ClusterHead){
+				//join cluster
+				curNode.NodeClusterParams.CurrentCluster.ClusterHead = curNode.NodeClusterParams.RecvMsgs[j].Sender
+				curNode.NodeClusterParams.CurrentCluster.Total++
+				break
 			}
+		}
 
-			//if node score highest
-			if(p.NodeList[i].HasMaxNodeScore()){
-				//assign self as cluster head, and all in range to be in cluster
-				p.NodeList[i].NodeClusterParams.CurrentCluster.ClusterHead = p.NodeList[i]
-				for j:=0; j<len(p.NodeList[i].NodeClusterParams.RecvMsgs); j++{
-					p.NodeList[i].NodeClusterParams.RecvMsgs[i].Sender.NodeClusterParams.CurrentCluster.ClusterHead = p.NodeList[i]
-				}
+		//if node score highest
+		if(curNode.HasMaxNodeScore()){
+			//assign self as cluster head, and all in range to be in cluster
+			curNode.NodeClusterParams.CurrentCluster.ClusterHead = curNode
+			for j:=0; j<len(curNode.NodeClusterParams.RecvMsgs); j++{
+				curNode.NodeClusterParams.RecvMsgs[j].Sender.NodeClusterParams.CurrentCluster.ClusterHead = curNode
 			}
 		}
 	}
