@@ -1,12 +1,26 @@
-import os
-import pickle
 import xml.etree.ElementTree as ET
-import xml.dom.minidom as xdm
 
 
 '''
 ######################## Obstacle Set Generator ######################## 
 '''
+
+
+# adjustCoordinates(data)
+# Changes coordinates in the square list so that the bottom left corner reflects the coordinates (0, 0)
+# Returns: the data with the adjusted squares list
+def adjust_coordinates(data):
+    for index in range(len(data['squares'])):
+        y1, y2, x1, x2 = data['squares'][index]
+        y1 = data['height'] - y1
+        y2 = data['height'] - y2
+        data['squares'][index] = (
+            x1,
+            x2,
+            y1,
+            y2
+        )
+    return data
 
 
 # create_vertex(XMLNode, int, int)
@@ -51,6 +65,7 @@ def create_border(parent, width, height):
 # Creates an ObstacleSet parent XML node filled with obstacles
 # Returns: The created ObstacleSet node
 def create_obstacle_set(data):
+    data = adjust_coordinates(data)
     root = ET.Element('ObstacleSet')
     root.set('type', 'explicit')
     root.set('class', '1')
@@ -59,10 +74,6 @@ def create_obstacle_set(data):
         create_obstacle(root, square)
     return root
 
-
-'''
-######################## Main Program ######################## 
-'''
 
 '''
     Pickle Data Structure
@@ -80,35 +91,3 @@ def create_obstacle_set(data):
     y1: Top-Left-Y
     y2: Bottom-Right-Y
 '''
-
-
-# adjustCoordinates(data)
-# Changes coordinates in the square list so that the bottom left corner reflects the coordinates (0, 0)
-# Returns: the data with the adjusted squares list
-def adjust_coordinates(data):
-    for index in range(len(data['squares'])):
-        y1, y2, x1, x2 = data['squares'][index]
-        data['squares'][index] = (
-            x1,
-            x2,
-            data['height'] - y1,
-            data['height'] - y2
-        )
-    return data
-
-
-# writeToXML(XMLNode, string)
-# Writes the given XML node to file
-def write_to_XML(node, fileName):
-    data = ET.tostring(node)
-    data = xdm.parseString(data)
-    data = data.toprettyxml(indent="\t")
-    outfile = open('%s/%s.xml' % (os.getcwd(), fileName), 'w')
-    outfile.write(data)
-    outfile.close()
-
-
-def build(base_name, data):
-    data = adjust_coordinates(data)
-    obstacle_set = create_obstacle_set(data)
-    write_to_XML(obstacle_set, base_name)
