@@ -724,7 +724,7 @@ func (curNode *NodeImpl) GetReadings() {
 		}
 
 
-		curNode.P.Server.Send(curNode, Reading{ADCRead, newX, newY, curNode.P.Iterations_used, curNode.GetID()})
+		curNode.P.Server.Send(curNode, Reading{ADCRead, newX, newY, curNode.P.CurrentTime, curNode.GetID()})
 
 
 	}

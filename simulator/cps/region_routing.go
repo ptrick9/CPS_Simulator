@@ -136,6 +136,7 @@ func ValidPath(reg int, endpoint Coord, r *RegionParams) bool{
 func PossPaths(p1, p2 Tuple, r *RegionParams) {
 	start_region := RegionContaining(p1, r)
 	end_region := RegionContaining(p2, r)
+	//fmt.Printf("Start: %v, End: %v\n", start_region, end_region)
 
 	r.Possible_paths = make([][]int, 0)
 
@@ -202,17 +203,18 @@ func GetPath(c1, c2 Coord, r *RegionParams) []Coord {
 		}
 	}
 	ret_path := make([]Coord, 0)
-
-	if len(r.Possible_paths[index]) == 1 {
-		ret_path = append(ret_path, InRegionRouting(p1, p2)...)
-	} else {
-		for i, s := range r.Possible_paths[index] {
-			if i == 0 {
-				ret_path = append(ret_path, InRegionRouting(p1, r.Square_list[s].Routers[r.Possible_paths[index][i+1]])...)
-			} else if i == len(r.Possible_paths[index])-1 {
-				ret_path = append(ret_path, InRegionRouting(r.Square_list[s].Routers[r.Possible_paths[index][i-1]], p2)...)
-			} else {
-				ret_path = append(ret_path, InRegionRouting(r.Square_list[s].Routers[r.Possible_paths[index][i-1]], r.Square_list[s].Routers[r.Possible_paths[index][i+1]])...)
+	if len(r.Possible_paths) > 0 {
+		if len(r.Possible_paths[index]) == 1 {
+			ret_path = append(ret_path, InRegionRouting(p1, p2)...)
+		} else {
+			for i, s := range r.Possible_paths[index] {
+				if i == 0 {
+					ret_path = append(ret_path, InRegionRouting(p1, r.Square_list[s].Routers[r.Possible_paths[index][i+1]])...)
+				} else if i == len(r.Possible_paths[index])-1 {
+					ret_path = append(ret_path, InRegionRouting(r.Square_list[s].Routers[r.Possible_paths[index][i-1]], p2)...)
+				} else {
+					ret_path = append(ret_path, InRegionRouting(r.Square_list[s].Routers[r.Possible_paths[index][i-1]], r.Square_list[s].Routers[r.Possible_paths[index][i+1]])...)
+				}
 			}
 		}
 	}
