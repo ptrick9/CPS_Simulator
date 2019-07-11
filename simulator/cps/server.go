@@ -376,7 +376,7 @@ func (s FusionCenter) MakeSuperNodes() {
 	starting_locs[2] = bot_left_corner
 	starting_locs[3] = bot_right_corner
 
-	closestSnodes := make([][][]int, 4)
+	/*closestSnodes := make([][][]int, 4)
 	for i := range closestSnodes {
 		closestSnodes[i] = make([][]int, 2)
 	}
@@ -423,7 +423,7 @@ func (s FusionCenter) MakeSuperNodes() {
 		meanY := getMean(closestSnodes[i][1])
 		fmt.Printf("New location for super node %v is (%v,%v)\n", i, int(meanX), int(meanY))
 		//starting_locs[i] = Coord{X: int(meanX), Y: int(meanY)}
-	}
+	}*/
 
 	//The scheduler determines which supernode should pursue a point of interest
 	//scheduler = &Scheduler{s.P, s.R, nil}
@@ -448,6 +448,62 @@ func (s FusionCenter) MakeSuperNodes() {
 		//The super node's current location is always the first element in the routePoints list
 		s.Sch.SNodeList[i].UpdateLoc()
 	}
+}
+
+func (s FusionCenter) PlaceSuperNodes() {
+	closestSnodes := make([][][]int, 4)
+	for i := range closestSnodes {
+		closestSnodes[i] = make([][]int, 2)
+	}
+
+	//Assignment
+	for i := range s.P.Grid {
+		for j := range s.P.Grid[i] {
+			if s.P.Grid[i][j].Navigable {
+				minDist := 100000000.0
+				minIndex := 0
+				xLoc := (s.P.Grid[i][j].X * s.P.XDiv) + int(s.P.XDiv/2)
+				yLoc := (s.P.Grid[i][j].Y * s.P.YDiv) + int(s.P.YDiv/2)
+				s.P.CenterCoord = Coord{X: xLoc, Y: yLoc}
+				for k := range s.Sch.SNodeList {
+					dist := 0.0
+					//fmt.Printf("Starting coordinate: %v\n", starting_locs[3])
+					ret_path := GetPath(s.Sch.SNodeList[k].GetCenter(), s.P.CenterCoord, s.R)
+
+					if len(ret_path) > 0 {
+						tmp := Tuple{X: ret_path[0].X, Y: ret_path[0].Y}
+						for i := 1; i < len(ret_path); i++ {
+							dist += Dist(tmp, Tuple{X: ret_path[i].X, Y: ret_path[i].Y})
+							tmp = Tuple{X: ret_path[i].X, Y: ret_path[i].Y}
+						}
+					} else {
+						dist = 200000000.0
+					}
+					if dist < minDist {
+						minDist = dist
+						minIndex = k
+					}
+					//fmt.Printf("Distance: %v\n", dist)
+				}
+				//fmt.Printf("min index: %v\n", minIndex)
+				closestSnodes[minIndex][0] = append(closestSnodes[minIndex][0], s.P.CenterCoord.X)
+				closestSnodes[minIndex][1] = append(closestSnodes[minIndex][1], s.P.CenterCoord.Y)
+			}
+		}
+	}
+
+	//Update
+	for i := range closestSnodes {
+		meanX := int(getMean(closestSnodes[i][0]))
+		meanY := int(getMean(closestSnodes[i][1]))
+		if !s.P.Grid[meanX / s.P.XDiv][meanY / s.P.YDiv].Navigable {
+			meanX+=10
+		}
+		fmt.Printf("New location for super node %v is (%v,%v)\n", i, int(meanX), int(meanY))
+		//starting_locs[i] = Coord{X: int(meanX), Y: int(meanY)}
+		s.Sch.SNodeList[i].AddRoutePoint(Coord{X: int(meanX), Y: int(meanY)})
+	}
+
 }
 
 func getMean(arr []int) float64{

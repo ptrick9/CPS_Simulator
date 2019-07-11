@@ -116,6 +116,9 @@ func main() {
 	p.Server.Init()
 	cps.ReadMap(p, r)
 
+	if (p.SuperNodes) {
+		p.Server.MakeSuperNodes()
+	}
 	cps.GenerateRouting(p, r)
 
 	cps.FlipSquares(p, r)
@@ -163,9 +166,8 @@ func main() {
 	}
 
 	p.Server.MakeGrid()
-	if (p.SuperNodes) {
-		p.Server.MakeSuperNodes()
-	}
+	p.Server.PlaceSuperNodes()
+	p.Server.PlaceSuperNodes()
 
 	fmt.Println("Super Node Type", p.SuperNodeType)
 	fmt.Println("Dimensions: ", p.MaxX, "x", p.MaxY)
