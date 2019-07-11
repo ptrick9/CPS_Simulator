@@ -335,7 +335,7 @@ func HandleMovement(p *Params) {
 		p.BoolGrid[int(newX)][int(newY)] = true
 
 		//sync the QuadTree
-		p.NodeTree.NodeMovement(float64(newX), float64(newY), p.NodeList[j].NodeBounds)
+		p.NodeTree.NodeMovement(p.NodeList[j].NodeBounds)
 
 		//writes the node information to the file
 		if p.EnergyPrint {
@@ -352,7 +352,6 @@ func HandleMovement(p *Params) {
 func HandleMovementCSV(p *Params) {
 	time := p.Iterations_used
 	for j := 0; j < len(p.NodeList); j++ {
-
 		if p.NodeList[j].Valid {
 			oldX, oldY := p.NodeList[j].GetLoc()
 			p.BoolGrid[int(oldX)][int(oldY)] = false //set the old spot false since the node will now move away
@@ -369,7 +368,7 @@ func HandleMovementCSV(p *Params) {
 		newX, newY := p.NodeList[j].GetLoc()
 
 		//sync the QuadTree
-		p.NodeTree.NodeMovement(float64(newX), float64(newY), p.NodeList[j].NodeBounds)
+		p.NodeTree.NodeMovement(p.NodeList[j].NodeBounds)
 		if p.NodeList[j].InBounds(p) {
 			p.NodeList[j].Valid = true
 		} else {
@@ -450,7 +449,14 @@ func SetupCSVNodes(p *Params) {
 
 
 		if newNode.Valid{
-			bNewNode := Bounds{float64(newNode.X),float64(newNode.Y),0,0,p.NodeTree, newNode}
+			bNewNode := Bounds{
+				X:	float64(newNode.X),
+				Y:	float64(newNode.Y),
+				Width:	0,
+				Height:	0,
+				CurTree:	p.NodeTree,
+				curNode: 	newNode,
+			}
 			p.NodeList[len(p.NodeList)-1].NodeBounds = &bNewNode
 			p.NodeTree.Insert(&bNewNode)
 		}
@@ -483,7 +489,14 @@ func SetupRandomNodes(p *Params) {
 			p.CurrentNodes += 1
 
 			if newNode.Valid{
-				bNewNode := Bounds{float64(newNode.X),float64(newNode.Y),0,0,p.NodeTree, newNode}
+				bNewNode := Bounds{
+					X:	float64(newNode.X),
+					Y:	float64(newNode.Y),
+					Width:	0,
+					Height:	0,
+					CurTree:	p.NodeTree,
+					curNode: 	newNode,
+				}
 				p.NodeList[len(p.NodeList)-1].NodeBounds = &bNewNode
 				p.NodeTree.Insert(&bNewNode)
 			}

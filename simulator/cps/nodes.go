@@ -132,6 +132,8 @@ type NodeImpl struct {
 
 	TotalPacketsSent    int
 	TotalBytesSent		int
+
+	IsClusterMember		bool
 	IsClusterHead		bool
 
 	NodeBounds			*Bounds //the node's representative bounds object
@@ -917,7 +919,7 @@ func (curNode *NodeImpl) MoveCSV(p *Params) {
 	}
 
 	//Handle movement in the tree (remove and reinsert if neccessary)
-	curNode.P.NodeTree.NodeMovement(float64(newX),float64(newY),curNode.NodeBounds)
+	curNode.P.NodeTree.NodeMovement(curNode.NodeBounds)
 
 	//Add the node into its new Square's p.TotalNodes
 	//If the node hasn't left the square, that Square's p.TotalNodes will
@@ -938,7 +940,7 @@ func (curNode *NodeImpl) MoveNormal(p *Params) {
 	p.BoolGrid[int(newX)][int(newY)] = true
 
 	//Handle movement in the tree (remove and reinsert if neccessary)
-	curNode.P.NodeTree.NodeMovement(float64(newX),float64(newY),curNode.NodeBounds)
+	curNode.P.NodeTree.NodeMovement(curNode.NodeBounds)
 
 	//Add the node into its new Square's p.TotalNodes
 	//If the node hasn't left the square, that Square's p.TotalNodes will

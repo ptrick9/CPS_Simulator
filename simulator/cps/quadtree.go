@@ -27,6 +27,7 @@ type Bounds struct {
 	Height 	float64
 	CurTree	*Quadtree 	//tree that this object is in
 	curNode *NodeImpl	//pointer to current Node it represents
+	CurTestNode *ClusterNode
 }
 
 //IsPoint - Checks if a bounds object is a point or not (has no width or height)
@@ -56,11 +57,17 @@ func (b *Bounds) Intersects(a Bounds) bool {
 	}
 }
 
-func (qt *Quadtree) NodeMovement(newX float64, newY float64, movingNode * Bounds){
-	inSameTree := newX>movingNode.CurTree.Bounds.X && newX<movingNode.CurTree.Bounds.X+movingNode.CurTree.Bounds.Width && newY>movingNode.CurTree.Bounds.Y && newY<movingNode.CurTree.Bounds.Y+movingNode.CurTree.Bounds.Width
-	if(!inSameTree){
+func (qt *Quadtree) NodeMovement(movingNode * Bounds){
+	movedDown := movingNode.Y<movingNode.CurTree.Bounds.Y
+	movedUp := movingNode.Y>movingNode.CurTree.Bounds.Y + movingNode.CurTree.Bounds.Height
+	movedRight := movingNode.X < movingNode.CurTree.Bounds.X
+	movedLeft := movingNode.X > movingNode.CurTree.Bounds.X + movingNode.CurTree.Bounds.Width
+
+	//iF moved out in any direction, reinsert in tree
+	if(movedDown || movedUp || movedRight || movedLeft){
 		qt.RemoveAndCleanup(movingNode)
 		qt.Insert(movingNode)
+		//fmt.Printf("INSERT IN TREE: Moving Nodeto (%.4f,%.4f)\n", movingNode.X,movingNode.Y)
 	}
 }
 
@@ -436,13 +443,14 @@ func (qt * Quadtree) RemoveAndCleanup(pRect * Bounds) *Bounds{
 				parent.Objects = append(parent.Objects, parent.SubTrees[i].Objects[j])
 			}
 		}
-	}
-	parent.SubTrees = []*Quadtree{}
+		parent.SubTrees = []*Quadtree{}
 
-	//once all objects are in parent, update objects to hold pointer to new CurTree
-	for i:=0; i<len(parent.Objects); i++{
-		parent.Objects[i].CurTree = parent
+		//once all objects are in parent, update objects to hold pointer to new CurTree
+		for i:=0; i<len(parent.Objects); i++{
+			parent.Objects[i].CurTree = parent
+		}
 	}
+
 
 	return pRect
 }

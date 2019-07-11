@@ -1,20 +1,22 @@
 package cps
 
+import "fmt"
+
 type Cluster struct {
-	ClusterHead			*NodeImpl	//id of clusterhead
+	ClusterHead			*ClusterNode//*NodeImpl	//id of clusterhead
 	Threshold			int //maximum # of nodes in a cluster
 	Total				int //current # of nodes in a cluster
 }
 
 type ClusterMemberParams struct{
 	CurrentCluster		*Cluster
-	RecvMsgs			[]HelloMsg
+	RecvMsgs			[]*HelloMsg
 	ThisNodeHello		*HelloMsg
 }
 
 type HelloMsg struct {
-	Sender				*NodeImpl		//pointer to Node sending the Hello Msg
-	ClusterHead			*NodeImpl		//pointer to of the cluster head
+	Sender				*ClusterNode//*NodeImpl		//pointer to Node sending the Hello Msg
+	ClusterHead			*ClusterNode//NodeImpl		//pointer to of the cluster head
 										//nil if not in a cluster
 										//points to self if Node is a ClusterHead
 	NodeCHScore			float64	//score for determining how suitible a node is to be a clusterhead
@@ -22,8 +24,18 @@ type HelloMsg struct {
 	BrodPeriod			float64	//broadcast period of the Sender
 }
 
+type ClusterNode struct{ //made for testing, only has parameters that the cluster needs to know from a NodeImpl
+	NodeBounds			*Bounds
+	Battery				float32
+	ClusterHead			*ClusterNode
+	NodeClusterParams 	*ClusterMemberParams
+	IsClusterHead		bool
+	IsClusterMember		bool
+	NodeTree			*Quadtree
+}
+
 //Computes the cluster score (higher the score the better chance a node beccomes a cluster head)
-func (curNode * NodeImpl) ComputeClusterScore(penalty float64, numWithinDist int) (score float64){
+func (curNode * ClusterNode) ComputeClusterScore(penalty float64, numWithinDist int) (score float64){
 	degree := float64(numWithinDist)
 	battery := float64(curNode.Battery)
 
@@ -33,7 +45,7 @@ func (curNode * NodeImpl) ComputeClusterScore(penalty float64, numWithinDist int
 }
 
 //Generates Hello Message for node to form/maintain clusters. Returns message as a string
-func (curNode * NodeImpl)GenerateHello(searchRange float64, score float64) {
+func (curNode * ClusterNode)GenerateHello(searchRange float64, score float64) {
 	var option int
 
 	if(curNode.IsClusterHead){
@@ -51,14 +63,14 @@ func (curNode * NodeImpl)GenerateHello(searchRange float64, score float64) {
 	curNode.NodeClusterParams.ThisNodeHello = message
 }
 
-func (curNode * NodeImpl)GenerateClusters(transmitRange float64){
+func (curNode * ClusterNode)GenerateClusters(transmitRange float64){
 	//assumes hello messages have already been generated
 
 	//Assign clusterheads and form clusters
 		//node already is a cluster head OR is already in a cluster
 	if(curNode.IsClusterHead || curNode.ClusterHead != nil){
 		return
-	}else{
+	} else{
 		//node is not a cluster head and is not in a cluster
 		for j:=0; j<len(curNode.NodeClusterParams.RecvMsgs); j++{
 			//if received a message from a cluster head
@@ -70,42 +82,98 @@ func (curNode * NodeImpl)GenerateClusters(transmitRange float64){
 			}
 		}
 
-		//if node score highest
+		for j:=0; j<len(curNode.NodeClusterParams.RecvMsgs); j++{
+
+		}
+
+		//No nodes within range are cluster heads
+		//find node in range with max score, make it a cluster head
 		if(curNode.HasMaxNodeScore()){
 			//assign self as cluster head, and all in range to be in cluster
-			curNode.NodeClusterParams.CurrentCluster.ClusterHead = curNode
+			curNode.IsClusterHead = true
+			curNode.NodeClusterParams.CurrentCluster = &Cluster{curNode,8,0}
+			//curNode.NodeClusterParams.CurrentCluster.ClusterHead = curNode
 			for j:=0; j<len(curNode.NodeClusterParams.RecvMsgs); j++{
-				curNode.NodeClusterParams.RecvMsgs[j].Sender.NodeClusterParams.CurrentCluster.ClusterHead = curNode
+				if(!curNode.NodeClusterParams.RecvMsgs[j].Sender.IsClusterMember){
+					curNode.NodeClusterParams.RecvMsgs[j].Sender.NodeClusterParams.CurrentCluster = curNode.NodeClusterParams.CurrentCluster
+					curNode.NodeClusterParams.CurrentCluster.Total++
+					if(!curNode.NodeClusterParams.RecvMsgs[j].Sender.IsClusterHead) {
+						curNode.NodeClusterParams.RecvMsgs[j].Sender.IsClusterMember = true
+					}
+
+					//update hello / send second messsage saying sender joined a cluster
+					curNode.NodeClusterParams.RecvMsgs[j].Sender.NodeClusterParams.ThisNodeHello.ClusterHead = curNode
+				}
 			}
 		}
 	}
 }
 
-func (curNode * NodeImpl) SendHelloMessage(transmitRange float64){
+func (curNode * ClusterNode) SendHelloMessage(transmitRange float64){
 	withinDist := []*Bounds{}
-	withinDist = curNode.P.NodeTree.WithinRadius(transmitRange,curNode.NodeBounds,curNode.NodeBounds.GetSearchBounds(transmitRange),withinDist)
+	//withinDist = curNode.P.NodeTree.WithinRadius(transmitRange,curNode.NodeBounds,curNode.NodeBounds.GetSearchBounds(transmitRange),withinDist)
+	withinDist = curNode.NodeTree.WithinRadius(transmitRange,curNode.NodeBounds,curNode.NodeBounds.GetSearchBounds(transmitRange),withinDist)
 	numWithinDist := len(withinDist)
 
-	score := curNode.ComputeClusterScore( 1,numWithinDist)
-	curNode.GenerateHello(transmitRange, score)
+	curNode.GenerateHello(transmitRange, curNode.ComputeClusterScore( 1,numWithinDist))
 
-	for j:=0; j<len(withinDist); j++{
-		if(withinDist[j].curNode.NodeClusterParams.RecvMsgs == nil){
-			withinDist[j].curNode.NodeClusterParams.RecvMsgs = []HelloMsg{}
+	for j:=0; j<len(withinDist); j++ {
+		if (withinDist[j].CurTestNode.NodeClusterParams.RecvMsgs != nil) {
+			withinDist[j].CurTestNode.NodeClusterParams.RecvMsgs = append(withinDist[j].CurTestNode.NodeClusterParams.RecvMsgs, curNode.NodeClusterParams.ThisNodeHello)
 		}
-		withinDist[j].curNode.NodeClusterParams.RecvMsgs = append(withinDist[j].curNode.NodeClusterParams.RecvMsgs, *curNode.NodeClusterParams.ThisNodeHello)
 	}
 }
 
-func (curNode * NodeImpl) HasMaxNodeScore() (isMax bool){
-	maxNode := &(NodeImpl{})
+func (curNode * ClusterNode) HasMaxNodeScore() (isMax bool){
+	maxNode := curNode//&(NodeImpl{})
 	maxScore := curNode.NodeClusterParams.ThisNodeHello.NodeCHScore
 	for i:= 0; i<len(curNode.NodeClusterParams.RecvMsgs); i++{
-		if(curNode.NodeClusterParams.RecvMsgs[i].NodeCHScore > maxScore){
-			maxScore = curNode.NodeClusterParams.RecvMsgs[i].NodeCHScore
-			maxNode = curNode.NodeClusterParams.RecvMsgs[i].Sender
+		//do not consider nodes already with a clusterhead
+		//if received a message from a node who has cluster head
+		if(!curNode.NodeClusterParams.RecvMsgs[i].Sender.IsClusterMember){
+			if(curNode.NodeClusterParams.RecvMsgs[i].NodeCHScore > maxScore){
+				maxScore = curNode.NodeClusterParams.RecvMsgs[i].NodeCHScore
+				maxNode = curNode.NodeClusterParams.RecvMsgs[i].Sender
+			}
 		}
 	}
 
 	return(maxNode == curNode)
 }
+
+func (curNode * ClusterNode) PrintClusterNode(){
+	fmt.Print("{")
+	fmt.Print(curNode.NodeBounds)
+	fmt.Print(" ")
+	fmt.Print(curNode.Battery)
+	fmt.Print(" ")
+	fmt.Print(curNode.ClusterHead)
+	fmt.Print(" ")
+	fmt.Print(curNode.NodeClusterParams.CurrentCluster)
+	fmt.Print(" ")
+	fmt.Print(curNode.IsClusterHead)
+	fmt.Print("}")
+	fmt.Println()
+}
+
+func (curNode * ClusterNode) ClearClusterParams(){
+	//Reset Cluster Params (all but hello->sender since that will stay the same always)
+	if(curNode.NodeClusterParams.CurrentCluster!=nil){
+		curNode.NodeClusterParams.CurrentCluster.ClusterHead = nil
+		curNode.NodeClusterParams.CurrentCluster.Total = 0
+		curNode.NodeClusterParams.CurrentCluster.Threshold = 0
+	} else{
+		curNode.NodeClusterParams.CurrentCluster = &Cluster{}
+	}
+
+	curNode.NodeClusterParams.RecvMsgs = []*HelloMsg{}
+	curNode.NodeClusterParams.ThisNodeHello.ClusterHead = nil
+	curNode.NodeClusterParams.ThisNodeHello.NodeCHScore = 0
+	curNode.NodeClusterParams.ThisNodeHello.BrodPeriod = 0
+	curNode.NodeClusterParams.ThisNodeHello.Option = 0
+
+	curNode.IsClusterMember = false
+	curNode.IsClusterHead = false
+	curNode.ClusterHead = nil
+}
+
