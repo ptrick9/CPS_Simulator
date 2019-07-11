@@ -33,10 +33,10 @@ func main(){
 		SubTrees:   make([]*cps.Quadtree, 0),
 	}
 
-	nodeList := make([]*cps.ClusterNode,size)
+	nodeList := make([]*cps.NodeImpl,size)
 
 	for i:=0; i<size;i++{
-		cn := cps.ClusterNode{
+		cn := cps.NodeImpl{
 			NodeBounds: &cps.Bounds{
 				X:      rand.Float64()*w,
 				Y:      rand.Float64()*h,
@@ -52,9 +52,11 @@ func main(){
 			},
 			IsClusterHead:		false,
 			IsClusterMember:	false,
-			NodeTree:			&qt,
+			P: &cps.Params{
+				NodeTree: &qt,
+			},
 		}
-		cn.NodeBounds.CurTestNode = &cn
+		cn.NodeBounds.CurNode = &cn
 
 		nodeList[i] = &cn
 		qt.Insert(cn.NodeBounds)

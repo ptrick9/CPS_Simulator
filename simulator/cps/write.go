@@ -455,7 +455,7 @@ func SetupCSVNodes(p *Params) {
 				Width:	0,
 				Height:	0,
 				CurTree:	p.NodeTree,
-				curNode: 	newNode,
+				CurNode: 	newNode,
 			}
 			p.NodeList[len(p.NodeList)-1].NodeBounds = &bNewNode
 			p.NodeTree.Insert(&bNewNode)
@@ -495,7 +495,7 @@ func SetupRandomNodes(p *Params) {
 					Width:	0,
 					Height:	0,
 					CurTree:	p.NodeTree,
-					curNode: 	newNode,
+					CurNode: 	newNode,
 				}
 				p.NodeList[len(p.NodeList)-1].NodeBounds = &bNewNode
 				p.NodeTree.Insert(&bNewNode)

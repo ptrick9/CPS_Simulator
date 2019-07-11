@@ -26,8 +26,8 @@ type Bounds struct {
 	Width  	float64
 	Height 	float64
 	CurTree	*Quadtree 	//tree that this object is in
-	curNode *NodeImpl	//pointer to current Node it represents
-	CurTestNode *ClusterNode
+	CurNode *NodeImpl	//pointer to current Node it represents
+	//CurTestNode *ClusterNode
 }
 
 //IsPoint - Checks if a bounds object is a point or not (has no width or height)
