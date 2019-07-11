@@ -370,11 +370,12 @@ func (s FusionCenter) MakeSuperNodes() {
 
 	fmt.Printf("TL: %v, TR %v, BL %v, BR %v\n", top_left_corner, top_right_corner, bot_left_corner, bot_right_corner)
 
-	starting_locs := make([]Coord, 4)
+	starting_locs := make([]Coord, 5)
 	starting_locs[0] = top_left_corner
 	starting_locs[1] = top_right_corner
 	starting_locs[2] = bot_left_corner
 	starting_locs[3] = bot_right_corner
+	starting_locs[4] = Coord{X: 280, Y: 149}
 
 	/*closestSnodes := make([][][]int, 4)
 	for i := range closestSnodes {
@@ -451,7 +452,7 @@ func (s FusionCenter) MakeSuperNodes() {
 }
 
 func (s FusionCenter) PlaceSuperNodes() {
-	closestSnodes := make([][][]int, 4)
+	closestSnodes := make([][][]int, 5)
 	for i := range closestSnodes {
 		closestSnodes[i] = make([][]int, 2)
 	}
@@ -501,7 +502,21 @@ func (s FusionCenter) PlaceSuperNodes() {
 		}
 		fmt.Printf("New location for super node %v is (%v,%v)\n", i, int(meanX), int(meanY))
 		//starting_locs[i] = Coord{X: int(meanX), Y: int(meanY)}
-		s.Sch.SNodeList[i].AddRoutePoint(Coord{X: int(meanX), Y: int(meanY)})
+		s.Sch.SNodeList[i].SetLoc(Coord{X: int(meanX), Y: int(meanY)})
+	}
+
+}
+
+func (s FusionCenter) RandomizeSuperNodes() {
+	for i := range s.Sch.SNodeList {
+		x := RandomInt(0, s.P.Width)
+		y := RandomInt(0, s.P.Height)
+		for !s.P.Grid[x  / s.P.XDiv][y / s.P.YDiv].Navigable {
+			x = RandomInt(0, s.P.Width)
+			y = RandomInt(0, s.P.Height)
+		}
+		fmt.Printf("Randomized node %v to coordinate (%v,%v)\n", i, x, y)
+		s.Sch.SNodeList[i].SetLoc(Coord{X: x, Y: y})
 	}
 
 }
