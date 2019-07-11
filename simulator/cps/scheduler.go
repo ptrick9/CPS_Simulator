@@ -1,6 +1,7 @@
 package cps
 
 import (
+	"fmt"
 	"math"
 )
 
@@ -99,7 +100,7 @@ func (s *Scheduler) AddRoutePoint0(c Coord) {
 	}
 	//fmt.Printf("\nClosest Node: %v\n", closestNode)
 	//Tells that super node to add that point
-	//fmt.Printf("\nAdded route point %v\n", c)
+	fmt.Printf("\nAdded route point %v\n", c)
 	s.SNodeList[closestNode].AddRoutePoint(c)
 }
 

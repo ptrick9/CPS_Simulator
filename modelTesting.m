@@ -13,6 +13,9 @@ E0 = rand(1,numNodes)*0.1.*S0;
 E1 = rand(1,numNodes)*0.1.*S1;
 E2 = rand(1,numNodes)*0.1.*S2;
 
+E0 = 0
+E1 = 0
+E2 = 0
 
 Tau1 = 10;
 Tau2 = 500;

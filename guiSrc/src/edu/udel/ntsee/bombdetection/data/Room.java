@@ -153,7 +153,7 @@ public class Room {
         return grid;
     }
 
-    public void updateData() throws IOException, LogFormatException {
+    public void updateData()  throws IOException, LogFormatException {
 
         this.positions = fileManager.getPositions() != null ? fileManager.getPositions().getData(getIndex()) : null;
         this.samples = fileManager.getSamples() != null ? fileManager.getSamples().getData(getIndex()) : null;

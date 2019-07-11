@@ -300,7 +300,7 @@ public class SimulatorController implements Drawable {
                     double amount = reading - grid.getMinValue();
                     double max = Math.max(grid.getMaxValue(), 20);
                     canvas.getGraphicsContext2D().setGlobalAlpha(amount / max);
-                    canvas.drawBlock(Color.RED, true, x, renderY, squares);
+                    canvas.drawBlock(Color.RED, true, x, renderY-1, squares);
                 }
             }
         }

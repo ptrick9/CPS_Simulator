@@ -1,7 +1,7 @@
 package main
 
 import (
-	"CPS_Simulator/simulator/cps"
+	"./cps"
 	"flag"
 	"fmt"
 	"math"

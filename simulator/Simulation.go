@@ -93,6 +93,9 @@ func main() {
 	p.MaxY = cps.GetDashedInput("maxY", p)
 	p.BombX = cps.GetDashedInput("bombX", p)
 	p.BombY = cps.GetDashedInput("bombY", p)
+
+	p.B = &cps.Bomb{X: p.BombX, Y: p.BombY}
+
 	//numAtt = getDashedInput("numAtt")
 
 	/*resultFile, err := os.Create("result.txt")
@@ -155,7 +158,6 @@ func main() {
 
 	fmt.Println("xDiv is ", p.XDiv, " yDiv is ", p.YDiv, " square capacity is ", p.SquareCapacity)
 
-	p.B = &cps.Bomb{X: p.BombX, Y: p.BombY}
 
 	p.WallNodeList = make([]cps.WallNodes, p.NumWallNodes)
 
@@ -241,7 +243,11 @@ func main() {
 					p.Events.Push(&cps.Event{nil, cps.POSITION, p.CurrentTime + 1000, 0})
 				}
 			} else if event.Instruction == cps.SERVER {
-				fmt.Fprintln(p.RoutingFile, "Amount:", p.NumSuperNodes)
+				if !p.SuperNodes {
+					fmt.Fprintln(p.RoutingFile, "Amount:", 0)
+				} else {
+					fmt.Fprintln(p.RoutingFile, "Amount:", p.NumSuperNodes)
+				}
 				p.Server.Tick()
 				p.Events.Push(&cps.Event{nil, cps.SERVER, p.CurrentTime + 1000, 0})
 
