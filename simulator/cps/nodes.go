@@ -645,8 +645,8 @@ func (curNode *NodeImpl) Distance(b Bomb) float32 {
 
 //Returns a float representing the detection of the bomb
 //	by the specific node depending on distance
-func (curNode *NodeImpl) RawConcentration(b Bomb) float32 {
-	dist := curNode.Distance(b)
+func RawConcentration(dist float32) float32 {
+	//dist := curNode.Distance(b)
 	//dist := float32(math.Pow(float64(math.Abs(float64(curNode.X)-float64(b.X))), 2) + math.Pow(float64(math.Abs(float64(curNode.Y)-float64(b.Y))), 2))
 
 	if dist < .1 {
@@ -654,7 +654,7 @@ func (curNode *NodeImpl) RawConcentration(b Bomb) float32 {
 	} else {
 		//return float32(1000 / (math.Pow((float64(dist)/0.2)*0.25,1.5)))
 		//reading := float32(math.Pow(1000/((float64(dist))), 3))
-		reading := float32(1000.0/ math.Pow(float64(dist/2), 3))
+		reading := float32(1000.0/ math.Pow(float64(dist/2)/.1, 3))
 		/*if(dist <= 3) {
 			fmt.Printf("Reading %v dist: %v %v %v %v %v %v\n", reading, dist, curNode.X, curNode.Y, curNode.GetY(), b.X, b.Y)
 		}*/
@@ -669,7 +669,7 @@ func (curNode *NodeImpl) GetReadings() {
 	if curNode.Valid { //Check if node should actually take readings or if it hasn't shown up yet
 		newX, newY := curNode.GetLoc()
 
-		RawConcentration := curNode.RawConcentration(*curNode.P.B) //this is the node's reported Value without error
+		RawConcentration := RawConcentration(curNode.Distance(*curNode.P.B)) //this is the node's reported Value without error
 
 		//need to get the correct Time reading Value from system
 		//need to verify where we read from
@@ -796,20 +796,29 @@ func (curNode *NodeImpl) GetReadingsCSV() {
 
 		newX, newY := curNode.GetLoc()
 
-		newDist := interpolateReading(newX, newY, curNode.P.CurrentTime, curNode.P.TimeStep, curNode.P)
 
-		//fmt.Printf("%v %v\n", curNode.Id, newDist)
-		//fmt.Println("-----------------------")
+		RawConcentration := interpolateReading(newX, newY, curNode.P.CurrentTime, curNode.P.TimeStep, curNode.P)
 
-		//newDist := curNode.P.SensorReadings[newX][newY][curNode.P.TimeStep]
+		//need to get the correct Time reading Value from system
+		//need to verify where we read from
+
 		//Calculate error, sensitivity, and noise, as per the matlab code
 		S0, S1, S2, E0, E1, E2, ET1, ET2 := curNode.GetParams()
 		sError := (S0 + E0) + (S1+E1)*math.Exp(-float64(curNode.NodeTime)/(curNode.P.Tau1+ET1)) + (S2+E2)*math.Exp(-float64(curNode.NodeTime)/(curNode.P.Tau2+ET2))
 		curNode.Sensitivity = S0 + (S1)*math.Exp(-float64(curNode.NodeTime)/curNode.P.Tau1) + (S2)*math.Exp(-float64(curNode.NodeTime)/curNode.P.Tau2)
-		sNoise := rand.NormFloat64()*0.5*curNode.P.ErrorModifierCM + float64(newDist)*sError
+		sNoise := rand.NormFloat64()*0.5*curNode.P.ErrorModifierCM + float64(RawConcentration)*sError
 
-		clean := float64(newDist) / curNode.Sensitivity
 		errorDist := sNoise / curNode.Sensitivity //this is the node's actual reading with error
+		clean := float64(RawConcentration) / curNode.Sensitivity
+
+
+		ADCRead := float64(curNode.ADCReading(float32(errorDist)))
+		ADCClean := float64(curNode.ADCReading(float32(clean)))
+
+		d := curNode.Distance(*curNode.P.B)
+		if d < 10 {
+			fmt.Fprintln(curNode.P.MoveReadingsFile, "Time:", curNode.P.CurrentTime/1000, "ID:", curNode.Id, "X:", newX, "Y:",  newY, "Dist:", d, "ADCClean:", ADCClean, "ADCError:", ADCRead, "CleanSense:", clean, "Error:", errorDist, "Raw:", RawConcentration)
+		}
 
 		//increment node Time
 		curNode.NodeTime++
@@ -819,7 +828,9 @@ func (curNode *NodeImpl) GetReadingsCSV() {
 			curNode.UpdateHistory(float32(errorDist))
 		//}
 
-		fmt.Fprintln(curNode.P.MoveReadingsFile, "ID:", curNode.Id, "X:", newX, "Y:", newY, "Sense:", errorDist, "CleanSense:", clean, "Real:", newDist)
+
+
+
 
 
 		//If the reading is more than 2 standard deviations away from the grid average, then recalibrate
@@ -838,9 +849,9 @@ func (curNode *NodeImpl) GetReadingsCSV() {
 		//if curNode.HasCheckedSensor && nodesPrint{
 		if curNode.P.NodesPrint {
 			if curNode.Recalibrated {
-				fmt.Fprintln(curNode.P.NodeFile, "ID:", curNode.GetID(), "Average:", curNode.GetAvg(), "Reading:", newDist, "Error Reading:", errorDist, "Recalibrated")
+				fmt.Fprintln(curNode.P.NodeFile, "ID:", curNode.GetID(), "Average:", curNode.GetAvg(), "Reading:", RawConcentration, "Error Reading:", errorDist, "Recalibrated")
 			} else {
-				fmt.Fprintln(curNode.P.NodeFile, "ID:", curNode.GetID(), "Average:", curNode.GetAvg(), "Reading:", newDist, "Error Reading:", errorDist)
+				fmt.Fprintln(curNode.P.NodeFile, "ID:", curNode.GetID(), "Average:", curNode.GetAvg(), "Reading:", RawConcentration, "Error Reading:", errorDist)
 			}
 			//fmt.Fprintln(nodeFile, "battery:", int(curNode.Battery),)
 			curNode.Recalibrated = false
@@ -855,7 +866,7 @@ func (curNode *NodeImpl) GetReadingsCSV() {
 		//Only do this if the sensor was pinged this iteration
 
 		if curNode.Valid {
-			curNode.P.Server.Send(curNode, Reading{errorDist, newX, newY, curNode.P.Iterations_used, curNode.GetID()})
+			curNode.P.Server.Send(curNode, Reading{ADCRead, newX, newY, curNode.P.Iterations_used, curNode.GetID()})
 		}
 
 	}

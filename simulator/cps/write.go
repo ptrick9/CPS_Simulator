@@ -703,7 +703,7 @@ func SetupFiles(p *Params) {
 	fmt.Fprintln(p.DriftFile, "Error Multiplier:", p.ErrorModifierCM)
 	fmt.Fprintln(p.DriftFile, "--------------------")
 
-	p.GridFile, err = os.Create(p.OutputFileNameCM + "-Grid.txt")
+	p.GridFile, err = os.Create(p.OutputFileNameCM + "-grid.txt")
 	if err != nil {
 		log.Fatal("Cannot create file", err)
 	}
@@ -814,9 +814,11 @@ func SetupParameters(p *Params) {
 		readSensorCSV(p)
 	} else {
 		p.MaxRaw = 1000
-		p.EdgeRaw = 36
+		//p.EdgeRaw = 36
+		p.EdgeRaw = RawConcentration(float32(p.DetectionDistance))
+		fmt.Println("Raw:", p.EdgeRaw)
 		p.MaxADC = 4095
-		p.EdgeADC = 5
+		p.EdgeADC = 3
 		p.ADCWidth = p.MaxRaw/p.MaxADC
 		p.ADCOffset = p.EdgeRaw - p.EdgeADC * p.ADCWidth
 	}
@@ -830,6 +832,72 @@ func SetupParameters(p *Params) {
 
 func InterpolateFloat (start float32, end float32, portion float32) float32{
 	return (float32(end-start) * portion + float32(start))
+}
+
+func CalculateADCSetting(reading float64, x, y, time int, p *Params) {
+
+
+	fmt.Println("\n", reading, time, x, y)
+	total := float32(0.0)
+	counted := float32(0.0)
+	for i := -1; i < 2; i++ {
+		for j := -1; j < 2; j++ {
+			if i != 0 && j != 0 {
+				if i+x > 0 && i+x < p.Width {
+					if j+y > 0 && j+y < p.Height {
+						total += InterpolateFloat(float32(p.SensorReadings[x][y][time]),  float32(p.SensorReadings[i + x][j + y][time]), .2/float32(Dist(Tuple{x, y}, Tuple{x+i, y+j})))
+						counted += 1
+					}
+				}
+			}
+		}
+	}
+
+	p.MaxRaw = total/counted
+
+
+	straight_increment := int(math.Ceil(p.DetectionDistance))
+	fmt.Println(straight_increment)
+	diag_increment := int(math.Ceil(p.DetectionDistance/math.Sqrt2))
+	fmt.Println(diag_increment)
+
+	points := [8][2]int{
+		{straight_increment, 0},			//right
+		{diag_increment, diag_increment}, 	//upper right
+		{0, straight_increment},			//up
+		{-diag_increment, diag_increment}, 	//upper left
+		{-straight_increment, 0},			//left
+		{-diag_increment, -diag_increment}, //lower left
+		{0, -straight_increment},			//down
+		{diag_increment, -diag_increment}}	//lower right
+
+
+	total = 0
+	counted = 0
+
+	for _,point := range(points) {
+		if point[0] + x > 0 && point[0] + x < p.Width {
+			if point[1] + y > 0 && point[1] + y < p.Height {
+				//if legal then interpolate the correct value based on distance
+				total += InterpolateFloat(float32(p.SensorReadings[x][y][time]), float32(p.SensorReadings[x + point[0]][y + point[1]][time]), float32(p.DetectionDistance/(Dist(Tuple{x, y}, Tuple{x + point[0], y + point[1]}))))
+				counted += 1
+			}
+		}
+	}
+
+
+
+	fmt.Println(p.MaxRaw)
+	//p.EdgeRaw = 36
+	p.EdgeRaw = total/counted
+	fmt.Println(p.EdgeRaw)
+	p.MaxADC = 4095
+	p.EdgeADC = 3
+	p.ADCWidth = p.MaxRaw/p.MaxADC
+	p.ADCOffset = p.EdgeRaw - p.EdgeADC * p.ADCWidth
+
+
+	fmt.Printf("\n")
 }
 
 //readSensorCSV reads the sensor values from a file
@@ -871,8 +939,8 @@ func readSensorCSV(p *Params) {
 
 	i := 1
 	fmt.Printf("Sensor CSV Processing\n")
-	maxReading := 0.0
-	/*maxLocX := 0
+	/*maxReading := 0.0
+	maxLocX := 0
 	maxLocY := 0
 	maxTime := 0*/
 	for i < len(record) {
@@ -891,12 +959,12 @@ func readSensorCSV(p *Params) {
 			//fmt.Printf("x:%v, y:%v, j:%v\n",x,y,j)
 			p.SensorReadings[x][y][j-2] = read1
 
-			if read1 > maxReading {
+			/*if read1 > maxReading {
 				maxReading = read1
-				/*maxLocX = int(x)
+				maxLocX = int(x)
 				maxLocY = int(y)
-				maxTime = j-2*/
-			}
+				maxTime = j-2
+			}*/
 
 			j += 1
 
@@ -911,8 +979,10 @@ func readSensorCSV(p *Params) {
 
 
 
+	//CalculateADCSetting(maxReading, maxLocX, maxLocY, maxTime, p)
+	fmt.Println(p.BombX, p.BombY)
+	CalculateADCSetting(p.SensorReadings[p.B.X][p.B.Y][10], p.B.X, p.B.Y, 10, p)
 
-	fmt.Printf("\n")
 
 
 
@@ -1100,7 +1170,7 @@ func GetFlags(p *Params) {
 	flag.IntVar(&p.NumSuperNodes, "numSuperNodes", 4, "the number of super nodes in the simulator")
 	flag.Float64Var(&p.CalibrationThresholdCM, "Recalibration Threshold", 3.0, "Value over grid average to recalibrate node")
 	flag.Float64Var(&p.StdDevThresholdCM, "StandardDeviationThreshold", 1.7, "Detection Threshold based on standard deviations from mean")
-
+	flag.Float64Var(&p.DetectionDistance, "detectionDistance", 6.0, "Detection Distance")
 	//Range: 0-2
 	//0: default routing algorithm, points added onto the end of the path and routed to in that order
 	//flag.IntVar(&p.SuperNodeType, "p.SuperNodeType", 0, "the type of super node used in the simulator")
