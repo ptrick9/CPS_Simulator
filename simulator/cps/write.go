@@ -434,6 +434,9 @@ func SetupCSVNodes(p *Params) {
 		newNode.Y = float32(p.NodeMovements[i][1].Y)
 
 		newNode.ClusterHead = nil //nil Cluster Head signifies having no cluster head
+		newNode.IsClusterHead = false
+		newNode.IsClusterMember = false
+		newNode.NodeClusterParams = &ClusterMemberParams{}
 
 		if newNode.InBounds(p) {
 			newNode.Valid = true
@@ -446,6 +449,8 @@ func SetupCSVNodes(p *Params) {
 		p.CurrentNodes += 1
 		p.Events.Push(&Event{newNode, SENSE, 0, 0})
 		p.Events.Push(&Event{newNode, MOVE, 0, 0})
+		p.Events.Push(&Event{newNode,CLUSTERMSG,1,0})
+		p.Events.Push(&Event{newNode,CLUSTERFORM,2,0})
 
 
 		if newNode.Valid{
@@ -471,6 +476,9 @@ func SetupRandomNodes(p *Params) {
 			newNode := InitializeNodeParameters(p, i)
 
 			newNode.ClusterHead = nil //nil Cluster Head signifies having no cluster head
+			newNode.IsClusterHead = false
+			newNode.IsClusterMember = false
+			newNode.NodeClusterParams = &ClusterMemberParams{}
 
 			xx := rangeInt(1, p.MaxX)
 			yy := rangeInt(1, p.MaxY)
@@ -487,6 +495,10 @@ func SetupRandomNodes(p *Params) {
 
 			p.NodeList = append(p.NodeList, newNode)
 			p.CurrentNodes += 1
+			p.Events.Push(&Event{newNode, SENSE, 0, 0})
+			p.Events.Push(&Event{newNode, MOVE, 0, 0})
+			p.Events.Push(&Event{newNode,CLUSTERMSG,1,0})
+			p.Events.Push(&Event{newNode,CLUSTERFORM,2,0})
 
 			if newNode.Valid{
 				bNewNode := Bounds{
@@ -786,6 +798,10 @@ func SetupFiles(p *Params) {
 		log.Fatal("Cannot create file", err)
 	}
 
+	p.ClusterFile, err = os.Create(p.OutputFileNameCM + "-adhoc.txt")
+	if err != nil{
+		log.Fatal("Cannot create file", err)
+	}
 	//defer p.AttractionFile.Close()
 
 	p.ServerFile, err = os.Create(p.OutputFileNameCM + "-server.txt")

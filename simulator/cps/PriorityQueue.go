@@ -14,8 +14,9 @@ const (
 	SERVER
 	ENERGYPRINT
 	GRID
-
-
+	CLUSTERMSG
+	CLUSTERFORM
+	CLUSTERPRINT
 )
 
 type Event struct {

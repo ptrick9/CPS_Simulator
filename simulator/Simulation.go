@@ -138,6 +138,11 @@ func main() {
 		SubTrees:   make([]*cps.Quadtree, 0),
 	}
 
+	p.ClusterNetwork = &cps.AdHocNetwork{
+		ClusterHeads:	[]*cps.NodeImpl{},
+		TotalHeads:			0,
+	}
+
 	//This is where the text file reading ends
 	Vn := make([]float64, 1000)
 	for i := 0; i < 1000; i++ {
@@ -202,11 +207,12 @@ func main() {
 	p.Events.Push(&cps.Event{nil, cps.SERVER, 999, 0})
 	p.Events.Push(&cps.Event{nil, cps.GRID, 999, 0})
 	p.Events.Push(&cps.Event{nil, cps.TIME, -1, 0})
-
+	p.Events.Push(&cps.Event{nil, cps.CLUSTERPRINT, 999, 0})
 
 
 	p.CurrentTime = 0
 	for len(p.Events) > 0 && p.CurrentTime < 1000*p.Iterations_of_event{
+		//fmt.Println(p.CurrentTime,1000*p.Iterations_of_event)
 		event := heap.Pop(&p.Events).(*cps.Event)
 		//fmt.Println(event)
 		//fmt.Println(p.CurrentNodes)
@@ -232,7 +238,15 @@ func main() {
 				} else {
 					event.Node.MoveNormal(p)
 				}
+
+				p.ClusterNetwork.ClearClusterParams(event.Node)
 				p.Events.Push(&cps.Event{event.Node, cps.MOVE, p.CurrentTime+100, 0})
+			} else if event.Instruction == cps.CLUSTERMSG {
+				event.Node.SendHelloMessage(20.0)
+				p.Events.Push(&cps.Event{event.Node, cps.CLUSTERMSG, p.CurrentTime+100, 0})
+			} else if event.Instruction == cps.CLUSTERFORM {
+				p.ClusterNetwork.GenerateClusters(20.0,event.Node)
+				p.Events.Push(&cps.Event{event.Node, cps.CLUSTERFORM, p.CurrentTime+100, 0})
 			}
 		} else {
 			if event.Instruction == cps.POSITION {
@@ -292,9 +306,29 @@ func main() {
 					fmt.Fprint(p.GridFile, "----------------\n")
 
 				}
+			} else if event.Instruction == cps.CLUSTERPRINT {
+				totalHeads := p.ClusterNetwork.TotalHeads
+				for i:=0; i<len(p.ClusterNetwork.ClusterHeads); i++{
+					if(p.ClusterNetwork.ClusterHeads[i].NodeClusterParams.CurrentCluster.Total==0){
+						totalHeads--
+					}
+				}
+				fmt.Fprintln(p.ClusterFile, "Amount:", totalHeads)
+				for i:=0; i<len(p.ClusterNetwork.ClusterHeads); i++{
+					if (p.ClusterNetwork.ClusterHeads[i].NodeClusterParams.CurrentCluster.Total>0){
+						fmt.Fprintf(p.ClusterFile,"%d: [", p.ClusterNetwork.ClusterHeads[i].Id)
+						for j:=0; j<len(p.ClusterNetwork.ClusterHeads[i].NodeClusterParams.CurrentCluster.ClusterMembers); j++ {
+							fmt.Fprintf(p.ClusterFile,"%d", p.ClusterNetwork.ClusterHeads[i].NodeClusterParams.CurrentCluster.ClusterMembers[j].Id)
+							if (j+1 != len( p.ClusterNetwork.ClusterHeads[i].NodeClusterParams.CurrentCluster.ClusterMembers)) {
+								fmt.Fprintf(p.ClusterFile,", ")
+							}
+						}
+						fmt.Fprintf(p.ClusterFile,"]\n")
+					}
+				}
+				p.Events.Push(&cps.Event{nil, cps.CLUSTERPRINT, p.CurrentTime + 1000, 0})
 			}
 		}
-
 	}
 
 /*

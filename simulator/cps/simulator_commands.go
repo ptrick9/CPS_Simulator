@@ -84,6 +84,7 @@ type Params struct {
 	NodeTest2	   *os.File
 	DetectionFile  *os.File
 	BatteryFile    *os.File
+	ClusterFile	   *os.File
 
 	SensorPath  string
 	MovementPath  string
@@ -190,4 +191,5 @@ type Params struct {
 
 	NodePositionMap			map[Tuple]*NodeImpl
 	NodeTree				* Quadtree
+	ClusterNetwork			* AdHocNetwork
 }

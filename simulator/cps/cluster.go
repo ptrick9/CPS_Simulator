@@ -2,10 +2,17 @@ package cps
 
 import "fmt"
 
+type AdHocNetwork struct {
+	ClusterHeads	[]*NodeImpl
+	TotalHeads		int
+}
+
 type Cluster struct {
 	ClusterHead			*NodeImpl//*NodeImpl	//id of clusterhead
 	Threshold			int //maximum # of nodes in a cluster
 	Total				int //current # of nodes in a cluster
+	ClusterMembers		[]*NodeImpl
+	ClusterNetwork		*AdHocNetwork
 }
 
 type ClusterMemberParams struct{
@@ -63,7 +70,7 @@ func (curNode * NodeImpl)GenerateHello(searchRange float64, score float64) {
 	curNode.NodeClusterParams.ThisNodeHello = message
 }
 
-func (curNode * NodeImpl)GenerateClusters(transmitRange float64){
+func (adhoc * AdHocNetwork)GenerateClusters(transmitRange float64, curNode * NodeImpl){
 	//assumes hello messages have already been generated
 
 	//Assign clusterheads and form clusters
@@ -82,20 +89,23 @@ func (curNode * NodeImpl)GenerateClusters(transmitRange float64){
 			}
 		}
 
-		for j:=0; j<len(curNode.NodeClusterParams.RecvMsgs); j++{
-
-		}
-
 		//No nodes within range are cluster heads
 		//find node in range with max score, make it a cluster head
 		if(curNode.HasMaxNodeScore()){
 			//assign self as cluster head, and all in range to be in cluster
 			curNode.IsClusterHead = true
-			curNode.NodeClusterParams.CurrentCluster = &Cluster{curNode,8,0}
+
+			adhoc.ClusterHeads = append(adhoc.ClusterHeads, curNode)
+			adhoc.TotalHeads++
+
+			curNode.NodeClusterParams.CurrentCluster = &Cluster{curNode,8,0, []*NodeImpl{}, adhoc}
 			//curNode.NodeClusterParams.CurrentCluster.ClusterHead = curNode
 			for j:=0; j<len(curNode.NodeClusterParams.RecvMsgs); j++{
 				if(!curNode.NodeClusterParams.RecvMsgs[j].Sender.IsClusterMember){
 					curNode.NodeClusterParams.RecvMsgs[j].Sender.NodeClusterParams.CurrentCluster = curNode.NodeClusterParams.CurrentCluster
+
+					curNode.NodeClusterParams.CurrentCluster.ClusterMembers = append(curNode.NodeClusterParams.CurrentCluster.ClusterMembers, curNode.NodeClusterParams.RecvMsgs[j].Sender)
+
 					curNode.NodeClusterParams.CurrentCluster.Total++
 					if(!curNode.NodeClusterParams.RecvMsgs[j].Sender.IsClusterHead) {
 						curNode.NodeClusterParams.RecvMsgs[j].Sender.IsClusterMember = true
@@ -156,24 +166,32 @@ func (curNode * NodeImpl) PrintClusterNode(){
 	fmt.Println()
 }
 
-func (curNode * NodeImpl) ClearClusterParams(){
+func (adhoc * AdHocNetwork) ClearClusterParams(curNode * NodeImpl){
 	//Reset Cluster Params (all but hello->sender since that will stay the same always)
 	if(curNode.NodeClusterParams.CurrentCluster!=nil){
 		curNode.NodeClusterParams.CurrentCluster.ClusterHead = nil
 		curNode.NodeClusterParams.CurrentCluster.Total = 0
 		curNode.NodeClusterParams.CurrentCluster.Threshold = 0
+		curNode.NodeClusterParams.CurrentCluster.ClusterMembers = []*NodeImpl{}
 	} else{
 		curNode.NodeClusterParams.CurrentCluster = &Cluster{}
 	}
 
 	curNode.NodeClusterParams.RecvMsgs = []*HelloMsg{}
-	curNode.NodeClusterParams.ThisNodeHello.ClusterHead = nil
-	curNode.NodeClusterParams.ThisNodeHello.NodeCHScore = 0
-	curNode.NodeClusterParams.ThisNodeHello.BrodPeriod = 0
-	curNode.NodeClusterParams.ThisNodeHello.Option = 0
+	if(curNode.NodeClusterParams.ThisNodeHello != nil){
+		curNode.NodeClusterParams.ThisNodeHello.ClusterHead = nil
+		curNode.NodeClusterParams.ThisNodeHello.NodeCHScore = 0
+		curNode.NodeClusterParams.ThisNodeHello.BrodPeriod = 0
+		curNode.NodeClusterParams.ThisNodeHello.Option = 0
+	}else{
+		curNode.NodeClusterParams.ThisNodeHello = &HelloMsg{}
+	}
 
 	curNode.IsClusterMember = false
 	curNode.IsClusterHead = false
 	curNode.ClusterHead = nil
+	adhoc.ClusterHeads = []*NodeImpl{}
+	adhoc.TotalHeads = 0
+
 }
 

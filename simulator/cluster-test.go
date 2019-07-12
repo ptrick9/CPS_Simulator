@@ -18,6 +18,11 @@ func main(){
 	size := 5000
 	transmissionRange := 33.0
 
+	adhoc := &cps.AdHocNetwork{
+		ClusterHeads:	[]*cps.NodeImpl{},
+		TotalHeads:		0,
+	}
+
 	qt := cps.Quadtree{
 		Bounds: cps.Bounds{
 			X:      0,
@@ -34,9 +39,9 @@ func main(){
 	}
 
 	nodeList := make([]*cps.NodeImpl,size)
-
 	for i:=0; i<size;i++{
 		cn := cps.NodeImpl{
+			Id:	i,
 			NodeBounds: &cps.Bounds{
 				X:      rand.Float64()*w,
 				Y:      rand.Float64()*h,
@@ -84,7 +89,7 @@ func main(){
 	fmt.Println()
 	fmt.Println("Generating clusters...")
 	for i:=0; i<len(nodeList); i++{
-		nodeList[i].GenerateClusters(transmissionRange)
+		adhoc.GenerateClusters(transmissionRange,nodeList[i])
 	}
 	fmt.Println("Done")
 
@@ -96,7 +101,7 @@ func main(){
 	for i:=0; i<len(nodeList); i++{
 		if(nodeList[i].IsClusterHead){
 		//	fmt.Printf("Node %d: (%.4f, %.4f) %.4f\n", i,nodeList[i].NodeBounds.X,nodeList[i].NodeBounds.Y,nodeList[i].NodeClusterParams.ThisNodeHello.NodeCHScore)
-			totalHeads++
+		//	totalHeads++
 		//	for j:=0; j<len(nodeList); j++{
 		//		if(nodeList[j].IsClusterMember && nodeList[j].NodeClusterParams.CurrentCluster.ClusterHead == nodeList[i]){
 		//			fmt.Printf("\tNode %d: (%.4f, %.4f) %.4f\n", j,nodeList[j].NodeBounds.X,nodeList[j].NodeBounds.Y,nodeList[j].NodeClusterParams.ThisNodeHello.NodeCHScore)
@@ -104,6 +109,20 @@ func main(){
 		//	}
 		}
 	}
+
+	totalHeads = adhoc.TotalHeads
+	fmt.Printf("Amount: %d\n",adhoc.TotalHeads)
+	for i:=0; i<len(adhoc.ClusterHeads); i++{
+		fmt.Printf("%d: [", adhoc.ClusterHeads[i].Id)
+		for j:=0; j<len(adhoc.ClusterHeads[i].NodeClusterParams.CurrentCluster.ClusterMembers); j++ {
+			fmt.Printf("%d", adhoc.ClusterHeads[i].NodeClusterParams.CurrentCluster.ClusterMembers[j].Id)
+			if (j+1 != len(adhoc.ClusterHeads[i].NodeClusterParams.CurrentCluster.ClusterMembers)) {
+				fmt.Printf(", ")
+			}
+		}
+		fmt.Printf("]\n")
+	}
+
 
 	dist := 0.0
 	for i:=0; i<len(nodeList); i++{
@@ -153,7 +172,7 @@ func main(){
 
 	fmt.Println("Reseting Cluster Params...")
 	for i:=0; i<len(nodeList); i++ {
-		nodeList[i].ClearClusterParams()
+		adhoc.ClearClusterParams(nodeList[i])
 	}
 
 	fmt.Println()
@@ -171,7 +190,7 @@ func main(){
 	fmt.Println()
 	fmt.Println("Generating clusters...")
 	for i:=0; i<len(nodeList); i++{
-		nodeList[i].GenerateClusters(transmissionRange)
+		adhoc.GenerateClusters(transmissionRange,nodeList[i])
 	}
 	fmt.Println("Done")
 
@@ -206,8 +225,20 @@ func main(){
 	}
 
 
-
 	fmt.Println("\tTotal Cluster Heads: ",totalHeads)
 	fmt.Println("\tAverage Nodes per cluster: ",float32(size)/float32(totalHeads))
 	fmt.Println("\tAverage Distance between clusterheads: ",radDist/float64(totalHeads))
+
+	totalHeads = adhoc.TotalHeads
+	fmt.Printf("Amount: %d\n",adhoc.TotalHeads)
+	for i:=0; i<len(adhoc.ClusterHeads); i++{
+		fmt.Printf("%d: [", adhoc.ClusterHeads[i].Id)
+		for j:=0; j<len(adhoc.ClusterHeads[i].NodeClusterParams.CurrentCluster.ClusterMembers); j++ {
+			fmt.Printf("%d", adhoc.ClusterHeads[i].NodeClusterParams.CurrentCluster.ClusterMembers[j].Id)
+			if (j+1 != len(adhoc.ClusterHeads[i].NodeClusterParams.CurrentCluster.ClusterMembers)) {
+				fmt.Printf(", ")
+			}
+		}
+		fmt.Printf("]\n")
+	}
 }
