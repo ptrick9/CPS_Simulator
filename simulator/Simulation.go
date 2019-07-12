@@ -167,7 +167,7 @@ func main() {
 
 	p.Server.MakeGrid()
 	//p.Server.RandomizeSuperNodes()
-	p.Server.PlaceSuperNodes()
+	//p.Server.PlaceSuperNodes()
 	//p.Server.PlaceSuperNodes()
 
 	fmt.Println("Super Node Type", p.SuperNodeType)

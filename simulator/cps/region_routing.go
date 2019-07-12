@@ -114,7 +114,9 @@ func ValidPath(reg int, endpoint Coord, r *RegionParams) bool{
 		return false
 	} else {
 		end := RegionContaining(Tuple{endpoint.X, endpoint.Y}, r)
-
+		if reg == end {
+			return true
+		}
 		for i := 0; i < len(r.Border_dict[reg]); i++ {
 			if r.Border_dict[reg][i] == end {
 				//fmt.Printf("Found a path to region %v\n",r.Border_dict[reg][i])
@@ -323,6 +325,78 @@ func GenerateRouting(p *Params, r *RegionParams) {
 					r.Border_dict[z] = append(r.Border_dict[z], y)
 
 				} else if square.X2 == new_square.X1-1 {
+					r.Border_dict[y] = append(r.Border_dict[y], z)
+					r.Border_dict[z] = append(r.Border_dict[z], y)
+				}
+			}
+
+			if new_square.Y2 == square.Y1 - 1 {
+				//Hanging Case 1
+				//next_square is on the top of square
+				// right side of next_square extends pass right side of square
+				if square.X1 <= new_square.X1 && square.X2 < new_square.X2 && square.X2 > new_square.X1 {
+					r.Border_dict[y] = append(r.Border_dict[y], z)
+					r.Border_dict[z] = append(r.Border_dict[z], y)
+				}
+
+				// Hanging Case 2
+				// next_square is on the top of square
+				// left side of next square extends pass the left side of square
+				if square.X1 >= new_square.X1 && square.X2 > new_square.X2 && square.X1 < new_square.X2 {
+					r.Border_dict[y] = append(r.Border_dict[y], z)
+					r.Border_dict[z] = append(r.Border_dict[z], y)
+				}
+			}
+
+			if square.Y2 == new_square.Y1 - 1{
+				// Hanging Case 3
+				// square is on top of next_square
+				// right side of square extends pass right side of next_square
+				if new_square.X1 <= square.X1 && new_square.X2 < square.X2 && new_square.X2 > square.X1 {
+					r.Border_dict[y] = append(r.Border_dict[y], z)
+					r.Border_dict[z] = append(r.Border_dict[z], y)
+				}
+
+				// Hanging Case 4
+				// square is on top of next_square
+				// # left side of square extends pass the left side of next_square
+				if new_square.X1 >= square.X1 && new_square.X2 > square.X2 && new_square.X1 < square.X2 {
+					r.Border_dict[y] = append(r.Border_dict[y], z)
+					r.Border_dict[z] = append(r.Border_dict[z], y)
+				}
+			}
+
+			if new_square.X2 == square.X1 - 1 {
+				// Hanging Case 5
+				// next_square is to the left of square
+				// bottom side of square extends pass the bottom side of next square
+				if square.Y1 >= new_square.Y1 && square.Y2 > new_square.Y2 && square.Y1 < new_square.Y2 {
+					r.Border_dict[y] = append(r.Border_dict[y], z)
+					r.Border_dict[z] = append(r.Border_dict[z], y)
+				}
+
+				// Hanging Case 6
+				// next_square is to the left of square
+				// top side of square extends pass the top side of next_square
+				if square.Y1 <= new_square.Y1 && square.Y2 < new_square.Y2 && square.Y2 > new_square.Y1 {
+					r.Border_dict[y] = append(r.Border_dict[y], z)
+					r.Border_dict[z] = append(r.Border_dict[z], y)
+				}
+			}
+
+			if square.X2 == new_square.X1 - 1 {
+				// Hanging Case 7
+				// square is to the left of next_square
+				// bottom side of square extends pass bottom side of next_square
+				if square.Y1 >= new_square.Y1 && square.Y2 > new_square.Y2 && square.Y1 < new_square.Y2 {
+					r.Border_dict[y] = append(r.Border_dict[y], z)
+					r.Border_dict[z] = append(r.Border_dict[z], y)
+				}
+
+				// Hanging Case 8
+				// square is to the left of next_square
+				// top side of square extends pass top side of next_square
+				if square.Y1 <= new_square.Y1 && square.Y2 < new_square.Y2 && square.Y2 > new_square.Y1 {
 					r.Border_dict[y] = append(r.Border_dict[y], z)
 					r.Border_dict[z] = append(r.Border_dict[z], y)
 				}

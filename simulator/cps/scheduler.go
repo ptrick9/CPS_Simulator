@@ -1,6 +1,7 @@
 package cps
 
 import (
+	"fmt"
 	"math"
 )
 
@@ -77,9 +78,10 @@ func (s *Scheduler) AddRoutePoint0(c Coord) {
 	for n, _ := range s.SNodeList {
 		length := len(s.SNodeList[n].GetRoutePath())
 		reg := RegionContaining(Tuple{s.SNodeList[n].GetX(), s.SNodeList[n].GetY()}, s.R)
-		//fmt.Printf("\nSuper Node X:%v, Y:%v\n", s.SNodeList[n].GetX(), s.SNodeList[n].GetY())
-		//fmt.Printf("Starting region: %v\n", reg)
+		fmt.Printf("\nSuper Node X:%v, Y:%v\n", s.SNodeList[n].GetX(), s.SNodeList[n].GetY())
+		fmt.Printf("Starting region: %v\n", reg)
 		if ValidPath(reg, c, s.R) {
+			fmt.Println("Valid path found!")
 			if length != 0 {
 				nodeDist = math.Sqrt(math.
 					Pow(float64(s.SNodeList[n].GetRoutePath()[length-1].X-c.X), 2.0) + math.
