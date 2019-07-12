@@ -45,6 +45,7 @@ type Params struct {
 	SquareColCM                    int     //This is an int 1 through maxY representing how many columns of squares there are
 	StdDevThresholdCM			   float64 //Detection Threshold based on standard deviations from mean
 	CalibrationThresholdCM		   float64
+	DetectionDistance 			   float64
 
 
 	StimFileNameCM        string
@@ -126,7 +127,6 @@ type Params struct {
 	Tau1 float64
 	Tau2 float64
 
-	Recalibrate bool
 
 	FileName string
 
