@@ -927,10 +927,11 @@ func (curNode *NodeImpl) MoveCSV(p *Params) {
 	}*/
 	if curNode.Valid {
 		p.BoolGrid[int(newX)][int(newY)] = true
+		//Handle movement in the tree (remove and reinsert if neccessary)
+		curNode.NodeBounds.X = float64(newX)
+		curNode.NodeBounds.Y = float64(newY)
+		curNode.P.NodeTree.NodeMovement(curNode.NodeBounds)
 	}
-
-	//Handle movement in the tree (remove and reinsert if neccessary)
-	curNode.P.NodeTree.NodeMovement(curNode.NodeBounds)
 
 	//Add the node into its new Square's p.TotalNodes
 	//If the node hasn't left the square, that Square's p.TotalNodes will

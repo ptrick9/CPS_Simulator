@@ -5,11 +5,11 @@ import "fmt"
 type AdHocNetwork struct {
 	ClusterHeads	[]*NodeImpl
 	TotalHeads		int
+	Threshold		int //maximum # of nodes in a cluster
 }
 
 type Cluster struct {
 	ClusterHead			*NodeImpl//*NodeImpl	//id of clusterhead
-	Threshold			int //maximum # of nodes in a cluster
 	Total				int //current # of nodes in a cluster
 	ClusterMembers		[]*NodeImpl
 	ClusterNetwork		*AdHocNetwork
@@ -98,9 +98,9 @@ func (adhoc * AdHocNetwork)GenerateClusters(transmitRange float64, curNode * Nod
 			adhoc.ClusterHeads = append(adhoc.ClusterHeads, curNode)
 			adhoc.TotalHeads++
 
-			curNode.NodeClusterParams.CurrentCluster = &Cluster{curNode,8,0, []*NodeImpl{}, adhoc}
+			curNode.NodeClusterParams.CurrentCluster = &Cluster{curNode,0, []*NodeImpl{}, adhoc}
 			//curNode.NodeClusterParams.CurrentCluster.ClusterHead = curNode
-			for j:=0; j<len(curNode.NodeClusterParams.RecvMsgs); j++{
+			for j:=0; j<len(curNode.NodeClusterParams.RecvMsgs) && j<adhoc.Threshold; j++{
 				if(!curNode.NodeClusterParams.RecvMsgs[j].Sender.IsClusterMember){
 					curNode.NodeClusterParams.RecvMsgs[j].Sender.NodeClusterParams.CurrentCluster = curNode.NodeClusterParams.CurrentCluster
 
@@ -171,7 +171,6 @@ func (adhoc * AdHocNetwork) ClearClusterParams(curNode * NodeImpl){
 	if(curNode.NodeClusterParams.CurrentCluster!=nil){
 		curNode.NodeClusterParams.CurrentCluster.ClusterHead = nil
 		curNode.NodeClusterParams.CurrentCluster.Total = 0
-		curNode.NodeClusterParams.CurrentCluster.Threshold = 0
 		curNode.NodeClusterParams.CurrentCluster.ClusterMembers = []*NodeImpl{}
 	} else{
 		curNode.NodeClusterParams.CurrentCluster = &Cluster{}

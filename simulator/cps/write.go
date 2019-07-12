@@ -452,18 +452,18 @@ func SetupCSVNodes(p *Params) {
 		p.Events.Push(&Event{newNode,CLUSTERMSG,1,0})
 		p.Events.Push(&Event{newNode,CLUSTERFORM,2,0})
 
+		bNewNode := Bounds{
+			X:	float64(newNode.X),
+			Y:	float64(newNode.Y),
+			Width:	0,
+			Height:	0,
+			CurTree:	p.NodeTree,
+			CurNode: 	newNode,
+		}
+		p.NodeList[len(p.NodeList)-1].NodeBounds = &bNewNode
+		p.NodeTree.Insert(&bNewNode)
 
 		if newNode.Valid{
-			bNewNode := Bounds{
-				X:	float64(newNode.X),
-				Y:	float64(newNode.Y),
-				Width:	0,
-				Height:	0,
-				CurTree:	p.NodeTree,
-				CurNode: 	newNode,
-			}
-			p.NodeList[len(p.NodeList)-1].NodeBounds = &bNewNode
-			p.NodeTree.Insert(&bNewNode)
 		}
 	}
 
@@ -1245,6 +1245,9 @@ func GetFlags(p *Params) {
 	//Tells the simulator whether or not to optimize the path of all the super nodes
 	//Only works when multiple super nodes are active in the same area
 	flag.BoolVar(&p.DoOptimize, "doOptimize", false, "whether or not to optimize the simulator")
+
+	flag.IntVar(&p.ClusterThreshold, "clusterThresh,",8, "max size of a node cluster")
+	flag.Float64Var(&p.NodeBTRange, "nodeBTRange",20.0,"bluetooth range of each node")
 
 	//Range: 0-4
 	//	0: begin in center, routed anywhere

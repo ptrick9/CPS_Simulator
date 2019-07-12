@@ -144,6 +144,7 @@ func main() {
 	p.ClusterNetwork = &cps.AdHocNetwork{
 		ClusterHeads:	[]*cps.NodeImpl{},
 		TotalHeads:			0,
+		Threshold:			p.ClusterThreshold,
 	}
 
 	//This is where the text file reading ends
@@ -219,7 +220,7 @@ func main() {
 		//fmt.Println(event)
 		//fmt.Println(p.CurrentNodes)
 		p.CurrentTime = event.Time
-		if event.Node != nil {
+		if event.Node != nil{
 			if event.Instruction == cps.SENSE {
 
 				if(p.CSVMovement) {
@@ -241,13 +242,19 @@ func main() {
 					event.Node.MoveNormal(p)
 				}
 
-				p.ClusterNetwork.ClearClusterParams(event.Node)
+				if(event.Node.Valid){
+					p.ClusterNetwork.ClearClusterParams(event.Node)
+				}
 				p.Events.Push(&cps.Event{event.Node, cps.MOVE, p.CurrentTime+100, 0})
 			} else if event.Instruction == cps.CLUSTERMSG {
-				event.Node.SendHelloMessage(20.0)
+				if(event.Node.Valid){
+					event.Node.SendHelloMessage(p.NodeBTRange)
+				}
 				p.Events.Push(&cps.Event{event.Node, cps.CLUSTERMSG, p.CurrentTime+100, 0})
 			} else if event.Instruction == cps.CLUSTERFORM {
-				p.ClusterNetwork.GenerateClusters(20.0,event.Node)
+				if(event.Node.Valid){
+					p.ClusterNetwork.GenerateClusters(p.NodeBTRange,event.Node)
+				}
 				p.Events.Push(&cps.Event{event.Node, cps.CLUSTERFORM, p.CurrentTime+100, 0})
 			}
 		} else {
