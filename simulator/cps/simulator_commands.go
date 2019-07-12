@@ -86,6 +86,7 @@ type Params struct {
 	DetectionFile  *os.File
 	BatteryFile    *os.File
 	ClusterFile	   *os.File
+	ClusterStatsFile *os.File
 
 	SensorPath  string
 	MovementPath  string

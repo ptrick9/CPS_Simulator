@@ -136,7 +136,6 @@ type NodeImpl struct {
 	IsClusterHead		bool
 
 	NodeBounds			*Bounds //the node's representative bounds object
-	ClusterHead       	*NodeImpl //id of cluster head
 	NodeClusterParams	*ClusterMemberParams
 	Recalibrated 		bool
 }

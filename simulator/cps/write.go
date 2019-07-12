@@ -433,7 +433,6 @@ func SetupCSVNodes(p *Params) {
 		newNode.X = float32(p.NodeMovements[i][0].X)
 		newNode.Y = float32(p.NodeMovements[i][1].Y)
 
-		newNode.ClusterHead = nil //nil Cluster Head signifies having no cluster head
 		newNode.IsClusterHead = false
 		newNode.IsClusterMember = false
 		newNode.NodeClusterParams = &ClusterMemberParams{}
@@ -475,7 +474,7 @@ func SetupRandomNodes(p *Params) {
 
 			newNode := InitializeNodeParameters(p, i)
 
-			newNode.ClusterHead = nil //nil Cluster Head signifies having no cluster head
+			newNode.NodeClusterParams.CurrentCluster.ClusterHead = nil //nil Cluster Head signifies having no cluster head
 			newNode.IsClusterHead = false
 			newNode.IsClusterMember = false
 			newNode.NodeClusterParams = &ClusterMemberParams{}
@@ -799,6 +798,11 @@ func SetupFiles(p *Params) {
 	}
 
 	p.ClusterFile, err = os.Create(p.OutputFileNameCM + "-adhoc.txt")
+	if err != nil{
+		log.Fatal("Cannot create file", err)
+	}
+
+	p.ClusterStatsFile, err = os.Create(p.OutputFileNameCM + "-clusters.txt")
 	if err != nil{
 		log.Fatal("Cannot create file", err)
 	}

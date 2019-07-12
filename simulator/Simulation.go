@@ -338,7 +338,14 @@ func main() {
 						}
 						fmt.Fprintf(p.ClusterFile,"]\n")
 					}
+
+					fmt.Fprintf(p.ClusterStatsFile, "%d", p.ClusterNetwork.ClusterHeads[i].NodeClusterParams.CurrentCluster.Total)
+					if(i+1 != len(p.ClusterNetwork.ClusterHeads)){
+						fmt.Fprintf(p.ClusterStatsFile,",")
+					}
 				}
+				fmt.Fprintln(p.ClusterStatsFile,"")
+
 				p.Events.Push(&cps.Event{nil, cps.CLUSTERPRINT, p.CurrentTime + 1000, 0})
 			}
 		}
