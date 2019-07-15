@@ -253,9 +253,9 @@ func main() {
 				p.Events.Push(&cps.Event{event.Node, cps.CLUSTERMSG, p.CurrentTime+100, 0})
 			} else if event.Instruction == cps.CLUSTERFORM {
 				if(event.Node.Valid){
-					p.ClusterNetwork.GenerateClusters(p.NodeBTRange,event.Node)
+					p.ClusterNetwork.GenerateClusters(event.Node)
 				}
-				p.Events.Push(&cps.Event{event.Node, cps.CLUSTERFORM, p.CurrentTime+100, 0})
+					p.Events.Push(&cps.Event{event.Node, cps.CLUSTERFORM, p.CurrentTime+100, 0})
 			}
 		} else {
 			if event.Instruction == cps.POSITION {
@@ -339,7 +339,7 @@ func main() {
 						fmt.Fprintf(p.ClusterFile,"]\n")
 					}
 
-					fmt.Fprintf(p.ClusterStatsFile, "%d", p.ClusterNetwork.ClusterHeads[i].NodeClusterParams.CurrentCluster.Total)
+					fmt.Fprintf(p.ClusterStatsFile, "%d", len(p.ClusterNetwork.ClusterHeads[i].NodeClusterParams.CurrentCluster.ClusterMembers))
 					if(i+1 != len(p.ClusterNetwork.ClusterHeads)){
 						fmt.Fprintf(p.ClusterStatsFile,",")
 					}

@@ -70,28 +70,38 @@ func (curNode * NodeImpl)GenerateHello(searchRange float64, score float64) {
 	curNode.NodeClusterParams.ThisNodeHello = message
 }
 
-func (adhoc * AdHocNetwork)GenerateClusters(transmitRange float64, curNode * NodeImpl){
+func (adhoc * AdHocNetwork)GenerateClusters(curNode * NodeImpl){
 	//assumes hello messages have already been generated
 
 	//Assign clusterheads and form clusters
 		//node already is a cluster head OR is already in a cluster
-	if(curNode.IsClusterHead || curNode.NodeClusterParams.CurrentCluster.ClusterHead != nil){
+	if(curNode.IsClusterMember){
 		return
+	}else if(curNode.IsClusterHead) {
+		//Check all nodes within distance / who received message
+		//if not already in a cluster and not a cluster head, join your cluster until full
+		for j:=0; j<len(curNode.NodeClusterParams.RecvMsgs); j++{
+			if(!curNode.NodeClusterParams.RecvMsgs[j].Sender.IsClusterHead && !curNode.NodeClusterParams.RecvMsgs[j].Sender.IsClusterMember){
+				if(curNode.NodeClusterParams.CurrentCluster.Total < adhoc.Threshold){
+					curNode.NodeClusterParams.CurrentCluster.ClusterMembers = append(curNode.NodeClusterParams.CurrentCluster.ClusterMembers, curNode.NodeClusterParams.RecvMsgs[j].Sender)
+					curNode.NodeClusterParams.RecvMsgs[j].Sender.NodeClusterParams.CurrentCluster.ClusterHead = curNode
+					curNode.NodeClusterParams.RecvMsgs[j].Sender.NodeClusterParams.CurrentCluster.Total = len(curNode.NodeClusterParams.CurrentCluster.ClusterMembers)
+					curNode.NodeClusterParams.RecvMsgs[j].Sender.NodeClusterParams.CurrentCluster = curNode.NodeClusterParams.CurrentCluster
+				}
+			}
+		}
 	} else{
 		//node is not a cluster head and is not in a cluster
 		for j:=0; j<len(curNode.NodeClusterParams.RecvMsgs); j++{
 			//if received a message from a cluster head and the cluster head does not have a "full" cluster
-			if(curNode.NodeClusterParams.RecvMsgs[j].Sender.IsClusterHead && curNode.NodeClusterParams.RecvMsgs[j].Sender.NodeClusterParams.CurrentCluster.Total <= adhoc.Threshold){
+			if(curNode.NodeClusterParams.RecvMsgs[j].Sender.IsClusterHead && curNode.NodeClusterParams.RecvMsgs[j].Sender.NodeClusterParams.CurrentCluster.Total < adhoc.Threshold){
 				//join cluster
 				curNode.NodeClusterParams.CurrentCluster.ClusterHead = curNode.NodeClusterParams.RecvMsgs[j].Sender
-				curNode.NodeClusterParams.CurrentCluster.Total++
 				curNode.NodeClusterParams.RecvMsgs[j].Sender.NodeClusterParams.CurrentCluster.ClusterMembers = append(curNode.NodeClusterParams.RecvMsgs[j].Sender.NodeClusterParams.CurrentCluster.ClusterMembers, curNode)
 				curNode.IsClusterMember = true
 				curNode.NodeClusterParams.CurrentCluster = curNode.NodeClusterParams.RecvMsgs[j].Sender.NodeClusterParams.CurrentCluster
-
-
-
-				break
+				curNode.NodeClusterParams.CurrentCluster.Total = len(curNode.NodeClusterParams.CurrentCluster.ClusterMembers)
+				return
 			}
 		}
 
@@ -106,23 +116,26 @@ func (adhoc * AdHocNetwork)GenerateClusters(transmitRange float64, curNode * Nod
 
 			curNode.NodeClusterParams.CurrentCluster = &Cluster{curNode,0, []*NodeImpl{}, adhoc}
 			//curNode.NodeClusterParams.CurrentCluster.ClusterHead = curNode
-			for j:=0; j<len(curNode.NodeClusterParams.RecvMsgs) && j<adhoc.Threshold; j++{
+			for j:=0; j<len(curNode.NodeClusterParams.RecvMsgs); j++{
 				//if received message from a node not already in a cluster
 				if(!curNode.NodeClusterParams.RecvMsgs[j].Sender.IsClusterMember){
-					//set clusters to the same cluster
-					curNode.NodeClusterParams.RecvMsgs[j].Sender.NodeClusterParams.CurrentCluster = curNode.NodeClusterParams.CurrentCluster
 
-					//add node to cluster members
-					curNode.NodeClusterParams.CurrentCluster.ClusterMembers = append(curNode.NodeClusterParams.CurrentCluster.ClusterMembers, curNode.NodeClusterParams.RecvMsgs[j].Sender)
+					if(curNode.NodeClusterParams.CurrentCluster.Total<adhoc.Threshold){
+						//set clusters to the same cluster
+						curNode.NodeClusterParams.RecvMsgs[j].Sender.NodeClusterParams.CurrentCluster = curNode.NodeClusterParams.CurrentCluster
 
-					//increment cluster
-					curNode.NodeClusterParams.CurrentCluster.Total++
-					if(!curNode.NodeClusterParams.RecvMsgs[j].Sender.IsClusterHead) {
-						curNode.NodeClusterParams.RecvMsgs[j].Sender.IsClusterMember = true
+						//add node to cluster members
+						curNode.NodeClusterParams.CurrentCluster.ClusterMembers = append(curNode.NodeClusterParams.CurrentCluster.ClusterMembers, curNode.NodeClusterParams.RecvMsgs[j].Sender)
+
+						//increment cluster
+						curNode.NodeClusterParams.CurrentCluster.Total = len(curNode.NodeClusterParams.CurrentCluster.ClusterMembers)
+						if(!curNode.NodeClusterParams.RecvMsgs[j].Sender.IsClusterHead) {
+							curNode.NodeClusterParams.RecvMsgs[j].Sender.IsClusterMember = true
+						}
+
+						//update hello / send second messsage saying sender joined a cluster
+						curNode.NodeClusterParams.RecvMsgs[j].Sender.NodeClusterParams.ThisNodeHello.ClusterHead = curNode
 					}
-
-					//update hello / send second messsage saying sender joined a cluster
-					curNode.NodeClusterParams.RecvMsgs[j].Sender.NodeClusterParams.ThisNodeHello.ClusterHead = curNode
 				}
 			}
 		}
@@ -149,8 +162,9 @@ func (curNode * NodeImpl) HasMaxNodeScore() (isMax bool){
 	maxScore := curNode.NodeClusterParams.ThisNodeHello.NodeCHScore
 	for i:= 0; i<len(curNode.NodeClusterParams.RecvMsgs); i++{
 		//do not consider nodes already with a clusterhead
-		//if received a message from a node who has cluster head
+		//if received a message from a node who does not have a cluster head
 		if(!curNode.NodeClusterParams.RecvMsgs[i].Sender.IsClusterMember){
+			//if their score higher than current node score
 			if(curNode.NodeClusterParams.RecvMsgs[i].NodeCHScore > maxScore){
 				maxScore = curNode.NodeClusterParams.RecvMsgs[i].NodeCHScore
 				maxNode = curNode.NodeClusterParams.RecvMsgs[i].Sender
@@ -200,6 +214,7 @@ func (adhoc * AdHocNetwork) ClearClusterParams(curNode * NodeImpl){
 	curNode.IsClusterHead = false
 	adhoc.ClusterHeads = []*NodeImpl{}
 	adhoc.TotalHeads = 0
+	curNode.ClusterSecondWave = false
 
 }
 

@@ -138,6 +138,7 @@ type NodeImpl struct {
 	NodeBounds			*Bounds //the node's representative bounds object
 	NodeClusterParams	*ClusterMemberParams
 	Recalibrated 		bool
+	ClusterSecondWave	bool
 }
 
 //NodeMovement controls the movement of all the normal nodes
