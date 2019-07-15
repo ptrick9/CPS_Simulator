@@ -210,6 +210,15 @@ func (curNode *NodeImpl) InBounds(p *Params) bool {
 	return false
 }
 
+func (curNode *NodeImpl) TurnValid(x, y int, p *Params) bool {
+	if x < curNode.P.Width && x >= 0 {
+		if y < curNode.P.Height && y >= 0 {
+			return true
+		}
+	}
+	return false
+}
+
 
 
 func (curNode *NodeImpl) ADCReading(raw float32) int {
@@ -898,8 +907,11 @@ func (curNode *NodeImpl) MoveCSV(p *Params) {
 	/*if (intTime > 0) {
 		fmt.Printf("%v %v %v %v %v %v\n", p.NodeMovements[id][intTime-1].X, p.NodeMovements[id][intTime-1].Y, p.NodeMovements[id][intTime].X, p.NodeMovements[id][intTime].Y, p.NodeMovements[id][intTime+1].X, p.NodeMovements[id][intTime+1].Y)
 	}*/
-	curNode.X = interpolate(p.NodeMovements[id][intTime].X, p.NodeMovements[id][intTime+1].X, portion)
-	curNode.Y = interpolate(p.NodeMovements[id][intTime].Y, p.NodeMovements[id][intTime+1].Y, portion)
+
+	if curNode.Valid {
+		curNode.X = interpolate(p.NodeMovements[id][intTime].X, p.NodeMovements[id][intTime+1].X, portion)
+		curNode.Y = interpolate(p.NodeMovements[id][intTime].Y, p.NodeMovements[id][intTime+1].Y, portion)
+	}
 	//fmt.Printf("%v %v\n", curNode.X, curNode.Y)
 
 
@@ -911,9 +923,7 @@ func (curNode *NodeImpl) MoveCSV(p *Params) {
 	//set the new location in the boolean field to true
 	newX, newY := curNode.GetLoc()
 
-	if !curNode.Valid {
-		curNode.Valid = curNode.InBounds(p)
-	}
+
 
 	//fmt.Printf("%v %v %v %v %v %v %v\n", newX, newY, int(newX), int(newY), p.Width, p.Height, curNode.Valid)
 	/*if curNode.InBounds(p) {
@@ -925,6 +935,11 @@ func (curNode *NodeImpl) MoveCSV(p *Params) {
 		p.BoolGrid[int(newX)][int(newY)] = true
 	}
 
+	if !curNode.Valid {
+		curNode.Valid = curNode.TurnValid(p.NodeMovements[id][intTime].X, p.NodeMovements[id][intTime].Y, p)
+		curNode.X = float32(p.NodeMovements[id][intTime].X)
+		curNode.Y = float32(p.NodeMovements[id][intTime].Y)
+	}
 
 	//Add the node into its new Square's p.TotalNodes
 	//If the node hasn't left the square, that Square's p.TotalNodes will

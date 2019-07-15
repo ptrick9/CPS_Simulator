@@ -13,8 +13,13 @@
 -movementPath=marathon_2k.txt
 -iterations=1000
 -csvSensor=true
--detectionThreshold=4000.0
+-detectionThreshold=5
+-superNodes=false
+-detectionDistance=6
+-cpuprofile=event
 */
+
+
 
 package main
 
