@@ -86,28 +86,6 @@ func Search(prev_region, curr_region, end_region int, curr_path []int, r *Region
 		}
 	}
 }
-/*
-func ValidPath(reg int, endpoint Coord, r *RegionParams) bool{
-	if len(r.Border_dict[reg]) == 0 {
-		return false
-	} else if r.Border_dict[reg][0] == reg {
-		return false
-	}else {
-		end := RegionContaining(Tuple{endpoint.X, endpoint.Y}, r)
-		//fmt.Printf("\nEnd point is in region: %v\n", end)
-
-		for i := 0; i < len(r.Border_dict[reg]); i++ {
-			if r.Border_dict[reg][i] == end {
-				return true
-			}
-			if r.Border_dict[reg][i] != reg {
-				return ValidPath(r.Border_dict[reg][i], endpoint, r)
-			}
-		}
-	}
-	return false
-}
-*/
 
 func ValidPath(reg int, endpoint Coord, r *RegionParams) bool{
 	if len(r.Border_dict[reg]) == 0 {
@@ -220,7 +198,7 @@ func GetPath(c1, c2 Coord, r *RegionParams) []Coord {
 			}
 		}
 	}
-
+	//fmt.Println(ret_path)
 	return ret_path
 }
 

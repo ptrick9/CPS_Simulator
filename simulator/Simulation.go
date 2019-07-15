@@ -167,8 +167,15 @@ func main() {
 
 	p.Server.MakeGrid()
 	//p.Server.RandomizeSuperNodes()
-	//p.Server.PlaceSuperNodes()
-	//p.Server.PlaceSuperNodes()
+	for i:=0;i < 3; i++ {
+		p.Server.PlaceSuperNodes()
+	}
+	var bytes byte
+	for x:= range p.Grid {
+		for y := range p.Grid[i] {
+
+		}
+	}
 
 	fmt.Println("Super Node Type", p.SuperNodeType)
 	fmt.Println("Dimensions: ", p.MaxX, "x", p.MaxY)

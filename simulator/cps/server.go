@@ -68,8 +68,8 @@ func (s FusionCenter) MakeGrid() {
 			}
 			//xLoc := (i * s.P.XDiv) + int(s.P.XDiv/2)
 			//yLoc := (j * s.P.YDiv) + int(s.P.YDiv/2)
-			xLoc := i * s.P.XDiv
-			yLoc := j * s.P.YDiv
+			xLoc := i * s.P.XDiv + s.P.XDiv / 2
+			yLoc := j * s.P.YDiv + s.P.YDiv / 2
 			navigable = true
 			for x:= xLoc; x < xLoc + s.P.XDiv; x++ {
 				for y := yLoc; y < yLoc + s.P.YDiv; y++ {
@@ -151,7 +151,7 @@ func (srv FusionCenter) Tick() {
 	}
 	if srv.P.CurrentTime / 1000 == 30 && srv.P.CurrentTime / 1000 !=0{
 		fmt.Println("Going to test point")
-		srv.Sch.AddRoutePoint(Coord{X: 197, Y: 2})
+		srv.Sch.AddRoutePoint(Coord{X: 2, Y: 212})
 		/*DensitySquares := srv.GetLeastDenseSquares()
 		leastDense := DensitySquares[0]
 		for i:=0; i < len(DensitySquares); i++ {
@@ -465,12 +465,14 @@ func (s FusionCenter) PlaceSuperNodes() {
 		closestSnodes[i] = make([][]int, 2)
 	}*/
 
-	closestSnodes := make([][]*Square, 5)
+	closestSnodes := make([][]*Square, 4)
 
 	//Assignment
+	num := 0
 	for i := range s.P.Grid {
 		for j := range s.P.Grid[i] {
 			if s.P.Grid[i][j].Navigable {
+				num++
 				minDist := 100000000.0
 				minIndex := -1
 				xLoc := (s.P.Grid[i][j].X * s.P.XDiv) + int(s.P.XDiv/2)
@@ -478,7 +480,7 @@ func (s FusionCenter) PlaceSuperNodes() {
 				s.P.CenterCoord = Coord{X: xLoc, Y: yLoc}
 				for k := range s.Sch.SNodeList {
 					dist := 0.0
-					fmt.Printf("Start: %v, End: %v\n", Coord{X: s.Sch.SNodeList[k].GetX(), Y: s.Sch.SNodeList[k].GetY()}, s.P.CenterCoord)
+					//fmt.Printf("Start: %v, End: %v\n", Coord{X: s.Sch.SNodeList[k].GetX(), Y: s.Sch.SNodeList[k].GetY()}, s.P.CenterCoord)
 					ret_path := GetPath(Coord{X: s.Sch.SNodeList[k].GetX(), Y: s.Sch.SNodeList[k].GetY()}, s.P.CenterCoord, s.R)
 
 					if len(ret_path) > 0 {
@@ -494,30 +496,47 @@ func (s FusionCenter) PlaceSuperNodes() {
 						minDist = dist
 						minIndex = k
 					}
-					fmt.Printf("Distance: %v\n", dist)
+					//fmt.Printf("Distance: %v\n", dist)
+				}
+				if minIndex == -1 {
+					minNode := 0
+					for m := range closestSnodes {
+						if len(closestSnodes[m]) < len(closestSnodes[minNode]) {
+							minNode = m
+						}
+					}
+					fmt.Printf("Moved node %v to %v\n", minNode, s.P.CenterCoord)
+					s.Sch.SNodeList[minNode].SetLoc(s.P.CenterCoord)
+					//s.PlaceSuperNodes()
+				} else {
+					s.P.Grid[i][j].SuperNodeCluster = minIndex
+					closestSnodes[minIndex] = append(closestSnodes[minIndex], s.P.Grid[i][j])
 				}
 				//fmt.Printf("min index: %v\n", minIndex)
 				//closestSnodes[minIndex][0] = append(closestSnodes[minIndex][0], s.P.CenterCoord.X)
 				//closestSnodes[minIndex][1] = append(closestSnodes[minIndex][1], s.P.CenterCoord.Y)
-				s.P.Grid[i][j].SuperNodeCluster = minIndex
-				closestSnodes[minIndex] = append(closestSnodes[minIndex], s.P.Grid[i][j])
+
 			}
 		}
 	}
 
+	num2:=0
 	for i := range s.Sch.SNodeList {
 		if i > -1 {
 			s.BuildCluster(i)
 			fmt.Printf("There are %v squares in cluster %v\n", len(closestSnodes[i]), i)
-
+			num2+= len(closestSnodes[i])
 			centers := s.FindCenter(closestSnodes[i])
 			coord := Coord{ X: s.P.Grid[centers[0].X][centers[0].Y].X * s.P.XDiv + int(s.P.XDiv/2),
 				Y: s.P.Grid[centers[0].X][centers[0].Y].Y * s.P.YDiv + int(s.P.YDiv/2)}
+			s.Sch.SNodeList[i].SetLoc(coord)
 
 			fmt.Printf("Centers for Super node %v: %v\n", i, len(centers))
 			fmt.Printf("New coordinate is %v\n", coord)
 		}
 	}
+	fmt.Printf("There are %v navigable squares\n", num)
+	fmt.Printf("There are %v squares in a cluster\n", num2)
 	//Update
 	/*for i := range closestSnodes {
 		meanX := int(getMean(closestSnodes[i][0]))
@@ -652,18 +671,6 @@ func max(num1, num2 float64) float64{
 		return  num2
 	}
 }
-
-/*func (s FusionCenter) BuildGraph(squareList []Square, squ Square, id int) {
-	//snode := s.Sch.SNodeList[id]
-	graph := make([])
-	for i := range squareList {
-
-	}
-	if squ.cluster == id {
-		if
-	}
-
-}*/
 
 func getMean(arr []*Square) float64{
 	//fmt.Println(arr)
