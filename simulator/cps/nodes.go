@@ -138,7 +138,7 @@ type NodeImpl struct {
 	NodeBounds			*Bounds //the node's representative bounds object
 	NodeClusterParams	*ClusterMemberParams
 	Recalibrated 		bool
-	ClusterSecondWave	bool
+	CHPenalty			float64
 }
 
 //NodeMovement controls the movement of all the normal nodes
@@ -425,8 +425,8 @@ func (curNode *NodeImpl) SendtoClusterHead(packet int){
 
 
 //decrement battery due to transmitting/receiving over BlueTooth
-func (curNode *NodeImpl) DecrementPowerBT(packet int){
-	curNode.Battery = curNode.Battery - float32(curNode.P.SamplingLossBTCM) *curNode.Battery
+func (curNode *NodeImpl) DecrementPowerBT(){
+	curNode.Battery = curNode.Battery - float32(curNode.P.SamplingLossBTCM)
 }
 
 //decrement battery due to transmitting/receiving over WiFi
@@ -435,8 +435,8 @@ func (curNode *NodeImpl) DecrementPowerWifi(packet int){
 }
 
 //decrement battery due to transmitting/receiving over 4G
-func (curNode *NodeImpl) DecrementPower4G(packet int){
-	curNode.Battery = curNode.Battery - float32(curNode.P.SamplingLoss4GCM) *curNode.Battery
+func (curNode *NodeImpl) DecrementPower4G(){
+	curNode.Battery = curNode.Battery - float32(curNode.P.SamplingLoss4GCM)
 }
 
 //decrement battery due to sampling Accelerometer
@@ -446,12 +446,12 @@ func (curNode *NodeImpl) DecrementPowerAccel(){
 
 //decrement battery due to transmitting/receiving GPS
 func (curNode *NodeImpl) DecrementPowerGPS(){
-	curNode.Battery = curNode.Battery - float32(curNode.P.SamplingLossGPSCM) *curNode.Battery
+	curNode.Battery = curNode.Battery - float32(curNode.P.SamplingLossGPSCM)
 }
 
 //decrement battery due to using GPS
 func (curNode *NodeImpl) DecrementPowerSensor(){
-	curNode.Battery = curNode.Battery - float32(curNode.P.SamplingLossSensorCM) *curNode.Battery
+	curNode.Battery = curNode.Battery - float32(curNode.P.SamplingLossSensorCM)
 }
 
 
@@ -833,12 +833,7 @@ func (curNode *NodeImpl) GetReadingsCSV() {
 			curNode.IncrementTotalSamples()
 			curNode.UpdateHistory(float32(errorDist))
 		//}
-
-
-
-
-
-
+		
 		//If the reading is more than 2 standard deviations away from the grid average, then recalibrate
 		//gridAverage := curNode.P.Grid[curNode.Row(curNode.P.YDiv)][curNode.Col(curNode.P.XDiv)].Avg
 		//standDev := grid[curNode.Row(yDiv)][curNode.Col(xDiv)].StdDev
@@ -862,10 +857,6 @@ func (curNode *NodeImpl) GetReadingsCSV() {
 			//fmt.Fprintln(nodeFile, "battery:", int(curNode.Battery),)
 			curNode.Recalibrated = false
 		}
-
-
-
-
 
 		//Receives the node's distance and calculates its running average
 		//for that square

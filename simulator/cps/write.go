@@ -461,7 +461,7 @@ func SetupCSVNodes(p *Params) {
 		}
 		p.NodeList[len(p.NodeList)-1].NodeBounds = &bNewNode
 		p.NodeTree.Insert(&bNewNode)
-		newNode.ClusterSecondWave = false
+		newNode.CHPenalty = 1.0 //initialized to 1
 
 		if newNode.Valid{
 		}

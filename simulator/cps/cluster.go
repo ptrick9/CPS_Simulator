@@ -1,6 +1,9 @@
 package cps
 
-import "fmt"
+import (
+	"fmt"
+	"math"
+)
 
 type AdHocNetwork struct {
 	ClusterHeads	[]*NodeImpl
@@ -48,7 +51,7 @@ func (curNode * NodeImpl) ComputeClusterScore(penalty float64, numWithinDist int
 
 	//weighted sum, 60% from degree (# of nodes withinin distance), 40% from its battery life
 	// penalty used to increase a nodes chance at staying a clusterhead
-	return ((0.6*degree + 0.4*battery)*penalty)
+	return ((0.5*degree + 0.5*battery)*curNode.CHPenalty)
 }
 
 //Generates Hello Message for node to form/maintain clusters. Returns message as a string
@@ -73,10 +76,11 @@ func (curNode * NodeImpl)GenerateHello(searchRange float64, score float64) {
 func (adhoc * AdHocNetwork)GenerateClusters(curNode * NodeImpl){
 	//assumes hello messages have already been generated
 
-	//Assign clusterheads and form clusters
-		//node already is a cluster head OR is already in a cluster
+
+	//node in a cluster, nothing to be done
 	if(curNode.IsClusterMember){
 		return
+	//node is a cluster head
 	}else if(curNode.IsClusterHead) {
 		//Check all nodes within distance / who received message
 		//if not already in a cluster and not a cluster head, join your cluster until full
@@ -107,7 +111,8 @@ func (adhoc * AdHocNetwork)GenerateClusters(curNode * NodeImpl){
 
 		//No nodes within range are cluster heads
 		//find node in range with max score, make it a cluster head
-		if(curNode.HasMaxNodeScore()){
+		isMax, maxNode := curNode.HasMaxNodeScore()
+		if(isMax){
 			//assign self as cluster head, and all in range to be in cluster
 			curNode.IsClusterHead = true
 
@@ -133,16 +138,23 @@ func (adhoc * AdHocNetwork)GenerateClusters(curNode * NodeImpl){
 							curNode.NodeClusterParams.RecvMsgs[j].Sender.IsClusterMember = true
 						}
 
+						curNode.DecrementPowerBT()
 						//update hello / send second messsage saying sender joined a cluster
 						curNode.NodeClusterParams.RecvMsgs[j].Sender.NodeClusterParams.ThisNodeHello.ClusterHead = curNode
 					}
 				}
 			}
+		} else{
+			adhoc.GenerateClusters(maxNode)
+		}
+
+		if(!curNode.IsClusterMember && curNode.IsClusterHead){
+			adhoc.GenerateClusters(curNode)
 		}
 	}
 }
 
-func (curNode * NodeImpl) SendHelloMessage(transmitRange float64){
+func (curNode * NodeImpl) SendHelloMessage(transmitRange float64, ){
 	withinDist := []*Bounds{}
 	withinDist = curNode.P.NodeTree.WithinRadius(transmitRange,curNode.NodeBounds,curNode.NodeBounds.GetSearchBounds(transmitRange),withinDist)
 	//withinDist = curNode.NodeTree.WithinRadius(transmitRange,curNode.NodeBounds,curNode.NodeBounds.GetSearchBounds(transmitRange),withinDist)
@@ -153,12 +165,13 @@ func (curNode * NodeImpl) SendHelloMessage(transmitRange float64){
 	for j:=0; j<len(withinDist); j++ {
 		if (withinDist[j].CurNode.NodeClusterParams.RecvMsgs != nil) {
 			withinDist[j].CurNode.NodeClusterParams.RecvMsgs = append(withinDist[j].CurNode.NodeClusterParams.RecvMsgs, curNode.NodeClusterParams.ThisNodeHello)
+			curNode.DecrementPowerBT()
 		}
 	}
 }
 
-func (curNode * NodeImpl) HasMaxNodeScore() (isMax bool){
-	maxNode := curNode//&(NodeImpl{})
+func (curNode * NodeImpl) HasMaxNodeScore() (isMax bool, maxNode * NodeImpl){
+	maxNode = curNode//&(NodeImpl{})
 	maxScore := curNode.NodeClusterParams.ThisNodeHello.NodeCHScore
 	for i:= 0; i<len(curNode.NodeClusterParams.RecvMsgs); i++{
 		//do not consider nodes already with a clusterhead
@@ -172,7 +185,7 @@ func (curNode * NodeImpl) HasMaxNodeScore() (isMax bool){
 		}
 	}
 
-	return(maxNode == curNode)
+	return(maxNode == curNode), maxNode
 }
 
 func (curNode * NodeImpl) PrintClusterNode(){
@@ -210,11 +223,42 @@ func (adhoc * AdHocNetwork) ClearClusterParams(curNode * NodeImpl){
 		curNode.NodeClusterParams.ThisNodeHello = &HelloMsg{}
 	}
 
+	if(curNode.IsClusterHead){
+		curNode.CHPenalty = 0.85
+	}else{
+		curNode.CHPenalty = 1.00
+	}
+
 	curNode.IsClusterMember = false
 	curNode.IsClusterHead = false
+
 	adhoc.ClusterHeads = []*NodeImpl{}
 	adhoc.TotalHeads = 0
-	curNode.ClusterSecondWave = false
-
 }
 
+//sorts messages by distance to the node: 0th = closest, nth = farthest
+func (curNode * NodeImpl) SortMessages(){
+
+	distances := []float64{}
+
+	for j:=0; j<len(curNode.NodeClusterParams.RecvMsgs);j++{
+		xDist := curNode.X-curNode.NodeClusterParams.RecvMsgs[j].Sender.X
+		yDist := curNode.Y-curNode.NodeClusterParams.RecvMsgs[j].Sender.Y
+		dist := math.Sqrt(float64(xDist*xDist)+float64(yDist*yDist))
+		distances = append(distances, dist)
+	}
+
+	for i:=0; i<len(curNode.NodeClusterParams.RecvMsgs);i++{
+		for j:=0; j<len(curNode.NodeClusterParams.RecvMsgs)-i-1; j++{
+			if(distances[j]>distances[j+1]){
+				helloTemp := curNode.NodeClusterParams.RecvMsgs[j]
+				curNode.NodeClusterParams.RecvMsgs[j] = curNode.NodeClusterParams.RecvMsgs[j+1]
+				curNode.NodeClusterParams.RecvMsgs[j+1] = helloTemp
+
+				distTemp := distances[j]
+				distances[j] = distances[j+1]
+				distances[j+1] = distTemp
+			}
+		}
+	}
+}
