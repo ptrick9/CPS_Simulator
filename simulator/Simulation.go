@@ -234,6 +234,7 @@ func main() {
 				} else {
 					event.Node.GetReadings()
 				}
+				event.Node.DecrementPowerSensor()
 
 			} else if event.Instruction == cps.MOVE {
 				if(p.CSVMovement) {
@@ -244,15 +245,26 @@ func main() {
 
 				if(event.Node.Valid){
 					p.ClusterNetwork.ClearClusterParams(event.Node)
+					event.Node.DecrementPowerGPS()
 				}
+
+				if(event.Node.IsClusterHead){
+					event.Node.DecrementPower4G()
+				} else {
+					event.Node.DecrementPowerBT()
+				}
+
 				p.Events.Push(&cps.Event{event.Node, cps.MOVE, p.CurrentTime+100, 0})
+
 			} else if event.Instruction == cps.CLUSTERMSG {
 				if(event.Node.Valid){
 					event.Node.SendHelloMessage(p.NodeBTRange)
 				}
 				p.Events.Push(&cps.Event{event.Node, cps.CLUSTERMSG, p.CurrentTime+100, 0})
+
 			} else if event.Instruction == cps.CLUSTERFORM {
 				if(event.Node.Valid){
+					event.Node.SortMessages()
 					p.ClusterNetwork.GenerateClusters(event.Node)
 				}
 					p.Events.Push(&cps.Event{event.Node, cps.CLUSTERFORM, p.CurrentTime+100, 0})
