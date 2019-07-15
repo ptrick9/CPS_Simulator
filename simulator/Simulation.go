@@ -23,7 +23,6 @@ import (
 	"bytes"
 	"container/heap"
 	"runtime"
-
 	//"CPS_Simulator/simulator/cps"
 	"fmt"
 	"log"
@@ -234,12 +233,15 @@ func main() {
 						}
 					}
 					fmt.Fprintln(p.PositionFile, "t= ", int(p.CurrentTime/1000), " amount= ", amount)
-
+					var buffer bytes.Buffer
 					for i := 0; i < p.CurrentNodes; i ++ {
+
 						if p.NodeList[i].Valid {
-							fmt.Fprintln(p.PositionFile, "ID:", p.NodeList[i].GetID(), "x:", int(p.NodeList[i].GetX()), "y:", int(p.NodeList[i].GetY()))
+							buffer.WriteString(fmt.Sprintf("ID: %v x: %v y: %v\n", p.NodeList[i].GetID(), int(p.NodeList[i].GetX()), int(p.NodeList[i].GetY())))
+							//fmt.Fprintln(p.PositionFile, "ID:", p.NodeList[i].GetID(), "x:", int(p.NodeList[i].GetX()), "y:", int(p.NodeList[i].GetY()))
 						}
 					}
+					fmt.Fprint(p.PositionFile, buffer.String())
 					p.Events.Push(&cps.Event{nil, cps.POSITION, p.CurrentTime + 1000, 0})
 				}
 			} else if event.Instruction == cps.SERVER {
@@ -264,23 +266,24 @@ func main() {
 				}
 				//fmt.Printf("\nSetting timestep to %v at %v next event at %v\n", p.SensorTimes[p.TimeStep], p.CurrentTime, p.SensorTimes[p.TimeStep+1]*1000)
 			} else if event.Instruction == cps.ENERGYPRINT {
-				fmt.Fprintln(p.EnergyFile, "Amount:", len(p.NodeList))
-				for i := 0; i < p.CurrentNodes; i ++ {
-					if p.EnergyPrint {
-						fmt.Fprintln(p.EnergyFile, p.NodeList[i])
+				fmt.Fprintln(p.EnergyFile, "Amount:", len(p.NodeList))  //big time waster
+				if p.EnergyPrint {
+					var buffer bytes.Buffer
+					for i := 0; i < p.CurrentNodes; i ++ {
+							buffer.WriteString(fmt.Sprintf("%v\n", p.NodeList[i]))
 					}
+					fmt.Fprintf(p.EnergyFile, buffer.String())
 				}
 				p.Events.Push(&cps.Event{nil, cps.ENERGYPRINT, p.CurrentTime + 1000, 0})
 			} else if event.Instruction == cps.GRID {
 				if p.GridPrint {
-					x := printGrid(p.Grid)
-					/*for number := range p.Attractions {
-						fmt.Fprintln(p.AttractionFile, p.Attractions[number])
-					}
-					fmt.Fprint(p.AttractionFile, "----------------\n")*/
-					fmt.Fprintln(p.GridFile, x.String())
+					//x := printGrid(p.Grid)
+					printGrid(p.Grid)
+
+					//fmt.Fprintln(p.GridFile, x)
 					p.Events.Push(&cps.Event{nil, cps.GRID, p.CurrentTime + 1000, 0})
 					fmt.Fprint(p.GridFile, "----------------\n")
+					//fmt.Println(p.Grid)
 
 				}
 			}
@@ -415,7 +418,7 @@ func main() {
 	}
 
  */
-	PrintNodeBatteryOverTime(p)
+	PrintNodeBatteryOverTimeFast(p)
 
 	p.PositionFile.Seek(0, 0)
 	fmt.Fprintln(p.PositionFile, "Image:", p.ImageFileNameCM)
@@ -449,22 +452,17 @@ func main() {
 }
 
 //printGrid saves the current measurements of each Square into a buffer to print into the file
-func printGrid(g [][]*cps.Square) bytes.Buffer {
+func printGrid(g [][]*cps.Square) {
 	var buffer bytes.Buffer
-	/*for i := range g {
-		for _, x := range g[i] {
-			buffer.WriteString(fmt.Sprintf("%.2f\t", x.Avg))
-		}
-		buffer.WriteString(fmt.Sprintf("\n"))
-	}
-	return buffer*/
 	for y := 0; y < len(g[0]); y++ {
 		for x:=0; x < len(g); x++ {
 			buffer.WriteString(fmt.Sprintf("%.2f\t", g[x][y].Avg))
 		}
-		buffer.WriteString(fmt.Sprintf("\n"))
+		//buffer.WriteString(fmt.Sprintf("%v\n", g[y]))
+		buffer.WriteString("\n")
 	}
-	return buffer
+	buffer.WriteString("\n")
+	fmt.Fprintf(p.GridFile, buffer.String())
 }
 
 //printGridNodes saves the current p.NumNodes of each Square into a buffer to print to the file
@@ -508,4 +506,23 @@ func PrintNodeBatteryOverTime(p * cps.Params)  {
 		fmt.Fprint(p.BatteryFile, "\n")
 	}
 	p.BatteryFile.Sync()
+}
+func PrintNodeBatteryOverTimeFast(p * cps.Params)  {
+	var buffer bytes.Buffer
+	buffer.WriteString("Time,")
+	for i := range p.NodeList{
+		n := p.NodeList[i]
+		buffer.WriteString(fmt.Sprintf("Node",n.GetID(),","))
+	}
+	buffer.WriteString("\n")
+
+	for t:=0; t<p.Iterations_of_event; t++{
+		buffer.WriteString(fmt.Sprintf("%d,", t))
+		for i := range p.NodeList{
+			n := p.NodeList[i]
+			buffer.WriteString(fmt.Sprintf("%v,", n.BatteryOverTime[t]))
+		}
+		buffer.WriteString("\n")
+	}
+	fmt.Fprintf(p.BatteryFile, buffer.String())
 }
