@@ -1,3 +1,6 @@
+import random
+import scipy.misc
+
 class Square:
     def __init__(self, y1, y2, x1, x2, can_cut, id_num):
         self.x1 = x1
@@ -564,14 +567,14 @@ def build(base_name, data):
     connect_adjacent_routers(square_list, vertices, edges, vmap, v_sq_map, data['height'], data['graph'])
 
 
-    '''
-    WALL_IMAGE = scipy.misc.imread('%s.png' % 'small_stadium_wall', mode='RGBA')
+
+    WALL_IMAGE = scipy.misc.imread('%s.png' % 'DelawareStadiumWalls', mode='RGBA')
     color_list = [(random.randrange(255), random.randrange(255), random.randrange(255), 128) for i in range(2000)]
     for xx, sq in enumerate(square_list):
         for i in range(sq.y1, sq.y2 + 1):
             for j in range(sq.x1, sq.x2 + 1):
                 WALL_IMAGE[i][j] = (color_list[xx])
-    scipy.misc.imsave('small_stadium_wall_blocks.png', WALL_IMAGE)
-    '''
+    scipy.misc.imsave('DelawareStdiumWallsBlocks.png', WALL_IMAGE)
+
 
     write_to_TXT(vertices, edges, base_name)

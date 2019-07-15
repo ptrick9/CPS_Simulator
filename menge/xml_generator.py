@@ -18,7 +18,8 @@ def make_goal_set(id, capacity, locations):
         goal.set('capacity', str(capacity))
         goal.set('x', str(location[0]))
         goal.set('y', str(location[1]))
-        goal.set('radius', '1')
+        goal.set('radius', '.5')
+        goal.set('weight', '1')
     return node
 
 
@@ -31,6 +32,7 @@ def make_state_static(name):
     node.set('final', '0')
     goal_selector = et.SubElement(node, 'GoalSelector')
     goal_selector.set('type', 'identity')
+    goal_selector.set('persistent', '0')
     vel_component = et.SubElement(node, 'VelComponent')
     vel_component.set('type', 'zero')
     return node
@@ -43,6 +45,7 @@ def make_state_teleport(name, location):
     action.set('dist', 'c')
     action.set('x_value', str(location[0]))
     action.set('y_value', str(location[1]))
+    action.set('exit_reset', 'true')
     return node
 
 
@@ -53,6 +56,7 @@ def make_state_travel(name, goal_set_id, map_name):
     goal_selector = et.SubElement(node, 'GoalSelector')
     goal_selector.set('type', 'random')
     goal_selector.set('goal_set', str(goal_set_id))
+    goal_selector.set('persistent', '1')
     vel_component = et.SubElement(node, 'VelComponent')
     vel_component.set('type', 'road_map')
     vel_component.set('file_name', '%s.txt' % map_name)
@@ -130,5 +134,6 @@ def make_agent_group(id, amount):
     generator.set('offset_y', '0')
     generator.set('count_x', str(amount))
     generator.set('count_y', '1')
+    generator.set('rotation', '0')
     return node
 

@@ -11,14 +11,14 @@ import xml_generator
 
 # Outputs to a folder titled MAIN_FILE_NAME
 
-MAIN_FILE_NAME = 'stadium_seating'
-WALL_FILE_NAME = 'stadium_seating_noPoints'
+MAIN_FILE_NAME = 'DelawareStadium'
+WALL_FILE_NAME = 'DelawareStadiumWalls'
 
 OUTPUT_SCENE_XML = True
 OUTPUT_BEHAVIOR_XML = True
-OUTPUT_VIEWER_XML = True
-OUTPUT_LINK_XML = True
-OUTPUT_GRAPH_TXT = True
+OUTPUT_VIEWER_XML = False
+OUTPUT_LINK_XML = False
+OUTPUT_GRAPH_TXT = False
 
 MAIN_IMAGE = imageio.imread('%s.png' % MAIN_FILE_NAME)
 WALL_IMAGE = scipy.misc.imread('%s.png' % WALL_FILE_NAME, mode='RGBA')
@@ -208,9 +208,9 @@ def add_spawn(group_id, group_node):
                 (group_id, destination_id))
             return False
 
-        spawn_names = [x[0] for x in locations]
-        tran = xml_generator.make_transition_random(','.join(spawn_names), destinations)
-        BEHAVIOR_XML.append(tran)
+    spawn_names = [x[0] for x in locations]
+    tran = xml_generator.make_transition_random(','.join(spawn_names), destinations)
+    BEHAVIOR_XML.append(tran)
     return True
 
 
@@ -319,19 +319,21 @@ def create_XML_scene_behavior():
     for group_id, group_node in enumerate(MAIN_XML.findall('Group')):
         if OUTPUT_SCENE_XML:
             if not add_agents(group_id, group_node):
-                break
+                return False
 
         if OUTPUT_BEHAVIOR_XML:
             if not add_goal_sets(group_id, group_node):
-                break
+                return False
 
             if not add_spawn(group_id, group_node):
-                break
+                return False
 
             if not add_goals(group_id, group_node):
-                break
+                return False
 
             TOTAL_GOAL_SETS += len(group_node.findall('GoalSet'))
+
+    return True
 
 def create_XML_viewer():
 
@@ -358,42 +360,34 @@ def write_to_XML(node, fileName):
     outfile.close()
 
 
-def print_progress(title, progress):
-    length = 20
-    block = int(round(length * progress))
-    msg = "\r{0}: [{1}] {2}%".format(title, "#" * block + "-" * (length - block), round(progress * 100, 2))
-    if progress >=1:
-        msg += " Done\r\n"
-    sys.stdout.write(msg)
-    sys.stdout.flush()
-
-
 '''
 ######################## Main Program ######################## 
 '''
 
 if OUTPUT_BEHAVIOR_XML or OUTPUT_SCENE_XML or OUTPUT_VIEWER_XML:
-    print("Creating output directory '%s/'" % MAIN_FILE_NAME)
+    print("Creating output directory './%s/'" % MAIN_FILE_NAME)
     path = '%s/' % MAIN_FILE_NAME
     if not os.path.exists(path):
         os.makedirs(path)
 
 if OUTPUT_LINK_XML:
-    print("Creating file '%s/%s.xml'..." % (MAIN_FILE_NAME, MAIN_FILE_NAME))
+    print("Creating link file '%s/%s.xml'..." % (MAIN_FILE_NAME, MAIN_FILE_NAME))
     link_xml = create_XML_link()
     write_to_XML(link_xml, '%s/%s' % (MAIN_FILE_NAME, MAIN_FILE_NAME))
 
 if OUTPUT_VIEWER_XML:
     create_XML_viewer()
-    print("Creating file '%s/%sV.xml'...." % (MAIN_FILE_NAME, MAIN_FILE_NAME))
+    print("Creating viewer file '%s/%sV.xml'...." % (MAIN_FILE_NAME, MAIN_FILE_NAME))
     write_to_XML(VIEWER_XML, '%s/%sV' % (MAIN_FILE_NAME, MAIN_FILE_NAME))
 
 if OUTPUT_BEHAVIOR_XML or OUTPUT_SCENE_XML:
+    print("Scanning %s.png pixels..." % WALL_FILE_NAME)
     COLOR_DICTIONARY = create_color_dictionary(MAIN_IMAGE)
+    print("Scanning %s.xml..."  % MAIN_FILE_NAME)
     create_XML_scene_behavior()
 
 if OUTPUT_BEHAVIOR_XML:
-    print("Creating file '%s/%sB.xml'..." % (MAIN_FILE_NAME, MAIN_FILE_NAME))
+    print("Creating behavior file '%s/%sB.xml'..." % (MAIN_FILE_NAME, MAIN_FILE_NAME))
     write_to_XML(BEHAVIOR_XML, '%s/%sB' % (MAIN_FILE_NAME, MAIN_FILE_NAME))
 
 if OUTPUT_SCENE_XML:
@@ -408,7 +402,7 @@ if OUTPUT_SCENE_XML:
 
     obstacle_set_node = wall_generator.create_obstacle_set(data)
     SCENE_XML.append(obstacle_set_node)
-    print("Creating file '%s/%sS.xml'..." % (MAIN_FILE_NAME, MAIN_FILE_NAME))
+    print("Creating scene file '%s/%sS.xml'..." % (MAIN_FILE_NAME, MAIN_FILE_NAME))
     write_to_XML(SCENE_XML, '%s/%sS' % (MAIN_FILE_NAME, MAIN_FILE_NAME))
 
 if OUTPUT_GRAPH_TXT:
