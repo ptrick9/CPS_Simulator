@@ -258,7 +258,9 @@ func main() {
 					event.Node.DecrementPowerBT()
 				}
 
-				p.Events.Push(&cps.Event{event.Node, cps.MOVE, p.CurrentTime+100, 0})
+				//if(p.CurrentTime/1000 <= 100){
+					p.Events.Push(&cps.Event{event.Node, cps.MOVE, p.CurrentTime+100, 0})
+				//}
 
 			} else if event.Instruction == cps.CLUSTERMSG {
 				if(event.Node.Valid){

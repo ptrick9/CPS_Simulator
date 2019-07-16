@@ -63,7 +63,7 @@ func (qt *Quadtree) NodeMovement(movingNode * Bounds){
 	movedRight := movingNode.X < movingNode.CurTree.Bounds.X
 	movedLeft := movingNode.X > movingNode.CurTree.Bounds.X + movingNode.CurTree.Bounds.Width
 
-	//iF moved out in any direction, reinsert in tree
+	//if moved out in any direction, reinsert in tree
 	if(movedDown || movedUp || movedRight || movedLeft){
 		qt.RemoveAndCleanup(movingNode)
 		qt.Insert(movingNode)
@@ -437,7 +437,7 @@ func (qt * Quadtree) RemoveAndCleanup(pRect * Bounds) *Bounds{
 
 	//if parent holds four, move all nodes up one level
 	parent := pRect.CurTree.ParentTree
-	if(parent.Total==4){
+	if(parent != nil && parent.Total==4){
 		for i:=0; i<len(parent.SubTrees); i++{
 			for j:=0; j<len(parent.SubTrees[i].Objects); j++{
 				parent.Objects = append(parent.Objects, parent.SubTrees[i].Objects[j])
