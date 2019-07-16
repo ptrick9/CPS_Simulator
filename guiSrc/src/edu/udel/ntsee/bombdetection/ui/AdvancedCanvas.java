@@ -4,6 +4,7 @@ import edu.udel.ntsee.bombdetection.data.Node;
 import javafx.beans.property.*;
 import javafx.event.Event;
 import javafx.event.EventHandler;
+import javafx.geometry.Point2D;
 import javafx.geometry.VPos;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
@@ -24,47 +25,11 @@ public class AdvancedCanvas extends Canvas {
     private Drawable drawable;
     private Camera camera;
 
-    private ObjectProperty<Node> mouseProperty;
     private BooleanProperty allowPanning;
     private int columns, rows;
     private double clickX, clickY;
 
-    // to do:
-    // copied positioning code from draw block
-    // should extract into a function
-    public void drawNumber(double number, int x, int y, int squares) {
-
-        GraphicsContext gc = getGraphicsContext2D();
-        gc.setTextAlign(TextAlignment.CENTER);
-        gc.setTextBaseline(VPos.CENTER);
-        gc.setFont(new Font(gc.getFont().getName(), camera.getBlockSize()));
-
-        double worldX = x * squares - getStartColumn();
-        double width = squares;
-        if (worldX < 0) {
-            worldX = 0;
-            width = squares + (x * squares - getStartColumn());
-        }
-
-        double worldY = y * squares - getStartRow();
-        double height = squares;
-        if (worldY < 0) {
-            worldY = 0;
-            height = squares + (y * squares - getStartRow());
-        }
-
-        double pixelX = -camera.getOffsetX() + worldX * camera.getBlockSize() + (camera.getBlockSize() * width / 2);
-        double pixelY = -camera.getOffsetY() + worldY * camera.getBlockSize() + (camera.getBlockSize() * height / 2);
-        gc.strokeText(String.valueOf(number), pixelX, pixelY, width * camera.getBlockSize());
-    }
-
-    public Node getMouse() {
-        return mouseProperty.get();
-    }
-
-    public ObjectProperty<Node> mouseProperty() {
-        return mouseProperty;
-    }
+    private ObjectProperty<Point2D> mouseProperty;
 
     public AdvancedCanvas(Drawable drawable) {
 
@@ -75,7 +40,7 @@ public class AdvancedCanvas extends Canvas {
         this.rows = 0;
         this.clickX = 0;
         this.clickY = 0;
-        this.mouseProperty = new SimpleObjectProperty<>(new Node(-1, 0, 0));
+        this.mouseProperty = new SimpleObjectProperty<>();
 
         widthProperty().addListener((observable, oldValue, newValue) -> {
             this.camera.setWidth(newValue.doubleValue());
@@ -100,9 +65,7 @@ public class AdvancedCanvas extends Canvas {
             this.drawable.draw();
         });
         setOnMouseMoved(event -> {
-            int x = (int)((event.getX() + camera.getOffsetX()) / camera.getBlockSize()) + getStartColumn();
-            int y = (int)((event.getY() + camera.getOffsetY()) / camera.getBlockSize()) + getStartRow();
-            this.mouseProperty.set(new Node(-1, x, y));
+            this.mouseProperty.setValue(new Point2D(event.getX(), event.getY()));
         });
         setOnScroll(event -> {
 
@@ -115,7 +78,16 @@ public class AdvancedCanvas extends Canvas {
             gc.setLineWidth(camera.getScale());
             drawable.draw();
         });
+    }
 
+    public Point2D getMouse() {
+
+        return mouseProperty.get();
+    }
+
+    public ObjectProperty<Point2D> mouseProperty() {
+
+        return mouseProperty;
     }
 
     public void setMouseEventHandler(EventHandler<MouseEvent> mouseEventHandler) {
@@ -194,7 +166,7 @@ public class AdvancedCanvas extends Canvas {
         for(int i=getStartRow(); i<=getEndRow(); i++) {
             double startX = -camera.getOffsetX();
             double startY = -camera.getOffsetY() + (i - getStartRow()) * camera.getBlockSize();
-            double endX = -camera.getOffsetX() + (getEndColumn() - getStartColumn()) * camera.getBlockSize();
+            double endX = -camera.getOffsetX() + getTotalVisibleColumns() * camera.getBlockSize();
             double endY = startY;
             gc.strokeLine(startX, startY, endX, endY);
         }
@@ -203,7 +175,7 @@ public class AdvancedCanvas extends Canvas {
             double startX = -camera.getOffsetX() + (i - getStartColumn()) * camera.getBlockSize();
             double startY = -camera.getOffsetY();
             double endX = startX;
-            double endY = -camera.getOffsetY() + (getEndRow() - getStartRow()) * camera.getBlockSize();
+            double endY = -camera.getOffsetY() + getTotalVisibleRows() * camera.getBlockSize();
             gc.strokeLine(startX, startY, endX, endY);
         }
     }
@@ -275,10 +247,10 @@ public class AdvancedCanvas extends Canvas {
             worldY2 = 0;
         }
 
-        double pixelX1 = -camera.getOffsetX() + worldX1 * camera.getBlockSize();
-        double pixelY1 = -camera.getOffsetY() + worldY1 * camera.getBlockSize();
-        double pixelX2 = -camera.getOffsetX() + worldX2 * camera.getBlockSize();
-        double pixelY2 = -camera.getOffsetY() + worldY2 * camera.getBlockSize();
+        double pixelX1 = -camera.getOffsetX() + worldX1 * camera.getBlockSize() + camera.getBlockSize() / 2;
+        double pixelY1 = -camera.getOffsetY() + worldY1 * camera.getBlockSize() + camera.getBlockSize() / 2;
+        double pixelX2 = -camera.getOffsetX() + worldX2 * camera.getBlockSize() + camera.getBlockSize() / 2;
+        double pixelY2 = -camera.getOffsetY() + worldY2 * camera.getBlockSize() + camera.getBlockSize() / 2;
         gc.strokeLine(pixelX1, pixelY1, pixelX2, pixelY2);
         gc.setLineWidth(1);
     }
@@ -330,12 +302,12 @@ public class AdvancedCanvas extends Canvas {
 
     public int getEndColumn() {
         double visibleColumns = Math.ceil((camera.getWidth() + camera.getOffsetX()) / camera.getBlockSize()) + getStartColumn();
-        return (int)Math.min(visibleColumns + 1, columns);
+        return (int)Math.min(visibleColumns, columns);
     }
 
     public int getEndRow() {
         double visibleRows = Math.ceil((camera.getHeight() + camera.getOffsetY()) / camera.getBlockSize()) + getStartRow();
-        return (int)Math.min(visibleRows + 1, rows);
+        return (int)Math.min(visibleRows, rows);
     }
 
     public int getTotalVisibleColumns() {
@@ -437,13 +409,46 @@ public class AdvancedCanvas extends Canvas {
         public void zoomIn() {
 
             if(getBlockSize() > MAXIMUM_BLOCK_SIZE) return;
+
+            double oldSize = camera.getBlockSize();
+            double oldMouseX = getMouse().getX();
+            double oldMouseY = getMouse().getY();
+
+            double worldX = ((oldMouseX + getOffsetX()) / getBlockSize()) + getStartColumn();
+            double worldY = ((oldMouseY + getOffsetY()) / getBlockSize()) + getStartRow();
+
             this.scale *= SCALE_MULTIPLIER;
+
+            double newSize = camera.getBlockSize();
+            double newX = worldX * newSize;
+            double newY = worldY * newSize;
+            double distanceX = newX - (oldSize * worldX);
+            double distanceY = newY - (oldSize * worldY);
+
+            move(-distanceX, -distanceY);
+
         }
 
         public void zoomOut() {
 
             if (getBlockSize() < MINIMUM_BLOCK_SIZE) return;
+
+            double oldSize = camera.getBlockSize();
+            double oldMouseX = getMouse().getX();
+            double oldMouseY = getMouse().getY();
+
+            double worldX = ((oldMouseX + getOffsetX()) / getBlockSize()) + getStartColumn();
+            double worldY = ((oldMouseY + getOffsetY()) / getBlockSize()) + getStartRow();
+
             this.scale /= SCALE_MULTIPLIER;
+
+            double newSize = camera.getBlockSize();
+            double newX = worldX * newSize;
+            double newY = worldY * newSize;
+            double distanceX = newX - (oldSize * worldX);
+            double distanceY = newY - (oldSize * worldY);
+
+            move(-distanceX, -distanceY);
         }
 
         public double getBlockSize() {
