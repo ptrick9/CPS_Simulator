@@ -673,7 +673,7 @@ func (curNode *NodeImpl) GetReadings() {
 	if curNode.Valid { //Check if node should actually take readings or if it hasn't shown up yet
 		newX, newY := curNode.GetLoc()
 
-		RawConcentration := RawConcentration(curNode.Distance(*curNode.P.B)) //this is the node's reported Value without error
+		RawConcentration := RawConcentration(curNode.Distance(*curNode.P.B)/2) //this is the node's reported Value without error
 
 		//need to get the correct Time reading Value from system
 		//need to verify where we read from
