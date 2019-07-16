@@ -463,7 +463,6 @@ func printGrid(g [][]*cps.Square) {
 		for x:=0; x < len(g); x++ {
 			buffer.WriteString(fmt.Sprintf("%.2f\t", g[x][y].Avg))
 		}
-		//buffer.WriteString(fmt.Sprintf("%v\n", g[y]))
 		buffer.WriteString("\n")
 	}
 	buffer.WriteString("\n")
