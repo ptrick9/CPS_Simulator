@@ -174,3 +174,5 @@ guiSrc/output/production/guiSrc/edu/udel/ntsee/bombdetection/data/
 *.class
 
 *.zip
+
+event

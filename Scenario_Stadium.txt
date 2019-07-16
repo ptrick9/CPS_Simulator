@@ -1,0 +1,12 @@
+numNodes-3722
+superNodeType-0
+maxX-616
+maxY-824
+bombX-516
+bombY-224
+N: 0
+W: 0
+S: 0
+P: 0
+POIS: 0
+

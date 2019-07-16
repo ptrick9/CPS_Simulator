@@ -870,7 +870,7 @@ func SetupParameters(p *Params) {
 	} else {
 		p.MaxRaw = 1000
 		//p.EdgeRaw = 36
-		p.EdgeRaw = RawConcentration(float32(p.DetectionDistance))
+		p.EdgeRaw = RawConcentration(float32(p.DetectionDistance/2))
 		fmt.Println("Raw:", p.EdgeRaw)
 		p.MaxADC = 4095
 		p.EdgeADC = 3
@@ -897,10 +897,12 @@ func CalculateADCSetting(reading float64, x, y, time int, p *Params) {
 	counted := float32(0.0)
 	for i := -1; i < 2; i++ {
 		for j := -1; j < 2; j++ {
-			if i != 0 && j != 0 {
+			if i != 0 || j != 0 {
 				if i+x > 0 && i+x < p.Width {
 					if j+y > 0 && j+y < p.Height {
-						total += InterpolateFloat(float32(p.SensorReadings[x][y][time]),  float32(p.SensorReadings[i + x][j + y][time]), .2/float32(Dist(Tuple{x, y}, Tuple{x+i, y+j})))
+						part := InterpolateFloat(float32(p.SensorReadings[x][y][time]),  float32(p.SensorReadings[i + x][j + y][time]), .2/float32(Dist(Tuple{x, y}, Tuple{x+i, y+j})))
+						total += part
+						//fmt.Println(i, j, float32(p.SensorReadings[x][y][time]),  float32(p.SensorReadings[i + x][j + y][time]), .2/float32(Dist(Tuple{x, y}, Tuple{x+i, y+j})), part)
 						counted += 1
 					}
 				}
@@ -934,7 +936,9 @@ func CalculateADCSetting(reading float64, x, y, time int, p *Params) {
 		if point[0] + x > 0 && point[0] + x < p.Width {
 			if point[1] + y > 0 && point[1] + y < p.Height {
 				//if legal then interpolate the correct value based on distance
-				total += InterpolateFloat(float32(p.SensorReadings[x][y][time]), float32(p.SensorReadings[x + point[0]][y + point[1]][time]), float32(p.DetectionDistance/(Dist(Tuple{x, y}, Tuple{x + point[0], y + point[1]}))))
+				part := InterpolateFloat(float32(p.SensorReadings[x][y][time]), float32(p.SensorReadings[x + point[0]][y + point[1]][time]), float32(p.DetectionDistance/(Dist(Tuple{x, y}, Tuple{x + point[0], y + point[1]}))))
+				total += part
+				//fmt.Println(float32(p.SensorReadings[x][y][time]), float32(p.SensorReadings[x + point[0]][y + point[1]][time]), float32(p.DetectionDistance/(Dist(Tuple{x, y}, Tuple{x + point[0], y + point[1]}))), part)
 				counted += 1
 			}
 		}

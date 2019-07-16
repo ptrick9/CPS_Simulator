@@ -1,0 +1,817 @@
+Total: 53.24s
+ROUTINE ======================== _/C_/Users/patrick/Dropbox/Patrick/udel/SUMMER2018/git_simulator/CPS_Simulator/simulator/cps.(*FusionCenter).Send in C:\Users\patrick\Dropbox\Patrick\udel\SUMMER2018\git_simulator\CPS_Simulator\simulator\cps\server.go
+     230ms      1.88s (flat, cum)  3.53% of Total
+         .          .    396:
+         .          .    397://Send is called by a node to deliver a reading to the server.
+         .          .    398:// Statistics are calculated each Time data is received
+         .          .    399:func (s *FusionCenter) Send(n *NodeImpl, rd Reading) {
+         .          .    400:	//fmt.Printf("Sending to server:\nTime: %v, ID: %v, X: %v, Y: %v, Sensor Value: %v\n", rd.Time, rd.Id, rd.Xpos, rd.YPos, rd.SensorVal)
+         .      240ms    401:	s.Times = make(map[int]bool, 0)
+         .       10ms    402:	if s.Times[rd.Time] {
+         .          .    403:
+         .          .    404:	} else {
+      10ms      230ms    405:		s.Times[rd.Time] = true
+         .          .    406:	}
+         .          .    407:
+         .          .    408:	for len(s.TimeBuckets) <= rd.Time {
+         .          .    409:		s.TimeBuckets = append(s.TimeBuckets, make([]Reading,0))
+         .          .    410:	}
+      10ms       10ms    411:	currBucket := (s.TimeBuckets)[rd.Time]
+         .          .    412:	if len(currBucket) != 0 { //currBucket != nil
+      10ms      260ms    413:		(s.TimeBuckets)[rd.Time] = append(currBucket, rd)
+         .          .    414:	} else {
+         .          .    415:		(s.TimeBuckets)[rd.Time] = append((s.TimeBuckets)[rd.Time], rd) //s.TimeBuckets[rd.Time] = []float64{rd.sensorVal}
+         .          .    416:	}
+         .          .    417:
+      10ms      760ms    418:	s.UpdateSquareAvg(rd)
+     130ms      130ms    419:	tile := s.P.Grid[int(rd.Xpos)/s.P.XDiv][int(rd.YPos)/s.P.YDiv]
+      10ms       10ms    420:	tile.LastReadingTime = rd.Time
+         .      180ms    421:	tile.SquareValues += math.Pow(float64(rd.SensorVal-float64(tile.Avg)), 2)
+      50ms       50ms    422:	if rd.SensorVal > (float64(s.GetSquareAverage(s.P.Grid[int(rd.Xpos)/s.P.XDiv][int(rd.YPos)/s.P.YDiv])) + s.P.CalibrationThresholdCM){ //Check if x over grid avg
+         .          .    423:		n.Recalibrate()
+         .          .    424:		s.LastRecal[n.Id] = s.P.Iterations_used
+         .          .    425:		//fmt.Println(s.LastRecal)
+         .          .    426:	}
+         .          .    427:}
+ROUTINE ======================== _/C_/Users/patrick/Dropbox/Patrick/udel/SUMMER2018/git_simulator/CPS_Simulator/simulator/cps.(*NodeImpl).ADCReading in C:\Users\patrick\Dropbox\Patrick\udel\SUMMER2018\git_simulator\CPS_Simulator\simulator\cps\nodes.go
+      30ms       30ms (flat, cum) 0.056% of Total
+         .          .    223:
+         .          .    224:func (curNode *NodeImpl) ADCReading(raw float32) int {
+         .          .    225:
+         .          .    226:	level := (raw - curNode.P.ADCOffset)/curNode.P.ADCWidth
+         .          .    227:
+      10ms       10ms    228:	if level > curNode.P.MaxADC {
+         .          .    229:		level = curNode.P.MaxADC
+      10ms       10ms    230:	} else if level < 0 {
+         .          .    231:		level = 0
+         .          .    232:	}
+         .          .    233:
+      10ms       10ms    234:	return int(level)
+         .          .    235:}
+         .          .    236:
+         .          .    237:func (curNode NodeImpl) String() string {
+         .          .    238:	//return fmt.Sprintf("x: %v y: %v Id: %v battery: %v sensor checked: %v sensor checks: %v GPS checked: %v GPS checks: %v server checked: %v server checks: %v buffer: %v ", int(curNode.X), curNode.Y, curNode.Id, curNode.Battery, curNode.HasCheckedSensor, curNode.TotalChecksSensor, curNode.HasCheckedGPS, curNode.TotalChecksGPS, curNode.HasCheckedServer, curNode.TotalChecksServer,curNode.BufferI)
+         .          .    239:	//return fmt.Sprintf("x: %v y: %v valid: %v", int(curNode.X), int(curNode.Y), curNode.Valid)
+ROUTINE ======================== _/C_/Users/patrick/Dropbox/Patrick/udel/SUMMER2018/git_simulator/CPS_Simulator/simulator/cps.(*NodeImpl).Distance in C:\Users\patrick\Dropbox\Patrick\udel\SUMMER2018\git_simulator\CPS_Simulator\simulator\cps\nodes.go
+      80ms      570ms (flat, cum)  1.07% of Total
+         .          .    647:	return int(math.Sqrt(math.Pow(float64(int(curNode.X)-curNode.P.B.X), 2) + math.Pow(float64(curNode.Y-float32(curNode.P.B.Y)), 2)))
+         .          .    648:}
+         .          .    649:
+         .          .    650:
+         .          .    651:func (curNode *NodeImpl) Distance(b Bomb) float32 {
+      80ms      570ms    652:	return float32(math.Sqrt(math.Pow(float64(math.Abs(float64(curNode.X)-float64(b.X))),2) + math.Pow(float64(math.Abs(float64(curNode.Y)-float64(b.Y))),2)))
+         .          .    653:}
+         .          .    654:
+         .          .    655://Returns a float representing the detection of the bomb
+         .          .    656://	by the specific node depending on distance
+         .          .    657:func RawConcentration(dist float32) float32 {
+ROUTINE ======================== _/C_/Users/patrick/Dropbox/Patrick/udel/SUMMER2018/git_simulator/CPS_Simulator/simulator/cps.(*NodeImpl).GetLoc in C:\Users\patrick\Dropbox\Patrick\udel\SUMMER2018\git_simulator\CPS_Simulator\simulator\cps\nodes.go
+      30ms       30ms (flat, cum) 0.056% of Total
+         .          .    560:	return curNode.Id
+         .          .    561:}
+         .          .    562:
+         .          .    563://getter function for x and y locations
+         .          .    564:func (curNode *NodeImpl) GetLoc() (float32, float32) {
+      30ms       30ms    565:	return curNode.X, curNode.Y
+         .          .    566:}
+         .          .    567:
+         .          .    568://setter function for S0
+         .          .    569:func (curNode *NodeImpl) SetS0(s0 float64) {
+         .          .    570:	curNode.S0 = s0
+ROUTINE ======================== _/C_/Users/patrick/Dropbox/Patrick/udel/SUMMER2018/git_simulator/CPS_Simulator/simulator/cps.(*NodeImpl).GetReadings in C:\Users\patrick\Dropbox\Patrick\udel\SUMMER2018\git_simulator\CPS_Simulator\simulator\cps\nodes.go
+     320ms      8.90s (flat, cum) 16.72% of Total
+         .          .    670:		return reading
+         .          .    671:	}
+         .          .    672:}
+         .          .    673:
+         .          .    674://Takes cares of taking a node's readings and printing detections and stuff
+      10ms       10ms    675:func (curNode *NodeImpl) GetReadings() {
+         .          .    676:
+         .          .    677:
+         .          .    678:	if curNode.Valid { //Check if node should actually take readings or if it hasn't shown up yet
+         .          .    679:		newX, newY := curNode.GetLoc()
+         .          .    680:
+         .      480ms    681:		RawConcentration := RawConcentration(curNode.Distance(*curNode.P.B)) //this is the node's reported Value without error
+         .          .    682:
+         .          .    683:		//need to get the correct Time reading Value from system
+         .          .    684:		//need to verify where we read from
+         .          .    685:
+         .          .    686:		//Calculate error, sensitivity, and noise, as per the matlab code
+         .          .    687:		S0, S1, S2, E0, E1, E2, ET1, ET2 := curNode.GetParams()
+      20ms      100ms    688:		sError := (S0 + E0) + (S1+E1)*math.Exp(-float64(curNode.NodeTime)/(curNode.P.Tau1+ET1)) + (S2+E2)*math.Exp(-float64(curNode.NodeTime)/(curNode.P.Tau2+ET2))
+      20ms      130ms    689:		curNode.Sensitivity = S0 + (S1)*math.Exp(-float64(curNode.NodeTime)/curNode.P.Tau1) + (S2)*math.Exp(-float64(curNode.NodeTime)/curNode.P.Tau2)
+      10ms      180ms    690:		sNoise := rand.NormFloat64()*0.5*curNode.P.ErrorModifierCM + float64(RawConcentration)*sError
+         .          .    691:
+         .          .    692:		errorDist := sNoise / curNode.Sensitivity //this is the node's actual reading with error
+      20ms       20ms    693:		clean := float64(RawConcentration) / curNode.Sensitivity
+         .          .    694:
+         .          .    695:
+      10ms       20ms    696:		ADCRead := float64(curNode.ADCReading(float32(errorDist)))
+         .       20ms    697:		ADCClean := float64(curNode.ADCReading(float32(clean)))
+         .          .    698:
+         .      270ms    699:		d := curNode.Distance(*curNode.P.B)
+      10ms       10ms    700:		if d < 10 {
+         .       60ms    701:			fmt.Fprintln(curNode.P.MoveReadingsFile, "Time:", curNode.P.CurrentTime/1000, "ID:", curNode.Id, "X:", newX, "Y:",  newY, "Dist:", d, "ADCClean:", ADCClean, "ADCError:", ADCRead, "CleanSense:", clean, "Error:", errorDist, "Raw:", RawConcentration)
+         .          .    702:		}
+         .          .    703:
+         .          .    704:
+         .          .    705:		//increment node Time
+         .          .    706:		curNode.NodeTime++
+         .          .    707:
+         .          .    708:		curNode.IncrementTotalSamples()
+     130ms      330ms    709:		curNode.UpdateHistory(float32(errorDist))
+         .          .    710:
+         .          .    711:		//If the reading is more than 2 standard deviations away from the grid average, then recalibrate
+         .          .    712:		//gridAverage := curNode.P.Grid[curNode.Row(curNode.P.YDiv)][curNode.Col(curNode.P.XDiv)].Avg
+         .          .    713:		//standDev := grid[curNode.Row(yDiv)][curNode.Col(xDiv)].StdDev
+         .          .    714:
+         .          .    715:		//New condition added: also recalibrate when the node's sensitivity is <= 1/2 of its original sensitvity
+         .          .    716:		//New condition added: Check to make sure the sensor was pinged this iteration
+         .          .    717:		if ((curNode.Sensitivity <= (curNode.InitialSensitivity / 2)) && curNode.P.Iterations_used != 0) {
+         .          .    718:			curNode.Recalibrate()
+         .          .    719:			curNode.Recalibrated = true
+         .          .    720:			curNode.IncrementNumResets()
+         .          .    721:		}
+         .          .    722:
+         .          .    723:		//printing statements to log files, only if the sensor was pinged this iteration
+         .          .    724:		//if curNode.HasCheckedSensor && nodesPrint{
+      10ms       10ms    725:		if curNode.P.NodesPrint {
+         .          .    726:			if curNode.Recalibrated {
+         .          .    727:				fmt.Fprintln(curNode.P.NodeFile, "ID:", curNode.GetID(), "Average:", curNode.GetAvg(), "Reading:", RawConcentration, "Error Reading:", errorDist, "Recalibrated")
+         .          .    728:			} else {
+         .          .    729:				fmt.Fprintln(curNode.P.NodeFile, "ID:", curNode.GetID(), "Average:", curNode.GetAvg(), "Reading:", RawConcentration, "Error Reading:", errorDist)
+         .          .    730:			}
+         .          .    731:			//fmt.Fprintln(nodeFile, "battery:", int(curNode.Battery),)
+         .          .    732:			curNode.Recalibrated = false
+         .          .    733:		}
+         .          .    734:
+         .          .    735:
+         .          .    736:		if ADCRead > curNode.P.DetectionThreshold && ADCClean < curNode.P.DetectionThreshold{
+      10ms      4.99s    737:			fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("FP T: %v ID: %v (%d, %d) D: %v C: %v E: %v", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead))
+         .          .    738:		} else if ADCRead < curNode.P.DetectionThreshold && ADCClean > curNode.P.DetectionThreshold {
+         .          .    739:			fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("FN T: %v ID: %v (%d, %d) D: %v C: %v E: %v", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead))
+         .          .    740:		} else if ADCRead > curNode.P.DetectionThreshold && ADCClean > curNode.P.DetectionThreshold {
+         .          .    741:			fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("TP T: %v ID: %v (%d, %d) D: %v C: %v E: %v", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead))
+         .          .    742:		}
+         .          .    743:
+         .          .    744:
+      50ms      1.93s    745:		curNode.P.Server.Send(curNode, Reading{ADCRead, newX, newY, curNode.P.Iterations_used, curNode.GetID()})
+         .          .    746:
+         .          .    747:
+         .          .    748:	}
+      10ms      330ms    749:	curNode.P.Events.Push(&Event{curNode, SENSE, curNode.P.CurrentTime + 1000, 0})
+         .          .    750:
+         .          .    751:
+      10ms       10ms    752:}
+         .          .    753:
+         .          .    754:func interpolateReading(x , y float32, time, timeStep int, p *Params) float32{
+         .          .    755:	oldX := int(x)
+         .          .    756:	oldY := int(y)
+         .          .    757:	nextX := int(math.Ceil(float64(x)))
+ROUTINE ======================== _/C_/Users/patrick/Dropbox/Patrick/udel/SUMMER2018/git_simulator/CPS_Simulator/simulator/cps.(*NodeImpl).GetX in C:\Users\patrick\Dropbox\Patrick\udel\SUMMER2018\git_simulator\CPS_Simulator\simulator\cps\nodes.go
+      70ms       70ms (flat, cum)  0.13% of Total
+         .          .    615:	return curNode.S0, curNode.S1, curNode.S2
+         .          .    616:}
+         .          .    617:
+         .          .    618://getter function for x
+         .          .    619:func (curNode *NodeImpl) GetX() float32 {
+      70ms       70ms    620:	return curNode.X
+         .          .    621:}
+         .          .    622:
+         .          .    623://getter function for y
+         .          .    624:func (curNode *NodeImpl) GetY() float32 {
+         .          .    625:	return curNode.Y
+ROUTINE ======================== _/C_/Users/patrick/Dropbox/Patrick/udel/SUMMER2018/git_simulator/CPS_Simulator/simulator/cps.(*NodeImpl).MoveCSV in C:\Users\patrick\Dropbox\Patrick\udel\SUMMER2018\git_simulator\CPS_Simulator\simulator\cps\nodes.go
+     8.78s      9.12s (flat, cum) 17.13% of Total
+         .          .    902:func interpolate (start int, end int, portion float32) float32{
+         .          .    903:	return (float32(end-start) * portion + float32(start))
+         .          .    904:}
+         .          .    905:
+         .          .    906://HandleMovementCSV does the same as HandleMovement
+      50ms       50ms    907:func (curNode *NodeImpl) MoveCSV(p *Params) {
+         .          .    908:	//time := p.Iterations_used
+      10ms       10ms    909:	floatTemp := float32(p.CurrentTime)
+     170ms      170ms    910:	intTime := int(floatTemp/1000)
+      70ms       70ms    911:	portion := (floatTemp / 1000) - float32(intTime)
+         .          .    912:
+      40ms       40ms    913:	id := curNode.GetID()
+         .          .    914:
+     3.35s      3.35s    915:	if curNode.Valid {
+      10ms       40ms    916:		oldX, oldY := curNode.GetLoc()
+     350ms      350ms    917:		p.BoolGrid[int(oldX)][int(oldY)] = false //set the old spot false since the node will now move away
+         .          .    918:
+     4.25s      4.52s    919:		curNode.X = interpolate(p.NodeMovements[id][intTime].X, p.NodeMovements[id][intTime+1].X, portion)
+      60ms       80ms    920:		curNode.Y = interpolate(p.NodeMovements[id][intTime].Y, p.NodeMovements[id][intTime+1].Y, portion)
+         .          .    921:
+         .          .    922:		//set the new location in the boolean field to true
+         .          .    923:		newX, newY := curNode.GetLoc()
+     150ms      150ms    924:		p.BoolGrid[int(newX)][int(newY)] = true
+         .          .    925:	}
+         .          .    926:
+         .          .    927:
+      20ms       20ms    928:	if !curNode.Valid {
+     230ms      250ms    929:		curNode.Valid = curNode.TurnValid(p.NodeMovements[id][intTime].X, p.NodeMovements[id][intTime].Y, p)
+         .          .    930:		curNode.X = float32(p.NodeMovements[id][intTime].X)
+      20ms       20ms    931:		curNode.Y = float32(p.NodeMovements[id][intTime].Y)
+         .          .    932:	}
+         .          .    933:
+         .          .    934:}
+         .          .    935:
+         .          .    936://HandleMovement adjusts BoolGrid when nodes move around the map
+ROUTINE ======================== _/C_/Users/patrick/Dropbox/Patrick/udel/SUMMER2018/git_simulator/CPS_Simulator/simulator/cps.(*NodeImpl).TurnValid in C:\Users\patrick\Dropbox\Patrick\udel\SUMMER2018\git_simulator\CPS_Simulator\simulator\cps\nodes.go
+      20ms       20ms (flat, cum) 0.038% of Total
+         .          .    209:	}
+         .          .    210:	return false
+         .          .    211:}
+         .          .    212:
+         .          .    213:func (curNode *NodeImpl) TurnValid(x, y int, p *Params) bool {
+      20ms       20ms    214:	if x < curNode.P.Width && x >= 0 {
+         .          .    215:		if y < curNode.P.Height && y >= 0 {
+         .          .    216:			return true
+         .          .    217:		}
+         .          .    218:	}
+         .          .    219:	return false
+ROUTINE ======================== _/C_/Users/patrick/Dropbox/Patrick/udel/SUMMER2018/git_simulator/CPS_Simulator/simulator/cps.(*NodeImpl).UpdateHistory in C:\Users\patrick\Dropbox\Patrick\udel\SUMMER2018\git_simulator\CPS_Simulator\simulator\cps\nodes.go
+     200ms      200ms (flat, cum)  0.38% of Total
+         .          .    464:*/
+         .          .    465:func (curNode *NodeImpl) UpdateHistory(newValue float32) {
+         .          .    466:
+         .          .    467:	//loop through the sample history slice in reverse order, excluding 0th Index
+         .          .    468:	for i := len(curNode.SampleHistory) - 1; i > 0; i-- {
+     150ms      150ms    469:		curNode.SampleHistory[i] = curNode.SampleHistory[i-1] //set the current Index equal to the Value of the previous Index
+         .          .    470:	}
+         .          .    471:
+         .          .    472:	curNode.SampleHistory[0] = newValue //set 0th Index to new measured Value
+         .          .    473:
+         .          .    474:	/* Now calculate the weighted average of the sample history. Note that if a node is stationary, all values
+         .          .    475:	averaged over are weighted equally. The faster the node is moving, the less the older values are worth when
+         .          .    476:	calculating the average, because in that case we want the average to more closely reflect the newer values
+         .          .    477:	*/
+         .          .    478:	var sum float32
+         .          .    479:	var numSamples int //variable for number of samples to average over
+         .          .    480:
+         .          .    481:	var decreaseRatio = curNode.SpeedWeight / 100.0
+         .          .    482:
+         .          .    483:	if curNode.TotalSamples > len(curNode.SampleHistory) { //if the node has taken more than x total samples
+         .          .    484:		numSamples = len(curNode.SampleHistory) //we only average over the x most recent ones
+         .          .    485:	} else { //if it doesn't have x samples taken yet
+         .          .    486:		numSamples = curNode.TotalSamples //we only average over the number of samples it's taken
+         .          .    487:	}
+         .          .    488:
+         .          .    489:	for i := 0; i < numSamples; i++ {
+      10ms       10ms    490:		if curNode.SampleHistory[i] != 0 {
+         .          .    491:			//weight the values of the sampleHistory when added to the sum variable based on the speed, so older values are weighted less
+      20ms       20ms    492:			sum += curNode.SampleHistory[i] - ((decreaseRatio) * float32(i))
+         .          .    493:		} else {
+         .          .    494:			sum += 0
+         .          .    495:		}
+         .          .    496:	}
+      20ms       20ms    497:	curNode.Avg = sum / float32(numSamples)
+         .          .    498:}
+         .          .    499:
+         .          .    500:func (curNode *NodeImpl) getDriftSlope() (float32, float32){
+         .          .    501:	var r float32
+         .          .    502:	var slope float32
+ROUTINE ======================== _/C_/Users/patrick/Dropbox/Patrick/udel/SUMMER2018/git_simulator/CPS_Simulator/simulator/cps.(*PriorityQueue).Pop in C:\Users\patrick\Dropbox\Patrick\udel\SUMMER2018\git_simulator\CPS_Simulator\simulator\cps\PriorityQueue.go
+     290ms      290ms (flat, cum)  0.54% of Total
+         .          .     47:	item.Index = n
+         .          .     48:	*pq = append(*pq, item)
+         .          .     49:	heap.Fix(pq, item.Index)
+         .          .     50:}
+         .          .     51:
+     120ms      120ms     52:func (pq *PriorityQueue) Pop() interface{} {
+      10ms       10ms     53:	old := *pq
+         .          .     54:	n := len(old)
+         .          .     55:	item := old[n-1]
+      30ms       30ms     56:	item.Index = -1 // for safety
+      90ms       90ms     57:	*pq = old[0 : n-1]
+      40ms       40ms     58:	return item
+         .          .     59:}
+         .          .     60:
+         .          .     61:// update modifies the priority and Value of an Event in the queue.
+         .          .     62:func (pq *PriorityQueue) update(item *Event, value Message, priority int) {
+         .          .     63:	item.Instruction = value
+ROUTINE ======================== _/C_/Users/patrick/Dropbox/Patrick/udel/SUMMER2018/git_simulator/CPS_Simulator/simulator/cps.(*PriorityQueue).Push in C:\Users\patrick\Dropbox\Patrick\udel\SUMMER2018\git_simulator\CPS_Simulator\simulator\cps\PriorityQueue.go
+     110ms      1.01s (flat, cum)  1.90% of Total
+         .          .     39:	pq[i], pq[j] = pq[j], pq[i]
+         .          .     40:	pq[i].Index = i
+         .          .     41:	pq[j].Index = j
+         .          .     42:}
+         .          .     43:
+      40ms       40ms     44:func (pq *PriorityQueue) Push(x interface{}) {
+         .          .     45:	n := len(*pq)
+      10ms       10ms     46:	item := x.(*Event)
+         .          .     47:	item.Index = n
+      20ms       20ms     48:	*pq = append(*pq, item)
+      40ms      940ms     49:	heap.Fix(pq, item.Index)
+         .          .     50:}
+         .          .     51:
+         .          .     52:func (pq *PriorityQueue) Pop() interface{} {
+         .          .     53:	old := *pq
+         .          .     54:	n := len(old)
+ROUTINE ======================== _/C_/Users/patrick/Dropbox/Patrick/udel/SUMMER2018/git_simulator/CPS_Simulator/simulator/cps.(*Square).SetSquareValues in C:\Users\patrick\Dropbox\Patrick\udel\SUMMER2018\git_simulator\CPS_Simulator\simulator\cps\grid.go
+      10ms       10ms (flat, cum) 0.019% of Total
+         .          .     95:	return s.SquareValues
+         .          .     96:}
+         .          .     97:
+         .          .     98://setter function for squareValues
+         .          .     99:func (s *Square) SetSquareValues(squareVals float64) {
+      10ms       10ms    100:	s.SquareValues = squareVals
+         .          .    101:}
+ROUTINE ======================== _/C_/Users/patrick/Dropbox/Patrick/udel/SUMMER2018/git_simulator/CPS_Simulator/simulator/cps.(*Square).TakeMeasurement in C:\Users\patrick\Dropbox\Patrick\udel\SUMMER2018\git_simulator\CPS_Simulator\simulator\cps\grid.go
+     360ms      500ms (flat, cum)  0.94% of Total
+         .          .     68:
+         .          .     69://This function takes a measurement from a node inside that
+         .          .     70://	Square and adds its Value to the Value list and calculates
+         .          .     71://	the new average
+         .          .     72:func (s *Square) TakeMeasurement(x float32) {
+     180ms      210ms     73:	s.Lock.Lock()
+         .       30ms     74:	defer s.Lock.Unlock()
+         .          .     75:	if s.NumEntry < s.MaxEntry {
+         .          .     76:		s.Tot += x
+         .          .     77:		s.Values[(s.NumEntry)%s.MaxEntry] = x
+         .          .     78:	} else {
+     160ms      160ms     79:		s.Tot -= s.Values[(s.NumEntry)%s.MaxEntry]
+      10ms       10ms     80:		s.Tot += x
+      10ms       10ms     81:		s.Values[(s.NumEntry)%s.MaxEntry] = x
+         .          .     82:	}
+         .          .     83:	s.NumEntry += 1
+         .       10ms     84:	s.Avg = s.Tot / float32(math.Min(float64(s.NumEntry), float64(s.MaxEntry)))
+         .       70ms     85:}
+         .          .     86:
+         .          .     87://toString method for Squares
+         .          .     88:func (s *Square) String() string {
+         .          .     89:	//return fmt.Sprintf("avg: %v num: %v vals: %v max: %v nodes: %v", s.Avg, s.NumEntry, s.Values, s.MaxEntry, s.NumNodes)
+         .          .     90:	return fmt.Sprintf("%.2f\t", s.Avg)
+ROUTINE ======================== _/C_/Users/patrick/Dropbox/Patrick/udel/SUMMER2018/git_simulator/CPS_Simulator/simulator/cps.CreateBoard in C:\Users\patrick\Dropbox\Patrick\udel\SUMMER2018\git_simulator\CPS_Simulator\simulator\cps\write.go
+         0       10ms (flat, cum) 0.019% of Total
+         .          .    313:func CreateBoard(x int, y int, p *Params) {
+         .          .    314:	p.BoardMap = [][]int{}
+         .          .    315:	for i := 0; i < x; i++ {
+         .          .    316:		p.BoardMap = append(p.BoardMap, []int{})
+         .          .    317:		for j := 0; j < y; j++ {
+         .       10ms    318:			p.BoardMap[i] = append(p.BoardMap[i], 0)
+         .          .    319:		}
+         .          .    320:	}
+         .          .    321:}
+         .          .    322:
+         .          .    323://HandleMovement adjusts BoolGrid when nodes move around the map
+ROUTINE ======================== _/C_/Users/patrick/Dropbox/Patrick/udel/SUMMER2018/git_simulator/CPS_Simulator/simulator/cps.FusionCenter.CheckDetections in C:\Users\patrick\Dropbox\Patrick\udel\SUMMER2018\git_simulator\CPS_Simulator\simulator\cps\server.go
+     920ms      970ms (flat, cum)  1.82% of Total
+         .          .     88:}
+         .          .     89:
+         .          .     90://CheckDetections iterates through the grid and validates detections by nodes
+         .          .     91:func (s FusionCenter) CheckDetections() {
+         .          .     92:	for x := 0; x < s.P.SquareColCM; x++ {
+      30ms       30ms     93:		for y := 0; y < s.P.SquareRowCM; y++ {
+     560ms      560ms     94:			bombSquare := s.P.Grid[s.P.B.X/s.P.XDiv][s.P.B.Y/s.P.YDiv]
+         .          .     95:			bs_y := float64(s.P.B.Y / s.P.YDiv)
+      10ms       10ms     96:			bs_x := float64(s.P.B.X / s.P.XDiv)
+      10ms       10ms     97:			iters := s.P.Iterations_used
+         .          .     98:
+     210ms      210ms     99:			s.P.Grid[x][y].StdDev = math.Sqrt(s.P.Grid[x][y].GetSquareValues() / float64(s.P.Grid[x][y].NumNodes-1))
+         .          .    100:
+         .          .    101:			//check for false negatives/positives
+      20ms       20ms    102:			if s.P.Grid[x][y].NumNodes > 0 && float64(s.P.Grid[x][y].Avg) < s.P.DetectionThreshold && bombSquare == s.P.Grid[x][y] && !s.P.Grid[x][y].HasDetected {
+         .          .    103:				//this is a s.P.Grid false negative
+         .          .    104:				fmt.Fprintln(s.P.DriftFile, "Grid False Negative Avg:", s.P.Grid[x][y].Avg, "Square Row:", y, "Square Column:", x, "Iteration:", iters)
+         .          .    105:				s.P.Grid[x][y].HasDetected = false
+         .          .    106:			}
+         .          .    107:
+      30ms       30ms    108:			if float64(s.P.Grid[x][y].Avg) >= s.P.DetectionThreshold && (math.Abs(bs_y-float64(y)) >= 1.1 && math.Abs(bs_x-float64(x)) >= 1.1) && !s.P.Grid[x][y].HasDetected {
+         .          .    109:				//this is a false positive
+         .       40ms    110:				fmt.Fprintln(s.P.DriftFile, "Grid False Positive Avg:", s.P.Grid[x][y].Avg, "Square Row:", y, "Square Column:", x, "Iteration:", iters)
+         .          .    111:				//report to supernodes
+         .          .    112:				xLoc := (x * s.P.XDiv) + int(s.P.XDiv/2)
+         .          .    113:				yLoc := (y * s.P.YDiv) + int(s.P.YDiv/2)
+         .          .    114:				s.P.CenterCoord = Coord{X: xLoc, Y: yLoc}
+         .          .    115:				if s.P.SuperNodes {
+         .          .    116:					s.Sch.AddRoutePoint(s.P.CenterCoord)
+         .          .    117:				}
+         .          .    118:				s.P.Grid[x][y].HasDetected = true
+         .          .    119:			}
+         .          .    120:
+      30ms       30ms    121:			if float64(s.P.Grid[x][y].Avg) >= s.P.DetectionThreshold && (math.Abs(bs_y-float64(y)) <= 1.1 && math.Abs(bs_x-float64(x)) <= 1.1) && !s.P.Grid[x][y].HasDetected {
+         .          .    122:				//this is a true positive
+         .          .    123:				fmt.Fprintln(s.P.DriftFile, "Grid True Positive Avg:", s.P.Grid[x][y].Avg, "Square Row:", y, "Square Column:", x, "Iteration:", iters)
+         .          .    124:				//report to supernodes
+         .          .    125:				xLoc := (x * s.P.XDiv) + int(s.P.XDiv/2)
+         .          .    126:				yLoc := (y * s.P.YDiv) + int(s.P.YDiv/2)
+         .          .    127:				s.P.CenterCoord = Coord{X: xLoc, Y: yLoc}
+         .          .    128:				if s.P.SuperNodes {
+         .          .    129:					s.Sch.AddRoutePoint(s.P.CenterCoord)
+         .          .    130:				}
+         .          .    131:				s.P.Grid[x][y].HasDetected = true
+         .          .    132:			}
+         .          .    133:
+         .       10ms    134:			s.P.Grid[x][y].SetSquareValues(0)
+      20ms       20ms    135:			s.P.Grid[x][y].NumNodes = 0
+         .          .    136:		}
+         .          .    137:	}
+         .          .    138:}
+         .          .    139:
+         .          .    140://Tick is performed every iteration to move supernodes and check possible detections
+ROUTINE ======================== _/C_/Users/patrick/Dropbox/Patrick/udel/SUMMER2018/git_simulator/CPS_Simulator/simulator/cps.FusionCenter.MakeGrid in C:\Users\patrick\Dropbox\Patrick\udel\SUMMER2018\git_simulator\CPS_Simulator\simulator\cps\server.go
+         0      200ms (flat, cum)  0.38% of Total
+         .          .     72:			yLoc := j * s.P.YDiv
+         .          .     73:			navigable = true
+         .          .     74:			for x:= xLoc; x < xLoc + s.P.XDiv; x++ {
+         .          .     75:				for y := yLoc; y < yLoc + s.P.YDiv; y++ {
+         .          .     76:					//fmt.Printf("X:%v, Y:%v, Region:%v\n", x, y, RegionContaining(Tuple{x, y}, s.R))
+         .      200ms     77:					if RegionContaining(Tuple{x, y}, s.R) == -1 {
+         .          .     78:						navigable = false
+         .          .     79:					}
+         .          .     80:				}
+         .          .     81:			}
+         .          .     82:
+ROUTINE ======================== _/C_/Users/patrick/Dropbox/Patrick/udel/SUMMER2018/git_simulator/CPS_Simulator/simulator/cps.FusionCenter.Tick in C:\Users\patrick\Dropbox\Patrick\udel\SUMMER2018\git_simulator\CPS_Simulator\simulator\cps\server.go
+         0      970ms (flat, cum)  1.82% of Total
+         .          .    207:		//The scheduler optimizes the paths of each super node
+         .          .    208:		srv.Sch.Optimize()
+         .          .    209:		//Resets the optimize flag
+         .          .    210:		optimize = false
+         .          .    211:	}
+         .      970ms    212:	srv.CheckDetections()
+         .          .    213:
+         .          .    214:}
+         .          .    215:
+         .          .    216://returns all of the nodes a radial distance from the current node
+         .          .    217:func (s* FusionCenter) NodesInRadius(curNode * NodeImpl, radius int)(map[Tuple]*NodeImpl) {
+ROUTINE ======================== _/C_/Users/patrick/Dropbox/Patrick/udel/SUMMER2018/git_simulator/CPS_Simulator/simulator/cps.FusionCenter.UpdateSquareAvg in C:\Users\patrick\Dropbox\Patrick\udel\SUMMER2018\git_simulator\CPS_Simulator\simulator\cps\server.go
+     190ms      690ms (flat, cum)  1.30% of Total
+         .          .    367:func (s FusionCenter) GetSquareAverage(tile *Square) float32 {
+         .          .    368:	return tile.Avg
+         .          .    369:}
+         .          .    370:
+         .          .    371://UpdateSquareAvg takes a node reading and updates the parameters in the Square the node took the reading in
+      20ms       20ms    372:func (s FusionCenter) UpdateSquareAvg(rd Reading) {
+      70ms       70ms    373:	tile := s.P.Grid[int(rd.Xpos)/s.P.XDiv][int(rd.YPos)/s.P.YDiv]
+      90ms      590ms    374:	tile.TakeMeasurement(float32(rd.SensorVal))
+      10ms       10ms    375:}
+         .          .    376:
+         .          .    377://UpdateSquareNumNodes searches the node list and updates the number of nodes in each square
+         .          .    378:func (s FusionCenter) UpdateSquareNumNodes() {
+         .          .    379:	var node NodeImpl
+         .          .    380:
+ROUTINE ======================== _/C_/Users/patrick/Dropbox/Patrick/udel/SUMMER2018/git_simulator/CPS_Simulator/simulator/cps.GenerateRouting in C:\Users\patrick\Dropbox\Patrick\udel\SUMMER2018\git_simulator\CPS_Simulator\simulator\cps\region_routing.go
+      70ms      120ms (flat, cum)  0.23% of Total
+         .          .    228:	done := false
+         .          .    229:	//for len(r.Point_list) != 0 {
+         .          .    230:	for !done {
+         .          .    231:		top_left := Tuple{-1, -1}
+         .          .    232:		for y := 0; y < p.Height; y++ {
+      10ms       10ms    233:			for x := 0; x < p.Width; x++ {
+         .          .    234:				//fmt.Printf("X: %d, Y: %d, v: %v progress: %d\n", x, y, r.Point_list2[x][y], len(r.Square_list))
+      60ms       60ms    235:				if r.Point_list2[x][y] {
+         .          .    236:					top_left = Tuple{x, y}
+         .          .    237:					break
+         .          .    238:				}
+         .          .    239:			}
+         .          .    240:			if (top_left != Tuple{-1, -1}) {
+         .          .    241:				break
+         .          .    242:			}
+         .          .    243:		}
+         .          .    244:		//fmt.Printf("working %d %d\n", top_left.X, top_left.Y)
+         .          .    245:		if (top_left == Tuple{-1, -1}) {
+         .          .    246:			done = true
+         .          .    247:			break
+         .          .    248:		}
+         .          .    249:		//top_left := r.Point_list[0]
+         .          .    250:		temp := Tuple{top_left.X, top_left.Y}
+         .          .    251:
+         .          .    252:		for r.Point_dict[Tuple{temp.X + 1, temp.Y}] {
+         .          .    253:			temp.X += 1
+         .          .    254:			//fmt.Printf("dict: X: %d, Y: %d", temp.X+1, temp.Y)
+         .          .    255:		}
+         .          .    256:
+         .          .    257:		collide := false
+         .          .    258:		y_test := Tuple{top_left.X, top_left.Y}
+         .          .    259:
+         .          .    260:		for !collide {
+         .          .    261:			y_test.Y += 1
+         .          .    262:
+         .          .    263:			for x_val := top_left.X; x_val < temp.X; x_val++ {
+         .       20ms    264:				if !r.Point_dict[Tuple{x_val, y_test.Y}] {
+         .          .    265:					collide = true
+         .          .    266:				}
+         .          .    267:			}
+         .          .    268:		}
+         .          .    269:
+         .          .    270:		bottom_right := Tuple{temp.X, y_test.Y - 1}
+         .          .    271:
+         .          .    272:		//fmt.Println(top_left.X, bottom_right.X, top_left.Y, bottom_right.Y)
+         .          .    273:
+         .          .    274:		new_square := RoutingSquare{top_left.X, bottom_right.X, top_left.Y, bottom_right.Y, true, id_counter, make([]Tuple, 0)}
+         .          .    275:		id_counter++
+         .          .    276:		//fmt.Println("start_r_square")
+         .       30ms    277:		RemoveRoutingSquare(new_square, r)
+         .          .    278:		//fmt.Println("end_r_square")
+         .          .    279:		r.Square_list = append(r.Square_list, new_square)
+         .          .    280:	}
+         .          .    281:	//fmt.Println("Built all squares")
+         .          .    282:	length := len(r.Square_list)
+ROUTINE ======================== _/C_/Users/patrick/Dropbox/Patrick/udel/SUMMER2018/git_simulator/CPS_Simulator/simulator/cps.InitializeNodeParameters in C:\Users\patrick\Dropbox\Patrick\udel\SUMMER2018\git_simulator\CPS_Simulator\simulator\cps\write.go
+      30ms       30ms (flat, cum) 0.056% of Total
+         .          .    389:func InitializeNodeParameters(p *Params, nodeNum int) *NodeImpl{
+         .          .    390:
+         .          .    391:	var initHistory = make([]float32, p.NumStoredSamples)
+         .          .    392:
+         .          .    393:	//initialize nodes to invalid starting point as starting point will be selected after initialization
+      30ms       30ms    394:	curNode := NodeImpl{P: p, X: -1, Y: -1, Id: len(p.NodeList), SampleHistory: initHistory, Concentration: 0,
+         .          .    395:		Cascade: nodeNum, Battery: p.BatteryCharges[nodeNum], BatteryLossScalar: p.BatteryLosses[nodeNum],
+         .          .    396:		BatteryLossSensor:        p.BatteryLossesSensor[nodeNum],
+         .          .    397:		BatteryLossGPS:           p.BatteryLossesGPS[nodeNum],
+         .          .    398:		BatteryLossServer:        p.BatteryLossesServer[nodeNum],
+         .          .    399:		BatteryLoss4G:            p.BatteryLosses4G[nodeNum],
+ROUTINE ======================== _/C_/Users/patrick/Dropbox/Patrick/udel/SUMMER2018/git_simulator/CPS_Simulator/simulator/cps.NodeImpl.String in C:\Users\patrick\Dropbox\Patrick\udel\SUMMER2018\git_simulator\CPS_Simulator\simulator\cps\nodes.go
+         0      950ms (flat, cum)  1.78% of Total
+         .          .    236:
+         .          .    237:func (curNode NodeImpl) String() string {
+         .          .    238:	//return fmt.Sprintf("x: %v y: %v Id: %v battery: %v sensor checked: %v sensor checks: %v GPS checked: %v GPS checks: %v server checked: %v server checks: %v buffer: %v ", int(curNode.X), curNode.Y, curNode.Id, curNode.Battery, curNode.HasCheckedSensor, curNode.TotalChecksSensor, curNode.HasCheckedGPS, curNode.TotalChecksGPS, curNode.HasCheckedServer, curNode.TotalChecksServer,curNode.BufferI)
+         .          .    239:	//return fmt.Sprintf("x: %v y: %v valid: %v", int(curNode.X), int(curNode.Y), curNode.Valid)
+         .          .    240:	//return fmt.Sprintf("battery: %v sensor checked: %v GPS checked: %v ", int(curNode.Battery), curNode.HasCheckedSensor, curNode.HasCheckedGPS)
+         .      950ms    241:	return fmt.Sprintf("battery: %v sensor checked: %v GPS checked: %v ", int(curNode.Battery), true, true)
+         .          .    242:
+         .          .    243:}
+         .          .    244:
+         .          .    245:func (c Coord) String() string {
+         .          .    246:	return fmt.Sprintf("{%v %v %v}", c.X, c.Y, c.Time)
+ROUTINE ======================== _/C_/Users/patrick/Dropbox/Patrick/udel/SUMMER2018/git_simulator/CPS_Simulator/simulator/cps.PriorityQueue.Less in C:\Users\patrick\Dropbox\Patrick\udel\SUMMER2018\git_simulator\CPS_Simulator\simulator\cps\PriorityQueue.go
+     1.98s      1.98s (flat, cum)  3.72% of Total
+         .          .     30:type PriorityQueue []*Event
+         .          .     31:
+         .          .     32:func (pq PriorityQueue) Len() int { return len(pq) }
+         .          .     33:
+         .          .     34:func (pq PriorityQueue) Less(i, j int) bool {
+     1.98s      1.98s     35:	return pq[i].Time < pq[j].Time
+         .          .     36:}
+         .          .     37:
+         .          .     38:func (pq PriorityQueue) Swap(i, j int) {
+         .          .     39:	pq[i], pq[j] = pq[j], pq[i]
+         .          .     40:	pq[i].Index = i
+ROUTINE ======================== _/C_/Users/patrick/Dropbox/Patrick/udel/SUMMER2018/git_simulator/CPS_Simulator/simulator/cps.PriorityQueue.Swap in C:\Users\patrick\Dropbox\Patrick\udel\SUMMER2018\git_simulator\CPS_Simulator\simulator\cps\PriorityQueue.go
+     1.25s      1.27s (flat, cum)  2.39% of Total
+         .          .     34:func (pq PriorityQueue) Less(i, j int) bool {
+         .          .     35:	return pq[i].Time < pq[j].Time
+         .          .     36:}
+         .          .     37:
+         .          .     38:func (pq PriorityQueue) Swap(i, j int) {
+     460ms      480ms     39:	pq[i], pq[j] = pq[j], pq[i]
+     170ms      170ms     40:	pq[i].Index = i
+     620ms      620ms     41:	pq[j].Index = j
+         .          .     42:}
+         .          .     43:
+         .          .     44:func (pq *PriorityQueue) Push(x interface{}) {
+         .          .     45:	n := len(*pq)
+         .          .     46:	item := x.(*Event)
+ROUTINE ======================== _/C_/Users/patrick/Dropbox/Patrick/udel/SUMMER2018/git_simulator/CPS_Simulator/simulator/cps.RawConcentration in C:\Users\patrick\Dropbox\Patrick\udel\SUMMER2018\git_simulator\CPS_Simulator\simulator\cps\nodes.go
+      60ms      180ms (flat, cum)  0.34% of Total
+         .          .    661:	if dist < .1 {
+         .          .    662:		return 1000
+         .          .    663:	} else {
+         .          .    664:		//return float32(1000 / (math.Pow((float64(dist)/0.2)*0.25,1.5)))
+         .          .    665:		//reading := float32(math.Pow(1000/((float64(dist))), 3))
+      50ms      170ms    666:		reading := float32(1000.0/ math.Pow(float64(dist/2)/.1, 3))
+         .          .    667:		/*if(dist <= 3) {
+         .          .    668:			fmt.Printf("Reading %v dist: %v %v %v %v %v %v\n", reading, dist, curNode.X, curNode.Y, curNode.GetY(), b.X, b.Y)
+         .          .    669:		}*/
+      10ms       10ms    670:		return reading
+         .          .    671:	}
+         .          .    672:}
+         .          .    673:
+         .          .    674://Takes cares of taking a node's readings and printing detections and stuff
+         .          .    675:func (curNode *NodeImpl) GetReadings() {
+ROUTINE ======================== _/C_/Users/patrick/Dropbox/Patrick/udel/SUMMER2018/git_simulator/CPS_Simulator/simulator/cps.ReadMap in C:\Users\patrick\Dropbox\Patrick\udel\SUMMER2018\git_simulator\CPS_Simulator\simulator\cps\write.go
+      20ms      190ms (flat, cum)  0.36% of Total
+         .          .    613:	fmt.Println("Width : ", p.Width)
+         .          .    614:	fmt.Println("Height : ", p.Height)
+         .          .    615:
+         .          .    616:	imgfile.Seek(0, 0)
+         .          .    617:
+         .       10ms    618:	img, _, err := image.Decode(imgfile)
+         .          .    619:
+         .          .    620:	for x := 0; x < p.Width; x++ {
+         .          .    621:		r.Point_list2 = append(r.Point_list2, make([]bool, p.Height))
+         .          .    622:	}
+         .          .    623:
+         .          .    624:	for x := 0; x < p.Width; x++ {
+         .          .    625:		for y := 0; y < p.Height; y++ {
+         .       10ms    626:			rr, _, _, _ := img.At(x, y).RGBA()
+         .          .    627:			/*rr, gg, bb, _ := img.At(1599, 90).RGBA()
+         .          .    628:			fmt.Printf("r: %d %d %d\n", rr, gg, bb)
+         .          .    629:			rr, gg, bb, _ = img.At(1599, 89).RGBA()
+         .          .    630:			fmt.Printf("r: %d %d %d\n", rr, gg, bb)*/
+         .          .    631:			if rr >= 60000 {
+         .          .    632:				r.Point_list2[x][y] = true
+      10ms       70ms    633:				r.Point_dict[Tuple{x, y}] = true
+         .          .    634:
+         .          .    635:			} else {
+         .       50ms    636:				r.Point_dict[Tuple{x, y}] = false
+         .          .    637:				p.BoardMap[x][y] = -1
+         .       20ms    638:				temp := make([]int, 2)
+         .          .    639:				temp[0] = x
+         .          .    640:				temp[1] = y
+      10ms       20ms    641:				p.Wpos = append(p.Wpos, temp)
+         .          .    642:				p.BoolGrid[x][y] = true
+         .          .    643:			}
+         .          .    644:		}
+         .          .    645:	}
+         .          .    646:
+         .       10ms    647:	CreateBoard(p.MaxX, p.MaxY, p)
+         .          .    648:	FillInWallsToBoard(p)
+         .          .    649:	FillInBufferCurrent(p)
+         .          .    650:	FillPointsToBoard(p)
+         .          .    651:	FillInMap(p)
+         .          .    652:
+ROUTINE ======================== _/C_/Users/patrick/Dropbox/Patrick/udel/SUMMER2018/git_simulator/CPS_Simulator/simulator/cps.RegionContaining in C:\Users\patrick\Dropbox\Patrick\udel\SUMMER2018\git_simulator\CPS_Simulator\simulator\cps\region_routing.go
+     200ms      200ms (flat, cum)  0.38% of Total
+         .          .     49:			r.Point_list2[i][j] = false
+         .          .     50:		}
+         .          .     51:	}
+         .          .     52:}
+         .          .     53:
+      10ms       10ms     54:func RegionContaining(p Tuple, r *RegionParams) int {
+     160ms      160ms     55:	for i, s := range r.Square_list {
+      20ms       20ms     56:		if p.X >= s.X1 && p.X <= s.X2 && p.Y <= s.Y1 && p.Y >= s.Y2 {
+      10ms       10ms     57:			return i
+         .          .     58:		}
+         .          .     59:	}
+         .          .     60:	return -1
+         .          .     61:}
+         .          .     62:
+ROUTINE ======================== _/C_/Users/patrick/Dropbox/Patrick/udel/SUMMER2018/git_simulator/CPS_Simulator/simulator/cps.RemoveRoutingSquare in C:\Users\patrick\Dropbox\Patrick\udel\SUMMER2018\git_simulator\CPS_Simulator\simulator\cps\region_routing.go
+         0       30ms (flat, cum) 0.056% of Total
+         .          .     42:}
+         .          .     43:
+         .          .     44:func RemoveRoutingSquare(sq RoutingSquare, r *RegionParams) {
+         .          .     45:	for i := sq.X1; i <= sq.X2; i++ {
+         .          .     46:		for j := sq.Y1; j <= sq.Y2; j++ {
+         .       30ms     47:			r.Point_dict[Tuple{i, j}] = false
+         .          .     48:			//r.Point_list_remove(Tuple{i, j})
+         .          .     49:			r.Point_list2[i][j] = false
+         .          .     50:		}
+         .          .     51:	}
+         .          .     52:}
+ROUTINE ======================== _/C_/Users/patrick/Dropbox/Patrick/udel/SUMMER2018/git_simulator/CPS_Simulator/simulator/cps.SetupCSVNodes in C:\Users\patrick\Dropbox\Patrick\udel\SUMMER2018\git_simulator\CPS_Simulator\simulator\cps\write.go
+         0       30ms (flat, cum) 0.056% of Total
+         .          .    422:	return &curNode
+         .          .    423:}
+         .          .    424:
+         .          .    425:func SetupCSVNodes(p *Params) {
+         .          .    426:	for i := 0; i < p.TotalNodes; i++ {
+         .       30ms    427:		newNode := InitializeNodeParameters(p, i)
+         .          .    428:
+         .          .    429:		newNode.X = float32(p.NodeMovements[i][0].X)
+         .          .    430:		newNode.Y = float32(p.NodeMovements[i][1].Y)
+         .          .    431:
+         .          .    432:		if newNode.InBounds(p) {
+ROUTINE ======================== _/C_/Users/patrick/Dropbox/Patrick/udel/SUMMER2018/git_simulator/CPS_Simulator/simulator/cps.SetupFiles in C:\Users\patrick\Dropbox\Patrick\udel\SUMMER2018\git_simulator\CPS_Simulator\simulator\cps\write.go
+         0       20ms (flat, cum) 0.038% of Total
+         .          .    658:	dummy, err := os.Create("dummyFile.txt")
+         .          .    659:	if err != nil {
+         .          .    660:		log.Fatal("cannot create file", err)
+         .          .    661:	}
+         .          .    662:	defer dummy.Close()
+         .       10ms    663:	p.PositionFile, err = os.Create(p.OutputFileNameCM + "-simulatorOutput.txt")
+         .          .    664:	if err != nil {
+         .          .    665:		log.Fatal("Cannot create file", err)
+         .          .    666:	}
+         .          .    667:	//defer p.PositionFile.Close()
+         .          .    668:
+         .          .    669:	//Print parameters to position file
+         .          .    670:	fmt.Fprintln(p.PositionFile, "Image:", p.ImageFileNameCM)
+         .          .    671:	fmt.Fprintln(p.PositionFile, "Width:", p.MaxX)
+         .          .    672:	fmt.Fprintln(p.PositionFile, "Height:", p.MaxY)
+         .          .    673:	fmt.Fprintf(p.PositionFile, "Amount: %-8v\n", p.Iterations_of_event)
+         .          .    674:	fmt.Fprintf(p.PositionFile, "Bomb x: %v\n", p.BombX)
+         .          .    675:	fmt.Fprintf(p.PositionFile, "Bomb y: %v\n", p.BombY)
+         .          .    676:
+         .          .    677:	p.DriftFile, err = os.Create(p.OutputFileNameCM + "-drift.txt")
+         .          .    678:	if err != nil {
+         .          .    679:		log.Fatal("Cannot create file", err)
+         .          .    680:	}
+         .          .    681:	//defer p.DriftFile.Close()
+         .          .    682:
+         .          .    683:	//Printing parameters to driftFile
+         .          .    684:	fmt.Fprintln(p.DriftFile, "Number of Nodes:", p.TotalNodes)
+         .          .    685:	fmt.Fprintln(p.DriftFile, "Rows:", p.SquareRowCM)
+         .          .    686:	fmt.Fprintln(p.DriftFile, "Columns:", p.SquareColCM)
+         .          .    687:	fmt.Fprintln(p.DriftFile, "Samples Stored by Node:", p.NumStoredSamples)
+         .          .    688:	fmt.Fprintln(p.DriftFile, "Samples Stored by Grid:", p.NumGridSamples)
+         .          .    689:	fmt.Fprintln(p.DriftFile, "Width:", p.MaxX)
+         .          .    690:	fmt.Fprintln(p.DriftFile, "Height:", p.MaxY)
+         .          .    691:	fmt.Fprintln(p.DriftFile, "Bomb x:", p.BombX)
+         .          .    692:	fmt.Fprintln(p.DriftFile, "Bomb y:", p.BombY)
+         .          .    693:	fmt.Fprintln(p.DriftFile, "Iterations:", p.Iterations_of_event)
+         .          .    694:	fmt.Fprintln(p.DriftFile, "Size of Square:", p.XDiv, "x", p.YDiv)
+         .          .    695:	fmt.Fprintln(p.DriftFile, "Detection Threshold:", p.DetectionThreshold)
+         .          .    696:	fmt.Fprintln(p.DriftFile, "Input File Name:", p.InputFileNameCM)
+         .          .    697:	fmt.Fprintln(p.DriftFile, "Output File Name:", p.OutputFileNameCM)
+         .          .    698:	fmt.Fprintln(p.DriftFile, "Battery Natural Loss:", p.NaturalLossCM)
+         .          .    699:	fmt.Fprintln(p.DriftFile, "Sensor Loss:", p.SamplingLossServerCM, "\nGPS Loss:", p.SamplingLossGPSCM, "\nServer Loss:", p.SamplingLossServerCM)
+         .          .    700:	fmt.Fprintln(p.DriftFile, "BlueTooth Loss:", p.SamplingLossBTCM, "\nWiFi Loss:", p.SamplingLossWifiCM, "\n4G Loss:", p.SamplingLoss4GCM, "\nAccelerometer Loss:", p.SamplingLossAccelCM)
+         .          .    701:	fmt.Fprintln(p.DriftFile, "Printing Position:", p.PositionPrint, "\nPrinting Energy:", p.EnergyPrint, "\nPrinting Nodes:", p.NodesPrint)
+         .          .    702:	fmt.Fprintln(p.DriftFile, "Super Nodes:", p.NumSuperNodes, "\nSuper Node Type:", p.SuperNodeType, "\nSuper Node Speed:", p.SuperNodeSpeed, "\nSuper Node Radius:", p.SuperNodeRadius)
+         .          .    703:	fmt.Fprintln(p.DriftFile, "Error Multiplier:", p.ErrorModifierCM)
+         .          .    704:	fmt.Fprintln(p.DriftFile, "--------------------")
+         .          .    705:
+         .          .    706:	p.GridFile, err = os.Create(p.OutputFileNameCM + "-grid.txt")
+         .          .    707:	if err != nil {
+         .          .    708:		log.Fatal("Cannot create file", err)
+         .          .    709:	}
+         .          .    710:	//defer p.GridFile.Close()
+         .          .    711:
+         .          .    712:	//Write parameters to gridFile
+         .          .    713:	fmt.Fprintln(p.GridFile, "Width:", p.SquareColCM)
+         .          .    714:	fmt.Fprintln(p.GridFile, "Height:", p.SquareRowCM)
+         .          .    715:
+         .          .    716:	p.NodeFile, err = os.Create(p.OutputFileNameCM + "-node_reading.txt")
+         .          .    717:	if err != nil {
+         .          .    718:		log.Fatal("Cannot create file", err)
+         .          .    719:	}
+         .          .    720:	//defer p.NodeFile.Close()
+         .          .    721:
+         .          .    722:	p.EnergyFile, err = os.Create(p.OutputFileNameCM + "-node.txt")
+         .          .    723:	if err != nil {
+         .          .    724:		log.Fatal("Cannot create file", err)
+         .          .    725:	}
+         .          .    726:	//defer p.EnergyFile.Close()
+         .          .    727:
+         .          .    728:	p.BatteryFile, err = os.Create(p.OutputFileNameCM + "-batteryusage.txt")
+         .          .    729:	if err != nil {
+         .          .    730:		log.Fatal("Cannot create file", err)
+         .          .    731:	}
+         .          .    732:
+         .          .    733:	p.RoutingFile, err = os.Create(p.OutputFileNameCM + "-path.txt")
+         .          .    734:	if err != nil {
+         .          .    735:		log.Fatal("Cannot create file", err)
+         .          .    736:	}
+         .          .    737:	//defer p.RoutingFile.Close()
+         .          .    738:
+         .       10ms    739:	p.BoolFile, err = os.Create(p.OutputFileNameCM + "-bool.txt")
+         .          .    740:	if err != nil {
+         .          .    741:		log.Fatal("Cannot create file", err)
+         .          .    742:	}
+         .          .    743:	//defer p.BoolFile.Close()
+         .          .    744:
+ROUTINE ======================== _/C_/Users/patrick/Dropbox/Patrick/udel/SUMMER2018/git_simulator/CPS_Simulator/simulator/cps.SetupParameters in C:\Users\patrick\Dropbox\Patrick\udel\SUMMER2018\git_simulator\CPS_Simulator\simulator\cps\write.go
+         0      1.79s (flat, cum)  3.36% of Total
+         .          .    822:		p.ADCWidth = p.MaxRaw/p.MaxADC
+         .          .    823:		p.ADCOffset = p.EdgeRaw - p.EdgeADC * p.ADCWidth
+         .          .    824:	}
+         .          .    825:
+         .          .    826:	if p.CSVMovement {
+         .      1.79s    827:		readMovementCSV(p)
+         .          .    828:	}
+         .          .    829:
+         .          .    830:
+         .          .    831:}
+         .          .    832:
+ROUTINE ======================== _/C_/Users/patrick/Dropbox/Patrick/udel/SUMMER2018/git_simulator/CPS_Simulator/simulator/cps.interpolate in C:\Users\patrick\Dropbox\Patrick\udel\SUMMER2018\git_simulator\CPS_Simulator\simulator\cps\nodes.go
+     290ms      290ms (flat, cum)  0.54% of Total
+         .          .    898:	}
+         .          .    899:	curNode.P.Events.Push(&Event{curNode, SENSE, curNode.P.CurrentTime + 500, 0})
+         .          .    900:}
+         .          .    901:
+         .          .    902:func interpolate (start int, end int, portion float32) float32{
+     290ms      290ms    903:	return (float32(end-start) * portion + float32(start))
+         .          .    904:}
+         .          .    905:
+         .          .    906://HandleMovementCSV does the same as HandleMovement
+         .          .    907:func (curNode *NodeImpl) MoveCSV(p *Params) {
+         .          .    908:	//time := p.Iterations_used
+ROUTINE ======================== _/C_/Users/patrick/Dropbox/Patrick/udel/SUMMER2018/git_simulator/CPS_Simulator/simulator/cps.readMovementCSV in C:\Users\patrick\Dropbox\Patrick\udel\SUMMER2018\git_simulator\CPS_Simulator\simulator\cps\write.go
+     320ms      1.79s (flat, cum)  3.36% of Total
+         .          .   1001:	}
+         .          .   1002:	defer in.Close()
+         .          .   1003:
+         .          .   1004:	r := csv.NewReader(in)
+         .          .   1005:	r.FieldsPerRecord = -1
+         .      1.05s   1006:	record, err := r.ReadAll()
+         .          .   1007:
+         .          .   1008:
+         .          .   1009:	timeSteps := len(record)
+         .          .   1010:
+         .          .   1011:
+         .          .   1012:	p.NodeMovements = make([][]Tuple, p.TotalNodes)
+         .          .   1013:	for i := range p.NodeMovements {
+         .       10ms   1014:		p.NodeMovements[i] = make([]Tuple, timeSteps)
+         .          .   1015:	}
+         .          .   1016:
+         .          .   1017:
+         .          .   1018:	time := 0
+         .          .   1019:	fmt.Printf("Movement CSV Processing %d TimeSteps for %d Nodes  %d\n", len(record), len(record[0])/2, p.TotalNodes)
+         .          .   1020:	for time < len(record) {
+         .          .   1021:		iter := 0
+         .          .   1022:
+      10ms       10ms   1023:		for iter < len(record[time])-1 && iter/2 < p.TotalNodes {
+      20ms      200ms   1024:			x, _ := strconv.ParseInt(record[time][iter], 10, 32);
+      40ms      270ms   1025:			y, _ := strconv.ParseInt(record[time][iter+1], 10, 32);
+         .          .   1026:
+     230ms      230ms   1027:			p.NodeMovements[iter/2][time] = Tuple{int(x), int(y)}
+      20ms       20ms   1028:			iter += 2
+         .          .   1029:		}
+         .          .   1030:		time++
+         .          .   1031:
+         .          .   1032:		if(time % 10 == 0) {
+         .          .   1033:			prog := int(float32(time)/float32(len(record))*100)

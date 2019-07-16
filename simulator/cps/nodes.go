@@ -216,6 +216,15 @@ func (curNode *NodeImpl) InBounds(p *Params) bool {
 	return false
 }
 
+func (curNode *NodeImpl) TurnValid(x, y int, p *Params) bool {
+	if x < curNode.P.Width && x >= 0 {
+		if y < curNode.P.Height && y >= 0 {
+			return true
+		}
+	}
+	return false
+}
+
 
 
 func (curNode *NodeImpl) ADCReading(raw float32) int {
@@ -660,7 +669,7 @@ func RawConcentration(dist float32) float32 {
 	} else {
 		//return float32(1000 / (math.Pow((float64(dist)/0.2)*0.25,1.5)))
 		//reading := float32(math.Pow(1000/((float64(dist))), 3))
-		reading := float32(1000.0/ math.Pow(float64(dist/2)/.1, 3))
+		reading := float32(1000.0/ math.Pow(float64(dist)/.1, 3))
 		/*if(dist <= 3) {
 			fmt.Printf("Reading %v dist: %v %v %v %v %v %v\n", reading, dist, curNode.X, curNode.Y, curNode.GetY(), b.X, b.Y)
 		}*/
@@ -675,7 +684,7 @@ func (curNode *NodeImpl) GetReadings() {
 	if curNode.Valid { //Check if node should actually take readings or if it hasn't shown up yet
 		newX, newY := curNode.GetLoc()
 
-		RawConcentration := RawConcentration(curNode.Distance(*curNode.P.B)) //this is the node's reported Value without error
+		RawConcentration := RawConcentration(curNode.Distance(*curNode.P.B)/2) //this is the node's reported Value without error
 
 		//need to get the correct Time reading Value from system
 		//need to verify where we read from
@@ -693,7 +702,7 @@ func (curNode *NodeImpl) GetReadings() {
 		ADCRead := float64(curNode.ADCReading(float32(errorDist)))
 		ADCClean := float64(curNode.ADCReading(float32(clean)))
 
-		d := curNode.Distance(*curNode.P.B)
+		d := curNode.Distance(*curNode.P.B)/2
 		if d < 10 {
 			fmt.Fprintln(curNode.P.MoveReadingsFile, "Time:", curNode.P.CurrentTime/1000, "ID:", curNode.Id, "X:", newX, "Y:",  newY, "Dist:", d, "ADCClean:", ADCClean, "ADCError:", ADCRead, "CleanSense:", clean, "Error:", errorDist, "Raw:", RawConcentration)
 		}
@@ -730,11 +739,20 @@ func (curNode *NodeImpl) GetReadings() {
 		}
 
 
+		if ADCRead > curNode.P.DetectionThreshold && ADCClean < curNode.P.DetectionThreshold{
+			fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("FP T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, RawConcentration))
+		} else if ADCRead < curNode.P.DetectionThreshold && ADCClean > curNode.P.DetectionThreshold {
+			fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("FN T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, RawConcentration))
+		} else if ADCRead > curNode.P.DetectionThreshold && ADCClean > curNode.P.DetectionThreshold {
+			fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("TP T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, RawConcentration))
+		}
+
+
 		curNode.P.Server.Send(curNode, Reading{ADCRead, newX, newY, curNode.P.Iterations_used, curNode.GetID()})
 
 
 	}
-	curNode.P.Events.Push(&Event{curNode, SENSE, curNode.P.CurrentTime + 1000, 0})
+	curNode.P.Events.Push(&Event{curNode, SENSE, curNode.P.CurrentTime + 500, 0})
 
 
 }
@@ -821,7 +839,7 @@ func (curNode *NodeImpl) GetReadingsCSV() {
 		ADCRead := float64(curNode.ADCReading(float32(errorDist)))
 		ADCClean := float64(curNode.ADCReading(float32(clean)))
 
-		d := curNode.Distance(*curNode.P.B)
+		d := curNode.Distance(*curNode.P.B)/2
 		if d < 10 {
 			fmt.Fprintln(curNode.P.MoveReadingsFile, "Time:", curNode.P.CurrentTime/1000, "ID:", curNode.Id, "X:", newX, "Y:",  newY, "Dist:", d, "ADCClean:", ADCClean, "ADCError:", ADCRead, "CleanSense:", clean, "Error:", errorDist, "Raw:", RawConcentration)
 		}
@@ -858,6 +876,18 @@ func (curNode *NodeImpl) GetReadingsCSV() {
 			curNode.Recalibrated = false
 		}
 
+		if ADCRead > curNode.P.DetectionThreshold && ADCClean < curNode.P.DetectionThreshold{
+			fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("FP T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, RawConcentration))
+		} else if ADCRead < curNode.P.DetectionThreshold && ADCClean > curNode.P.DetectionThreshold {
+			fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("FN T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, RawConcentration))
+		} else if ADCRead > curNode.P.DetectionThreshold && ADCClean > curNode.P.DetectionThreshold {
+			fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("TP T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, RawConcentration))
+		}
+
+
+
+
+
 		//Receives the node's distance and calculates its running average
 		//for that square
 		//Only do this if the sensor was pinged this iteration
@@ -881,33 +911,25 @@ func (curNode *NodeImpl) MoveCSV(p *Params) {
 	intTime := int(floatTemp/1000)
 	portion := (floatTemp / 1000) - float32(intTime)
 
+	id := curNode.GetID()
+
 	if curNode.Valid {
 		oldX, oldY := curNode.GetLoc()
 		p.BoolGrid[int(oldX)][int(oldY)] = false //set the old spot false since the node will now move away
+
+		curNode.X = interpolate(p.NodeMovements[id][intTime].X, p.NodeMovements[id][intTime+1].X, portion)
+		curNode.Y = interpolate(p.NodeMovements[id][intTime].Y, p.NodeMovements[id][intTime+1].Y, portion)
+
+		//set the new location in the boolean field to true
+		newX, newY := curNode.GetLoc()
+		p.BoolGrid[int(newX)][int(newY)] = true
 	}
-	//move the node to its new location
-	//curNode.Move(p)
 
-	id := curNode.GetID()
-
-	//fmt.Printf("----\n%v %v %v %v\n", curNode.Id, floatTemp, intTime, portion)
-	//fmt.Printf("%v %v\n", curNode.X, curNode.Y)
-	/*if (intTime > 0) {
-		fmt.Printf("%v %v %v %v %v %v\n", p.NodeMovements[id][intTime-1].X, p.NodeMovements[id][intTime-1].Y, p.NodeMovements[id][intTime].X, p.NodeMovements[id][intTime].Y, p.NodeMovements[id][intTime+1].X, p.NodeMovements[id][intTime+1].Y)
-	}*/
-	curNode.X = interpolate(p.NodeMovements[id][intTime].X, p.NodeMovements[id][intTime+1].X, portion)
-	curNode.Y = interpolate(p.NodeMovements[id][intTime].Y, p.NodeMovements[id][intTime+1].Y, portion)
-	//fmt.Printf("%v %v\n", curNode.X, curNode.Y)
-
-	/*curNode.X = p.NodeMovements[id][time].X
-	curNode.Y = p.NodeMovements[id][time].Y*/
-
-
-	//set the new location in the boolean field to true
-	newX, newY := curNode.GetLoc()
 
 	if !curNode.Valid {
-		curNode.Valid = curNode.InBounds(p)
+		curNode.Valid = curNode.TurnValid(p.NodeMovements[id][intTime].X, p.NodeMovements[id][intTime].Y, p)
+		curNode.X = float32(p.NodeMovements[id][intTime].X)
+		curNode.Y = float32(p.NodeMovements[id][intTime].Y)
 	}
 
 	//fmt.Printf("%v %v %v %v %v %v %v\n", newX, newY, int(newX), int(newY), p.Width, p.Height, curNode.Valid)

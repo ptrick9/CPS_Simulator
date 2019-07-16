@@ -86,7 +86,8 @@ func (s *Square) TakeMeasurement(x float32) {
 
 //toString method for Squares
 func (s *Square) String() string {
-	return fmt.Sprintf("avg: %v num: %v vals: %v max: %v nodes: %v", s.Avg, s.NumEntry, s.Values, s.MaxEntry, s.NumNodes)
+	//return fmt.Sprintf("avg: %v num: %v vals: %v max: %v nodes: %v", s.Avg, s.NumEntry, s.Values, s.MaxEntry, s.NumNodes)
+	return fmt.Sprintf("%.2f\t", s.Avg)
 }
 
 //getter function for squareValues
