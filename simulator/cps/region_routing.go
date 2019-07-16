@@ -87,28 +87,37 @@ func Search(prev_region, curr_region, end_region int, curr_path []int, r *Region
 	}
 }
 
-func ValidPath(reg int, endpoint Coord, r *RegionParams) bool{
+func ValidPath(reg int, endpoint Coord, first bool, r *RegionParams) bool{
+	if first {
+		r.Checked = make([]int, 0)
+	}
+	end := RegionContaining(Tuple{endpoint.X, endpoint.Y}, r)
+	//fmt.Printf("Checking for path from region %v to point %v\n", reg, end)
 	if len(r.Border_dict[reg]) == 0 {
 		return false
 	} else {
-		end := RegionContaining(Tuple{endpoint.X, endpoint.Y}, r)
 		if reg == end {
 			return true
 		}
 		for i := 0; i < len(r.Border_dict[reg]); i++ {
+			//fmt.Printf("Does %v = %v\n", r.Border_dict[reg][i], end)
 			if r.Border_dict[reg][i] == end {
-				//fmt.Printf("Found a path to region %v\n",r.Border_dict[reg][i])
+				//fmt.Println("Yes!")
+				//r.Checked = append(r.Checked, r.Border_dict[reg][i])
 				return true
 			}
-			if r.Border_dict[reg][i] != reg && !Is_in(r.Border_dict[reg][i], r.Checked){
+		}
+		for i := 0; i < len(r.Border_dict[reg]); i++ {
+			if !Is_in(r.Border_dict[reg][i], r.Checked){
 				r.Checked = append(r.Checked, reg)
 				//fmt.Println(r.Checked)
-				if ValidPath(r.Border_dict[reg][i], endpoint, r) {
+				if ValidPath(r.Border_dict[reg][i], endpoint, false, r) {
 					return true
 				}
 			}
 		}
 	}
+	//fmt.Println(r.Checked)
 	return false
 }
 
@@ -120,9 +129,10 @@ func PossPaths(p1, p2 Tuple, r *RegionParams) {
 
 	r.Possible_paths = make([][]int, 0)
 
-	if ValidPath(start_region, Coord{X:p2.X, Y:p2.Y}, r) {
+	if ValidPath(start_region, Coord{X:p2.X, Y:p2.Y}, true, r) {
 		Search(-1, start_region, end_region, make([]int, 0), r)
 	}
+	//fmt.Println(r.Possible_paths)
 }
 
 func InRegionRouting(p1, p2 Tuple) []Coord {
@@ -152,11 +162,11 @@ func InRegionRouting(p1, p2 Tuple) []Coord {
 }
 
 func GetPath(c1, c2 Coord, r *RegionParams) []Coord {
-	//fmt.Println(r.Possible_paths)
 	p1 := Tuple{c1.X, c1.Y}
 	p2 := Tuple{c2.X, c2.Y}
 
 	PossPaths(p1, p2, r)
+	//fmt.Println(r.Possible_paths)
 
 	min_dist := math.Pow(100, 100)
 	index := -1

@@ -54,6 +54,7 @@ type Reading struct {
 //MakeGrid initializes a grid of Square objects according to the size of the map
 func (s FusionCenter) MakeGrid() {
 	navigable := true
+	center := Coord{}
 	s.P.Grid = make([][]*Square, s.P.SquareColCM) //this creates the p.Grid and only works if row is same size as column
 	for i := range s.P.Grid {
 		s.P.Grid[i] = make([]*Square, s.P.SquareRowCM)
@@ -68,7 +69,7 @@ func (s FusionCenter) MakeGrid() {
 			}
 			//xLoc := (i * s.P.XDiv) + int(s.P.XDiv/2)
 			//yLoc := (j * s.P.YDiv) + int(s.P.YDiv/2)
-			xLoc := i * s.P.XDiv + s.P.XDiv / 2
+			/*xLoc := i * s.P.XDiv + s.P.XDiv / 2
 			yLoc := j * s.P.YDiv + s.P.YDiv / 2
 			navigable = true
 			for x:= xLoc; x < xLoc + s.P.XDiv; x++ {
@@ -78,6 +79,26 @@ func (s FusionCenter) MakeGrid() {
 						navigable = false
 					}
 				}
+			}*/
+			counter := 0
+			for x:= i * s.P.XDiv; x < (i * s.P.XDiv) + s.P.XDiv; x++ {
+				for y:=j * s.P.YDiv; y < (j * s.P.YDiv) + s.P.YDiv; y++ {
+					if RegionContaining(Tuple{x, y}, s.R) == -1 {
+						//navigable = false
+						counter++
+					} else {
+							center = Coord{X: x, Y: y}
+					}
+				}
+			}
+			if RegionContaining(Tuple{X: i * s.P.XDiv + s.P.XDiv / 2, Y: j * s.P.YDiv + s.P.YDiv / 2 }, s.R) != -1 {
+				center = Coord{X: i * s.P.XDiv + s.P.XDiv / 2, Y: j * s.P.YDiv + s.P.YDiv / 2 }
+			}
+
+			if counter == s.P.XDiv * s.P.YDiv {
+				navigable = false
+			} else {
+				navigable = true
 			}
 
 			/*s.P.Grid[i][j] = &Square{i, j, 0.0, 0, make([]float32, s.P.NumGridSamples),
@@ -86,7 +107,7 @@ func (s FusionCenter) MakeGrid() {
 				sync.Mutex{}, 0, navigable, false}*/
 			s.P.Grid[i][j] = &Square{X: i, Y: j, Values: make([]float32, s.P.NumGridSamples),
 				MaxEntry: s.P.NumGridSamples, HasDetected: false, CanBeTravelledTo: travelList,
-				NodesInSquare: map[Tuple]*NodeImpl{}, Lock: sync.Mutex{}, Navigable: navigable, Visited: false}
+				NodesInSquare: map[Tuple]*NodeImpl{}, Lock: sync.Mutex{}, Navigable: navigable, Visited: false, SuperNodeCluster: -1, Center:center}
 			s.P.Grid[i][j].ConnectedSquares = make([]*Square, 0)
 		}
 	}
@@ -374,65 +395,20 @@ func (s FusionCenter) MakeSuperNodes() {
 			}
 		}
 	}
-	//K means clustering
 
 	fmt.Printf("TL: %v, TR %v, BL %v, BR %v\n", top_left_corner, top_right_corner, bot_left_corner, bot_right_corner)
 
-	starting_locs := make([]Coord, 4)
+	starting_locs := make([]Coord, s.P.NumSuperNodes)
 	starting_locs[0] = top_left_corner
 	starting_locs[1] = top_right_corner
 	starting_locs[2] = bot_left_corner
 	starting_locs[3] = bot_right_corner
-	//starting_locs[4] = Coord{X: 280, Y: 149}
 
-	/*closestSnodes := make([][][]int, 4)
-	for i := range closestSnodes {
-		closestSnodes[i] = make([][]int, 2)
-	}
-
-	//Assignment
-	for i:= range s.P.Grid {
-		for j := range s.P.Grid[i] {
-			if s.P.Grid[i][j].Navigable {
-				minDist := 100000000.0
-				minIndex := 0
-				xLoc := (s.P.Grid[i][j].X * s.P.XDiv) + int(s.P.XDiv/2)
-				yLoc := (s.P.Grid[i][j].Y * s.P.YDiv) + int(s.P.YDiv/2)
-				s.P.CenterCoord = Coord{X: xLoc, Y: yLoc}
-				for k := range starting_locs {
-					dist := 0.0
-					//fmt.Printf("Starting coordinate: %v\n", starting_locs[3])
-					ret_path := GetPath(starting_locs[k], s.P.CenterCoord, s.R)
-
-					if len(ret_path) > 0 {
-						tmp := Tuple{X: ret_path[0].X, Y: ret_path[0].Y}
-						for i := 1; i < len(ret_path); i++ {
-							dist += Dist(tmp, Tuple{X: ret_path[i].X, Y: ret_path[i].Y})
-							tmp = Tuple{X: ret_path[i].X, Y: ret_path[i].Y}
-						}
-					} else {
-						dist = 200000000.0
-					}
-					if dist < minDist {
-						minDist = dist
-						minIndex = k
-					}
-					//fmt.Printf("Distance: %v\n", dist)
-				}
-				//fmt.Printf("min index: %v\n", minIndex)
-				closestSnodes[minIndex][0] = append(closestSnodes[minIndex][0], s.P.CenterCoord.X)
-				closestSnodes[minIndex][1] = append(closestSnodes[minIndex][1], s.P.CenterCoord.Y)
-			}
+	if s.P.NumSuperNodes > 4 {
+		for i := 3; i < s.P.NumSuperNodes; i++ {
+			starting_locs[i] = Coord{X: 0, Y: 0}
 		}
 	}
-
-	//Update
-	for i:= range closestSnodes {
-		meanX := getMean(closestSnodes[i][0])
-		meanY := getMean(closestSnodes[i][1])
-		fmt.Printf("New location for super node %v is (%v,%v)\n", i, int(meanX), int(meanY))
-		//starting_locs[i] = Coord{X: int(meanX), Y: int(meanY)}
-	}*/
 
 	//The scheduler determines which supernode should pursue a point of interest
 	//scheduler = &Scheduler{s.P, s.R, nil}
@@ -460,11 +436,6 @@ func (s FusionCenter) MakeSuperNodes() {
 }
 
 func (s FusionCenter) PlaceSuperNodes() {
-	/*closestSnodes := make([][][]int, 5)
-	for i := range closestSnodes {
-		closestSnodes[i] = make([][]int, 2)
-	}*/
-
 	closestSnodes := make([][]*Square, 4)
 
 	//Assignment
@@ -473,24 +444,24 @@ func (s FusionCenter) PlaceSuperNodes() {
 		for j := range s.P.Grid[i] {
 			if s.P.Grid[i][j].Navigable {
 				num++
-				minDist := 100000000.0
+				minDist := 1000000000000.0
 				minIndex := -1
-				xLoc := (s.P.Grid[i][j].X * s.P.XDiv) + int(s.P.XDiv/2)
-				yLoc := (s.P.Grid[i][j].Y * s.P.YDiv) + int(s.P.YDiv/2)
-				s.P.CenterCoord = Coord{X: xLoc, Y: yLoc}
+
 				for k := range s.Sch.SNodeList {
 					dist := 0.0
-					//fmt.Printf("Start: %v, End: %v\n", Coord{X: s.Sch.SNodeList[k].GetX(), Y: s.Sch.SNodeList[k].GetY()}, s.P.CenterCoord)
-					ret_path := GetPath(Coord{X: s.Sch.SNodeList[k].GetX(), Y: s.Sch.SNodeList[k].GetY()}, s.P.CenterCoord, s.R)
+					ret_path := GetPath(Coord{X: s.Sch.SNodeList[k].GetX(), Y: s.Sch.SNodeList[k].GetY()}, s.P.Grid[i][j].Center, s.R)
 
-					if len(ret_path) > 0 {
+					if len(ret_path) > 0 && ValidPath(RegionContaining(Tuple{X: s.Sch.SNodeList[k].GetX(), Y: s.Sch.SNodeList[k].GetY()}, s.R), s.P.Grid[i][j].Center, true, s.R){
 						tmp := Tuple{X: ret_path[0].X, Y: ret_path[0].Y}
 						for i := 1; i < len(ret_path); i++ {
 							dist += Dist(tmp, Tuple{X: ret_path[i].X, Y: ret_path[i].Y})
 							tmp = Tuple{X: ret_path[i].X, Y: ret_path[i].Y}
 						}
 					} else {
-						dist = 400000000.0
+						dist = 1000000000000.0
+						/*fmt.Printf("Cannot reach point %v in region %v from %v\n", s.P.Grid[i][j].Center,
+							RegionContaining(Tuple{X: s.P.Grid[i][j].Center.X, Y: s.P.Grid[i][j].Center.Y}, s.R),
+							RegionContaining(Tuple{X: s.Sch.SNodeList[k].GetX(), Y: s.Sch.SNodeList[k].GetY()}, s.R))*/
 					}
 					if dist < minDist {
 						minDist = dist
@@ -505,8 +476,8 @@ func (s FusionCenter) PlaceSuperNodes() {
 							minNode = m
 						}
 					}
-					fmt.Printf("Moved node %v to %v\n", minNode, s.P.CenterCoord)
-					s.Sch.SNodeList[minNode].SetLoc(s.P.CenterCoord)
+					//fmt.Printf("Moved node %v to %v\n", minNode, s.P.CenterCoord)
+					//s.Sch.SNodeList[minNode].SetLoc(s.P.Grid[i][j].Center)
 					//s.PlaceSuperNodes()
 				} else {
 					s.P.Grid[i][j].SuperNodeCluster = minIndex
@@ -527,8 +498,9 @@ func (s FusionCenter) PlaceSuperNodes() {
 			fmt.Printf("There are %v squares in cluster %v\n", len(closestSnodes[i]), i)
 			num2+= len(closestSnodes[i])
 			centers := s.FindCenter(closestSnodes[i])
-			coord := Coord{ X: s.P.Grid[centers[0].X][centers[0].Y].X * s.P.XDiv + int(s.P.XDiv/2),
-				Y: s.P.Grid[centers[0].X][centers[0].Y].Y * s.P.YDiv + int(s.P.YDiv/2)}
+			/*coord := Coord{ X: s.P.Grid[centers[0].X][centers[0].Y].X * s.P.XDiv + int(s.P.XDiv/2),
+				Y: s.P.Grid[centers[0].X][centers[0].Y].Y * s.P.YDiv + int(s.P.YDiv/2)}*/
+			coord := s.P.Grid[centers[0].X][centers[0].Y].Center
 			s.Sch.SNodeList[i].SetLoc(coord)
 
 			fmt.Printf("Centers for Super node %v: %v\n", i, len(centers))

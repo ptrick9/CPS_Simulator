@@ -46,6 +46,8 @@ type Square struct {
 	ConnectedSquares []*Square
 
 	SuperNodeCluster int
+
+	Center Coord //Center of square or one of its accisible parts
 }
 
 //Adds a node to this Square, increasing its numNodes

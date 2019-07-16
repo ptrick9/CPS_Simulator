@@ -19,7 +19,7 @@
 package main
 
 import (
-	"./cps"
+	"CPS_Simulator/simulator/cps"
 	"bytes"
 	"container/heap"
 	"runtime"
@@ -169,15 +169,19 @@ func main() {
 
 	p.Server.MakeGrid()
 	//p.Server.RandomizeSuperNodes()
-	for i:=0;i < 3; i++ {
+	for i:=0;i < 1; i++ {
 		p.Server.PlaceSuperNodes()
 	}
-	var bytes byte
+	var buffer bytes.Buffer
 	for x:= range p.Grid {
-		for y := range p.Grid[i] {
-
+		for y := range p.Grid[x] {
+			xLoc := x * p.XDiv
+			yLoc := y * p.YDiv
+			//X,Y of corner, super node cluster, and navigable
+			buffer.WriteString(fmt.Sprintf("X:%v Y:%v C:%v N:%v\n", xLoc, yLoc, p.Grid[x][y].SuperNodeCluster, p.Grid[x][y].Navigable))
 		}
 	}
+	fmt.Fprintln(p.SnodeClusters, buffer.String())
 
 	fmt.Println("Super Node Type", p.SuperNodeType)
 	fmt.Println("Dimensions: ", p.MaxX, "x", p.MaxY)

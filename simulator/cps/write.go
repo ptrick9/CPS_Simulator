@@ -777,6 +777,12 @@ func SetupFiles(p *Params) {
 		log.Fatal("Cannot create file", err)
 	}
 	//defer p.ServerFile.Close()
+
+	p.SnodeClusters, err = os.Create(p.OutputFileNameCM + "-snodeClusters.txt")
+	if err != nil {
+		log.Fatal("Cannot create file", err)
+	}
+	//defer p.ServerFile.Close()
 }
 
 func SetupParameters(p *Params) {
