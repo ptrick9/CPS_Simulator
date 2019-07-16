@@ -737,7 +737,7 @@ func (curNode *NodeImpl) GetReadings() {
 		}
 
 
-		curNode.P.Server.Send(curNode, Reading{ADCRead, newX, newY, curNode.P.Iterations_used, curNode.GetID()})
+		curNode.P.Server.Send(curNode, Reading{ADCRead, newX, newY, curNode.P.CurrentTime, curNode.GetID()})
 
 
 	}
@@ -887,7 +887,7 @@ func (curNode *NodeImpl) GetReadingsCSV() {
 		//Only do this if the sensor was pinged this iteration
 
 		if curNode.Valid {
-			curNode.P.Server.Send(curNode, Reading{ADCRead, newX, newY, curNode.P.Iterations_used, curNode.GetID()})
+			curNode.P.Server.Send(curNode, Reading{ADCRead, newX, newY, curNode.P.CurrentTime, curNode.GetID()})
 		}
 
 	}

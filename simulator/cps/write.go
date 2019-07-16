@@ -1222,6 +1222,7 @@ func GetFlags(p *Params) {
 	flag.StringVar(&p.OutRoutingStatsNameCM, "outRoutingStatsName", "routingStats.txt", "Name of the output file for stats")
 
 	flag.BoolVar(&p.RegionRouting, "regionRouting", true, "True if you want to use the new routing algorithm with regions and cutting")
+	flag.IntVar(&p.ValidationThreshold, "validationThreshold", 1, "Number of detections required to validate a detection")
 
 	flag.Parse()
 	fmt.Println("Natural Loss: ", p.NaturalLossCM)
