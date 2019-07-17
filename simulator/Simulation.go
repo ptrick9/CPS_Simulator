@@ -223,7 +223,7 @@ func main() {
 				} else {
 					event.Node.MoveNormal(p)
 				}
-				p.Events.Push(&cps.Event{event.Node, cps.MOVE, p.CurrentTime+100, 0})
+					p.Events.Push(&cps.Event{event.Node, cps.MOVE, p.CurrentTime + 100, 0})
 			}
 		} else {
 			if event.Instruction == cps.POSITION {
