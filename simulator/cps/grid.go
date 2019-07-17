@@ -37,8 +37,6 @@ type Square struct {
 	LastReadingTime int
 	Navigable		bool
 	Visited		bool
-
-	Readings []Reading
 }
 
 //Adds a node to this Square, increasing its numNodes

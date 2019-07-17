@@ -25,6 +25,7 @@ type FusionCenter struct {
 	Times 			map[int]bool
 	LastRecal		[]int
 	Sch		*Scheduler
+	Readings		map[Key][]float64
 }
 
 //Init initializes the values for the server
@@ -40,6 +41,8 @@ func (s *FusionCenter) Init(){
 
 	s.LastRecal = make([]int, s.P.TotalNodes) //s.P.TotalNodes
 	s.Sch = &Scheduler{s.P, s.R, nil}
+
+	s.Readings = make(map[Key][]float64)
 }
 
 //Reading packages the data sent by a node
@@ -49,6 +52,13 @@ type   Reading struct {
 	YPos      float32
 	Time      int //Time represented by iteration number
 	Id        int //Node Id number
+}
+
+//Key for dictionary of sensor readings
+type Key struct {
+	X 		int
+	Y		int
+	Time 	int
 }
 
 //MakeGrid initializes a grid of Square objects according to the size of the map
@@ -82,7 +92,7 @@ func (s FusionCenter) MakeGrid() {
 
 			s.P.Grid[i][j] = &Square{i, j, 0.0, 0, make([]float32, s.P.NumGridSamples),
 				s.P.NumGridSamples, 0.0, 0, 0, false,
-				0.0, 0.0, false, travelList, map[Tuple]*NodeImpl{}, sync.Mutex{}, 0, navigable, false, make([]Reading, 0)}
+				0.0, 0.0, false, travelList, map[Tuple]*NodeImpl{}, sync.Mutex{}, 0, navigable, false}
 		}
 	}
 }
@@ -398,7 +408,12 @@ func (s FusionCenter) UpdateSquareNumNodes() {
 // Statistics are calculated each Time data is received
 func (s *FusionCenter) Send(n *NodeImpl, rd Reading) {
 	//fmt.Printf("Sending to server:\nTime: %v, ID: %v, X: %v, Y: %v, Sensor Value: %v\n", rd.Time, rd.Id, rd.Xpos, rd.YPos, rd.SensorVal)
-	s.P.Grid[int(rd.Xpos/float32(s.P.XDiv))][int(rd.YPos/float32(s.P.YDiv))].Readings = append(s.P.Grid[int(rd.Xpos/float32(s.P.XDiv))][int(rd.YPos/float32(s.P.YDiv))].Readings, rd)
+	_, ok := s.Readings[Key{int(rd.Xpos / float32(s.P.XDiv)), int(rd.YPos / float32(s.P.YDiv)), rd.Time/1000}]
+	if ok {
+		s.Readings[Key{int(rd.Xpos), int(rd.YPos), rd.Time/1000}] = append(s.Readings[Key{int(rd.Xpos), int(rd.YPos), rd.Time / 1000}], rd.SensorVal)
+	} else {
+		s.Readings[Key{int(rd.Xpos), int(rd.YPos), rd.Time/1000}] = []float64{rd.SensorVal}
+	}
 	s.Times = make(map[int]bool, 0)
 	if s.Times[rd.Time] {
 
@@ -425,18 +440,15 @@ func (s *FusionCenter) Send(n *NodeImpl, rd Reading) {
 		s.LastRecal[n.Id] = s.P.Iterations_used
 		//fmt.Println(s.LastRecal)
 	}
-	if rd.Time > 60000 && rd.SensorVal > s.P.DetectionThreshold{
-		fmt.Printf("Possible detection with value %v\n", rd.SensorVal)
+
+	if rd.SensorVal > s.P.DetectionThreshold {
 		validations := 0
-		//for t := s.P.CurrentTime - 60000; t <= s.P.CurrentTime; t++ {
+		for t:= (s.P.CurrentTime / 1000) - 60; t <= s.P.CurrentTime / 1000; t++ {
 			for x:= int((rd.Xpos - float32(s.P.DetectionDistance)) / float32(s.P.XDiv)); x < int((rd.Xpos + float32(s.P.DetectionDistance) )/ float32(s.P.XDiv)); x++ {
 				for y:= int((rd.YPos - float32(s.P.DetectionDistance)) / float32(s.P.YDiv)); y < int((rd.YPos + float32(s.P.DetectionDistance) )/ float32(s.P.YDiv)); y++ {
-					for r:= range s.P.Grid[x][y].Readings {
-						dist := math.Sqrt(math.Pow(float64(rd.Xpos - s.P.Grid[x][y].Readings[r].Xpos), 2) + math.Pow(float64(rd.YPos - s.P.Grid[x][y].Readings[r].YPos), 2))
-						if s.P.Grid[x][y].Readings[r].Time >= s.P.CurrentTime - 60000 && dist <= s.P.DetectionDistance{
-							if s.P.Grid[x][y].Readings[r].SensorVal > s.P.DetectionThreshold {
-								validations++
-							}
+					for r:= range s.Readings[Key{x,y,t}] {
+						if s.Readings[Key{x,y,t}][r] > s.P.DetectionThreshold {
+							validations++
 						}
 					}
 				}
