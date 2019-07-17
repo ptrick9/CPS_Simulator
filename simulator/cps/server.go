@@ -82,7 +82,7 @@ func (s FusionCenter) MakeGrid() {
 
 			s.P.Grid[i][j] = &Square{i, j, 0.0, 0, make([]float32, s.P.NumGridSamples),
 				s.P.NumGridSamples, 0.0, 0, 0, false,
-				0.0, 0.0, false, travelList, map[Tuple]*NodeImpl{}, sync.Mutex{}, 0, navigable, false}
+				0.0, 0.0, false, travelList, map[Tuple]*NodeImpl{}, sync.Mutex{}, 0, navigable, false, make([]Reading, 0)}
 		}
 	}
 }
@@ -398,6 +398,7 @@ func (s FusionCenter) UpdateSquareNumNodes() {
 // Statistics are calculated each Time data is received
 func (s *FusionCenter) Send(n *NodeImpl, rd Reading) {
 	//fmt.Printf("Sending to server:\nTime: %v, ID: %v, X: %v, Y: %v, Sensor Value: %v\n", rd.Time, rd.Id, rd.Xpos, rd.YPos, rd.SensorVal)
+	s.P.Grid[int(rd.Xpos/float32(s.P.XDiv))][int(rd.YPos/float32(s.P.YDiv))].Readings = append(s.P.Grid[int(rd.Xpos/float32(s.P.XDiv))][int(rd.YPos/float32(s.P.YDiv))].Readings, rd)
 	s.Times = make(map[int]bool, 0)
 	if s.Times[rd.Time] {
 
@@ -423,6 +424,31 @@ func (s *FusionCenter) Send(n *NodeImpl, rd Reading) {
 		n.Recalibrate()
 		s.LastRecal[n.Id] = s.P.Iterations_used
 		//fmt.Println(s.LastRecal)
+	}
+	if rd.Time > 60000 && rd.SensorVal > s.P.DetectionThreshold{
+		fmt.Printf("Possible detection with value %v\n", rd.SensorVal)
+		validations := 0
+		for t := s.P.CurrentTime - 60000; t <= s.P.CurrentTime; t++ {
+			for x:= int((rd.Xpos - float32(s.P.DetectionDistance)) / float32(s.P.XDiv)); x < int((rd.Xpos + float32(s.P.DetectionDistance) )/ float32(s.P.XDiv)); x++ {
+				for y:= int((rd.YPos - float32(s.P.DetectionDistance)) / float32(s.P.YDiv)); y < int((rd.YPos + float32(s.P.DetectionDistance) )/ float32(s.P.YDiv)); y++ {
+					for r:= range s.P.Grid[x][y].Readings {
+						dist := math.Sqrt(math.Pow(float64(rd.Xpos - s.P.Grid[x][y].Readings[r].Xpos), 2) + math.Pow(float64(rd.YPos - s.P.Grid[x][y].Readings[r].YPos), 2))
+						if s.P.Grid[x][y].Readings[r].Time == t && dist <= s.P.DetectionDistance{
+							if s.P.Grid[x][y].Readings[r].SensorVal > s.P.DetectionThreshold {
+								validations++
+							}
+						}
+					}
+				}
+			}
+		}
+		if validations >= s.P.ValidationThreshold {
+			fmt.Println("Valid!")
+			s.P.CenterCoord = Coord{X: int(rd.Xpos), Y: int(rd.YPos)}
+			if s.P.SuperNodes {
+				s.Sch.AddRoutePoint(s.P.CenterCoord)
+			}
+		}
 	}
 }
 
