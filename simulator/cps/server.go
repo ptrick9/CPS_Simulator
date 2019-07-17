@@ -26,6 +26,7 @@ type FusionCenter struct {
 	LastRecal		[]int
 	Sch		*Scheduler
 	Readings		map[Key][]Reading
+	CheckedIds		[]int
 }
 
 //Init initializes the values for the server
@@ -43,6 +44,7 @@ func (s *FusionCenter) Init(){
 	s.Sch = &Scheduler{s.P, s.R, nil}
 
 	s.Readings = make(map[Key][]Reading)
+	s.CheckedIds = make([]int, 0)
 }
 
 //Reading packages the data sent by a node
@@ -442,13 +444,16 @@ func (s *FusionCenter) Send(n *NodeImpl, rd Reading) {
 	}
 
 	if rd.SensorVal > s.P.DetectionThreshold {
+		s.CheckedIds = make([]int, 0)
 		validations := 0
 		for t:= (s.P.CurrentTime / 1000) - 60; t <= s.P.CurrentTime / 1000; t++ {
 			for x:= int((rd.Xpos - float32(s.P.DetectionDistance)) / float32(s.P.XDiv)); x < int((rd.Xpos + float32(s.P.DetectionDistance) )/ float32(s.P.XDiv)); x++ {
 				for y:= int((rd.YPos - float32(s.P.DetectionDistance)) / float32(s.P.YDiv)); y < int((rd.YPos + float32(s.P.DetectionDistance) )/ float32(s.P.YDiv)); y++ {
 					for r:= range s.Readings[Key{x,y,t}] {
 						if Dist(Tuple{int(s.Readings[Key{x,y,t}][r].Xpos), int(s.Readings[Key{x,y,t}][r].YPos)}, Tuple{int(rd.Xpos), int(rd.YPos)}) < s.P.DetectionDistance {
-							if s.Readings[Key{x,y,t}][r].Id != rd.Id && s.Readings[Key{x,y,t}][r].SensorVal > s.P.DetectionThreshold {
+							if s.Readings[Key{x,y,t}][r].Id != rd.Id && !Is_in(s.Readings[Key{x,y,t}][r].Id, s.CheckedIds) &&
+								s.Readings[Key{x,y,t}][r].SensorVal > s.P.DetectionThreshold {
+								s.CheckedIds = append(s.CheckedIds, s.Readings[Key{x,y,t}][r].Id)
 								validations++
 							}
 						}
@@ -463,7 +468,7 @@ func (s *FusionCenter) Send(n *NodeImpl, rd Reading) {
 				s.Sch.AddRoutePoint(s.P.CenterCoord)
 			}
 		} else {
-			fmt.Println(rd)
+			//fmt.Println(rd)
 		}
 	}
 }
