@@ -25,7 +25,7 @@ type FusionCenter struct {
 	Times 			map[int]bool
 	LastRecal		[]int
 	Sch		*Scheduler
-	Readings		map[Key][]float64
+	Readings		map[Key][]Reading
 }
 
 //Init initializes the values for the server
@@ -42,7 +42,7 @@ func (s *FusionCenter) Init(){
 	s.LastRecal = make([]int, s.P.TotalNodes) //s.P.TotalNodes
 	s.Sch = &Scheduler{s.P, s.R, nil}
 
-	s.Readings = make(map[Key][]float64)
+	s.Readings = make(map[Key][]Reading)
 }
 
 //Reading packages the data sent by a node
@@ -410,9 +410,9 @@ func (s *FusionCenter) Send(n *NodeImpl, rd Reading) {
 	//fmt.Printf("Sending to server:\nTime: %v, ID: %v, X: %v, Y: %v, Sensor Value: %v\n", rd.Time, rd.Id, rd.Xpos, rd.YPos, rd.SensorVal)
 	_, ok := s.Readings[Key{int(rd.Xpos / float32(s.P.XDiv)), int(rd.YPos / float32(s.P.YDiv)), rd.Time/1000}]
 	if ok {
-		s.Readings[Key{int(rd.Xpos / float32(s.P.XDiv)), int(rd.YPos / float32(s.P.YDiv)), rd.Time / 1000}] = append(s.Readings[Key{int(rd.Xpos / float32(s.P.XDiv)), int(rd.YPos / float32(s.P.YDiv)), rd.Time / 1000}], rd.SensorVal)
+		s.Readings[Key{int(rd.Xpos / float32(s.P.XDiv)), int(rd.YPos / float32(s.P.YDiv)), rd.Time / 1000}] = append(s.Readings[Key{int(rd.Xpos / float32(s.P.XDiv)), int(rd.YPos / float32(s.P.YDiv)), rd.Time / 1000}], rd)
 	} else {
-		s.Readings[Key{int(rd.Xpos / float32(s.P.XDiv)), int(rd.YPos / float32(s.P.YDiv)), rd.Time / 1000}] = []float64{rd.SensorVal}
+		s.Readings[Key{int(rd.Xpos / float32(s.P.XDiv)), int(rd.YPos / float32(s.P.YDiv)), rd.Time / 1000}] = []Reading{rd}
 	}
 	s.Times = make(map[int]bool, 0)
 	if s.Times[rd.Time] {
@@ -447,8 +447,10 @@ func (s *FusionCenter) Send(n *NodeImpl, rd Reading) {
 			for x:= int((rd.Xpos - float32(s.P.DetectionDistance)) / float32(s.P.XDiv)); x < int((rd.Xpos + float32(s.P.DetectionDistance) )/ float32(s.P.XDiv)); x++ {
 				for y:= int((rd.YPos - float32(s.P.DetectionDistance)) / float32(s.P.YDiv)); y < int((rd.YPos + float32(s.P.DetectionDistance) )/ float32(s.P.YDiv)); y++ {
 					for r:= range s.Readings[Key{x,y,t}] {
-						if s.Readings[Key{x,y,t}][r] > s.P.DetectionThreshold {
-							validations++
+						if Dist(Tuple{int(s.Readings[Key{x,y,t}][r].Xpos), int(s.Readings[Key{x,y,t}][r].YPos)}, Tuple{int(rd.Xpos), int(rd.YPos)}) < s.P.DetectionDistance {
+							if s.Readings[Key{x,y,t}][r].Id != rd.Id && s.Readings[Key{x,y,t}][r].SensorVal > s.P.DetectionThreshold {
+								validations++
+							}
 						}
 					}
 				}
