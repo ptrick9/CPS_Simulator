@@ -410,9 +410,9 @@ func (s *FusionCenter) Send(n *NodeImpl, rd Reading) {
 	//fmt.Printf("Sending to server:\nTime: %v, ID: %v, X: %v, Y: %v, Sensor Value: %v\n", rd.Time, rd.Id, rd.Xpos, rd.YPos, rd.SensorVal)
 	_, ok := s.Readings[Key{int(rd.Xpos / float32(s.P.XDiv)), int(rd.YPos / float32(s.P.YDiv)), rd.Time/1000}]
 	if ok {
-		s.Readings[Key{int(rd.Xpos), int(rd.YPos), rd.Time/1000}] = append(s.Readings[Key{int(rd.Xpos), int(rd.YPos), rd.Time / 1000}], rd.SensorVal)
+		s.Readings[Key{int(rd.Xpos / float32(s.P.XDiv)), int(rd.YPos / float32(s.P.YDiv)), rd.Time / 1000}] = append(s.Readings[Key{int(rd.Xpos / float32(s.P.XDiv)), int(rd.YPos / float32(s.P.YDiv)), rd.Time / 1000}], rd.SensorVal)
 	} else {
-		s.Readings[Key{int(rd.Xpos), int(rd.YPos), rd.Time/1000}] = []float64{rd.SensorVal}
+		s.Readings[Key{int(rd.Xpos / float32(s.P.XDiv)), int(rd.YPos / float32(s.P.YDiv)), rd.Time / 1000}] = []float64{rd.SensorVal}
 	}
 	s.Times = make(map[int]bool, 0)
 	if s.Times[rd.Time] {
@@ -453,13 +453,15 @@ func (s *FusionCenter) Send(n *NodeImpl, rd Reading) {
 					}
 				}
 			}
-		//}
+		}
 		if validations >= s.P.ValidationThreshold {
 			fmt.Println("Valid!")
 			s.P.CenterCoord = Coord{X: int(rd.Xpos), Y: int(rd.YPos)}
 			if s.P.SuperNodes {
 				s.Sch.AddRoutePoint(s.P.CenterCoord)
 			}
+		} else {
+			fmt.Println(rd)
 		}
 	}
 }
