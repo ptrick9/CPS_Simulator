@@ -139,7 +139,7 @@ func (s FusionCenter) CheckDetections() {
 				yLoc := (y * s.P.YDiv) + int(s.P.YDiv/2)
 				s.P.CenterCoord = Coord{X: xLoc, Y: yLoc}
 				if s.P.SuperNodes {
-					s.Sch.AddRoutePoint(s.P.CenterCoord)
+					s.Sch.AddRoutePoint(s.P.Grid[x][y].Center)
 				}
 				s.P.Grid[x][y].HasDetected = true
 			}
@@ -246,7 +246,7 @@ func (srv FusionCenter) Tick() {
 		if len(srv.TimeBuckets[z]) > 0 {
 			rd := srv.TimeBuckets[z][len(srv.TimeBuckets[z]) - 1]
 			if rd.SensorVal > DetectionThreshold {
-				fmt.Println("\nPossible Detection!")
+				//fmt.Println("\nPossible Detection!")
 				if time > 60 {
 					avg := 0.0
 					count := 0
@@ -266,9 +266,9 @@ func (srv FusionCenter) Tick() {
 					}
 					avg = avg / float64(count)
 					if validated {
-						fmt.Println("Detection Validated!")
+						//fmt.Println("Detection Validated!")
 					} else {
-						fmt.Println("False Positive!")
+						//fmt.Println("False Positive!")
 					}
 				}
 			}

@@ -171,10 +171,14 @@ func main() {
 	}
 
 	p.Server.MakeGrid()
-	//p.Server.RandomizeSuperNodes()
-	for i:=0;i < 2; i++ {
-		p.Server.PlaceSuperNodes()
+
+	if p.SuperNodes {
+		//p.Server.RandomizeSuperNodes()
+		for i:=0;i < 1; i++ {
+			p.Server.PlaceSuperNodes()
+		}
 	}
+
 	var buffer bytes.Buffer
 	for x:= range p.Grid {
 		for y := range p.Grid[x] {
