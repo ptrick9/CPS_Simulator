@@ -696,7 +696,7 @@ func (curNode *NodeImpl) GetReadings() {
 		if d < 10 {
 			fmt.Fprintln(curNode.P.MoveReadingsFile, "Time:", curNode.P.CurrentTime/1000, "ID:", curNode.Id, "X:", newX, "Y:",  newY, "Dist:", d, "ADCClean:", ADCClean, "ADCError:", ADCRead, "CleanSense:", clean, "Error:", errorDist, "Raw:", RawConc)
 		}
-		
+
 
 		//increment node Time
 		curNode.NodeTime++
