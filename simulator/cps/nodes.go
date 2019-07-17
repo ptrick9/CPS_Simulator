@@ -662,7 +662,7 @@ func RawConcentration(dist float32) float32 {
 		return 1000
 	} else {
 		//reading := float32(1000.0/ math.Pow(float64(dist)/.2, 3))
-		reading := float32(1000.0/ (float64(dist)/.2))
+		reading := float32(1000.0/ (float64(dist)/.1))
 		return reading
 	}
 }
@@ -674,7 +674,7 @@ func (curNode *NodeImpl) GetReadings() {
 	if curNode.Valid { //Check if node should actually take readings or if it hasn't shown up yet
 		newX, newY := curNode.GetLoc()
 
-		RawConcentration := RawConcentration(curNode.Distance(*curNode.P.B)/2) //this is the node's reported Value without error
+		RawConc := RawConcentration(curNode.Distance(*curNode.P.B)/2) //this is the node's reported Value without error
 
 		//need to get the correct Time reading Value from system
 		//need to verify where we read from
@@ -683,10 +683,10 @@ func (curNode *NodeImpl) GetReadings() {
 		S0, S1, S2, E0, E1, E2, ET1, ET2 := curNode.GetParams()
 		sError := (S0 + E0) + (S1+E1)*math.Exp(-float64(curNode.NodeTime)/(curNode.P.Tau1+ET1)) + (S2+E2)*math.Exp(-float64(curNode.NodeTime)/(curNode.P.Tau2+ET2))
 		curNode.Sensitivity = S0 + (S1)*math.Exp(-float64(curNode.NodeTime)/curNode.P.Tau1) + (S2)*math.Exp(-float64(curNode.NodeTime)/curNode.P.Tau2)
-		sNoise := rand.NormFloat64()*0.5*curNode.P.ErrorModifierCM + float64(RawConcentration)*sError
+		sNoise := rand.NormFloat64()*0.5*curNode.P.ErrorModifierCM + float64(RawConc)*sError
 
 		errorDist := sNoise / curNode.Sensitivity //this is the node's actual reading with error
-		clean := float64(RawConcentration) / curNode.Sensitivity
+		clean := float64(RawConc) / curNode.Sensitivity
 
 
 		ADCRead := float64(curNode.ADCReading(float32(errorDist)))
@@ -694,9 +694,9 @@ func (curNode *NodeImpl) GetReadings() {
 
 		d := curNode.Distance(*curNode.P.B)/2
 		if d < 10 {
-			fmt.Fprintln(curNode.P.MoveReadingsFile, "Time:", curNode.P.CurrentTime/1000, "ID:", curNode.Id, "X:", newX, "Y:",  newY, "Dist:", d, "ADCClean:", ADCClean, "ADCError:", ADCRead, "CleanSense:", clean, "Error:", errorDist, "Raw:", RawConcentration)
+			fmt.Fprintln(curNode.P.MoveReadingsFile, "Time:", curNode.P.CurrentTime/1000, "ID:", curNode.Id, "X:", newX, "Y:",  newY, "Dist:", d, "ADCClean:", ADCClean, "ADCError:", ADCRead, "CleanSense:", clean, "Error:", errorDist, "Raw:", RawConc)
 		}
-		//fmt.Printf("%v\n", curNode.ADCReading(9.0))
+		
 
 		//increment node Time
 		curNode.NodeTime++
@@ -720,21 +720,21 @@ func (curNode *NodeImpl) GetReadings() {
 		//if curNode.HasCheckedSensor && nodesPrint{
 		if curNode.P.NodesPrint {
 			if curNode.Recalibrated {
-				fmt.Fprintln(curNode.P.NodeFile, "ID:", curNode.GetID(), "Average:", curNode.GetAvg(), "Reading:", RawConcentration, "Error Reading:", errorDist, "Recalibrated")
+				fmt.Fprintln(curNode.P.NodeFile, "ID:", curNode.GetID(), "Average:", curNode.GetAvg(), "Reading:", RawConc, "Error Reading:", errorDist, "Recalibrated")
 			} else {
-				fmt.Fprintln(curNode.P.NodeFile, "ID:", curNode.GetID(), "Average:", curNode.GetAvg(), "Reading:", RawConcentration, "Error Reading:", errorDist)
+				fmt.Fprintln(curNode.P.NodeFile, "ID:", curNode.GetID(), "Average:", curNode.GetAvg(), "Reading:", RawConc, "Error Reading:", errorDist)
 			}
 			//fmt.Fprintln(nodeFile, "battery:", int(curNode.Battery),)
 			curNode.Recalibrated = false
 		}
 
 
-		if ADCRead > curNode.P.DetectionThreshold && ADCClean < curNode.P.DetectionThreshold{
-			fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("FP T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, RawConcentration))
+		if (ADCRead > curNode.P.DetectionThreshold && ADCClean < curNode.P.DetectionThreshold) || (ADCRead > curNode.P.DetectionThreshold && d > float32(curNode.P.DetectionDistance/2.0)){
+			fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("FP T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, RawConc))
 		} else if ADCRead < curNode.P.DetectionThreshold && ADCClean > curNode.P.DetectionThreshold && d < float32(curNode.P.DetectionDistance/2.0) {
-			fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("FN T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, RawConcentration))
+			fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("FN T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, RawConc))
 		} else if ADCRead > curNode.P.DetectionThreshold && ADCClean > curNode.P.DetectionThreshold {
-			fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("TP T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, RawConcentration))
+			fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("TP T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, RawConc))
 		}
 
 

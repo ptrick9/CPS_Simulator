@@ -819,7 +819,7 @@ func SetupParameters(p *Params) {
 
 		p.MaxRaw = 1000
 		//p.EdgeRaw = 36
-		p.EdgeRaw = RawConcentration(float32(p.DetectionDistance))
+		p.EdgeRaw = RawConcentration(float32(p.DetectionDistance/2))
 		fmt.Println("Raw:", p.EdgeRaw)
 		p.MaxADC = 4095
 		p.EdgeADC = 3
