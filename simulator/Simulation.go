@@ -174,7 +174,7 @@ func main() {
 	p.Server.MakeGrid()
 
 	if p.SuperNodes {
-		//p.Server.RandomizeSuperNodes()
+		p.Server.RandomizeSuperNodes()
 		for i:=0;i < 1; i++ {
 			p.Server.PlaceSuperNodes()
 		}

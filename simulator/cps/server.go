@@ -514,6 +514,7 @@ func (s FusionCenter) PlaceSuperNodes() {
 				Y: s.P.Grid[centers[0].X][centers[0].Y].Y * s.P.YDiv + int(s.P.YDiv/2)}*/
 			coord := s.P.Grid[centers[0].X][centers[0].Y].Center
 			s.Sch.SNodeList[i].SetLoc(coord)
+			s.Sch.SNodeList[i].UpdateLoc()
 
 			fmt.Printf("Centers for Super node %v: %v\n", i, len(centers))
 			fmt.Printf("New coordinate is %v\n", coord)
@@ -549,6 +550,7 @@ func (s FusionCenter) RandomizeSuperNodes() {
 		}
 		fmt.Printf("Randomized node %v to coordinate (%v,%v)\n", i, x, y)
 		s.Sch.SNodeList[i].SetLoc(Coord{X: x, Y: y})
+		s.Sch.SNodeList[i].UpdateLoc()
 	}
 
 }
