@@ -436,7 +436,7 @@ func (s FusionCenter) MakeSuperNodes() {
 }
 
 func (s FusionCenter) PlaceSuperNodes() {
-	closestSnodes := make([][]*Square, 4)
+	closestSnodes := make([][]*Square, s.P.NumSuperNodes)
 
 	//Assignment
 	num := 0
@@ -476,9 +476,9 @@ func (s FusionCenter) PlaceSuperNodes() {
 							minNode = m
 						}
 					}
-					//fmt.Printf("Moved node %v to %v\n", minNode, s.P.CenterCoord)
-					//s.Sch.SNodeList[minNode].SetLoc(s.P.Grid[i][j].Center)
-					//s.PlaceSuperNodes()
+					fmt.Printf("Moved node %v to %v\n", minNode, s.P.CenterCoord)
+					s.Sch.SNodeList[minNode].SetLoc(s.P.Grid[i][j].Center)
+					s.PlaceSuperNodes()
 				} else {
 					s.P.Grid[i][j].SuperNodeCluster = minIndex
 					closestSnodes[minIndex] = append(closestSnodes[minIndex], s.P.Grid[i][j])

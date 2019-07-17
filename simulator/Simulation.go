@@ -6,14 +6,17 @@
 -logEnergy=true
 -logNodes=false
 -noEnergy=true
--sensorPath=C:/Users/patrick/Dropbox/Patrick/udel/SUMMER2019/GitSimulator/smoothed_marathon.csv
+-sensorPath=smoothed_marathon.csv
 -SquareRowCM=60
 -SquareColCM=320
 -csvMove=true
 -movementPath=marathon_2k.txt
 -iterations=1000
--csvSensor=true
--detectionThreshold=4000.0
+-csvSensor=false
+-detectionThreshold=5
+-numSuperNodes=4
+-superNodes=false
+-validationThreshold=5
 */
 
 package main
@@ -169,7 +172,7 @@ func main() {
 
 	p.Server.MakeGrid()
 	//p.Server.RandomizeSuperNodes()
-	for i:=0;i < 1; i++ {
+	for i:=0;i < 2; i++ {
 		p.Server.PlaceSuperNodes()
 	}
 	var buffer bytes.Buffer
