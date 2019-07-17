@@ -43,7 +43,7 @@ func (s *FusionCenter) Init(){
 }
 
 //Reading packages the data sent by a node
-type Reading struct {
+type   Reading struct {
 	SensorVal float64
 	Xpos      float32
 	YPos      float32
@@ -428,12 +428,12 @@ func (s *FusionCenter) Send(n *NodeImpl, rd Reading) {
 	if rd.Time > 60000 && rd.SensorVal > s.P.DetectionThreshold{
 		fmt.Printf("Possible detection with value %v\n", rd.SensorVal)
 		validations := 0
-		for t := s.P.CurrentTime - 60000; t <= s.P.CurrentTime; t++ {
+		//for t := s.P.CurrentTime - 60000; t <= s.P.CurrentTime; t++ {
 			for x:= int((rd.Xpos - float32(s.P.DetectionDistance)) / float32(s.P.XDiv)); x < int((rd.Xpos + float32(s.P.DetectionDistance) )/ float32(s.P.XDiv)); x++ {
 				for y:= int((rd.YPos - float32(s.P.DetectionDistance)) / float32(s.P.YDiv)); y < int((rd.YPos + float32(s.P.DetectionDistance) )/ float32(s.P.YDiv)); y++ {
 					for r:= range s.P.Grid[x][y].Readings {
 						dist := math.Sqrt(math.Pow(float64(rd.Xpos - s.P.Grid[x][y].Readings[r].Xpos), 2) + math.Pow(float64(rd.YPos - s.P.Grid[x][y].Readings[r].YPos), 2))
-						if s.P.Grid[x][y].Readings[r].Time == t && dist <= s.P.DetectionDistance{
+						if s.P.Grid[x][y].Readings[r].Time >= s.P.CurrentTime - 60000 && dist <= s.P.DetectionDistance{
 							if s.P.Grid[x][y].Readings[r].SensorVal > s.P.DetectionThreshold {
 								validations++
 							}
@@ -441,7 +441,7 @@ func (s *FusionCenter) Send(n *NodeImpl, rd Reading) {
 					}
 				}
 			}
-		}
+		//}
 		if validations >= s.P.ValidationThreshold {
 			fmt.Println("Valid!")
 			s.P.CenterCoord = Coord{X: int(rd.Xpos), Y: int(rd.YPos)}
