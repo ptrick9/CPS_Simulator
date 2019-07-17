@@ -37,6 +37,17 @@ type Square struct {
 	LastReadingTime int
 	Navigable		bool
 	Visited		bool
+
+	left		*Square
+	right 		*Square
+	up 			*Square
+	down 		*Square
+
+	ConnectedSquares []*Square
+
+	SuperNodeCluster int
+
+	Center Coord //Center of square or one of its accisible parts
 }
 
 //Adds a node to this Square, increasing its numNodes

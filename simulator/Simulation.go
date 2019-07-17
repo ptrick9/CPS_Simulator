@@ -6,17 +6,17 @@
 -logEnergy=true
 -logNodes=false
 -noEnergy=true
--sensorPath=C:/Users/patrick/Dropbox/Patrick/udel/SUMMER2019/GitSimulator/smoothed_marathon.csv
+-sensorPath=smoothed_marathon.csv
 -SquareRowCM=60
 -SquareColCM=320
 -csvMove=true
 -movementPath=marathon_2k.txt
 -iterations=1000
--csvSensor=true
+-csvSensor=false
 -detectionThreshold=5
+-numSuperNodes=4
 -superNodes=false
--detectionDistance=6
--cpuprofile=event
+-validationThreshold=5
 */
 
 
@@ -24,7 +24,7 @@
 package main
 
 import (
-	"./cps"
+	"CPS_Simulator/simulator/cps"
 	"bytes"
 	"container/heap"
 	"runtime"
@@ -122,10 +122,10 @@ func main() {
 	cps.MakeBoolGrid(p)
 	p.Server.Init()
 	cps.ReadMap(p, r)
+
 	if (p.SuperNodes) {
 		p.Server.MakeSuperNodes()
 	}
-
 	cps.GenerateRouting(p, r)
 
 	cps.FlipSquares(p, r)
@@ -172,6 +172,24 @@ func main() {
 	}
 
 	p.Server.MakeGrid()
+
+	if p.SuperNodes {
+		//p.Server.RandomizeSuperNodes()
+		for i:=0;i < 1; i++ {
+			p.Server.PlaceSuperNodes()
+		}
+	}
+
+	var buffer bytes.Buffer
+	for x:= range p.Grid {
+		for y := range p.Grid[x] {
+			xLoc := x * p.XDiv
+			yLoc := y * p.YDiv
+			//X,Y of corner, super node cluster, and navigable
+			buffer.WriteString(fmt.Sprintf("X:%v Y:%v C:%v N:%v\n", xLoc, yLoc, p.Grid[x][y].SuperNodeCluster, p.Grid[x][y].Navigable))
+		}
+	}
+	fmt.Fprintln(p.SnodeClusters, buffer.String())
 
 	fmt.Println("Super Node Type", p.SuperNodeType)
 	fmt.Println("Dimensions: ", p.MaxX, "x", p.MaxY)

@@ -90,49 +90,38 @@ func Search(prev_region, curr_region, end_region int, curr_path []int, r *Region
 		}
 	}
 }
-/*
-func ValidPath(reg int, endpoint Coord, r *RegionParams) bool{
-	if len(r.Border_dict[reg]) == 0 {
-		return false
-	} else if r.Border_dict[reg][0] == reg {
-		return false
-	}else {
-		end := RegionContaining(Tuple{endpoint.X, endpoint.Y}, r)
-		//fmt.Printf("\nEnd point is in region: %v\n", end)
 
-		for i := 0; i < len(r.Border_dict[reg]); i++ {
-			if r.Border_dict[reg][i] == end {
-				return true
-			}
-			if r.Border_dict[reg][i] != reg {
-				return ValidPath(r.Border_dict[reg][i], endpoint, r)
-			}
-		}
+func ValidPath(reg int, endpoint Coord, first bool, r *RegionParams) bool{
+	if first {
+		r.Checked = make([]int, 0)
 	}
-	return false
-}
-*/
-
-func ValidPath(reg int, endpoint Coord, r *RegionParams) bool{
+	end := RegionContaining(Tuple{endpoint.X, endpoint.Y}, r)
+	//fmt.Printf("Checking for path from region %v to point %v\n", reg, end)
 	if len(r.Border_dict[reg]) == 0 {
 		return false
 	} else {
-		end := RegionContaining(Tuple{endpoint.X, endpoint.Y}, r)
-
+		if reg == end {
+			return true
+		}
 		for i := 0; i < len(r.Border_dict[reg]); i++ {
+			//fmt.Printf("Does %v = %v\n", r.Border_dict[reg][i], end)
 			if r.Border_dict[reg][i] == end {
-				//fmt.Printf("Found a path to region %v\n",r.Border_dict[reg][i])
+				//fmt.Println("Yes!")
+				//r.Checked = append(r.Checked, r.Border_dict[reg][i])
 				return true
 			}
-			if r.Border_dict[reg][i] != reg && !Is_in(r.Border_dict[reg][i], r.Checked){
+		}
+		for i := 0; i < len(r.Border_dict[reg]); i++ {
+			if !Is_in(r.Border_dict[reg][i], r.Checked){
 				r.Checked = append(r.Checked, reg)
 				//fmt.Println(r.Checked)
-				if ValidPath(r.Border_dict[reg][i], endpoint, r) {
+				if ValidPath(r.Border_dict[reg][i], endpoint, false, r) {
 					return true
 				}
 			}
 		}
 	}
+	//fmt.Println(r.Checked)
 	return false
 }
 
@@ -140,12 +129,14 @@ func ValidPath(reg int, endpoint Coord, r *RegionParams) bool{
 func PossPaths(p1, p2 Tuple, r *RegionParams) {
 	start_region := RegionContaining(p1, r)
 	end_region := RegionContaining(p2, r)
+	//fmt.Printf("Start: %v, End: %v\n", start_region, end_region)
 
 	r.Possible_paths = make([][]int, 0)
 
-	if ValidPath(start_region, Coord{X:p2.X, Y:p2.Y}, r) {
+	if ValidPath(start_region, Coord{X:p2.X, Y:p2.Y}, true, r) {
 		Search(-1, start_region, end_region, make([]int, 0), r)
 	}
+	//fmt.Println(r.Possible_paths)
 }
 
 func InRegionRouting(p1, p2 Tuple) []Coord {
@@ -175,11 +166,11 @@ func InRegionRouting(p1, p2 Tuple) []Coord {
 }
 
 func GetPath(c1, c2 Coord, r *RegionParams) []Coord {
-	//fmt.Println(r.Possible_paths)
 	p1 := Tuple{c1.X, c1.Y}
 	p2 := Tuple{c2.X, c2.Y}
 
 	PossPaths(p1, p2, r)
+	//fmt.Println(r.Possible_paths)
 
 	min_dist := math.Pow(100, 100)
 	index := -1
@@ -206,21 +197,22 @@ func GetPath(c1, c2 Coord, r *RegionParams) []Coord {
 		}
 	}
 	ret_path := make([]Coord, 0)
-
-	if len(r.Possible_paths[index]) == 1 {
-		ret_path = append(ret_path, InRegionRouting(p1, p2)...)
-	} else {
-		for i, s := range r.Possible_paths[index] {
-			if i == 0 {
-				ret_path = append(ret_path, InRegionRouting(p1, r.Square_list[s].Routers[r.Possible_paths[index][i+1]])...)
-			} else if i == len(r.Possible_paths[index])-1 {
-				ret_path = append(ret_path, InRegionRouting(r.Square_list[s].Routers[r.Possible_paths[index][i-1]], p2)...)
-			} else {
-				ret_path = append(ret_path, InRegionRouting(r.Square_list[s].Routers[r.Possible_paths[index][i-1]], r.Square_list[s].Routers[r.Possible_paths[index][i+1]])...)
+	if len(r.Possible_paths) > 0 {
+		if len(r.Possible_paths[index]) == 1 {
+			ret_path = append(ret_path, InRegionRouting(p1, p2)...)
+		} else {
+			for i, s := range r.Possible_paths[index] {
+				if i == 0 {
+					ret_path = append(ret_path, InRegionRouting(p1, r.Square_list[s].Routers[r.Possible_paths[index][i+1]])...)
+				} else if i == len(r.Possible_paths[index])-1 {
+					ret_path = append(ret_path, InRegionRouting(r.Square_list[s].Routers[r.Possible_paths[index][i-1]], p2)...)
+				} else {
+					ret_path = append(ret_path, InRegionRouting(r.Square_list[s].Routers[r.Possible_paths[index][i-1]], r.Square_list[s].Routers[r.Possible_paths[index][i+1]])...)
+				}
 			}
 		}
 	}
-
+	//fmt.Println(ret_path)
 	return ret_path
 }
 
@@ -325,6 +317,78 @@ func GenerateRouting(p *Params, r *RegionParams) {
 					r.Border_dict[z] = append(r.Border_dict[z], y)
 
 				} else if square.X2 == new_square.X1-1 {
+					r.Border_dict[y] = append(r.Border_dict[y], z)
+					r.Border_dict[z] = append(r.Border_dict[z], y)
+				}
+			}
+
+			if new_square.Y2 == square.Y1 - 1 {
+				//Hanging Case 1
+				//next_square is on the top of square
+				// right side of next_square extends pass right side of square
+				if square.X1 <= new_square.X1 && square.X2 < new_square.X2 && square.X2 > new_square.X1 {
+					r.Border_dict[y] = append(r.Border_dict[y], z)
+					r.Border_dict[z] = append(r.Border_dict[z], y)
+				}
+
+				// Hanging Case 2
+				// next_square is on the top of square
+				// left side of next square extends pass the left side of square
+				if square.X1 >= new_square.X1 && square.X2 > new_square.X2 && square.X1 < new_square.X2 {
+					r.Border_dict[y] = append(r.Border_dict[y], z)
+					r.Border_dict[z] = append(r.Border_dict[z], y)
+				}
+			}
+
+			if square.Y2 == new_square.Y1 - 1{
+				// Hanging Case 3
+				// square is on top of next_square
+				// right side of square extends pass right side of next_square
+				if new_square.X1 <= square.X1 && new_square.X2 < square.X2 && new_square.X2 > square.X1 {
+					r.Border_dict[y] = append(r.Border_dict[y], z)
+					r.Border_dict[z] = append(r.Border_dict[z], y)
+				}
+
+				// Hanging Case 4
+				// square is on top of next_square
+				// # left side of square extends pass the left side of next_square
+				if new_square.X1 >= square.X1 && new_square.X2 > square.X2 && new_square.X1 < square.X2 {
+					r.Border_dict[y] = append(r.Border_dict[y], z)
+					r.Border_dict[z] = append(r.Border_dict[z], y)
+				}
+			}
+
+			if new_square.X2 == square.X1 - 1 {
+				// Hanging Case 5
+				// next_square is to the left of square
+				// bottom side of square extends pass the bottom side of next square
+				if square.Y1 >= new_square.Y1 && square.Y2 > new_square.Y2 && square.Y1 < new_square.Y2 {
+					r.Border_dict[y] = append(r.Border_dict[y], z)
+					r.Border_dict[z] = append(r.Border_dict[z], y)
+				}
+
+				// Hanging Case 6
+				// next_square is to the left of square
+				// top side of square extends pass the top side of next_square
+				if square.Y1 <= new_square.Y1 && square.Y2 < new_square.Y2 && square.Y2 > new_square.Y1 {
+					r.Border_dict[y] = append(r.Border_dict[y], z)
+					r.Border_dict[z] = append(r.Border_dict[z], y)
+				}
+			}
+
+			if square.X2 == new_square.X1 - 1 {
+				// Hanging Case 7
+				// square is to the left of next_square
+				// bottom side of square extends pass bottom side of next_square
+				if square.Y1 >= new_square.Y1 && square.Y2 > new_square.Y2 && square.Y1 < new_square.Y2 {
+					r.Border_dict[y] = append(r.Border_dict[y], z)
+					r.Border_dict[z] = append(r.Border_dict[z], y)
+				}
+
+				// Hanging Case 8
+				// square is to the left of next_square
+				// top side of square extends pass top side of next_square
+				if square.Y1 <= new_square.Y1 && square.Y2 < new_square.Y2 && square.Y2 > new_square.Y1 {
 					r.Border_dict[y] = append(r.Border_dict[y], z)
 					r.Border_dict[z] = append(r.Border_dict[z], y)
 				}

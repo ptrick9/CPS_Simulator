@@ -228,6 +228,102 @@ func Rebuild(sq_list []RoutingSquare, r *RegionParams) {
 					r.Square_list[y].Routers[z] = Tuple{new_square.X1, int((square.Y2-square.Y1)/2) + square.Y1}
 				}
 			}
+
+			if new_square.Y2 == square.Y1 - 1 {
+				//Hanging Case 1
+				//next_square is on the top of square
+				// right side of next_square extends pass right side of square
+				if square.X1 <= new_square.X1 && square.X2 < new_square.X2 && square.X2 > new_square.X1 {
+					r.Border_dict[y] = append(r.Border_dict[y], z)
+					r.Border_dict[z] = append(r.Border_dict[z], y)
+
+					r.Square_list[z].Routers[y] = Tuple{(new_square.X1 + square.X2) / 2,  square.Y1}
+					r.Square_list[z].Routers[y] = Tuple{(new_square.X1 + square.X2) / 2,  new_square.Y2}
+				}
+
+				// Hanging Case 2
+				// next_square is on the top of square
+				// left side of next square extends pass the left side of square
+				if square.X1 >= new_square.X1 && square.X2 > new_square.X2 && square.X1 < new_square.X2 {
+					r.Border_dict[y] = append(r.Border_dict[y], z)
+					r.Border_dict[z] = append(r.Border_dict[z], y)
+
+					r.Square_list[z].Routers[y] = Tuple{(square.X1 + new_square.X2) / 2,  square.Y1}
+					r.Square_list[z].Routers[y] = Tuple{(square.X1 + new_square.X2) / 2,  new_square.Y2}
+				}
+			}
+
+			if square.Y2 == new_square.Y1 - 1{
+				// Hanging Case 3
+				// square is on top of next_square
+				// right side of square extends pass right side of next_square
+				if new_square.X1 <= square.X1 && new_square.X2 < square.X2 && new_square.X2 > square.X1 {
+					r.Border_dict[y] = append(r.Border_dict[y], z)
+					r.Border_dict[z] = append(r.Border_dict[z], y)
+
+					r.Square_list[z].Routers[y] = Tuple{(square.X1 + new_square.X2) / 2,  square.Y2}
+					r.Square_list[z].Routers[y] = Tuple{(square.X1 + new_square.X2) / 2,  new_square.Y1}
+				}
+
+				// Hanging Case 4
+				// square is on top of next_square
+				// # left side of square extends pass the left side of next_square
+				if new_square.X1 >= square.X1 && new_square.X2 > square.X2 && new_square.X1 < square.X2 {
+					r.Border_dict[y] = append(r.Border_dict[y], z)
+					r.Border_dict[z] = append(r.Border_dict[z], y)
+
+					r.Square_list[z].Routers[y] = Tuple{(new_square.X1 + square.X2) / 2,  square.Y2}
+					r.Square_list[z].Routers[y] = Tuple{(new_square.X1 + square.X2) / 2,  new_square.Y1}
+				}
+			}
+
+			if new_square.X2 == square.X1 - 1 {
+				// Hanging Case 5
+				// next_square is to the left of square
+				// bottom side of square extends pass the bottom side of next square
+				if square.Y1 >= new_square.Y1 && square.Y2 > new_square.Y2 && square.Y1 < new_square.Y2 {
+					r.Border_dict[y] = append(r.Border_dict[y], z)
+					r.Border_dict[z] = append(r.Border_dict[z], y)
+
+					r.Square_list[y].Routers[z] = Tuple{square.X1,(square.Y1 + new_square.Y2) / 2}
+					r.Square_list[y].Routers[z] = Tuple{new_square.X2,(square.Y1 + new_square.Y2) / 2}
+				}
+
+				// Hanging Case 6
+				// next_square is to the left of square
+				// top side of square extends pass the top side of next_square
+				if square.Y1 <= new_square.Y1 && square.Y2 < new_square.Y2 && square.Y2 > new_square.Y1 {
+					r.Border_dict[y] = append(r.Border_dict[y], z)
+					r.Border_dict[z] = append(r.Border_dict[z], y)
+
+					r.Square_list[y].Routers[z] = Tuple{square.X1,(new_square.Y1 + square.Y2) / 2}
+					r.Square_list[y].Routers[z] = Tuple{new_square.X2,(new_square.Y1 + square.Y2) / 2}
+				}
+			}
+
+			if square.X2 == new_square.X1 - 1 {
+				// Hanging Case 7
+				// square is to the left of next_square
+				// bottom side of square extends pass bottom side of next_square
+				if square.Y1 >= new_square.Y1 && square.Y2 > new_square.Y2 && square.Y1 < new_square.Y2 {
+					r.Border_dict[y] = append(r.Border_dict[y], z)
+					r.Border_dict[z] = append(r.Border_dict[z], y)
+
+					r.Square_list[y].Routers[z] = Tuple{square.X1,(square.Y1 + new_square.Y2) / 2}
+					r.Square_list[y].Routers[z] = Tuple{new_square.X2,(square.Y1 + new_square.Y2) / 2}
+				}
+
+				// Hanging Case 8
+				// square is to the left of next_square
+				// top side of square extends pass top side of next_square
+				if square.Y1 <= new_square.Y1 && square.Y2 < new_square.Y2 && square.Y2 > new_square.Y1 {
+					r.Border_dict[y] = append(r.Border_dict[y], z)
+					r.Border_dict[z] = append(r.Border_dict[z], y)
+
+					r.Square_list[y].Routers[z] = Tuple{square.X2,(new_square.Y1 + square.Y2) / 2}
+					r.Square_list[y].Routers[z] = Tuple{new_square.X1,(new_square.Y1 + square.Y2) / 2}
+				}
+			}
 		}
 	}
 }

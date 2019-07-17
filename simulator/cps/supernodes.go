@@ -37,6 +37,7 @@ type SuperNodeParent interface {
 	SetNumDest(int)
 	SetRoutePath([]Coord)
 	SetRoutePoints([]Coord)
+	SetLoc(coord Coord)
 }
 
 //Super nodes travel through the gird based of a Route
@@ -502,4 +503,8 @@ func (n *Supern) SetRoutePath(c []Coord) {
 }
 func (n *Supern) SetRoutePoints(c []Coord) {
 	n.RoutePoints = c
+}
+func (n *Supern) SetLoc(coord Coord) {
+	n.X = float32(coord.X)
+	n.Y = float32(coord.Y)
 }

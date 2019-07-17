@@ -31,7 +31,7 @@ type FusionCenter struct {
 
 //Init initializes the values for the server
 func (s *FusionCenter) Init(){
-	s.TimeBuckets = make([][]Reading, s.P.Iterations_used)
+	s.TimeBuckets = make([][]Reading, s.P.Iterations_of_event)
 	s.Mean = make([]float64, s.P.Iterations_of_event)
 	s.StdDev = make([]float64, s.P.Iterations_of_event)
 	s.Variance = make([]float64, s.P.Iterations_of_event)
@@ -66,6 +66,7 @@ type Key struct {
 //MakeGrid initializes a grid of Square objects according to the size of the map
 func (s FusionCenter) MakeGrid() {
 	navigable := true
+	center := Coord{}
 	s.P.Grid = make([][]*Square, s.P.SquareColCM) //this creates the p.Grid and only works if row is same size as column
 	for i := range s.P.Grid {
 		s.P.Grid[i] = make([]*Square, s.P.SquareRowCM)
@@ -80,8 +81,8 @@ func (s FusionCenter) MakeGrid() {
 			}
 			//xLoc := (i * s.P.XDiv) + int(s.P.XDiv/2)
 			//yLoc := (j * s.P.YDiv) + int(s.P.YDiv/2)
-			xLoc := i * s.P.XDiv
-			yLoc := j * s.P.YDiv
+			/*xLoc := i * s.P.XDiv + s.P.XDiv / 2
+			yLoc := j * s.P.YDiv + s.P.YDiv / 2
 			navigable = true
 			for x:= xLoc; x < xLoc + s.P.XDiv; x++ {
 				for y := yLoc; y < yLoc + s.P.YDiv; y++ {
@@ -90,11 +91,36 @@ func (s FusionCenter) MakeGrid() {
 						navigable = false
 					}
 				}
+			}*/
+			counter := 0
+			for x:= i * s.P.XDiv; x < (i * s.P.XDiv) + s.P.XDiv; x++ {
+				for y:=j * s.P.YDiv; y < (j * s.P.YDiv) + s.P.YDiv; y++ {
+					if RegionContaining(Tuple{x, y}, s.R) == -1 {
+						//navigable = false
+						counter++
+					} else {
+							center = Coord{X: x, Y: y}
+					}
+				}
+			}
+			if RegionContaining(Tuple{X: i * s.P.XDiv + s.P.XDiv / 2, Y: j * s.P.YDiv + s.P.YDiv / 2 }, s.R) != -1 {
+				center = Coord{X: i * s.P.XDiv + s.P.XDiv / 2, Y: j * s.P.YDiv + s.P.YDiv / 2 }
 			}
 
-			s.P.Grid[i][j] = &Square{i, j, 0.0, 0, make([]float32, s.P.NumGridSamples),
+			if counter == s.P.XDiv * s.P.YDiv {
+				navigable = false
+			} else {
+				navigable = true
+			}
+
+			/*s.P.Grid[i][j] = &Square{i, j, 0.0, 0, make([]float32, s.P.NumGridSamples),
 				s.P.NumGridSamples, 0.0, 0, 0, false,
-				0.0, 0.0, false, travelList, map[Tuple]*NodeImpl{}, sync.Mutex{}, 0, navigable, false}
+				0.0, 0.0, false, travelList, map[Tuple]*NodeImpl{},
+				sync.Mutex{}, 0, navigable, false}*/
+			s.P.Grid[i][j] = &Square{X: i, Y: j, Values: make([]float32, s.P.NumGridSamples),
+				MaxEntry: s.P.NumGridSamples, HasDetected: false, CanBeTravelledTo: travelList,
+				NodesInSquare: map[Tuple]*NodeImpl{}, Lock: sync.Mutex{}, Navigable: navigable, Visited: false, SuperNodeCluster: -1, Center:center}
+			s.P.Grid[i][j].ConnectedSquares = make([]*Square, 0)
 		}
 	}
 }
@@ -125,7 +151,7 @@ func (s FusionCenter) CheckDetections() {
 				yLoc := (y * s.P.YDiv) + int(s.P.YDiv/2)
 				s.P.CenterCoord = Coord{X: xLoc, Y: yLoc}
 				if s.P.SuperNodes {
-					s.Sch.AddRoutePoint(s.P.CenterCoord)
+					s.Sch.AddRoutePoint(s.P.Grid[x][y].Center)
 				}
 				s.P.Grid[x][y].HasDetected = true
 			}
@@ -138,6 +164,7 @@ func (s FusionCenter) CheckDetections() {
 				yLoc := (y * s.P.YDiv) + int(s.P.YDiv/2)
 				s.P.CenterCoord = Coord{X: xLoc, Y: yLoc}
 				if s.P.SuperNodes {
+					fmt.Println(s.P.CenterCoord)
 					s.Sch.AddRoutePoint(s.P.CenterCoord)
 				}
 				s.P.Grid[x][y].HasDetected = true
@@ -155,8 +182,10 @@ func (srv FusionCenter) Tick() {
 	for i := range srv.Sch.SNodeList {
 		srv.P.Grid[srv.Sch.SNodeList[i].GetX() / srv.P.XDiv][srv.Sch.SNodeList[i].GetY() / srv.P.YDiv].Visited = true
 	}
-	/*if srv.P.Iterations_used % 60 == 0 && srv.P.Iterations_used !=0{
-		DensitySquares := srv.GetLeastDenseSquares()
+	if srv.P.CurrentTime / 1000 == 30 && srv.P.CurrentTime / 1000 !=0{
+		fmt.Println("Going to test point")
+		srv.Sch.AddRoutePoint(Coord{X: 2, Y: 212})
+		/*DensitySquares := srv.GetLeastDenseSquares()
 		leastDense := DensitySquares[0]
 		for i:=0; i < len(DensitySquares); i++ {
 			if DensitySquares[i].Navigable {
@@ -172,8 +201,8 @@ func (srv FusionCenter) Tick() {
 			fmt.Printf("Destination Coordinate: %v\n",srv.P.CenterCoord)
 			fmt.Printf("Destination Region:%v\n",RegionContaining(Tuple{srv.P.CenterCoord.X, srv.P.CenterCoord.Y}, srv.R))
 			srv.Sch.AddRoutePoint(srv.P.CenterCoord)
-		}
-	}*/
+		}*/
+	}
 
 	for _, s := range srv.Sch.SNodeList {
 		//Saves the current length of the super node's list of routePoints
@@ -221,6 +250,43 @@ func (srv FusionCenter) Tick() {
 		//Resets the optimize flag
 		optimize = false
 	}
+	var radius float32 = 5.0
+	DetectionThreshold := srv.P.DetectionThreshold
+	validated := false
+	time := srv.P.CurrentTime / 1000
+	for z := range srv.TimeBuckets {
+		if len(srv.TimeBuckets[z]) > 0 {
+			rd := srv.TimeBuckets[z][len(srv.TimeBuckets[z]) - 1]
+			if rd.SensorVal > DetectionThreshold {
+				//fmt.Println("\nPossible Detection!")
+				if time > 60 {
+					avg := 0.0
+					count := 0
+					for t:= time - 60; t < time; t++ {
+						//fmt.Printf("Length of time bucket %v is %v\n", t, len(srv.TimeBuckets[t]))
+						for r := range srv.TimeBuckets[t] {
+							if srv.TimeBuckets[t][r].Xpos > rd.Xpos - radius && srv.TimeBuckets[t][r].Xpos < rd.Xpos + radius {
+								if srv.TimeBuckets[t][r].YPos > rd.YPos - radius && srv.TimeBuckets[t][r].YPos < rd.YPos + radius {
+									if srv.TimeBuckets[t][r].SensorVal > DetectionThreshold {
+										validated = true
+									}
+									avg += srv.TimeBuckets[t][r].SensorVal
+									count++
+								}
+							}
+						}
+					}
+					avg = avg / float64(count)
+					if validated {
+						//fmt.Println("Detection Validated!")
+					} else {
+						//fmt.Println("False Positive!")
+					}
+				}
+			}
+		}
+	}
+
 	srv.CheckDetections()
 
 }
@@ -344,11 +410,17 @@ func (s FusionCenter) MakeSuperNodes() {
 
 	fmt.Printf("TL: %v, TR %v, BL %v, BR %v\n", top_left_corner, top_right_corner, bot_left_corner, bot_right_corner)
 
-	starting_locs := make([]Coord, 4)
+	starting_locs := make([]Coord, s.P.NumSuperNodes)
 	starting_locs[0] = top_left_corner
 	starting_locs[1] = top_right_corner
 	starting_locs[2] = bot_left_corner
 	starting_locs[3] = bot_right_corner
+
+	if s.P.NumSuperNodes > 4 {
+		for i := 3; i < s.P.NumSuperNodes; i++ {
+			starting_locs[i] = Coord{X: 0, Y: 0}
+		}
+	}
 
 	//The scheduler determines which supernode should pursue a point of interest
 	//scheduler = &Scheduler{s.P, s.R, nil}
@@ -373,6 +445,227 @@ func (s FusionCenter) MakeSuperNodes() {
 		//The super node's current location is always the first element in the routePoints list
 		s.Sch.SNodeList[i].UpdateLoc()
 	}
+}
+
+func (s FusionCenter) PlaceSuperNodes() {
+	closestSnodes := make([][]*Square, s.P.NumSuperNodes)
+
+	//Assignment
+	num := 0
+	for i := range s.P.Grid {
+		for j := range s.P.Grid[i] {
+			if s.P.Grid[i][j].Navigable {
+				num++
+				minDist := 1000000000000.0
+				minIndex := -1
+
+				for k := range s.Sch.SNodeList {
+					dist := 0.0
+					ret_path := GetPath(Coord{X: s.Sch.SNodeList[k].GetX(), Y: s.Sch.SNodeList[k].GetY()}, s.P.Grid[i][j].Center, s.R)
+
+					if len(ret_path) > 0 && ValidPath(RegionContaining(Tuple{X: s.Sch.SNodeList[k].GetX(), Y: s.Sch.SNodeList[k].GetY()}, s.R), s.P.Grid[i][j].Center, true, s.R){
+						tmp := Tuple{X: ret_path[0].X, Y: ret_path[0].Y}
+						for i := 1; i < len(ret_path); i++ {
+							dist += Dist(tmp, Tuple{X: ret_path[i].X, Y: ret_path[i].Y})
+							tmp = Tuple{X: ret_path[i].X, Y: ret_path[i].Y}
+						}
+					} else {
+						dist = 1000000000000.0
+						/*fmt.Printf("Cannot reach point %v in region %v from %v\n", s.P.Grid[i][j].Center,
+							RegionContaining(Tuple{X: s.P.Grid[i][j].Center.X, Y: s.P.Grid[i][j].Center.Y}, s.R),
+							RegionContaining(Tuple{X: s.Sch.SNodeList[k].GetX(), Y: s.Sch.SNodeList[k].GetY()}, s.R))*/
+					}
+					if dist < minDist {
+						minDist = dist
+						minIndex = k
+					}
+					//fmt.Printf("Distance: %v\n", dist)
+				}
+				if minIndex == -1 {
+					minNode := 0
+					for m := range closestSnodes {
+						if len(closestSnodes[m]) < len(closestSnodes[minNode]) {
+							minNode = m
+						}
+					}
+					fmt.Printf("Moved node %v to %v\n", minNode, s.P.CenterCoord)
+					s.Sch.SNodeList[minNode].SetLoc(s.P.Grid[i][j].Center)
+					s.PlaceSuperNodes()
+				} else {
+					s.P.Grid[i][j].SuperNodeCluster = minIndex
+					closestSnodes[minIndex] = append(closestSnodes[minIndex], s.P.Grid[i][j])
+				}
+				//fmt.Printf("min index: %v\n", minIndex)
+				//closestSnodes[minIndex][0] = append(closestSnodes[minIndex][0], s.P.CenterCoord.X)
+				//closestSnodes[minIndex][1] = append(closestSnodes[minIndex][1], s.P.CenterCoord.Y)
+
+			}
+		}
+	}
+
+	num2:=0
+	for i := range s.Sch.SNodeList {
+		if i > -1 {
+			s.BuildCluster(i)
+			fmt.Printf("There are %v squares in cluster %v\n", len(closestSnodes[i]), i)
+			num2+= len(closestSnodes[i])
+			centers := s.FindCenter(closestSnodes[i])
+			/*coord := Coord{ X: s.P.Grid[centers[0].X][centers[0].Y].X * s.P.XDiv + int(s.P.XDiv/2),
+				Y: s.P.Grid[centers[0].X][centers[0].Y].Y * s.P.YDiv + int(s.P.YDiv/2)}*/
+			coord := s.P.Grid[centers[0].X][centers[0].Y].Center
+			s.Sch.SNodeList[i].SetLoc(coord)
+
+			fmt.Printf("Centers for Super node %v: %v\n", i, len(centers))
+			fmt.Printf("New coordinate is %v\n", coord)
+		}
+	}
+	fmt.Printf("There are %v navigable squares\n", num)
+	fmt.Printf("There are %v squares in a cluster\n", num2)
+	//Update
+	/*for i := range closestSnodes {
+		meanX := int(getMean(closestSnodes[i][0]))
+		meanY := int(getMean(closestSnodes[i][1]))
+		if !s.P.Grid[meanX / s.P.XDiv][meanY / s.P.YDiv].Navigable {
+			meanX+=10
+		}
+		fmt.Printf("New location for super node %v is (%v,%v)\n", i, int(meanX), int(meanY))
+		//starting_locs[i] = Coord{X: int(meanX), Y: int(meanY)}
+		s.Sch.SNodeList[i].SetLoc(Coord{X: int(meanX), Y: int(meanY)})
+
+		mean := getMean(closestSnodes[i])
+		s.Sch.SNodeList[i].SetLoc(Coord{X: int(mean), Y: int(mean)})
+
+	}*/
+
+}
+
+func (s FusionCenter) RandomizeSuperNodes() {
+	for i := range s.Sch.SNodeList {
+		x := RandomInt(0, s.P.Width)
+		y := RandomInt(0, s.P.Height)
+		for !s.P.Grid[x  / s.P.XDiv][y / s.P.YDiv].Navigable {
+			x = RandomInt(0, s.P.Width)
+			y = RandomInt(0, s.P.Height)
+		}
+		fmt.Printf("Randomized node %v to coordinate (%v,%v)\n", i, x, y)
+		s.Sch.SNodeList[i].SetLoc(Coord{X: x, Y: y})
+	}
+
+}
+
+func (s FusionCenter) BuildCluster(id int) {
+	for x := range s.P.Grid {
+		for y := range s.P.Grid[x] {
+
+			if s.P.Grid[x][y].SuperNodeCluster == id {
+				if x > 0 && s.P.Grid[x-1][y].SuperNodeCluster == id {
+					s.P.Grid[x][y].left = s.P.Grid[x-1][y]
+					s.P.Grid[x][y].ConnectedSquares = append(s.P.Grid[x][y].ConnectedSquares, s.P.Grid[x-1][y])
+					if x < len(s.P.Grid) - 1 && s.P.Grid[x+1][y].SuperNodeCluster == id{
+						s.P.Grid[x][y].right = s.P.Grid[x+1][y]
+						s.P.Grid[x][y].ConnectedSquares = append(s.P.Grid[x][y].ConnectedSquares, s.P.Grid[x+1][y])
+					} else {
+						s.P.Grid[x][y].right = nil
+					}
+				} else {
+					s.P.Grid[x][y].left = nil
+				}
+
+				if y > 0  && s.P.Grid[x][y-1].SuperNodeCluster == id{
+					s.P.Grid[x][y].down = s.P.Grid[x][y - 1]
+					s.P.Grid[x][y].ConnectedSquares = append(s.P.Grid[x][y].ConnectedSquares, s.P.Grid[x][y-y])
+					if y < len(s.P.Grid[x]) - 1 && s.P.Grid[x][y+1].SuperNodeCluster == id{
+						s.P.Grid[x][y].up = s.P.Grid[x][y + 1]
+						s.P.Grid[x][y].ConnectedSquares = append(s.P.Grid[x][y].ConnectedSquares, s.P.Grid[x][y+1])
+					} else {
+						s.P.Grid[x][y].up = nil
+					}
+				} else {
+					s.P.Grid[x][y].down = nil
+				}
+			}
+
+		}
+	}
+}
+
+func (s FusionCenter) FindCenter(squares []*Square) []*Square{
+	distances := make([][]float64,len(squares))
+	eccentricity := make([]float64, len(squares))
+	radius := 1000000.0
+	center := make([]*Square, 0)
+
+	for i:= range distances {
+		distances[i] = make([]float64, len(squares))
+	}
+	for i:= range squares {
+		xLoc := (squares[i].X * s.P.XDiv) + int(s.P.XDiv/2)
+		yLoc := (squares[i].Y * s.P.YDiv) + int(s.P.YDiv/2)
+		centerCoord := Tuple{X: xLoc, Y: yLoc}
+
+		for j:= range squares {
+			xLoc := (squares[j].X * s.P.XDiv) + int(s.P.XDiv/2)
+			yLoc := (squares[j].Y * s.P.YDiv) + int(s.P.YDiv/2)
+			centerCoord2 := Tuple{X: xLoc, Y: yLoc}
+			distances[i][j] = Dist(centerCoord, centerCoord2)
+		}
+	}
+
+	//fmt.Printf("Starting Floyd-Warshall algorithm with %v nodes\n", len(distances))
+	//Floyd-Warshall Algorithm
+	for k := range distances {
+		for j := range distances {
+			for i := range distances {
+				distances[i][j] = min(distances[i][j], distances[i][k] + distances[k][j])
+			}
+		}
+	}
+
+	for i:= range distances {
+		for j:= range distances {
+			eccentricity[i] = max(eccentricity[i], distances[i][j])
+		}
+	}
+
+
+	for i := range distances {
+		radius = min(radius, eccentricity[i]);
+	}
+
+	for i := range distances {
+		if eccentricity[i] == radius {
+			center = append(center, squares[i])
+		}
+	}
+	return center
+}
+
+func min(num1, num2 float64) float64{
+	if num1 < num2 {
+		return num1
+	} else {
+		return  num2
+	}
+}
+
+func max(num1, num2 float64) float64{
+	if num1 > num2 {
+		return num1
+	} else {
+		return  num2
+	}
+}
+
+func getMean(arr []*Square) float64{
+	//fmt.Println(arr)
+	sum  := 0
+	avg := 0.0
+	for i := range arr {
+		sum += arr[i].X
+	}
+	avg = float64(sum) / float64(len(arr))
+	//fmt.Printf("Length of array: %v, Sum: %v, Avg: %v\n", len(arr), sum, avg)
+	return avg
 }
 
 //GetSquareAverage grabs and returns the average of a particular Square
@@ -417,20 +710,21 @@ func (s *FusionCenter) Send(n *NodeImpl, rd Reading) {
 		s.Readings[Key{int(rd.Xpos / float32(s.P.XDiv)), int(rd.YPos / float32(s.P.YDiv)), rd.Time / 1000}] = []Reading{rd}
 	}
 	s.Times = make(map[int]bool, 0)
-	if s.Times[rd.Time] {
+	time := rd.Time / 1000
+	if s.Times[time] {
 
 	} else {
-		s.Times[rd.Time] = true
+		s.Times[time] = true
 	}
 
-	for len(s.TimeBuckets) <= rd.Time {
+	for len(s.TimeBuckets) <= time {
 		s.TimeBuckets = append(s.TimeBuckets, make([]Reading,0))
 	}
-	currBucket := (s.TimeBuckets)[rd.Time]
+	currBucket := (s.TimeBuckets)[time]
 	if len(currBucket) != 0 { //currBucket != nil
-		(s.TimeBuckets)[rd.Time] = append(currBucket, rd)
+		(s.TimeBuckets)[time] = append(currBucket, rd)
 	} else {
-		(s.TimeBuckets)[rd.Time] = append((s.TimeBuckets)[rd.Time], rd) //s.TimeBuckets[rd.Time] = []float64{rd.sensorVal}
+		(s.TimeBuckets)[time] = append((s.TimeBuckets)[time], rd) //s.TimeBuckets[rd.Time] = []float64{rd.sensorVal}
 	}
 
 	s.UpdateSquareAvg(rd)
