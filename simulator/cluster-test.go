@@ -419,33 +419,27 @@ func main() {
 				fmt.Fprintf(p.ClusterDebug,"Iteration: %d\tlen(p.ClusterNetwork.ClusterHeads): %d\tClusterHeads: %d\tClusterMembers: %d\n",p.CurrentTime/1000,len(p.ClusterNetwork.ClusterHeads),clusterHeadCount,clusterMemberCount)
 
 				for i:=0; i<len(p.NodeList); i++ {
-					if(p.NodeList[i].IsClusterMember && !p.NodeList[i].IsClusterHead){
-						if(p.NodeList[i].NodeClusterParams.CurrentCluster==nil){
-							fmt.Fprintf(p.ClusterDebug,"\tClusterHead: {nil}\tMissingMember {ID: %d}\n",p.NodeList[i].Id)
-						} else{
-							found := false
-							j := 0
-							for j<len(p.ClusterNetwork.ClusterHeads){
-								if(p.ClusterNetwork.ClusterHeads[j] ==  p.NodeList[i].NodeClusterParams.CurrentCluster.ClusterHead){
-									break
-								} else{
-									j++
+					if(p.NodeList[i].IsClusterHead){
+						for j:=0; j<len(p.ClusterNetwork.ClusterHeads); j++{
+							for k:=0; k<len(p.ClusterNetwork.ClusterHeads[j].NodeClusterParams.CurrentCluster.ClusterMembers); k++{
+								if(p.NodeList[i] == p.ClusterNetwork.ClusterHeads[j].NodeClusterParams.CurrentCluster.ClusterMembers[k]){
+									fmt.Fprintf(p.ClusterDebug,"\tCluster Head {CH_ID: %d, Size=%d} is cluster member of {CH_ID: %d, Size=%d}\n", p.NodeList[i].Id,p.NodeList[i].NodeClusterParams.CurrentCluster.Total,p.ClusterNetwork.ClusterHeads[j].Id,p.ClusterNetwork.ClusterHeads[j].NodeClusterParams.CurrentCluster.Total)
 								}
 							}
-							if(j<len(p.ClusterNetwork.ClusterHeads)){
-								for k := 0; k<len(p.ClusterNetwork.ClusterHeads[j].NodeClusterParams.CurrentCluster.ClusterMembers) && !found; k++{
-									if(p.ClusterNetwork.ClusterHeads[j].NodeClusterParams.CurrentCluster.ClusterMembers[k]==p.NodeList[i]){
-										found = true
-									}
-								}
-								if(!found){
-									fmt.Fprintf(p.ClusterDebug, "\tClusterHead: {ID: %d, Size: %d} \tMissingMember {ID: %d, CH_ID: %d}\n",p.ClusterNetwork.ClusterHeads[j].Id,p.ClusterNetwork.ClusterHeads[j].NodeClusterParams.CurrentCluster.Total,p.NodeList[i].Id, p.NodeList[i].NodeClusterParams.CurrentCluster.ClusterHead.Id)
-								}
-							} else{
-								fmt.Fprintf(p.ClusterDebug, "\tClusterHead: {Not Found} \tMissingMember {ID: %d, CH_ID: %d}\n",p.NodeList[i].Id, p.NodeList[i].NodeClusterParams.CurrentCluster.ClusterHead.Id)
-							}
-
 						}
+					} else if(p.NodeList[i].IsClusterMember){
+						clusterCount := 0
+						for j:=0; j<len(p.ClusterNetwork.ClusterHeads); j++{
+							for k:=0; k<len(p.ClusterNetwork.ClusterHeads[j].NodeClusterParams.CurrentCluster.ClusterMembers); k++{
+								if(p.NodeList[i] == p.ClusterNetwork.ClusterHeads[j].NodeClusterParams.CurrentCluster.ClusterMembers[k]){
+									clusterCount++
+								}
+							}
+						}
+						if(clusterCount>1){
+							fmt.Fprintf(p.ClusterDebug,"\tNode ID=%d is cluster member of %d cluster\n", p.NodeList[i].Id,clusterCount)
+						}
+
 					}
 				}
 
@@ -494,7 +488,6 @@ func main() {
 					}
 				}
 
-
 				for i:=0; i<len(p.ClusterNetwork.SingularNodes); i++{
 					if(p.ClusterNetwork.SingularNodes[i].IsClusterHead){
 						p.ClusterNetwork.FormClusters(p.ClusterNetwork.SingularNodes[i])
@@ -541,6 +534,17 @@ func main() {
 					if(p.ClusterNetwork.SingularNodes[i].IsClusterHead || p.ClusterNetwork.SingularNodes[i].IsClusterMember){// && p.ClusterNetwork.SingularNodes[i].NodeClusterParams.CurrentCluster!=nil && p.ClusterNetwork.SingularNodes[i].NodeClusterParams.CurrentCluster.Total>0){
 						p.ClusterNetwork.SingularNodes = append(p.ClusterNetwork.SingularNodes[:i],p.ClusterNetwork.SingularNodes[i+1:]...)
 						p.ClusterNetwork.SingularCount--
+					}
+				}
+
+				for i:=0; i<len(p.ClusterNetwork.ClusterHeads); i++ {
+					for j:=0; j<len(p.ClusterNetwork.ClusterHeads); j++ {
+						for k:=0; k<len(p.ClusterNetwork.ClusterHeads[j].NodeClusterParams.CurrentCluster.ClusterMembers); k++ {
+							if(p.ClusterNetwork.ClusterHeads[j].NodeClusterParams.CurrentCluster.ClusterMembers[k]==p.ClusterNetwork.ClusterHeads[i]){
+								p.ClusterNetwork.ClusterHeads[j].NodeClusterParams.CurrentCluster.ClusterMembers = append(p.ClusterNetwork.ClusterHeads[j].NodeClusterParams.CurrentCluster.ClusterMembers[:k],p.ClusterNetwork.ClusterHeads[j].NodeClusterParams.CurrentCluster.ClusterMembers[k+1:]... )
+								p.ClusterNetwork.ClusterHeads[j].NodeClusterParams.CurrentCluster.Total--
+							}
+						}
 					}
 				}
 
