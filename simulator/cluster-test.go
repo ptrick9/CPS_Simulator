@@ -242,7 +242,7 @@ func main() {
 	p.Events.Push(&cps.Event{nil, cps.SERVER, 999, 0})
 	p.Events.Push(&cps.Event{nil, cps.GRID, 999, 0})
 	p.Events.Push(&cps.Event{nil, cps.TIME, -1, 0})
-	p.Events.Push(&cps.Event{nil, cps.CLUSTERPRINT, 1999, 0})
+	p.Events.Push(&cps.Event{nil, cps.CLUSTERPRINT, 999, 0})
 	p.Events.Push(&cps.Event{nil,cps.CLUSTERLESSFORM,25,0})
 
 
@@ -418,25 +418,34 @@ func main() {
 				}
 				fmt.Fprintf(p.ClusterDebug,"Iteration: %d\tlen(p.ClusterNetwork.ClusterHeads): %d\tClusterHeads: %d\tClusterMembers: %d\n",p.CurrentTime/1000,len(p.ClusterNetwork.ClusterHeads),clusterHeadCount,clusterMemberCount)
 
-				clusterMemberCountFromArrays := 0
 				for i:=0; i<len(p.NodeList); i++ {
-					if(p.NodeList[i].IsClusterHead){
-						//found := false
-						for j:=0; j<len(p.ClusterNetwork.ClusterHeads);j++{// && !found ;j++{
-							//if(p.ClusterNetwork.ClusterHeads[j]==p.NodeList[i]){
-							//	found = true
-							//}
-
-							clusterMemberCountFromArrays += len(p.ClusterNetwork.ClusterHeads[j].NodeClusterParams.CurrentCluster.ClusterMembers)
+					if(p.NodeList[i].IsClusterMember && !p.NodeList[i].IsClusterHead){
+						if(p.NodeList[i].NodeClusterParams.CurrentCluster==nil){
+							fmt.Fprintf(p.ClusterDebug,"\tClusterHead: {nil}\tMissingMember {ID: %d}\n",p.NodeList[i].Id)
+						} else{
+							found := false
+							j := 0
+							for j<len(p.ClusterNetwork.ClusterHeads){
+								if(p.ClusterNetwork.ClusterHeads[j] ==  p.NodeList[i].NodeClusterParams.CurrentCluster.ClusterHead){
+									break
+								} else{
+									j++
+								}
+							}
+							if(j<len(p.ClusterNetwork.ClusterHeads)){
+								for k := 0; k<len(p.ClusterNetwork.ClusterHeads[j].NodeClusterParams.CurrentCluster.ClusterMembers) && !found; k++{
+									if(p.ClusterNetwork.ClusterHeads[j].NodeClusterParams.CurrentCluster.ClusterMembers[k]==p.NodeList[i]){
+										found = true
+									}
+								}
+								if(!found){
+									fmt.Fprintf(p.ClusterDebug, "\tClusterHead: {ID: %d, Size: %d} \tMissingMember {ID: %d, CH_ID: %d}\n",p.ClusterNetwork.ClusterHeads[j].Id,p.ClusterNetwork.ClusterHeads[j].NodeClusterParams.CurrentCluster.Total,p.NodeList[i].Id, p.NodeList[i].NodeClusterParams.CurrentCluster.ClusterHead.Id)
+								}
+							} else{
+								fmt.Fprintf(p.ClusterDebug, "\tClusterHead: {Not Found} \tMissingMember {ID: %d, CH_ID: %d}\n",p.NodeList[i].Id, p.NodeList[i].NodeClusterParams.CurrentCluster.ClusterHead.Id)
+							}
 
 						}
-						//if(!found){
-						//	if(p.NodeList[i].NodeClusterParams.CurrentCluster!=nil) {
-						//		fmt.Fprintf(p.ClusterDebug, "\tNotFound: {ID: %d, Size: %d} \n", p.NodeList[i].Id, p.NodeList[i].NodeClusterParams.CurrentCluster.Total)
-						//	} else{
-						//		fmt.Fprintf(p.ClusterDebug, "\tNotFound: {ID: %d, Size: nil cluster} \n", p.NodeList[i].Id)
-						//	}
-						//}
 					}
 				}
 
@@ -457,6 +466,34 @@ func main() {
 				p.Events.Push(&cps.Event{nil, cps.CLUSTERPRINT, p.CurrentTime + 1000, 0})
 				p.ClusterNetwork.ResetClusters()
 			} else if event.Instruction == cps.CLUSTERLESSFORM {
+				for i:=0; i<len(p.NodeList); i++ {
+					if(p.NodeList[i].IsClusterMember && !p.NodeList[i].IsClusterHead){
+						if(p.NodeList[i].NodeClusterParams.CurrentCluster==nil){
+						} else{
+							found := false
+							j := 0
+							for j<len(p.ClusterNetwork.ClusterHeads){
+								if(p.ClusterNetwork.ClusterHeads[j] ==  p.NodeList[i].NodeClusterParams.CurrentCluster.ClusterHead){
+									break
+								} else{
+									j++
+								}
+							}
+							if(j<len(p.ClusterNetwork.ClusterHeads)){
+								for k := 0; k<len(p.ClusterNetwork.ClusterHeads[j].NodeClusterParams.CurrentCluster.ClusterMembers) && !found; k++{
+									if(p.ClusterNetwork.ClusterHeads[j].NodeClusterParams.CurrentCluster.ClusterMembers[k]==p.NodeList[i]){
+										found = true
+									}
+								}
+							}
+							if(!found){
+								p.NodeList[i].IsClusterMember = false
+								p.ClusterNetwork.SingularNodes = append(p.ClusterNetwork.SingularNodes, p.NodeList[i])
+							}
+						}
+					}
+				}
+
 
 				for i:=0; i<len(p.ClusterNetwork.SingularNodes); i++{
 					if(p.ClusterNetwork.SingularNodes[i].IsClusterHead){
@@ -490,6 +527,7 @@ func main() {
 							p.ClusterNetwork.SingularNodes[i].NodeClusterParams.CurrentCluster.ClusterMembers = []*cps.NodeImpl{}
 							p.ClusterNetwork.SingularNodes[i].NodeClusterParams.CurrentCluster.ClusterNetwork = p.ClusterNetwork
 							p.ClusterNetwork.SingularNodes[i].IsClusterHead = true
+							p.ClusterNetwork.SingularNodes[i].IsClusterMember = false
 
 							p.ClusterNetwork.ClusterHeads = append(p.ClusterNetwork.ClusterHeads, p.ClusterNetwork.SingularNodes[i])
 							p.ClusterNetwork.TotalHeads++

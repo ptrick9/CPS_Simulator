@@ -75,86 +75,6 @@ func (curNode * NodeImpl)GenerateHello(searchRange float64, score float64) {
 	curNode.NodeClusterParams.ThisNodeHello = message
 }
 
-func (adhoc * AdHocNetwork)GenerateClusters(curNode * NodeImpl){
-	//assumes hello messages have already been generated
-
-	//node in a cluster, nothing to be done
-	if(curNode.IsClusterMember){
-		return
-	//node is a cluster head
-	}else if(curNode.IsClusterHead) {
-		//Check all nodes within distance / who received message
-		//if not already in a cluster and not a cluster head, join your cluster until full
-		for j:=0; j<len(curNode.NodeClusterParams.RecvMsgs); j++{
-			if(!curNode.NodeClusterParams.RecvMsgs[j].Sender.IsClusterHead && !curNode.NodeClusterParams.RecvMsgs[j].Sender.IsClusterMember){
-				if(curNode.NodeClusterParams.CurrentCluster.Total < adhoc.Threshold){
-					curNode.NodeClusterParams.CurrentCluster.ClusterMembers = append(curNode.NodeClusterParams.CurrentCluster.ClusterMembers, curNode.NodeClusterParams.RecvMsgs[j].Sender)
-					curNode.NodeClusterParams.RecvMsgs[j].Sender.NodeClusterParams.CurrentCluster.ClusterHead = curNode
-					curNode.NodeClusterParams.RecvMsgs[j].Sender.NodeClusterParams.CurrentCluster.Total = len(curNode.NodeClusterParams.CurrentCluster.ClusterMembers)
-					curNode.NodeClusterParams.RecvMsgs[j].Sender.NodeClusterParams.CurrentCluster = curNode.NodeClusterParams.CurrentCluster
-				}
-			}
-		}
-	} else{
-		//node is not a cluster head and is not in a cluster
-		for j:=0; j<len(curNode.NodeClusterParams.RecvMsgs); j++{
-			//if received a message from a cluster head and the cluster head does not have a "full" cluster
-			if(curNode.NodeClusterParams.RecvMsgs[j].Sender.IsClusterHead && curNode.NodeClusterParams.RecvMsgs[j].Sender.NodeClusterParams.CurrentCluster.Total < adhoc.Threshold){
-				//join cluster
-				curNode.NodeClusterParams.CurrentCluster.ClusterHead = curNode.NodeClusterParams.RecvMsgs[j].Sender
-				curNode.NodeClusterParams.RecvMsgs[j].Sender.NodeClusterParams.CurrentCluster.ClusterMembers = append(curNode.NodeClusterParams.RecvMsgs[j].Sender.NodeClusterParams.CurrentCluster.ClusterMembers, curNode)
-				curNode.IsClusterMember = true
-				curNode.NodeClusterParams.CurrentCluster = curNode.NodeClusterParams.RecvMsgs[j].Sender.NodeClusterParams.CurrentCluster
-				curNode.NodeClusterParams.CurrentCluster.Total = len(curNode.NodeClusterParams.CurrentCluster.ClusterMembers)
-				return
-			}
-		}
-
-		//No nodes within range are cluster heads
-		//find node in range with max score, make it a cluster head
-		maxNode := curNode.HasMaxNodeScore()
-		if(maxNode == curNode){
-			//assign self as cluster head, and all in range to be in cluster
-			curNode.IsClusterHead = true
-
-			adhoc.ClusterHeads = append(adhoc.ClusterHeads, curNode)
-			adhoc.TotalHeads++
-
-			curNode.NodeClusterParams.CurrentCluster = &Cluster{curNode,0, []*NodeImpl{}, adhoc}
-			//curNode.NodeClusterParams.CurrentCluster.ClusterHead = curNode
-			for j:=0; j<len(curNode.NodeClusterParams.RecvMsgs); j++{
-				//if received message from a node not already in a cluster
-				if(!curNode.NodeClusterParams.RecvMsgs[j].Sender.IsClusterMember){
-
-					if(curNode.NodeClusterParams.CurrentCluster.Total<adhoc.Threshold){
-						//set clusters to the same cluster
-						curNode.NodeClusterParams.RecvMsgs[j].Sender.NodeClusterParams.CurrentCluster = curNode.NodeClusterParams.CurrentCluster
-
-						//add node to cluster members
-						curNode.NodeClusterParams.CurrentCluster.ClusterMembers = append(curNode.NodeClusterParams.CurrentCluster.ClusterMembers, curNode.NodeClusterParams.RecvMsgs[j].Sender)
-
-						//increment cluster
-						curNode.NodeClusterParams.CurrentCluster.Total = len(curNode.NodeClusterParams.CurrentCluster.ClusterMembers)
-						if(!curNode.NodeClusterParams.RecvMsgs[j].Sender.IsClusterHead) {
-							curNode.NodeClusterParams.RecvMsgs[j].Sender.IsClusterMember = true
-						}
-
-						curNode.DecrementPowerBT()
-						//update hello / send second messsage saying sender joined a cluster
-						curNode.NodeClusterParams.RecvMsgs[j].Sender.NodeClusterParams.ThisNodeHello.ClusterHead = curNode
-					}
-				}
-			}
-		} else{
-			adhoc.GenerateClusters(maxNode)
-		}
-
-		if(!curNode.IsClusterMember && curNode.IsClusterHead){
-			adhoc.GenerateClusters(curNode)
-		}
-	}
-}
-
 func (curNode * NodeImpl) SendHelloMessage(transmitRange float64, ){
 	withinDist := []*Bounds{}
 	withinDist = curNode.P.NodeTree.WithinRadius(transmitRange,curNode.NodeBounds,curNode.NodeBounds.GetSearchBounds(transmitRange),withinDist)
@@ -292,7 +212,7 @@ func (adhoc * AdHocNetwork) ElectClusterHead(curNode * NodeImpl){
 
 	if(maxNode.IsClusterHead == false){
 		maxNode.IsClusterHead = true
-
+		maxNode.IsClusterMember = false
 		adhoc.ClusterHeads = append(adhoc.ClusterHeads, maxNode)
 		adhoc.TotalHeads = len(adhoc.ClusterHeads)
 		maxNode.NodeClusterParams.CurrentCluster = &Cluster{maxNode,0,[]*NodeImpl{},adhoc}
@@ -319,8 +239,6 @@ func (adhoc * AdHocNetwork) FormClusters(clusterHead * NodeImpl){
 
 		}
 	}
-
-
 
 	for i:=0; i<len(msgs); i++ {
 		if (msgs[i].Sender.IsClusterHead || msgs[i].Sender.IsClusterMember) {

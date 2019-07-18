@@ -271,7 +271,7 @@ func main() {
 			} else if event.Instruction == cps.CLUSTERFORM {
 				if(event.Node.Valid){
 					event.Node.SortMessages()
-					p.ClusterNetwork.GenerateClusters(event.Node)
+					//p.ClusterNetwork.GenerateClusters(event.Node)
 				}
 					p.Events.Push(&cps.Event{event.Node, cps.CLUSTERFORM, p.CurrentTime+100, 0})
 			}
