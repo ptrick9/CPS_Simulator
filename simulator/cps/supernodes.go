@@ -16,6 +16,7 @@ type SuperNodeParent interface {
 
 	UpdateLoc()
 
+	AddRoutePointUrgent(Coord)
 	AddRoutePoint(Coord)
 	UpdatePath()
 	Route(grid [][]*Square, c1 Coord, c2 Coord, list []Coord) []Coord

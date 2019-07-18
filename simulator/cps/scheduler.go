@@ -52,7 +52,7 @@ func (s *Scheduler) Optimize() {
 //This function determines which super node adding method should be called
 func (s *Scheduler) AddRoutePoint(c Coord) {
 	if s.P.SuperNodeType == 0 {
-		s.AddRoutePoint0(c)
+		s.AddRoutePoint0(c, false)
 	} else if s.P.SuperNodeType == 1 {
 		s.AddRoutePoint1(c)
 	} else if s.P.SuperNodeType == 2 || s.P.SuperNodeType == 3 || s.P.SuperNodeType == 4 {
@@ -64,15 +64,25 @@ func (s *Scheduler) AddRoutePoint(c Coord) {
 	}
 }
 
+func (s *Scheduler) AddRoutePointArray(c []Coord) {
+	for i:= range c {
+		s.AddRoutePoint0(c[i], false)
+	}
+}
+
+func (s *Scheduler) AddRoutePointUrgent(c Coord) {
+	s.AddRoutePoint0(c, true)
+}
+
 //Adds a point of interest to a super node of type 0
 //Since super node 0 operates on the default scheduling algorithm the
 //	scheduler adds the new point of interest to the super node who's
 //	final destination is closest to the point
-func (s *Scheduler) AddRoutePoint0(c Coord) {
-	dist := 100000.0
+func (s *Scheduler) AddRoutePoint0(c Coord, urgent bool) {
+	dist := 1000000.0//100000.0
 	nodeDist := 100000.0
 	closestNode := -1
-
+	fmt.Printf("\nCoordinate: X:%v Y:%v\n", c.X, c.Y)
 	//Finds the super node closest to the newly added point
 	for n, _ := range s.SNodeList {
 		length := len(s.SNodeList[n].GetRoutePath())
@@ -92,16 +102,22 @@ func (s *Scheduler) AddRoutePoint0(c Coord) {
 					Pow(float64(s.SNodeList[n].GetX()-c.X), 2.0) + math.
 					Pow(float64(s.SNodeList[n].GetY()-c.Y), 2.0))
 			}
+			fmt.Printf("Node: %v, Distance: %v\n", n, nodeDist)
 			if nodeDist < dist {
 				dist = nodeDist
 				closestNode = n
 			}
 		}
 	}
-	//fmt.Printf("\nClosest Node: %v\n", closestNode)
+	fmt.Printf("Closest Node: %v\n", closestNode)
 	//Tells that super node to add that point
-	//fmt.Printf("Added route point %v\n", c)
-	s.SNodeList[closestNode].AddRoutePoint(c)
+	//fmt.Printf("\nAdded route point %v\n", c)
+	fmt.Printf("Distance: %v\n", dist)
+	if urgent {
+		s.SNodeList[closestNode].AddRoutePointUrgent(c)
+	} else {
+		s.SNodeList[closestNode].AddRoutePoint(c)
+	}
 }
 
 //Adds a point of interest to a super node of type 1

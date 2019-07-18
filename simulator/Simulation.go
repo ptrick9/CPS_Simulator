@@ -74,6 +74,9 @@ func main() {
 
 	//getFlags()
 	cps.GetFlags(p)
+	p.Iterations_used = 0
+	p.Iterations_of_event = p.IterationsCM
+
 	if p.CPUProfile != "" {
 		f, err := os.Create(p.CPUProfile)
 		if err != nil {
@@ -130,6 +133,11 @@ func main() {
 
 	cps.FlipSquares(p, r)
 
+	//fmt.Println(cps.RegionContaining(cps.Tuple{430,30}, r))
+	//fmt.Printf("Valid path from 27 to 44: %v\n", cps.ValidPath(27, cps.Coord{X:430,Y:30},r))
+	//goal := 44
+	//fmt.Printf("TL:%v, %v\nBR:%v, %v\n", r.Square_list[goal].X1,r.Square_list[goal].Y1,r.Square_list[goal].X2, r.Square_list[goal].Y2 )
+
 	//This is where the text file reading ends
 	Vn := make([]float64, 1000)
 	for i := 0; i < 1000; i++ {
@@ -147,8 +155,8 @@ func main() {
 	rand.Seed(time.Now().UnixNano()) //sets random to work properly by tying to to clock
 	p.ThreshHoldBatteryToHave = 30.0 //This is the threshold battery to have for all phones
 
-	p.Iterations_used = 0
-	p.Iterations_of_event = p.IterationsCM
+	//p.Iterations_used = 0
+	//p.Iterations_of_event = p.IterationsCM
 	p.EstimatedPingsNeeded = 10200
 
 
@@ -193,7 +201,7 @@ func main() {
 
 	fmt.Println("Super Node Type", p.SuperNodeType)
 	fmt.Println("Dimensions: ", p.MaxX, "x", p.MaxY)
-	fmt.Printf("Running Simulator iteration %d\\%v", 0, p.Iterations_of_event)
+	fmt.Printf("Running Simulator iteration %d\\%v\n", 0, p.Iterations_of_event)
 
 	iters := 0
 	p.TimeStep = 0
@@ -331,7 +339,7 @@ func main() {
 
 
 		//fmt.Println(iterations_used)
-		fmt.Printf("\rRunning Simulator iteration %d\\%v", iters, p.Iterations_of_event)
+		fmt.Printf("\rRunning Simulator iteration %d\\%v\n", iters, p.Iterations_of_event)
 
 		for i := 0; i < len(p.Poispos); i++ {
 			if p.Iterations_used == p.Poispos[i][2] || p.Iterations_used == p.Poispos[i][3] {

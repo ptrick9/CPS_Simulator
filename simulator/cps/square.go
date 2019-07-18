@@ -9,7 +9,7 @@ type RoutingSquare struct {
 	X1, X2, Y1, Y2 int
 	Can_cut        bool
 	Id_num         int
-	Routers        []Tuple
+	Routers        [][]Tuple
 }
 
 //Square_equals is  comparator for two RoutingSquares
@@ -79,47 +79,47 @@ func Single_cut(sq1, sq2 RoutingSquare) []RoutingSquare {
 
 	if sq1.X1 == sq2.X1 && sq1.X2 == sq2.X2 {
 		if sq1.Y1 < sq2.Y1 {
-			new_squares = append(new_squares, RoutingSquare{sq1.X1, sq2.X2, sq1.Y1, sq2.Y2, true, sq1.Id_num, make([]Tuple, 0)})
+			new_squares = append(new_squares, RoutingSquare{sq1.X1, sq2.X2, sq1.Y1, sq2.Y2, true, sq1.Id_num, make([][]Tuple, 0)})
 		} else {
-			new_squares = append(new_squares, RoutingSquare{sq1.X1, sq2.X2, sq2.Y1, sq1.Y2, true, sq1.Id_num, make([]Tuple, 0)})
+			new_squares = append(new_squares, RoutingSquare{sq1.X1, sq2.X2, sq2.Y1, sq1.Y2, true, sq1.Id_num, make([][]Tuple, 0)})
 		}
 	} else if sq1.Y1 == sq2.Y1 && sq1.Y2 == sq2.Y2 {
 		if sq1.X1 < sq2.X1 {
-			new_squares = append(new_squares, RoutingSquare{sq1.X1, sq2.X2, sq1.Y1, sq1.Y2, true, sq1.Id_num, make([]Tuple, 0)})
+			new_squares = append(new_squares, RoutingSquare{sq1.X1, sq2.X2, sq1.Y1, sq1.Y2, true, sq1.Id_num, make([][]Tuple, 0)})
 		} else {
-			new_squares = append(new_squares, RoutingSquare{sq2.X1, sq1.X2, sq1.Y1, sq1.Y2, true, sq1.Id_num, make([]Tuple, 0)})
+			new_squares = append(new_squares, RoutingSquare{sq2.X1, sq1.X2, sq1.Y1, sq1.Y2, true, sq1.Id_num, make([][]Tuple, 0)})
 		}
 	} else if sq1.X1 == sq2.X1 {
 		if sq1.Y1 < sq2.Y1 {
-			new_squares = append(new_squares, RoutingSquare{sq1.X1, sq1.X2, sq1.Y1, sq2.Y2, true, sq1.Id_num, make([]Tuple, 0)})
-			new_squares = append(new_squares, RoutingSquare{sq1.X2 + 1, sq2.X2, sq2.Y1, sq2.Y2, false, sq2.Id_num, make([]Tuple, 0)})
+			new_squares = append(new_squares, RoutingSquare{sq1.X1, sq1.X2, sq1.Y1, sq2.Y2, true, sq1.Id_num, make([][]Tuple, 0)})
+			new_squares = append(new_squares, RoutingSquare{sq1.X2 + 1, sq2.X2, sq2.Y1, sq2.Y2, false, sq2.Id_num, make([][]Tuple, 0)})
 		} else {
-			new_squares = append(new_squares, RoutingSquare{sq1.X1, sq1.X2, sq2.Y1, sq1.Y2, true, sq1.Id_num, make([]Tuple, 0)})
-			new_squares = append(new_squares, RoutingSquare{sq1.X2 + 1, sq2.X2, sq2.Y1, sq2.Y2, false, sq2.Id_num, make([]Tuple, 0)})
+			new_squares = append(new_squares, RoutingSquare{sq1.X1, sq1.X2, sq2.Y1, sq1.Y2, true, sq1.Id_num, make([][]Tuple, 0)})
+			new_squares = append(new_squares, RoutingSquare{sq1.X2 + 1, sq2.X2, sq2.Y1, sq2.Y2, false, sq2.Id_num, make([][]Tuple, 0)})
 		}
 	} else if sq1.X2 == sq2.X2 {
 		if sq1.Y1 < sq2.Y1 {
-			new_squares = append(new_squares, RoutingSquare{sq1.X1, sq1.X2, sq1.Y1, sq2.Y2, true, sq1.Id_num, make([]Tuple, 0)})
-			new_squares = append(new_squares, RoutingSquare{sq2.X1, sq1.X1 - 1, sq2.Y1, sq2.Y2, false, sq2.Id_num, make([]Tuple, 0)})
+			new_squares = append(new_squares, RoutingSquare{sq1.X1, sq1.X2, sq1.Y1, sq2.Y2, true, sq1.Id_num, make([][]Tuple, 0)})
+			new_squares = append(new_squares, RoutingSquare{sq2.X1, sq1.X1 - 1, sq2.Y1, sq2.Y2, false, sq2.Id_num, make([][]Tuple, 0)})
 		} else {
-			new_squares = append(new_squares, RoutingSquare{sq1.X1, sq1.X2, sq2.Y1, sq1.Y2, true, sq1.Id_num, make([]Tuple, 0)})
-			new_squares = append(new_squares, RoutingSquare{sq2.X1, sq1.X1 - 1, sq2.Y1, sq2.Y2, false, sq2.Id_num, make([]Tuple, 0)})
+			new_squares = append(new_squares, RoutingSquare{sq1.X1, sq1.X2, sq2.Y1, sq1.Y2, true, sq1.Id_num, make([][]Tuple, 0)})
+			new_squares = append(new_squares, RoutingSquare{sq2.X1, sq1.X1 - 1, sq2.Y1, sq2.Y2, false, sq2.Id_num, make([][]Tuple, 0)})
 		}
 	} else if sq1.Y1 == sq2.Y1 {
 		if sq1.X1 < sq2.X1 {
-			new_squares = append(new_squares, RoutingSquare{sq1.X1, sq2.X2, sq1.Y1, sq1.Y2, true, sq1.Id_num, make([]Tuple, 0)})
-			new_squares = append(new_squares, RoutingSquare{sq2.X1, sq2.X2, sq1.Y2 + 1, sq2.Y2, false, sq2.Id_num, make([]Tuple, 0)})
+			new_squares = append(new_squares, RoutingSquare{sq1.X1, sq2.X2, sq1.Y1, sq1.Y2, true, sq1.Id_num, make([][]Tuple, 0)})
+			new_squares = append(new_squares, RoutingSquare{sq2.X1, sq2.X2, sq1.Y2 + 1, sq2.Y2, false, sq2.Id_num, make([][]Tuple, 0)})
 		} else {
-			new_squares = append(new_squares, RoutingSquare{sq2.X1, sq1.X2, sq1.Y1, sq1.Y2, true, sq1.Id_num, make([]Tuple, 0)})
-			new_squares = append(new_squares, RoutingSquare{sq2.X1, sq2.X2, sq1.Y2 + 1, sq2.Y2, false, sq2.Id_num, make([]Tuple, 0)})
+			new_squares = append(new_squares, RoutingSquare{sq2.X1, sq1.X2, sq1.Y1, sq1.Y2, true, sq1.Id_num, make([][]Tuple, 0)})
+			new_squares = append(new_squares, RoutingSquare{sq2.X1, sq2.X2, sq1.Y2 + 1, sq2.Y2, false, sq2.Id_num, make([][]Tuple, 0)})
 		}
 	} else if sq1.Y2 == sq2.Y2 {
 		if sq1.X1 < sq2.X1 {
-			new_squares = append(new_squares, RoutingSquare{sq1.X1, sq2.X2, sq1.Y1, sq1.Y2, true, sq1.Id_num, make([]Tuple, 0)})
-			new_squares = append(new_squares, RoutingSquare{sq2.X1, sq2.X2, sq2.Y1, sq1.Y1 - 1, false, sq2.Id_num, make([]Tuple, 0)})
+			new_squares = append(new_squares, RoutingSquare{sq1.X1, sq2.X2, sq1.Y1, sq1.Y2, true, sq1.Id_num, make([][]Tuple, 0)})
+			new_squares = append(new_squares, RoutingSquare{sq2.X1, sq2.X2, sq2.Y1, sq1.Y1 - 1, false, sq2.Id_num, make([][]Tuple, 0)})
 		} else {
-			new_squares = append(new_squares, RoutingSquare{sq2.X1, sq1.X2, sq1.Y1, sq1.Y2, true, sq1.Id_num, make([]Tuple, 0)})
-			new_squares = append(new_squares, RoutingSquare{sq2.X1, sq2.X2, sq2.Y1, sq1.Y1 - 1, false, sq2.Id_num, make([]Tuple, 0)})
+			new_squares = append(new_squares, RoutingSquare{sq2.X1, sq1.X2, sq1.Y1, sq1.Y2, true, sq1.Id_num, make([][]Tuple, 0)})
+			new_squares = append(new_squares, RoutingSquare{sq2.X1, sq2.X2, sq2.Y1, sq1.Y1 - 1, false, sq2.Id_num, make([][]Tuple, 0)})
 		}
 	}
 
@@ -131,23 +131,23 @@ func Double_cut(sq1, sq2 RoutingSquare) []RoutingSquare {
 
 	if sq1.X1 > sq2.X1 && sq1.X2 < sq2.X2 {
 		if sq1.Y2+1 == sq2.Y1 {
-			new_squares = append(new_squares, RoutingSquare{sq1.X1, sq1.X2, sq1.Y1, sq2.Y2, true, sq1.Id_num, make([]Tuple, 0)})
-			new_squares = append(new_squares, RoutingSquare{sq2.X1, sq1.X1 - 1, sq2.Y1, sq2.Y2, false, sq2.Id_num, make([]Tuple, 0)})
-			new_squares = append(new_squares, RoutingSquare{sq1.X2 + 1, sq2.X2, sq2.Y1, sq2.Y2, false, -1, make([]Tuple, 0)})
+			new_squares = append(new_squares, RoutingSquare{sq1.X1, sq1.X2, sq1.Y1, sq2.Y2, true, sq1.Id_num, make([][]Tuple, 0)})
+			new_squares = append(new_squares, RoutingSquare{sq2.X1, sq1.X1 - 1, sq2.Y1, sq2.Y2, false, sq2.Id_num, make([][]Tuple, 0)})
+			new_squares = append(new_squares, RoutingSquare{sq1.X2 + 1, sq2.X2, sq2.Y1, sq2.Y2, false, -1, make([][]Tuple, 0)})
 		} else {
-			new_squares = append(new_squares, RoutingSquare{sq1.X1, sq1.X2, sq2.Y1, sq1.Y2, true, sq1.Id_num, make([]Tuple, 0)})
-			new_squares = append(new_squares, RoutingSquare{sq2.X1, sq1.X1 - 1, sq2.Y1, sq2.Y2, false, sq2.Id_num, make([]Tuple, 0)})
-			new_squares = append(new_squares, RoutingSquare{sq1.X2 + 1, sq2.X2, sq2.Y1, sq2.Y2, false, -1, make([]Tuple, 0)})
+			new_squares = append(new_squares, RoutingSquare{sq1.X1, sq1.X2, sq2.Y1, sq1.Y2, true, sq1.Id_num, make([][]Tuple, 0)})
+			new_squares = append(new_squares, RoutingSquare{sq2.X1, sq1.X1 - 1, sq2.Y1, sq2.Y2, false, sq2.Id_num, make([][]Tuple, 0)})
+			new_squares = append(new_squares, RoutingSquare{sq1.X2 + 1, sq2.X2, sq2.Y1, sq2.Y2, false, -1, make([][]Tuple, 0)})
 		}
 	} else if sq1.Y1 > sq2.Y1 && sq1.Y2 < sq2.Y2 {
 		if sq1.X2+1 == sq2.X1 {
-			new_squares = append(new_squares, RoutingSquare{sq1.X1, sq2.X2, sq1.Y1, sq1.Y2, true, sq1.Id_num, make([]Tuple, 0)})
-			new_squares = append(new_squares, RoutingSquare{sq2.X1, sq2.X2, sq2.Y1, sq1.Y1 - 1, false, sq2.Id_num, make([]Tuple, 0)})
-			new_squares = append(new_squares, RoutingSquare{sq2.X1, sq2.X2, sq1.Y2 + 1, sq2.Y2, false, -1, make([]Tuple, 0)})
+			new_squares = append(new_squares, RoutingSquare{sq1.X1, sq2.X2, sq1.Y1, sq1.Y2, true, sq1.Id_num, make([][]Tuple, 0)})
+			new_squares = append(new_squares, RoutingSquare{sq2.X1, sq2.X2, sq2.Y1, sq1.Y1 - 1, false, sq2.Id_num, make([][]Tuple, 0)})
+			new_squares = append(new_squares, RoutingSquare{sq2.X1, sq2.X2, sq1.Y2 + 1, sq2.Y2, false, -1, make([][]Tuple, 0)})
 		} else {
-			new_squares = append(new_squares, RoutingSquare{sq2.X1, sq1.X2, sq1.Y1, sq1.Y2, true, sq1.Id_num, make([]Tuple, 0)})
-			new_squares = append(new_squares, RoutingSquare{sq2.X1, sq2.X2, sq2.Y1, sq1.Y1 - 1, false, sq2.Id_num, make([]Tuple, 0)})
-			new_squares = append(new_squares, RoutingSquare{sq2.X1, sq2.X2, sq1.Y2 + 1, sq2.Y2, false, -1, make([]Tuple, 0)})
+			new_squares = append(new_squares, RoutingSquare{sq2.X1, sq1.X2, sq1.Y1, sq1.Y2, true, sq1.Id_num, make([][]Tuple, 0)})
+			new_squares = append(new_squares, RoutingSquare{sq2.X1, sq2.X2, sq2.Y1, sq1.Y1 - 1, false, sq2.Id_num, make([][]Tuple, 0)})
+			new_squares = append(new_squares, RoutingSquare{sq2.X1, sq2.X2, sq1.Y2 + 1, sq2.Y2, false, -1, make([][]Tuple, 0)})
 		}
 	}
 
@@ -157,7 +157,10 @@ func Double_cut(sq1, sq2 RoutingSquare) []RoutingSquare {
 func Rebuild(sq_list []RoutingSquare, r *RegionParams) {
 	for x := 0; x < len(r.Square_list); x++ {
 		r.Border_dict[x] = make([]int, 0)
-		r.Square_list[x].Routers = make([]Tuple, len(r.Square_list))
+		r.Square_list[x].Routers = make([][]Tuple, len(r.Square_list))
+		for i:= range r.Square_list[x].Routers {
+			r.Square_list[x].Routers[i] = make([]Tuple, 3)
+		}
 	}
 
 	for y := 0; y < len(sq_list); y++ {
@@ -171,30 +174,54 @@ func Rebuild(sq_list []RoutingSquare, r *RegionParams) {
 					r.Border_dict[y] = append(r.Border_dict[y], z)
 					r.Border_dict[z] = append(r.Border_dict[z], y)
 
-					r.Square_list[z].Routers[y] = Tuple{int((new_square.X2-new_square.X1)/2) + new_square.X1, new_square.Y1}
-					r.Square_list[y].Routers[z] = Tuple{int((new_square.X2-new_square.X1)/2) + new_square.X1, square.Y2}
+					r.Square_list[z].Routers[y][0] = Tuple{int(new_square.X1), new_square.Y1}
+					r.Square_list[y].Routers[z][0] = Tuple{int(new_square.X1), square.Y2}
+
+					r.Square_list[z].Routers[y][1] = Tuple{int((new_square.X2-new_square.X1)/2) + new_square.X1, new_square.Y1}
+					r.Square_list[y].Routers[z][1] = Tuple{int((new_square.X2-new_square.X1)/2) + new_square.X1, square.Y2}
+
+					r.Square_list[z].Routers[y][2] = Tuple{int(new_square.X2), new_square.Y1}
+					r.Square_list[y].Routers[z][2] = Tuple{int(new_square.X2), square.Y2}
 
 				} else if new_square.Y2 == square.Y1-1 {
 					r.Border_dict[y] = append(r.Border_dict[y], z)
 					r.Border_dict[z] = append(r.Border_dict[z], y)
 
-					r.Square_list[z].Routers[y] = Tuple{int((new_square.X2-new_square.X1)/2) + new_square.X1, new_square.Y2}
-					r.Square_list[y].Routers[z] = Tuple{int((new_square.X2-new_square.X1)/2) + new_square.X1, square.Y1}
+					r.Square_list[z].Routers[y][0] = Tuple{int(new_square.X1), new_square.Y2}
+					r.Square_list[y].Routers[z][0] = Tuple{int(new_square.X1), square.Y1}
+
+					r.Square_list[z].Routers[y][1] = Tuple{int((new_square.X2-new_square.X1)/2) + new_square.X1, new_square.Y2}
+					r.Square_list[y].Routers[z][1] = Tuple{int((new_square.X2-new_square.X1)/2) + new_square.X1, square.Y1}
+
+					r.Square_list[z].Routers[y][2] = Tuple{int(new_square.X2), new_square.Y2}
+					r.Square_list[y].Routers[z][2] = Tuple{int(new_square.X2), square.Y1}
 				}
 			} else if new_square.Y1 >= square.Y1 && new_square.Y2 <= square.Y2 {
 				if new_square.X1 == square.X2+1 {
 					r.Border_dict[y] = append(r.Border_dict[y], z)
 					r.Border_dict[z] = append(r.Border_dict[z], y)
 
-					r.Square_list[z].Routers[y] = Tuple{new_square.X1, int((new_square.Y2-new_square.Y1)/2) + new_square.Y1}
-					r.Square_list[y].Routers[z] = Tuple{square.X2, int((new_square.Y2-new_square.Y1)/2) + new_square.Y1}
+					r.Square_list[z].Routers[y][0] = Tuple{new_square.X1, int(new_square.Y1)}
+					r.Square_list[y].Routers[z][0] = Tuple{square.X2, int(new_square.Y1)}
+
+					r.Square_list[z].Routers[y][1] = Tuple{new_square.X1, int((new_square.Y2-new_square.Y1)/2) + new_square.Y1}
+					r.Square_list[y].Routers[z][1] = Tuple{square.X2, int((new_square.Y2-new_square.Y1)/2) + new_square.Y1}
+
+					r.Square_list[z].Routers[y][2] = Tuple{new_square.X1, int(new_square.Y2)}
+					r.Square_list[y].Routers[z][2] = Tuple{square.X2, int(new_square.Y2)}
 
 				} else if new_square.X2 == square.X1-1 {
 					r.Border_dict[y] = append(r.Border_dict[y], z)
 					r.Border_dict[z] = append(r.Border_dict[z], y)
 
-					r.Square_list[z].Routers[y] = Tuple{new_square.X2, int((new_square.Y2-new_square.Y1)/2) + new_square.Y1}
-					r.Square_list[y].Routers[z] = Tuple{square.X1, int((new_square.Y2-new_square.Y1)/2) + new_square.Y1}
+					r.Square_list[z].Routers[y][0] = Tuple{new_square.X2, int(new_square.Y1)}
+					r.Square_list[y].Routers[z][0] = Tuple{square.X1, int(new_square.Y1)}
+
+					r.Square_list[z].Routers[y][1] = Tuple{new_square.X2, int((new_square.Y2-new_square.Y1)/2) + new_square.Y1}
+					r.Square_list[y].Routers[z][1] = Tuple{square.X1, int((new_square.Y2-new_square.Y1)/2) + new_square.Y1}
+
+					r.Square_list[z].Routers[y][2] = Tuple{new_square.X2, int(new_square.Y2)}
+					r.Square_list[y].Routers[z][2] = Tuple{square.X1, int(new_square.Y2)}
 				}
 			}
 			if square.X1 >= new_square.X1 && square.X2 <= new_square.X2 {
@@ -202,30 +229,54 @@ func Rebuild(sq_list []RoutingSquare, r *RegionParams) {
 					r.Border_dict[y] = append(r.Border_dict[y], z)
 					r.Border_dict[z] = append(r.Border_dict[z], y)
 
-					r.Square_list[z].Routers[y] = Tuple{int((square.X2-square.X1)/2) + square.X1, square.Y1}
-					r.Square_list[y].Routers[z] = Tuple{int((square.X2-square.X1)/2) + square.X1, new_square.Y2}
+					r.Square_list[z].Routers[y][0] = Tuple{int(square.X1), square.Y1}
+					r.Square_list[y].Routers[z][0] = Tuple{int(square.X1), new_square.Y2}
+
+					r.Square_list[z].Routers[y][1] = Tuple{int((square.X2-square.X1)/2) + square.X1, square.Y1}
+					r.Square_list[y].Routers[z][1] = Tuple{int((square.X2-square.X1)/2) + square.X1, new_square.Y2}
+
+					r.Square_list[z].Routers[y][2] = Tuple{int(square.X2), square.Y1}
+					r.Square_list[y].Routers[z][2] = Tuple{int(square.X2), new_square.Y2}
 
 				} else if square.Y2 == new_square.Y1-1 {
 					r.Border_dict[y] = append(r.Border_dict[y], z)
 					r.Border_dict[z] = append(r.Border_dict[z], y)
 
-					r.Square_list[z].Routers[y] = Tuple{int((square.X2-square.X1)/2) + square.X1, square.Y2}
-					r.Square_list[y].Routers[z] = Tuple{int((square.X2-square.X1)/2) + square.X1, new_square.Y1}
+					r.Square_list[z].Routers[y][0] = Tuple{int(square.X1), square.Y2}
+					r.Square_list[y].Routers[z][0] = Tuple{int(square.X1), new_square.Y1}
+
+					r.Square_list[z].Routers[y][1] = Tuple{int((square.X2-square.X1)/2) + square.X1, square.Y2}
+					r.Square_list[y].Routers[z][1] = Tuple{int((square.X2-square.X1)/2) + square.X1, new_square.Y1}
+
+					r.Square_list[z].Routers[y][1] = Tuple{int(square.X2), square.Y2}
+					r.Square_list[y].Routers[z][1] = Tuple{int(square.X2), new_square.Y1}
 				}
 			} else if square.Y1 >= new_square.Y1 && square.Y2 <= new_square.Y2 {
 				if square.X1 == new_square.X2+1 {
 					r.Border_dict[y] = append(r.Border_dict[y], z)
 					r.Border_dict[z] = append(r.Border_dict[z], y)
 
-					r.Square_list[z].Routers[y] = Tuple{square.X1, int((square.Y2-square.Y1)/2) + square.Y1}
-					r.Square_list[y].Routers[z] = Tuple{new_square.X2, int((square.Y2-square.Y1)/2) + square.Y1}
+					r.Square_list[z].Routers[y][0] = Tuple{square.X1, int(square.Y1)}
+					r.Square_list[y].Routers[z][0] = Tuple{new_square.X2, int(square.Y1)}
+
+					r.Square_list[z].Routers[y][1] = Tuple{square.X1, int((square.Y2-square.Y1)/2) + square.Y1}
+					r.Square_list[y].Routers[z][1] = Tuple{new_square.X2, int((square.Y2-square.Y1)/2) + square.Y1}
+
+					r.Square_list[z].Routers[y][2] = Tuple{square.X1, int(square.Y2)}
+					r.Square_list[y].Routers[z][2] = Tuple{new_square.X2, int(square.Y2)}
 
 				} else if square.X2 == new_square.X1-1 {
 					r.Border_dict[y] = append(r.Border_dict[y], z)
 					r.Border_dict[z] = append(r.Border_dict[z], y)
 
-					r.Square_list[z].Routers[y] = Tuple{square.X2, int((square.Y2-square.Y1)/2) + square.Y1}
-					r.Square_list[y].Routers[z] = Tuple{new_square.X1, int((square.Y2-square.Y1)/2) + square.Y1}
+					r.Square_list[z].Routers[y][0] = Tuple{square.X2, int(square.Y1)}
+					r.Square_list[y].Routers[z][0] = Tuple{new_square.X1, int(square.Y1)}
+
+					r.Square_list[z].Routers[y][1] = Tuple{square.X2, int((square.Y2-square.Y1)/2) + square.Y1}
+					r.Square_list[y].Routers[z][1] = Tuple{new_square.X1, int((square.Y2-square.Y1)/2) + square.Y1}
+
+					r.Square_list[z].Routers[y][2] = Tuple{square.X2, int(square.Y2)}
+					r.Square_list[y].Routers[z][2] = Tuple{new_square.X1, int(square.Y2)}
 				}
 			}
 

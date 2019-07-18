@@ -403,3 +403,7 @@ func Remove_coord_index(arr []Coord, n int) []Coord {
 func (n *Sn_two) AddRoutePoint(c Coord) {
 	n.AllPoints = append(n.AllPoints, c)
 }
+
+func (n *Sn_two) AddRoutePointUrgent(c Coord) {
+	n.AllPoints = append(n.AllPoints, c)
+}
