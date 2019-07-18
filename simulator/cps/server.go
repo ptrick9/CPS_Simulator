@@ -519,7 +519,7 @@ func (s FusionCenter) PlaceSuperNodes() {
 
 				for k := range s.Sch.SNodeList {
 					dist := 0.0
-					ret_path := GetPath(Coord{X: s.Sch.SNodeList[k].GetX(), Y: s.Sch.SNodeList[k].GetY()}, s.P.Grid[i][j].Center, s.R)
+					ret_path := GetPath(Coord{X: s.Sch.SNodeList[k].GetX(), Y: s.Sch.SNodeList[k].GetY()}, s.P.Grid[i][j].Center, s.R, s.P)
 
 					if len(ret_path) > 0 && ValidPath(RegionContaining(Tuple{X: s.Sch.SNodeList[k].GetX(), Y: s.Sch.SNodeList[k].GetY()}, s.R), s.P.Grid[i][j].Center, true, s.R){
 						tmp := Tuple{X: ret_path[0].X, Y: ret_path[0].Y}

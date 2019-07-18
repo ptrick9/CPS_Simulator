@@ -288,8 +288,14 @@ func Rebuild(sq_list []RoutingSquare, r *RegionParams) {
 					r.Border_dict[y] = append(r.Border_dict[y], z)
 					r.Border_dict[z] = append(r.Border_dict[z], y)
 
-					r.Square_list[z].Routers[y] = Tuple{(new_square.X1 + square.X2) / 2,  square.Y1}
-					r.Square_list[z].Routers[y] = Tuple{(new_square.X1 + square.X2) / 2,  new_square.Y2}
+					r.Square_list[z].Routers[y][0] = Tuple{new_square.X1, int(square.Y1)}
+					r.Square_list[y].Routers[z][0] = Tuple{new_square.X1, int(new_square.Y2)}
+
+					r.Square_list[z].Routers[y][1] = Tuple{(new_square.X1 + square.X2) / 2,  square.Y1}
+					r.Square_list[z].Routers[y][1] = Tuple{(new_square.X1 + square.X2) / 2,  new_square.Y2}
+
+					r.Square_list[z].Routers[y][2] = Tuple{square.X2, int(square.Y1)}
+					r.Square_list[y].Routers[z][2] = Tuple{square.X2, int(new_square.Y2)}
 				}
 
 				// Hanging Case 2
@@ -299,8 +305,14 @@ func Rebuild(sq_list []RoutingSquare, r *RegionParams) {
 					r.Border_dict[y] = append(r.Border_dict[y], z)
 					r.Border_dict[z] = append(r.Border_dict[z], y)
 
-					r.Square_list[z].Routers[y] = Tuple{(square.X1 + new_square.X2) / 2,  square.Y1}
-					r.Square_list[z].Routers[y] = Tuple{(square.X1 + new_square.X2) / 2,  new_square.Y2}
+					r.Square_list[z].Routers[y][0] = Tuple{square.X1,  square.Y1}
+					r.Square_list[z].Routers[y][0] = Tuple{square.X1,  new_square.Y2}
+
+					r.Square_list[z].Routers[y][1] = Tuple{(square.X1 + new_square.X2) / 2,  square.Y1}
+					r.Square_list[z].Routers[y][1] = Tuple{(square.X1 + new_square.X2) / 2,  new_square.Y2}
+
+					r.Square_list[z].Routers[y][2] = Tuple{new_square.X2,  square.Y1}
+					r.Square_list[z].Routers[y][2] = Tuple{new_square.X2,  new_square.Y2}
 				}
 			}
 
@@ -312,19 +324,31 @@ func Rebuild(sq_list []RoutingSquare, r *RegionParams) {
 					r.Border_dict[y] = append(r.Border_dict[y], z)
 					r.Border_dict[z] = append(r.Border_dict[z], y)
 
-					r.Square_list[z].Routers[y] = Tuple{(square.X1 + new_square.X2) / 2,  square.Y2}
-					r.Square_list[z].Routers[y] = Tuple{(square.X1 + new_square.X2) / 2,  new_square.Y1}
+					r.Square_list[z].Routers[y][0] = Tuple{square.X1,  square.Y2}
+					r.Square_list[z].Routers[y][0] = Tuple{square.X1,  new_square.Y1}
+
+					r.Square_list[z].Routers[y][1] = Tuple{(square.X1 + new_square.X2) / 2,  square.Y2}
+					r.Square_list[z].Routers[y][1] = Tuple{(square.X1 + new_square.X2) / 2,  new_square.Y1}
+
+					r.Square_list[z].Routers[y][2] = Tuple{new_square.X2,  square.Y2}
+					r.Square_list[z].Routers[y][2] = Tuple{new_square.X2,  new_square.Y1}
 				}
 
 				// Hanging Case 4
 				// square is on top of next_square
-				// # left side of square extends pass the left side of next_square
+				// left side of square extends pass the left side of next_square
 				if new_square.X1 >= square.X1 && new_square.X2 > square.X2 && new_square.X1 < square.X2 {
 					r.Border_dict[y] = append(r.Border_dict[y], z)
 					r.Border_dict[z] = append(r.Border_dict[z], y)
 
-					r.Square_list[z].Routers[y] = Tuple{(new_square.X1 + square.X2) / 2,  square.Y2}
-					r.Square_list[z].Routers[y] = Tuple{(new_square.X1 + square.X2) / 2,  new_square.Y1}
+					r.Square_list[z].Routers[y][0] = Tuple{new_square.X1,  square.Y2}
+					r.Square_list[z].Routers[y][0] = Tuple{new_square.X1,  new_square.Y1}
+
+					r.Square_list[z].Routers[y][1] = Tuple{(new_square.X1 + square.X2) / 2,  square.Y2}
+					r.Square_list[z].Routers[y][1] = Tuple{(new_square.X1 + square.X2) / 2,  new_square.Y1}
+
+					r.Square_list[z].Routers[y][2] = Tuple{square.X2,  square.Y2}
+					r.Square_list[z].Routers[y][2] = Tuple{square.X2,  new_square.Y1}
 				}
 			}
 
@@ -336,8 +360,14 @@ func Rebuild(sq_list []RoutingSquare, r *RegionParams) {
 					r.Border_dict[y] = append(r.Border_dict[y], z)
 					r.Border_dict[z] = append(r.Border_dict[z], y)
 
-					r.Square_list[y].Routers[z] = Tuple{square.X1,(square.Y1 + new_square.Y2) / 2}
-					r.Square_list[y].Routers[z] = Tuple{new_square.X2,(square.Y1 + new_square.Y2) / 2}
+					r.Square_list[y].Routers[z][0] = Tuple{square.X1,new_square.Y2}
+					r.Square_list[y].Routers[z][0] = Tuple{new_square.X2,new_square.Y2}
+
+					r.Square_list[y].Routers[z][1] = Tuple{square.X1,(square.Y1 + new_square.Y2) / 2}
+					r.Square_list[y].Routers[z][1] = Tuple{new_square.X2,(square.Y1 + new_square.Y2) / 2}
+
+					r.Square_list[y].Routers[z][2] = Tuple{square.X1,square.Y1}
+					r.Square_list[y].Routers[z][2] = Tuple{new_square.X2,square.Y1}
 				}
 
 				// Hanging Case 6
@@ -347,8 +377,16 @@ func Rebuild(sq_list []RoutingSquare, r *RegionParams) {
 					r.Border_dict[y] = append(r.Border_dict[y], z)
 					r.Border_dict[z] = append(r.Border_dict[z], y)
 
-					r.Square_list[y].Routers[z] = Tuple{square.X1,(new_square.Y1 + square.Y2) / 2}
-					r.Square_list[y].Routers[z] = Tuple{new_square.X2,(new_square.Y1 + square.Y2) / 2}
+					r.Square_list[y].Routers[z][0] = Tuple{square.X1,square.Y2}
+					r.Square_list[y].Routers[z][0] = Tuple{new_square.X2,square.Y2}
+
+					r.Square_list[y].Routers[z][1] = Tuple{square.X1,(new_square.Y1 + square.Y2) / 2}
+					r.Square_list[y].Routers[z][1] = Tuple{new_square.X2,(new_square.Y1 + square.Y2) / 2}
+
+					r.Square_list[y].Routers[z][2] = Tuple{square.X1,new_square.Y1}
+					r.Square_list[y].Routers[z][2] = Tuple{new_square.X2,new_square.Y1}
+
+
 				}
 			}
 
@@ -360,8 +398,14 @@ func Rebuild(sq_list []RoutingSquare, r *RegionParams) {
 					r.Border_dict[y] = append(r.Border_dict[y], z)
 					r.Border_dict[z] = append(r.Border_dict[z], y)
 
-					r.Square_list[y].Routers[z] = Tuple{square.X1,(square.Y1 + new_square.Y2) / 2}
-					r.Square_list[y].Routers[z] = Tuple{new_square.X2,(square.Y1 + new_square.Y2) / 2}
+					r.Square_list[y].Routers[z][0] = Tuple{square.X1,new_square.Y2}
+					r.Square_list[y].Routers[z][0] = Tuple{new_square.X2,new_square.Y2}
+
+					r.Square_list[y].Routers[z][1] = Tuple{square.X1,(square.Y1 + new_square.Y2) / 2}
+					r.Square_list[y].Routers[z][1] = Tuple{new_square.X2,(square.Y1 + new_square.Y2) / 2}
+
+					r.Square_list[y].Routers[z][2] = Tuple{square.X1,square.Y1}
+					r.Square_list[y].Routers[z][2] = Tuple{new_square.X2,square.Y1}
 				}
 
 				// Hanging Case 8
@@ -371,8 +415,14 @@ func Rebuild(sq_list []RoutingSquare, r *RegionParams) {
 					r.Border_dict[y] = append(r.Border_dict[y], z)
 					r.Border_dict[z] = append(r.Border_dict[z], y)
 
-					r.Square_list[y].Routers[z] = Tuple{square.X2,(new_square.Y1 + square.Y2) / 2}
-					r.Square_list[y].Routers[z] = Tuple{new_square.X1,(new_square.Y1 + square.Y2) / 2}
+					r.Square_list[y].Routers[z][0] = Tuple{square.X2,square.Y2}
+					r.Square_list[y].Routers[z][0] = Tuple{new_square.X1,square.Y2}
+
+					r.Square_list[y].Routers[z][1] = Tuple{square.X2,(new_square.Y1 + square.Y2) / 2}
+					r.Square_list[y].Routers[z][1] = Tuple{new_square.X1,(new_square.Y1 + square.Y2) / 2}
+
+					r.Square_list[y].Routers[z][2] = Tuple{square.X2,new_square.Y1}
+					r.Square_list[y].Routers[z][2] = Tuple{new_square.X1,new_square.Y1}
 				}
 			}
 		}

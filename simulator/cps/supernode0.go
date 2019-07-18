@@ -61,7 +61,7 @@ func (n *Sn_zero) UpdatePath() {
 }
 
 func (n *Sn_zero) AddRoutePointUrgent(c Coord) {
-	n.RoutePoints = []Coord{ Coord{X: n.X, Y: n.Y}, c}
+	n.RoutePoints = []Coord{ {X: int(n.X), Y: int(n.Y)}, c}
 	n.RoutePath = make([]Coord, 0)
 	n.NumDestinations = 0
 	n.UpdatePath()
