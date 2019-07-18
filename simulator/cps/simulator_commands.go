@@ -87,6 +87,7 @@ type Params struct {
 	BatteryFile    *os.File
 	ClusterFile	   *os.File
 	ClusterStatsFile *os.File
+	ClusterDebug	*os.File
 
 	SensorPath  string
 	MovementPath  string

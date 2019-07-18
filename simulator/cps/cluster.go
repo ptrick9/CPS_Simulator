@@ -7,7 +7,9 @@ import (
 
 type AdHocNetwork struct {
 	ClusterHeads	[]*NodeImpl
+	SingularNodes   []*NodeImpl
 	TotalHeads		int
+	SingularCount	int
 	Threshold		int //maximum # of nodes in a cluster
 }
 
@@ -22,6 +24,7 @@ type ClusterMemberParams struct{
 	CurrentCluster		*Cluster
 	RecvMsgs			[]*HelloMsg
 	ThisNodeHello		*HelloMsg
+	AttemptedToJoin		[]*NodeImpl
 }
 
 type HelloMsg struct {
@@ -58,11 +61,11 @@ func (curNode * NodeImpl) ComputeClusterScore(penalty float64, numWithinDist int
 func (curNode * NodeImpl)GenerateHello(searchRange float64, score float64) {
 	var option int
 
-	if(curNode.IsClusterHead){
-		option = curNode.NodeClusterParams.CurrentCluster.Total
-	} else{
+	//if(curNode.IsClusterHead){
+	//	option = curNode.NodeClusterParams.CurrentCluster.Total
+	//} else{
 		option = 0
-	}
+	//}
 
 	message := &HelloMsg{
 		Sender: curNode,
@@ -236,17 +239,24 @@ func (adhoc * AdHocNetwork) ClearClusterParams(curNode * NodeImpl){
 
 func (adhoc * AdHocNetwork) ResetClusters(){
 	for i:=0; i<len(adhoc.ClusterHeads); i++{
-		if(adhoc.ClusterHeads[i].NodeClusterParams.CurrentCluster!=nil){
-			for j:=0; j<len(adhoc.ClusterHeads[i].NodeClusterParams.CurrentCluster.ClusterMembers); j++{
-				adhoc.ClusterHeads[i].NodeClusterParams.CurrentCluster.ClusterMembers[j].IsClusterMember = false
-				adhoc.ClusterHeads[i].NodeClusterParams.CurrentCluster.ClusterMembers[j].NodeClusterParams.CurrentCluster = nil
+		if(adhoc.ClusterHeads[i].NodeClusterParams!=nil){
+			adhoc.ClusterHeads[i].NodeClusterParams.AttemptedToJoin = []*NodeImpl{}
+			if(adhoc.ClusterHeads[i].NodeClusterParams.CurrentCluster!=nil){
+				for j:=0; j<len(adhoc.ClusterHeads[i].NodeClusterParams.CurrentCluster.ClusterMembers); j++{
+					adhoc.ClusterHeads[i].NodeClusterParams.CurrentCluster.ClusterMembers[j].IsClusterMember = false
+					adhoc.ClusterHeads[i].NodeClusterParams.CurrentCluster.ClusterMembers[j].NodeClusterParams.CurrentCluster = nil
+					adhoc.ClusterHeads[i].NodeClusterParams.CurrentCluster.ClusterMembers[j].NodeClusterParams.RecvMsgs = []*HelloMsg{}
+					adhoc.ClusterHeads[i].NodeClusterParams.CurrentCluster.ClusterMembers[j].NodeClusterParams.AttemptedToJoin = []*NodeImpl{}
+					adhoc.ClusterHeads[i].NodeClusterParams.CurrentCluster.ClusterMembers[j].NodeClusterParams.ThisNodeHello = nil
+				}
+				adhoc.ClusterHeads[i].NodeClusterParams.CurrentCluster = nil
+				adhoc.ClusterHeads[i].IsClusterHead = false
 			}
-			adhoc.ClusterHeads[i].NodeClusterParams.CurrentCluster = nil
-			adhoc.ClusterHeads[i].IsClusterHead = false
 		}
 	}
 	adhoc.TotalHeads = 0
 	adhoc.ClusterHeads = []*NodeImpl{}
+	adhoc.SingularNodes = []*NodeImpl{}
 }
 
 //sorts messages by distance to the node: 0th = closest, nth = farthest
@@ -279,6 +289,7 @@ func (curNode * NodeImpl) SortMessages(){
 
 func (adhoc * AdHocNetwork) ElectClusterHead(curNode * NodeImpl){
 	maxNode := curNode.HasMaxNodeScore()
+
 	if(maxNode.IsClusterHead == false){
 		maxNode.IsClusterHead = true
 
@@ -288,15 +299,100 @@ func (adhoc * AdHocNetwork) ElectClusterHead(curNode * NodeImpl){
 	}
 }
 
+//Assumed to be called by cluster heads
 func (adhoc * AdHocNetwork) FormClusters(clusterHead * NodeImpl){
-	for i:=0; i<len(clusterHead.NodeClusterParams.RecvMsgs) && len(clusterHead.NodeClusterParams.CurrentCluster.ClusterMembers)<adhoc.Threshold; i++{
+
+	msgs := clusterHead.NodeClusterParams.RecvMsgs
+	if(clusterHead.NodeClusterParams.CurrentCluster==nil){
+		clusterHead.NodeClusterParams.CurrentCluster = &Cluster{clusterHead, 0, []*NodeImpl{},adhoc }
+		adhoc.ClusterHeads = append(adhoc.ClusterHeads, clusterHead)
+		adhoc.TotalHeads++
+	}
+
+	for i:=0; i<len(clusterHead.NodeClusterParams.RecvMsgs) && clusterHead.NodeClusterParams.CurrentCluster.Total<adhoc.Threshold; i++{
 		if(!clusterHead.NodeClusterParams.RecvMsgs[i].Sender.IsClusterHead && !clusterHead.NodeClusterParams.RecvMsgs[i].Sender.IsClusterMember){
 			clusterHead.NodeClusterParams.CurrentCluster.ClusterMembers = append(clusterHead.NodeClusterParams.CurrentCluster.ClusterMembers, clusterHead.NodeClusterParams.RecvMsgs[i].Sender)
 			clusterHead.NodeClusterParams.CurrentCluster.Total = len(clusterHead.NodeClusterParams.CurrentCluster.ClusterMembers)
 
 			clusterHead.NodeClusterParams.RecvMsgs[i].Sender.IsClusterMember = true
 			clusterHead.NodeClusterParams.RecvMsgs[i].Sender.NodeClusterParams.CurrentCluster = clusterHead.NodeClusterParams.CurrentCluster
+
 		}
 	}
+
+
+
+	for i:=0; i<len(msgs); i++ {
+		if (msgs[i].Sender.IsClusterHead || msgs[i].Sender.IsClusterMember) {
+			if (i < len(msgs)) {
+				msgs = append(msgs[:i], msgs[i+1:]...)
+			}
+		}
+	}
+
+	if(len(msgs)>0){
+		for i:=0; i<len(msgs); i++{
+			adhoc.ElectClusterHead(msgs[i].Sender)
+			//if(msgs[i].Sender.IsClusterHead){
+			//	msgs[i].Sender.NodeClusterParams.CurrentCluster = &Cluster{}
+			//	msgs[i].Sender.NodeClusterParams.CurrentCluster.ClusterHead = adhoc.SingularNodes[i]
+			//	msgs[i].Sender.NodeClusterParams.CurrentCluster.Total = 0
+			//	msgs[i].Sender.NodeClusterParams.CurrentCluster.ClusterMembers = []*NodeImpl{}
+			//	msgs[i].Sender.NodeClusterParams.CurrentCluster.ClusterNetwork = adhoc
+			//	msgs[i].Sender.IsClusterHead = true
+			//
+			//	adhoc.ClusterHeads = append(adhoc.ClusterHeads, adhoc.SingularNodes[i])
+			//	adhoc.TotalHeads++
+			//}
+
+				//Add to SingularNodes if it has
+				exists := false
+				for j:=0; j<len(adhoc.SingularNodes); j++{
+					if(adhoc.SingularNodes[j] == msgs[i].Sender){
+						exists = true
+						break
+					}
+				}
+
+				if(!exists){
+					adhoc.SingularNodes = append(adhoc.SingularNodes, msgs[i].Sender)
+					adhoc.SingularCount++
+				}
+		}
+	}
+}
+
+//sorts clusterheads by distance to the current node
+func (adhoc * AdHocNetwork) SortClusterHeads(curNode * NodeImpl, searchRange float64) (viableOptions []*NodeImpl){
+
+	distances := []float64{}
+	viableOptions = []*NodeImpl{}
+
+	for j:=0; j<len(adhoc.ClusterHeads);j++{
+		xDist := curNode.X-adhoc.ClusterHeads[j].X
+		yDist := curNode.Y-adhoc.ClusterHeads[j].Y
+		dist := math.Sqrt(float64(xDist*xDist)+float64(yDist*yDist))
+		if(dist<=searchRange){
+			distances = append(distances, dist)
+			viableOptions = append(viableOptions, adhoc.ClusterHeads[j])
+		}
+
+	}
+
+	for i:=0; i<len(viableOptions);i++{
+		for j:=0; j<len(viableOptions)-i-1; j++{
+			if(distances[j]>distances[j+1]){
+				chTemp := viableOptions[j]
+				viableOptions[j] = viableOptions[j+1]
+				viableOptions[j+1] = chTemp
+
+				distTemp := distances[j]
+				distances[j] = distances[j+1]
+				distances[j+1] = distTemp
+			}
+		}
+	}
+	//fmt.Println(distances)
+	return viableOptions
 }
 

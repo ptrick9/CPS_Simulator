@@ -34,7 +34,7 @@ import (
 	"math/rand"
 	"os"
 	"runtime/pprof"
-	"time"
+	//"time"
 
 	"image"
 	"image/png"
@@ -70,7 +70,7 @@ func main() {
 	p.Tau2 = 500
 	p.FoundBomb = false
 
-	rand.Seed(time.Now().UTC().UnixNano())
+	//rand.Seed(time.Now().UTC().UnixNano())
 
 	//getFlags()
 	cps.GetFlags(p)
@@ -147,7 +147,9 @@ func main() {
 
 	p.ClusterNetwork = &cps.AdHocNetwork{
 		ClusterHeads:	[]*cps.NodeImpl{},
+		SingularNodes:	[]*cps.NodeImpl{},
 		TotalHeads:			0,
+		SingularCount:		0,
 		Threshold:			p.ClusterThreshold,
 	}
 
@@ -165,7 +167,7 @@ func main() {
 		}
 	}
 
-	rand.Seed(time.Now().UnixNano()) //sets random to work properly by tying to to clock
+	//rand.Seed(time.Now().UnixNano()) //sets random to work properly by tying to to clock
 	p.ThreshHoldBatteryToHave = 30.0 //This is the threshold battery to have for all phones
 
 	p.Iterations_used = 0
@@ -240,7 +242,8 @@ func main() {
 	p.Events.Push(&cps.Event{nil, cps.SERVER, 999, 0})
 	p.Events.Push(&cps.Event{nil, cps.GRID, 999, 0})
 	p.Events.Push(&cps.Event{nil, cps.TIME, -1, 0})
-	p.Events.Push(&cps.Event{nil, cps.CLUSTERPRINT, 999, 0})
+	p.Events.Push(&cps.Event{nil, cps.CLUSTERPRINT, 1999, 0})
+	p.Events.Push(&cps.Event{nil,cps.CLUSTERLESSFORM,25,0})
 
 
 	p.CurrentTime = 0
@@ -302,7 +305,7 @@ func main() {
 
 			} else if event.Instruction == cps.CLUSTERFORM {
 				if(event.Node.Valid){
-					//event.Node.SortMessages()
+					event.Node.SortMessages()
 					//p.ClusterNetwork.GenerateClusters(event.Node)
 					if(event.Node.IsClusterHead){
 						p.ClusterNetwork.FormClusters(event.Node)
@@ -403,8 +406,108 @@ func main() {
 				}
 				fmt.Fprintln(p.ClusterStatsFile,"")
 
+				clusterHeadCount:=0
+				clusterMemberCount:=0
+				fmt.Fprint(p.ClusterDebug, "", )
+				for i:=0; i<len(p.NodeList); i++ {
+					if(p.NodeList[i].IsClusterHead){
+						clusterHeadCount++
+					} else if(p.NodeList[i].IsClusterMember){
+							clusterMemberCount++
+					}
+				}
+				fmt.Fprintf(p.ClusterDebug,"Iteration: %d\tlen(p.ClusterNetwork.ClusterHeads): %d\tClusterHeads: %d\tClusterMembers: %d\n",p.CurrentTime/1000,len(p.ClusterNetwork.ClusterHeads),clusterHeadCount,clusterMemberCount)
+
+				clusterMemberCountFromArrays := 0
+				for i:=0; i<len(p.NodeList); i++ {
+					if(p.NodeList[i].IsClusterHead){
+						//found := false
+						for j:=0; j<len(p.ClusterNetwork.ClusterHeads);j++{// && !found ;j++{
+							//if(p.ClusterNetwork.ClusterHeads[j]==p.NodeList[i]){
+							//	found = true
+							//}
+
+							clusterMemberCountFromArrays += len(p.ClusterNetwork.ClusterHeads[j].NodeClusterParams.CurrentCluster.ClusterMembers)
+
+						}
+						//if(!found){
+						//	if(p.NodeList[i].NodeClusterParams.CurrentCluster!=nil) {
+						//		fmt.Fprintf(p.ClusterDebug, "\tNotFound: {ID: %d, Size: %d} \n", p.NodeList[i].Id, p.NodeList[i].NodeClusterParams.CurrentCluster.Total)
+						//	} else{
+						//		fmt.Fprintf(p.ClusterDebug, "\tNotFound: {ID: %d, Size: nil cluster} \n", p.NodeList[i].Id)
+						//	}
+						//}
+					}
+				}
+
+				//fmt.Fprintln(p.ClusterFile, "Amount:", p.ClusterNetwork.SingularCount)
+				//for i:=0; i<len(p.ClusterNetwork.SingularNodes); i++{
+				//	if (len(p.ClusterNetwork.SingularNodes[i].NodeClusterParams.AttemptedToJoin)>0){
+				//		fmt.Fprintf(p.ClusterFile,"%d: [", p.ClusterNetwork.SingularNodes[i].Id)
+				//		for j:=0; j<len(p.ClusterNetwork.SingularNodes[i].NodeClusterParams.AttemptedToJoin); j++ {
+				//			fmt.Fprintf(p.ClusterFile,"%d", p.ClusterNetwork.SingularNodes[i].NodeClusterParams.AttemptedToJoin[j].Id)
+				//			if (j+1 != len(p.ClusterNetwork.SingularNodes[i].NodeClusterParams.AttemptedToJoin)) {
+				//				fmt.Fprintf(p.ClusterFile,", ")
+				//			}
+				//		}
+				//		fmt.Fprintf(p.ClusterFile,"]\n")
+				//	}
+				//}
+
 				p.Events.Push(&cps.Event{nil, cps.CLUSTERPRINT, p.CurrentTime + 1000, 0})
 				p.ClusterNetwork.ResetClusters()
+			} else if event.Instruction == cps.CLUSTERLESSFORM {
+
+				for i:=0; i<len(p.ClusterNetwork.SingularNodes); i++{
+					if(p.ClusterNetwork.SingularNodes[i].IsClusterHead){
+						p.ClusterNetwork.FormClusters(p.ClusterNetwork.SingularNodes[i])
+					} else if(!p.ClusterNetwork.SingularNodes[i].IsClusterMember){
+						viableOptions := p.ClusterNetwork.SortClusterHeads(p.ClusterNetwork.SingularNodes[i],p.NodeBTRange)
+
+						k := 0
+						joined := false
+						atj := []*cps.NodeImpl{}
+						for !joined && k<len(viableOptions){
+							//fmt.Printf("\tViableOption Total: %d\n",viableOptions[0].NodeClusterParams.CurrentCluster.Total)
+							if(viableOptions[k].NodeClusterParams.CurrentCluster.Total < p.ClusterThreshold){
+								clusterHead := viableOptions[k]
+
+								clusterHead.NodeClusterParams.CurrentCluster.ClusterMembers = append(clusterHead.NodeClusterParams.CurrentCluster.ClusterMembers, p.ClusterNetwork.SingularNodes[i])
+								clusterHead.NodeClusterParams.CurrentCluster.Total++
+
+								p.ClusterNetwork.SingularNodes[i].IsClusterMember = true
+								p.ClusterNetwork.SingularNodes[i].NodeClusterParams.CurrentCluster = clusterHead.NodeClusterParams.CurrentCluster
+								joined = true
+							} else{
+								atj = append(atj, viableOptions[k])
+							}
+							k++
+						}
+						if(k==len(viableOptions)){
+							p.ClusterNetwork.SingularNodes[i].NodeClusterParams.CurrentCluster = &cps.Cluster{}
+							p.ClusterNetwork.SingularNodes[i].NodeClusterParams.CurrentCluster.ClusterHead = p.ClusterNetwork.SingularNodes[i]
+							p.ClusterNetwork.SingularNodes[i].NodeClusterParams.CurrentCluster.Total = 0
+							p.ClusterNetwork.SingularNodes[i].NodeClusterParams.CurrentCluster.ClusterMembers = []*cps.NodeImpl{}
+							p.ClusterNetwork.SingularNodes[i].NodeClusterParams.CurrentCluster.ClusterNetwork = p.ClusterNetwork
+							p.ClusterNetwork.SingularNodes[i].IsClusterHead = true
+
+							p.ClusterNetwork.ClusterHeads = append(p.ClusterNetwork.ClusterHeads, p.ClusterNetwork.SingularNodes[i])
+							p.ClusterNetwork.TotalHeads++
+							p.ClusterNetwork.SingularNodes[i].NodeClusterParams.AttemptedToJoin = append(p.ClusterNetwork.SingularNodes[i].NodeClusterParams.AttemptedToJoin, atj...)
+						}
+					}
+
+				}
+
+				for i:=0; i<len(p.ClusterNetwork.SingularNodes); i++{
+					if(p.ClusterNetwork.SingularNodes[i].IsClusterHead || p.ClusterNetwork.SingularNodes[i].IsClusterMember){// && p.ClusterNetwork.SingularNodes[i].NodeClusterParams.CurrentCluster!=nil && p.ClusterNetwork.SingularNodes[i].NodeClusterParams.CurrentCluster.Total>0){
+						p.ClusterNetwork.SingularNodes = append(p.ClusterNetwork.SingularNodes[:i],p.ClusterNetwork.SingularNodes[i+1:]...)
+						p.ClusterNetwork.SingularCount--
+					}
+				}
+
+				//fmt.Println()
+				p.Events.Push(&cps.Event{nil, cps.CLUSTERLESSFORM, p.CurrentTime + 1000, 0})
 			}
 		}
 	}

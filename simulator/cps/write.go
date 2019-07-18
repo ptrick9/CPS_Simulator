@@ -798,6 +798,11 @@ func SetupFiles(p *Params) {
 		log.Fatal("Cannot create file", err)
 	}
 
+	p.ClusterDebug, err = os.Create(p.OutputFileNameCM + "-adhoc_debug.txt")
+	if err != nil{
+		log.Fatal("Cannot create file", err)
+	}
+
 	p.ClusterFile, err = os.Create(p.OutputFileNameCM + "-adhoc.txt")
 	if err != nil{
 		log.Fatal("Cannot create file", err)
