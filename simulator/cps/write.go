@@ -433,10 +433,6 @@ func SetupCSVNodes(p *Params) {
 		newNode.X = float32(p.NodeMovements[i][0].X)
 		newNode.Y = float32(p.NodeMovements[i][1].Y)
 
-		newNode.IsClusterHead = false
-		newNode.IsClusterMember = false
-		newNode.NodeClusterParams = &ClusterMemberParams{}
-
 		if newNode.InBounds(p) {
 			newNode.Valid = true
 			p.BoolGrid[int(newNode.X)][int(newNode.Y)] = true
@@ -447,11 +443,17 @@ func SetupCSVNodes(p *Params) {
 		p.NodeList = append(p.NodeList, newNode)
 		p.CurrentNodes += 1
 		p.Events.Push(&Event{newNode,SENSE,0,0})
-		p.Events.Push(&Event{newNode,CLUSTERMSG,10,0})
-		p.Events.Push(&Event{newNode,CLUSTERHEADELECT,15,0})
-		p.Events.Push(&Event{newNode,CLUSTERFORM,20,0})
 
-		p.ClusterNetwork.ClearClusterParams(newNode)
+		if(p.ClusteringOn){
+			newNode.IsClusterHead = false
+			newNode.IsClusterMember = false
+			newNode.NodeClusterParams = &ClusterMemberParams{}
+			p.Events.Push(&Event{newNode,CLUSTERMSG,10,0})
+			p.Events.Push(&Event{newNode,CLUSTERHEADELECT,15,0})
+			p.Events.Push(&Event{newNode,CLUSTERFORM,20,0})
+			p.ClusterNetwork.ClearClusterParams(newNode)
+			newNode.CHPenalty = 1.0 //initialized to 1
+		}
 
 		bNewNode := Bounds{
 			X:	float64(newNode.X),
@@ -463,10 +465,8 @@ func SetupCSVNodes(p *Params) {
 		}
 		p.NodeList[len(p.NodeList)-1].NodeBounds = &bNewNode
 		p.NodeTree.Insert(&bNewNode)
-		newNode.CHPenalty = 1.0 //initialized to 1
 
-		if newNode.Valid{
-		}
+
 	}
 
 }
@@ -476,11 +476,6 @@ func SetupRandomNodes(p *Params) {
 		if p.Iterations_used == p.NodeEntryTimes[i][2] {
 
 			newNode := InitializeNodeParameters(p, i)
-
-			newNode.NodeClusterParams.CurrentCluster.ClusterHead = nil //nil Cluster Head signifies having no cluster head
-			newNode.IsClusterHead = false
-			newNode.IsClusterMember = false
-			newNode.NodeClusterParams = &ClusterMemberParams{}
 
 			xx := rangeInt(1, p.MaxX)
 			yy := rangeInt(1, p.MaxY)
@@ -498,9 +493,21 @@ func SetupRandomNodes(p *Params) {
 			p.NodeList = append(p.NodeList, newNode)
 			p.CurrentNodes += 1
 			p.Events.Push(&Event{newNode, SENSE, 0, 0})
-			p.Events.Push(&Event{newNode, MOVE, 0, 0})
-			p.Events.Push(&Event{newNode,CLUSTERMSG,1,0})
-			p.Events.Push(&Event{newNode,CLUSTERFORM,2,0})
+
+			if(p.ClusteringOn){
+				newNode.NodeClusterParams.CurrentCluster.ClusterHead = nil //nil Cluster Head signifies having no cluster head
+				newNode.IsClusterHead = false
+				newNode.IsClusterMember = false
+				newNode.NodeClusterParams = &ClusterMemberParams{}
+				newNode.IsClusterHead = false
+				newNode.IsClusterMember = false
+				newNode.NodeClusterParams = &ClusterMemberParams{}
+				p.Events.Push(&Event{newNode,CLUSTERMSG,10,0})
+				p.Events.Push(&Event{newNode,CLUSTERHEADELECT,15,0})
+				p.Events.Push(&Event{newNode,CLUSTERFORM,20,0})
+				p.ClusterNetwork.ClearClusterParams(newNode)
+				newNode.CHPenalty = 1.0 //initialized to 1
+			}
 
 			if newNode.Valid{
 				bNewNode := Bounds{
@@ -1268,6 +1275,7 @@ func GetFlags(p *Params) {
 
 	flag.IntVar(&p.ClusterThreshold, "clusterThresh,",8, "max size of a node cluster")
 	flag.Float64Var(&p.NodeBTRange, "nodeBTRange",20.0,"bluetooth range of each node")
+	flag.BoolVar(&p.ClusteringOn,"clusteringOn",true,"True: nodes will form clusters, False: no clusters will form")
 
 	//Range: 0-4
 	//	0: begin in center, routed anywhere

@@ -198,4 +198,5 @@ type Params struct {
 	ClusterNetwork			* AdHocNetwork
 	NodeBTRange				float64
 	ClusterThreshold		int
+	ClusteringOn			bool
 }
