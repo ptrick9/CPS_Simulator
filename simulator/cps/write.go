@@ -402,14 +402,14 @@ func InitializeNodeParameters(p *Params, nodeNum int) *NodeImpl{
 		BatteryLossBT:			  p.BatteryLossesBT[nodeNum]}
 
 	//values to determine coefficients
-	curNode.SetS0(rand.Float64()*0.2 + 0.1)
-	curNode.SetS1(rand.Float64()*0.2 + 0.1)
-	curNode.SetS2(rand.Float64()*0.2 + 0.1)
+	curNode.SetS0(rand.Float64()*0.005 + 0.33)
+	curNode.SetS1(rand.Float64()*0.005 + 0.33)
+	curNode.SetS2(rand.Float64()*0.005 + 0.33)
 	//values to determine error in coefficients
 	s0, s1, s2 := curNode.GetCoefficients()
-	curNode.SetE0(rand.Float64() * 0.1 * p.ErrorModifierCM * s0)
-	curNode.SetE1(rand.Float64() * 0.1 * p.ErrorModifierCM * s1)
-	curNode.SetE2(rand.Float64() * 0.1 * p.ErrorModifierCM * s2)
+	curNode.SetE0(rand.Float64() * 0.02 * p.ErrorModifierCM * s0)
+	curNode.SetE1(rand.Float64() * 0.02 * p.ErrorModifierCM * s1)
+	curNode.SetE2(rand.Float64() * 0.02 * p.ErrorModifierCM * s2)
 	//Values to determine error in exponents
 	curNode.SetET1(p.Tau1 * rand.Float64() * p.ErrorModifierCM * 0.05)
 	curNode.SetET2(p.Tau1 * rand.Float64() * p.ErrorModifierCM * 0.05)

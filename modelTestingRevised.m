@@ -4,25 +4,25 @@
 numNodes = 1000
 
 %Create Time Steps
-t = [0:1:10000]';
+t = [0:1:20000]';
 
 %Create All S0-S2 parameters
-S0 = rand(1,numNodes)*0.2+0.1;
-S1 = rand(1,numNodes)*0.2+0.1;
-S2 = rand(1,numNodes)*0.2+0.1;
+S0 = randn(1,numNodes)*0.005+0.33;
+S1 = randn(1,numNodes)*0.005+0.33;
+S2 = randn(1,numNodes)*0.005+0.33;
 
 %Create all E0-E2 parameters
-E0 = rand(1,numNodes)*0.1.*S0;
-E1 = rand(1,numNodes)*0.1.*S1;
-E2 = rand(1,numNodes)*0.1.*S2;
+E0 = randn(1,numNodes)*0.02.*S0;
+E1 = randn(1,numNodes)*0.02.*S1;
+E2 = randn(1,numNodes)*0.02.*S2;
 
 %Tau1-2 as defined in original document
-Tau1 = 10;
-Tau2 = 500;
+Tau1 = 3500;
+Tau2 = 9000;
 
 %ET1-2 values 
-ET1 = Tau1*rand(1,numNodes)*0.05;
-ET2 = Tau1*rand(1,numNodes)*0.05;
+ET1 = Tau1*randn(1,numNodes)*0.05;
+ET2 = Tau1*randn(1,numNodes)*0.05;
 
 
 %Sensitivity for each node over time
