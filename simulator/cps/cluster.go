@@ -292,14 +292,11 @@ func (adhoc * AdHocNetwork) SortClusterHeads(curNode * NodeImpl, searchRange flo
 	viableOptions = []*NodeImpl{}
 
 	for j:=0; j<len(adhoc.ClusterHeads);j++{
-		//if(curNode.IsWithinRange(adhoc.ClusterHeads[j],searchRange)){
-			xDist := curNode.X-adhoc.ClusterHeads[j].X
-			yDist := curNode.Y-adhoc.ClusterHeads[j].Y
-			dist := math.Sqrt(float64(xDist*xDist)+float64(yDist*yDist))
-			distances = append(distances, dist)
-			viableOptions = append(viableOptions, adhoc.ClusterHeads[j])
-		//}
-
+		xDist := curNode.X-adhoc.ClusterHeads[j].X
+		yDist := curNode.Y-adhoc.ClusterHeads[j].Y
+		dist := math.Sqrt(float64(xDist*xDist)+float64(yDist*yDist))
+		distances = append(distances, dist)
+		viableOptions = append(viableOptions, adhoc.ClusterHeads[j])
 	}
 
 	for i:=0; i<len(viableOptions);i++{
