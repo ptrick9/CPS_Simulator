@@ -446,10 +446,12 @@ func SetupCSVNodes(p *Params) {
 
 		p.NodeList = append(p.NodeList, newNode)
 		p.CurrentNodes += 1
-		p.Events.Push(&Event{newNode, SENSE, 0, 0})
-		p.Events.Push(&Event{newNode, MOVE, 0, 0})
+		p.Events.Push(&Event{newNode,SENSE,0,0})
 		p.Events.Push(&Event{newNode,CLUSTERMSG,10,0})
+		p.Events.Push(&Event{newNode,CLUSTERHEADELECT,15,0})
 		p.Events.Push(&Event{newNode,CLUSTERFORM,20,0})
+
+		p.ClusterNetwork.ClearClusterParams(newNode)
 
 		bNewNode := Bounds{
 			X:	float64(newNode.X),

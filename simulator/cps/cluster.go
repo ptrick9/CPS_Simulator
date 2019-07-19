@@ -54,7 +54,7 @@ func (curNode * NodeImpl) ComputeClusterScore(penalty float64, numWithinDist int
 
 	//weighted sum, 60% from degree (# of nodes withinin distance), 40% from its battery life
 	// penalty used to increase a nodes chance at staying a clusterhead
-	return ((0.5*degree + 0.5*battery)*curNode.CHPenalty)
+	return ((0.6*degree + 0.4*battery)*curNode.CHPenalty)
 }
 
 //Generates Hello Message for node to form/maintain clusters. Returns message as a string
@@ -204,7 +204,6 @@ func (curNode * NodeImpl) SortMessages(){
 			}
 		}
 	}
-	//fmt.Println(distances)
 }
 
 func (adhoc * AdHocNetwork) ElectClusterHead(curNode * NodeImpl){
@@ -251,17 +250,6 @@ func (adhoc * AdHocNetwork) FormClusters(clusterHead * NodeImpl){
 	if(len(msgs)>0){
 		for i:=0; i<len(msgs); i++{
 			adhoc.ElectClusterHead(msgs[i].Sender)
-			//if(msgs[i].Sender.IsClusterHead){
-			//	msgs[i].Sender.NodeClusterParams.CurrentCluster = &Cluster{}
-			//	msgs[i].Sender.NodeClusterParams.CurrentCluster.ClusterHead = adhoc.SingularNodes[i]
-			//	msgs[i].Sender.NodeClusterParams.CurrentCluster.Total = 0
-			//	msgs[i].Sender.NodeClusterParams.CurrentCluster.ClusterMembers = []*NodeImpl{}
-			//	msgs[i].Sender.NodeClusterParams.CurrentCluster.ClusterNetwork = adhoc
-			//	msgs[i].Sender.IsClusterHead = true
-			//
-			//	adhoc.ClusterHeads = append(adhoc.ClusterHeads, adhoc.SingularNodes[i])
-			//	adhoc.TotalHeads++
-			//}
 
 				//Add to SingularNodes if it has
 				exists := false
@@ -312,5 +300,99 @@ func (adhoc * AdHocNetwork) SortClusterHeads(curNode * NodeImpl, searchRange flo
 	}
 	//fmt.Println(distances)
 	return viableOptions
+}
+
+func (adhoc * AdHocNetwork) FinalizeClusters(p * Params){
+	for i:=0; i<len(p.NodeList); i++ {
+		//Nodes marked as members but not in a cluster added to SingularNodes
+		if(p.NodeList[i].IsClusterMember && !p.NodeList[i].IsClusterHead){
+			if(p.NodeList[i].NodeClusterParams.CurrentCluster==nil){
+			} else{
+				found := false
+				j := 0
+				for j<len(p.ClusterNetwork.ClusterHeads){
+					if(p.ClusterNetwork.ClusterHeads[j] ==  p.NodeList[i].NodeClusterParams.CurrentCluster.ClusterHead){
+						break
+					} else{
+						j++
+					}
+				}
+				if(j<len(p.ClusterNetwork.ClusterHeads)){
+					for k := 0; k<len(p.ClusterNetwork.ClusterHeads[j].NodeClusterParams.CurrentCluster.ClusterMembers) && !found; k++{
+						if(p.ClusterNetwork.ClusterHeads[j].NodeClusterParams.CurrentCluster.ClusterMembers[k]==p.NodeList[i]){
+							found = true
+						}
+					}
+				}
+				if(!found){
+					p.NodeList[i].IsClusterMember = false
+					p.ClusterNetwork.SingularNodes = append(p.ClusterNetwork.SingularNodes, p.NodeList[i])
+				}
+			}
+		}
+	}
+
+	//Finds viable options for singular nodes (join another cluster or form own)
+	for i:=0; i<len(p.ClusterNetwork.SingularNodes); i++{
+		if(p.ClusterNetwork.SingularNodes[i].IsClusterHead){
+			p.ClusterNetwork.FormClusters(p.ClusterNetwork.SingularNodes[i])
+		} else if(!p.ClusterNetwork.SingularNodes[i].IsClusterMember){
+			viableOptions := p.ClusterNetwork.SortClusterHeads(p.ClusterNetwork.SingularNodes[i],p.NodeBTRange)
+
+			k := 0
+			joined := false
+			atj := []*NodeImpl{}
+			for !joined && k<len(viableOptions){
+				//fmt.Printf("\tViableOption Total: %d\n",viableOptions[0].NodeClusterParams.CurrentCluster.Total)
+				if(viableOptions[k].NodeClusterParams.CurrentCluster.Total < p.ClusterThreshold){
+					clusterHead := viableOptions[k]
+
+					clusterHead.NodeClusterParams.CurrentCluster.ClusterMembers = append(clusterHead.NodeClusterParams.CurrentCluster.ClusterMembers, p.ClusterNetwork.SingularNodes[i])
+					clusterHead.NodeClusterParams.CurrentCluster.Total++
+
+					p.ClusterNetwork.SingularNodes[i].IsClusterMember = true
+					p.ClusterNetwork.SingularNodes[i].NodeClusterParams.CurrentCluster = clusterHead.NodeClusterParams.CurrentCluster
+					joined = true
+				} else{
+					atj = append(atj, viableOptions[k])
+				}
+				k++
+			}
+			if(k==len(viableOptions)){
+				p.ClusterNetwork.SingularNodes[i].NodeClusterParams.CurrentCluster = &Cluster{}
+				p.ClusterNetwork.SingularNodes[i].NodeClusterParams.CurrentCluster.ClusterHead = p.ClusterNetwork.SingularNodes[i]
+				p.ClusterNetwork.SingularNodes[i].NodeClusterParams.CurrentCluster.Total = 0
+				p.ClusterNetwork.SingularNodes[i].NodeClusterParams.CurrentCluster.ClusterMembers = []*NodeImpl{}
+				p.ClusterNetwork.SingularNodes[i].NodeClusterParams.CurrentCluster.ClusterNetwork = p.ClusterNetwork
+				p.ClusterNetwork.SingularNodes[i].IsClusterHead = true
+				p.ClusterNetwork.SingularNodes[i].IsClusterMember = false
+
+				p.ClusterNetwork.ClusterHeads = append(p.ClusterNetwork.ClusterHeads, p.ClusterNetwork.SingularNodes[i])
+				p.ClusterNetwork.TotalHeads++
+				p.ClusterNetwork.SingularNodes[i].NodeClusterParams.AttemptedToJoin = append(p.ClusterNetwork.SingularNodes[i].NodeClusterParams.AttemptedToJoin, atj...)
+			}
+		}
+
+	}
+
+	//If no longer a singular node remove from array and decrease count
+	for i:=0; i<len(p.ClusterNetwork.SingularNodes); i++{
+		if(p.ClusterNetwork.SingularNodes[i].IsClusterHead || p.ClusterNetwork.SingularNodes[i].IsClusterMember){// && p.ClusterNetwork.SingularNodes[i].NodeClusterParams.CurrentCluster!=nil && p.ClusterNetwork.SingularNodes[i].NodeClusterParams.CurrentCluster.Total>0){
+			p.ClusterNetwork.SingularNodes = append(p.ClusterNetwork.SingularNodes[:i],p.ClusterNetwork.SingularNodes[i+1:]...)
+			p.ClusterNetwork.SingularCount--
+		}
+	}
+
+	//if a cluster head is part of a cluster remove from that cluster
+	for i:=0; i<len(p.ClusterNetwork.ClusterHeads); i++ {
+		for j:=0; j<len(p.ClusterNetwork.ClusterHeads); j++ {
+			for k:=0; k<len(p.ClusterNetwork.ClusterHeads[j].NodeClusterParams.CurrentCluster.ClusterMembers); k++ {
+				if(p.ClusterNetwork.ClusterHeads[j].NodeClusterParams.CurrentCluster.ClusterMembers[k]==p.ClusterNetwork.ClusterHeads[i]){
+					p.ClusterNetwork.ClusterHeads[j].NodeClusterParams.CurrentCluster.ClusterMembers = append(p.ClusterNetwork.ClusterHeads[j].NodeClusterParams.CurrentCluster.ClusterMembers[:k],p.ClusterNetwork.ClusterHeads[j].NodeClusterParams.CurrentCluster.ClusterMembers[k+1:]... )
+					p.ClusterNetwork.ClusterHeads[j].NodeClusterParams.CurrentCluster.Total--
+				}
+			}
+		}
+	}
 }
 

@@ -215,6 +215,7 @@ func main() {
 	p.Events.Push(&cps.Event{nil, cps.GRID, 999, 0})
 	p.Events.Push(&cps.Event{nil, cps.TIME, -1, 0})
 	p.Events.Push(&cps.Event{nil, cps.CLUSTERPRINT, 999, 0})
+	p.Events.Push(&cps.Event{nil,cps.CLUSTERLESSFORM,25,0})
 
 
 	p.CurrentTime = 0
@@ -262,18 +263,27 @@ func main() {
 					p.Events.Push(&cps.Event{event.Node, cps.MOVE, p.CurrentTime+100, 0})
 				//}
 
-			} else if event.Instruction == cps.CLUSTERMSG {
+			}else if event.Instruction == cps.CLUSTERMSG {
 				if(event.Node.Valid){
 					event.Node.SendHelloMessage(p.NodeBTRange)
 				}
-				p.Events.Push(&cps.Event{event.Node, cps.CLUSTERMSG, p.CurrentTime+100, 0})
+				p.Events.Push(&cps.Event{event.Node, cps.CLUSTERMSG, p.CurrentTime+1000, 0})
+
+			} else if event.Instruction == cps.CLUSTERHEADELECT {
+				if(event.Node.Valid){
+					p.ClusterNetwork.ElectClusterHead(event.Node)
+				}
+				p.Events.Push(&cps.Event{event.Node, cps.CLUSTERHEADELECT, p.CurrentTime+1000, 0})
 
 			} else if event.Instruction == cps.CLUSTERFORM {
 				if(event.Node.Valid){
 					event.Node.SortMessages()
 					//p.ClusterNetwork.GenerateClusters(event.Node)
+					if(event.Node.IsClusterHead){
+						p.ClusterNetwork.FormClusters(event.Node)
+					}
 				}
-					p.Events.Push(&cps.Event{event.Node, cps.CLUSTERFORM, p.CurrentTime+100, 0})
+				p.Events.Push(&cps.Event{event.Node, cps.CLUSTERFORM, p.CurrentTime+1000, 0})
 			}
 		} else {
 			if event.Instruction == cps.POSITION {
@@ -361,14 +371,57 @@ func main() {
 						fmt.Fprintf(p.ClusterFile,"]\n")
 					}
 
-					fmt.Fprintf(p.ClusterStatsFile, "%d", len(p.ClusterNetwork.ClusterHeads[i].NodeClusterParams.CurrentCluster.ClusterMembers))
+					fmt.Fprintf(p.ClusterStatsFile, "%d", p.ClusterNetwork.ClusterHeads[i].NodeClusterParams.CurrentCluster.Total)
 					if(i+1 != len(p.ClusterNetwork.ClusterHeads)){
 						fmt.Fprintf(p.ClusterStatsFile,",")
 					}
 				}
 				fmt.Fprintln(p.ClusterStatsFile,"")
 
+				clusterHeadCount:=0
+				clusterMemberCount:=0
+				fmt.Fprint(p.ClusterDebug, "", )
+				for i:=0; i<len(p.NodeList); i++ {
+					if(p.NodeList[i].IsClusterHead){
+						clusterHeadCount++
+					} else if(p.NodeList[i].IsClusterMember){
+						clusterMemberCount++
+					}
+				}
+				fmt.Fprintf(p.ClusterDebug,"Iteration: %d\tlen(p.ClusterNetwork.ClusterHeads): %d\tClusterHeads: %d\tClusterMembers: %d\n",p.CurrentTime/1000,len(p.ClusterNetwork.ClusterHeads),clusterHeadCount,clusterMemberCount)
+
+				for i:=0; i<len(p.NodeList); i++ {
+					if(p.NodeList[i].IsClusterHead){
+						for j:=0; j<len(p.ClusterNetwork.ClusterHeads); j++{
+							for k:=0; k<len(p.ClusterNetwork.ClusterHeads[j].NodeClusterParams.CurrentCluster.ClusterMembers); k++{
+								if(p.NodeList[i] == p.ClusterNetwork.ClusterHeads[j].NodeClusterParams.CurrentCluster.ClusterMembers[k]){
+									fmt.Fprintf(p.ClusterDebug,"\tCluster Head {CH_ID: %d, Size=%d} is cluster member of {CH_ID: %d, Size=%d}\n", p.NodeList[i].Id,p.NodeList[i].NodeClusterParams.CurrentCluster.Total,p.ClusterNetwork.ClusterHeads[j].Id,p.ClusterNetwork.ClusterHeads[j].NodeClusterParams.CurrentCluster.Total)
+								}
+							}
+						}
+					} else if(p.NodeList[i].IsClusterMember){
+						clusterCount := 0
+						for j:=0; j<len(p.ClusterNetwork.ClusterHeads); j++{
+							for k:=0; k<len(p.ClusterNetwork.ClusterHeads[j].NodeClusterParams.CurrentCluster.ClusterMembers); k++{
+								if(p.NodeList[i] == p.ClusterNetwork.ClusterHeads[j].NodeClusterParams.CurrentCluster.ClusterMembers[k]){
+									clusterCount++
+								}
+							}
+						}
+						if(clusterCount>1){
+							fmt.Fprintf(p.ClusterDebug,"\tNode ID=%d is cluster member of %d cluster\n", p.NodeList[i].Id,clusterCount)
+						}
+
+					}
+				}
+
 				p.Events.Push(&cps.Event{nil, cps.CLUSTERPRINT, p.CurrentTime + 1000, 0})
+				p.ClusterNetwork.ResetClusters()
+			} else if event.Instruction == cps.CLUSTERLESSFORM {
+				p.ClusterNetwork.FinalizeClusters(p)
+
+				//fmt.Println()
+				p.Events.Push(&cps.Event{nil, cps.CLUSTERLESSFORM, p.CurrentTime + 1000, 0})
 			}
 		}
 	}
