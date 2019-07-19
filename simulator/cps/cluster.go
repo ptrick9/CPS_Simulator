@@ -75,13 +75,21 @@ func (curNode * NodeImpl)GenerateHello(searchRange float64, score float64) {
 	curNode.NodeClusterParams.ThisNodeHello = message
 }
 
-func (curNode * NodeImpl) SendHelloMessage(transmitRange float64, ){
+func (curNode * NodeImpl) SendHelloMessage(transmitRange float64){
 	withinDist := []*Bounds{}
 	withinDist = curNode.P.NodeTree.WithinRadius(transmitRange,curNode.NodeBounds,curNode.NodeBounds.GetSearchBounds(transmitRange),withinDist)
 	//withinDist = curNode.NodeTree.WithinRadius(transmitRange,curNode.NodeBounds,curNode.NodeBounds.GetSearchBounds(transmitRange),withinDist)
 	numWithinDist := len(withinDist)
 
 	curNode.GenerateHello(transmitRange, curNode.ComputeClusterScore( 1,numWithinDist))
+
+	//for j:=0; j<len(withinDist); {
+	//	if(curNode.IsWithinRange(withinDist[j].CurNode,transmitRange)){
+	//		j++
+	//	} else{
+	//			withinDist = append(withinDist[:j],withinDist[j+1:]...)
+	//	}
+	//}
 
 	for j:=0; j<len(withinDist); j++ {
 		if (withinDist[j].CurNode.NodeClusterParams.RecvMsgs != nil) {
@@ -204,6 +212,13 @@ func (curNode * NodeImpl) SortMessages(){
 			}
 		}
 	}
+	k := 0
+	for k<len(distances) && distances[k] <= 8 {
+		k++
+	}
+	if(k<len(distances)){
+		curNode.NodeClusterParams.RecvMsgs  = curNode.NodeClusterParams.RecvMsgs[:k]
+	}
 }
 
 func (adhoc * AdHocNetwork) ElectClusterHead(curNode * NodeImpl){
@@ -230,12 +245,14 @@ func (adhoc * AdHocNetwork) FormClusters(clusterHead * NodeImpl){
 
 	for i:=0; i<len(clusterHead.NodeClusterParams.RecvMsgs) && clusterHead.NodeClusterParams.CurrentCluster.Total<adhoc.Threshold; i++{
 		if(!clusterHead.NodeClusterParams.RecvMsgs[i].Sender.IsClusterHead && !clusterHead.NodeClusterParams.RecvMsgs[i].Sender.IsClusterMember){
-			clusterHead.NodeClusterParams.CurrentCluster.ClusterMembers = append(clusterHead.NodeClusterParams.CurrentCluster.ClusterMembers, clusterHead.NodeClusterParams.RecvMsgs[i].Sender)
-			clusterHead.NodeClusterParams.CurrentCluster.Total = len(clusterHead.NodeClusterParams.CurrentCluster.ClusterMembers)
+			//if(clusterHead.IsWithinRange(clusterHead.NodeClusterParams.RecvMsgs[i].Sender,8)){
+				clusterHead.NodeClusterParams.CurrentCluster.ClusterMembers = append(clusterHead.NodeClusterParams.CurrentCluster.ClusterMembers, clusterHead.NodeClusterParams.RecvMsgs[i].Sender)
+				clusterHead.NodeClusterParams.CurrentCluster.Total = len(clusterHead.NodeClusterParams.CurrentCluster.ClusterMembers)
 
-			clusterHead.NodeClusterParams.RecvMsgs[i].Sender.IsClusterMember = true
-			clusterHead.NodeClusterParams.RecvMsgs[i].Sender.NodeClusterParams.CurrentCluster = clusterHead.NodeClusterParams.CurrentCluster
+				clusterHead.NodeClusterParams.RecvMsgs[i].Sender.IsClusterMember = true
+				clusterHead.NodeClusterParams.RecvMsgs[i].Sender.NodeClusterParams.CurrentCluster = clusterHead.NodeClusterParams.CurrentCluster
 
+			//}
 		}
 	}
 
@@ -275,13 +292,13 @@ func (adhoc * AdHocNetwork) SortClusterHeads(curNode * NodeImpl, searchRange flo
 	viableOptions = []*NodeImpl{}
 
 	for j:=0; j<len(adhoc.ClusterHeads);j++{
-		xDist := curNode.X-adhoc.ClusterHeads[j].X
-		yDist := curNode.Y-adhoc.ClusterHeads[j].Y
-		dist := math.Sqrt(float64(xDist*xDist)+float64(yDist*yDist))
-		if(dist<=searchRange){
+		//if(curNode.IsWithinRange(adhoc.ClusterHeads[j],searchRange)){
+			xDist := curNode.X-adhoc.ClusterHeads[j].X
+			yDist := curNode.Y-adhoc.ClusterHeads[j].Y
+			dist := math.Sqrt(float64(xDist*xDist)+float64(yDist*yDist))
 			distances = append(distances, dist)
 			viableOptions = append(viableOptions, adhoc.ClusterHeads[j])
-		}
+		//}
 
 	}
 
@@ -298,6 +315,14 @@ func (adhoc * AdHocNetwork) SortClusterHeads(curNode * NodeImpl, searchRange flo
 			}
 		}
 	}
+	k := 0
+	for k<len(distances) && distances[k] <= 8 {
+		k++
+	}
+	if(k<len(distances)){
+		viableOptions  = viableOptions[:k]
+	}
+
 	//fmt.Println(distances)
 	return viableOptions
 }
@@ -396,3 +421,12 @@ func (adhoc * AdHocNetwork) FinalizeClusters(p * Params){
 	}
 }
 
+func (node1 * NodeImpl) IsWithinRange(node2 * NodeImpl, searchRange float64) (inRange bool){
+	xDist := node1.X - node2.X
+	yDist := node1.Y - node2.Y
+	radDist := math.Sqrt(float64(xDist*xDist)+float64(yDist*yDist))
+
+	inRange = radDist <= searchRange
+
+	return inRange
+}

@@ -27,6 +27,7 @@ import (
 	"./cps"
 	"bytes"
 	"container/heap"
+	//"math"
 	"runtime"
 	//"CPS_Simulator/simulator/cps"
 	"fmt"
@@ -299,13 +300,13 @@ func main() {
 
 			} else if event.Instruction == cps.CLUSTERHEADELECT {
 				if(event.Node.Valid){
+					event.Node.SortMessages()
 					p.ClusterNetwork.ElectClusterHead(event.Node)
 				}
 				p.Events.Push(&cps.Event{event.Node, cps.CLUSTERHEADELECT, p.CurrentTime+1000, 0})
 
 			} else if event.Instruction == cps.CLUSTERFORM {
 				if(event.Node.Valid){
-					event.Node.SortMessages()
 					//p.ClusterNetwork.GenerateClusters(event.Node)
 					if(event.Node.IsClusterHead){
 						p.ClusterNetwork.FormClusters(event.Node)
@@ -420,6 +421,17 @@ func main() {
 
 				for i:=0; i<len(p.NodeList); i++ {
 					if(p.NodeList[i].IsClusterHead){
+						var outOfRangeCount int
+						for j:=0; j<len(p.NodeList[i].NodeClusterParams.CurrentCluster.ClusterMembers); j++{
+							outOfRangeCount = 0
+							if(!(p.NodeList[i].IsWithinRange(p.NodeList[i].NodeClusterParams.CurrentCluster.ClusterMembers[j],p.NodeBTRange))){
+								outOfRangeCount++
+							}
+						}
+						if(outOfRangeCount > 0){
+							fmt.Fprintf(p.ClusterDebug,"\tCH_ID: %d\tOutOfRangeCount: %d of %d\n", p.NodeList[i].Id, outOfRangeCount, p.NodeList[i].NodeClusterParams.CurrentCluster.Total)
+						}
+
 						for j:=0; j<len(p.ClusterNetwork.ClusterHeads); j++{
 							for k:=0; k<len(p.ClusterNetwork.ClusterHeads[j].NodeClusterParams.CurrentCluster.ClusterMembers); k++{
 								if(p.NodeList[i] == p.ClusterNetwork.ClusterHeads[j].NodeClusterParams.CurrentCluster.ClusterMembers[k]){
@@ -440,6 +452,13 @@ func main() {
 							fmt.Fprintf(p.ClusterDebug,"\tNode ID=%d is cluster member of %d cluster\n", p.NodeList[i].Id,clusterCount)
 						}
 
+					} else {
+						if(p.NodeList[i].NodeClusterParams.CurrentCluster==nil){
+							fmt.Fprintf(p.ClusterDebug,"\tLOST NODE: ID=%d ,Cluster = nil}\n", p.NodeList[i].Id)
+						} else 	if(p.NodeList[i].NodeClusterParams.CurrentCluster.ClusterHead==nil){
+							fmt.Fprintf(p.ClusterDebug,"\tLOST NODE: ID=%d ,CH = nil}\n", p.NodeList[i].Id)
+						} else{
+							fmt.Fprintf(p.ClusterDebug,"\tLOST NODE: ID=%d ,CH_ID=%d}\n", p.NodeList[i].Id, p.NodeList[i].NodeClusterParams.CurrentCluster.ClusterHead.Id)}
 					}
 				}
 

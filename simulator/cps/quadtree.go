@@ -492,9 +492,9 @@ func (qt * Quadtree) WithinRadius(radius float64, center * Bounds, searchBounds 
 						//its very likely all points in the bounds are also in the area, but not always true
 						//so check with the distance formula
 
-						yDist := center.Y - qt.Objects[i].Y
-						xDist := center.X - qt.Objects[i].X
-						radDist := math.Sqrt(yDist*yDist + xDist*xDist)
+						yDist := center.CurNode.Y - qt.Objects[i].CurNode.Y
+						xDist := center.CurNode.X - qt.Objects[i].CurNode.X
+						radDist := math.Sqrt(float64(yDist*yDist) + float64(xDist*xDist))
 
 						//if the distance is less than the search radius then it is in the search area, thus add to array
 						if(radDist <= radius){

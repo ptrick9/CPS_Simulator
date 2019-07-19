@@ -27,6 +27,7 @@ import (
 	"./cps"
 	"bytes"
 	"container/heap"
+	"math"
 	"runtime"
 	//"CPS_Simulator/simulator/cps"
 	"fmt"
@@ -271,13 +272,13 @@ func main() {
 
 			} else if event.Instruction == cps.CLUSTERHEADELECT {
 				if(event.Node.Valid){
+					event.Node.SortMessages()
 					p.ClusterNetwork.ElectClusterHead(event.Node)
 				}
 				p.Events.Push(&cps.Event{event.Node, cps.CLUSTERHEADELECT, p.CurrentTime+1000, 0})
 
 			} else if event.Instruction == cps.CLUSTERFORM {
 				if(event.Node.Valid){
-					event.Node.SortMessages()
 					//p.ClusterNetwork.GenerateClusters(event.Node)
 					if(event.Node.IsClusterHead){
 						p.ClusterNetwork.FormClusters(event.Node)
@@ -392,6 +393,17 @@ func main() {
 
 				for i:=0; i<len(p.NodeList); i++ {
 					if(p.NodeList[i].IsClusterHead){
+						for j:=0; j<len(p.NodeList[i].NodeClusterParams.CurrentCluster.ClusterMembers); j++{
+							xDist := p.NodeList[i].X - p.NodeList[i].NodeClusterParams.CurrentCluster.ClusterMembers[j].X
+							yDist := p.NodeList[i].Y - p.NodeList[i].NodeClusterParams.CurrentCluster.ClusterMembers[j].Y
+							radDist := math.Sqrt(float64(xDist*xDist)+float64(yDist*yDist))
+							if(!(p.NodeList[i].IsWithinRange(p.NodeList[i].NodeClusterParams.CurrentCluster.ClusterMembers[j],p.NodeBTRange))){
+								fmt.Fprintf(p.ClusterDebug,"\tCluster Member Out of Range: Member:{ID=%d, Coord(%.4f,%.4f)} Cluster:{CH_ID=%d, Coord(%.4f,%.4f),Size=%d} Dist: %.4f\n",
+									p.NodeList[i].NodeClusterParams.CurrentCluster.ClusterMembers[j].Id,p.NodeList[i].NodeClusterParams.CurrentCluster.ClusterMembers[j].X,p.NodeList[i].NodeClusterParams.CurrentCluster.ClusterMembers[j].Y,
+									p.NodeList[i].Id,p.NodeList[i].X,p.NodeList[i].Y,p.NodeList[i].NodeClusterParams.CurrentCluster.Total, radDist)
+							}
+						}
+
 						for j:=0; j<len(p.ClusterNetwork.ClusterHeads); j++{
 							for k:=0; k<len(p.ClusterNetwork.ClusterHeads[j].NodeClusterParams.CurrentCluster.ClusterMembers); k++{
 								if(p.NodeList[i] == p.ClusterNetwork.ClusterHeads[j].NodeClusterParams.CurrentCluster.ClusterMembers[k]){
@@ -409,7 +421,7 @@ func main() {
 							}
 						}
 						if(clusterCount>1){
-							fmt.Fprintf(p.ClusterDebug,"\tNode ID=%d is cluster member of %d cluster\n", p.NodeList[i].Id,clusterCount)
+							fmt.Fprintf(p.ClusterDebug,"\tNode ID=%d is cluster member of %d clusters\n", p.NodeList[i].Id,clusterCount)
 						}
 
 					}
