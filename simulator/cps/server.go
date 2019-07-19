@@ -25,6 +25,8 @@ type FusionCenter struct {
 	Times 			map[int]bool
 	LastRecal		[]int
 	Sch		*Scheduler
+	Readings		map[Key][]Reading
+	CheckedIds		[]int
 }
 
 //Init initializes the values for the server
@@ -40,15 +42,25 @@ func (s *FusionCenter) Init(){
 
 	s.LastRecal = make([]int, s.P.TotalNodes) //s.P.TotalNodes
 	s.Sch = &Scheduler{s.P, s.R, nil}
+
+	s.Readings = make(map[Key][]Reading)
+	s.CheckedIds = make([]int, 0)
 }
 
 //Reading packages the data sent by a node
-type Reading struct {
+type   Reading struct {
 	SensorVal float64
 	Xpos      float32
 	YPos      float32
 	Time      int //Time represented by iteration number
 	Id        int //Node Id number
+}
+
+//Key for dictionary of sensor readings
+type Key struct {
+	X 		int
+	Y		int
+	Time 	int
 }
 
 //MakeGrid initializes a grid of Square objects according to the size of the map
@@ -398,6 +410,12 @@ func (s FusionCenter) UpdateSquareNumNodes() {
 // Statistics are calculated each Time data is received
 func (s *FusionCenter) Send(n *NodeImpl, rd Reading) {
 	//fmt.Printf("Sending to server:\nTime: %v, ID: %v, X: %v, Y: %v, Sensor Value: %v\n", rd.Time, rd.Id, rd.Xpos, rd.YPos, rd.SensorVal)
+	_, ok := s.Readings[Key{int(rd.Xpos / float32(s.P.XDiv)), int(rd.YPos / float32(s.P.YDiv)), rd.Time/1000}]
+	if ok {
+		s.Readings[Key{int(rd.Xpos / float32(s.P.XDiv)), int(rd.YPos / float32(s.P.YDiv)), rd.Time / 1000}] = append(s.Readings[Key{int(rd.Xpos / float32(s.P.XDiv)), int(rd.YPos / float32(s.P.YDiv)), rd.Time / 1000}], rd)
+	} else {
+		s.Readings[Key{int(rd.Xpos / float32(s.P.XDiv)), int(rd.YPos / float32(s.P.YDiv)), rd.Time / 1000}] = []Reading{rd}
+	}
 	s.Times = make(map[int]bool, 0)
 	if s.Times[rd.Time] {
 
@@ -423,6 +441,50 @@ func (s *FusionCenter) Send(n *NodeImpl, rd Reading) {
 		n.Recalibrate()
 		s.LastRecal[n.Id] = s.P.Iterations_used
 		//fmt.Println(s.LastRecal)
+	}
+
+	if rd.SensorVal > s.P.DetectionThreshold {
+		s.CheckedIds = make([]int, 0)
+		validations := 0
+		for t:= (s.P.CurrentTime / 1000) - 60; t <= s.P.CurrentTime / 1000; t++ {
+			for x:= int((rd.Xpos - float32(s.P.DetectionDistance)) / float32(s.P.XDiv)); x < int((rd.Xpos + float32(s.P.DetectionDistance) )/ float32(s.P.XDiv)); x++ {
+				for y:= int((rd.YPos - float32(s.P.DetectionDistance)) / float32(s.P.YDiv)); y < int((rd.YPos + float32(s.P.DetectionDistance) )/ float32(s.P.YDiv)); y++ {
+					for r:= range s.Readings[Key{x,y,t}] {
+						currRead := s.Readings[Key{x,y,t}][r]
+						if FloatDist(Tuple32{currRead.Xpos, currRead.YPos}, Tuple32{rd.Xpos, rd.YPos}) < s.P.DetectionDistance {
+							if currRead.Id != rd.Id && !Is_in(currRead.Id, s.CheckedIds) && currRead.SensorVal > s.P.DetectionThreshold {
+								s.CheckedIds = append(s.CheckedIds, currRead.Id)
+								validations++
+							}
+						}
+					}
+				}
+			}
+		}
+		if validations >= s.P.ValidationThreshold {
+
+			//fmt.Println("Valid!")
+			s.P.CenterCoord = Coord{X: int(rd.Xpos), Y: int(rd.YPos)}
+			if s.P.SuperNodes {
+				s.Sch.AddRoutePoint(s.P.CenterCoord)
+			}
+			/*if FloatDist(Tuple32{rd.Xpos, rd.YPos}, Tuple32{float32(s.P.B.X), float32(s.P.B.Y)}) > s.P.DetectionDistance {
+				fmt.Fprintln(s.P.DetectionFile, fmt.Sprintf("FP Confirmation T: %v ID: %v (%v, %v) D: %v C: %v", rd.Time, rd.Id, rd.Xpos, rd.YPos, FloatDist(Tuple32{rd.Xpos, rd.YPos}, Tuple32{float32(s.P.B.X), float32(s.P.B.Y)}) , rd.SensorVal))
+			} else {
+				fmt.Fprintln(s.P.DetectionFile, fmt.Sprintf("TP Confirmation T: %v ID: %v (%v, %v) D: %v C: %v", rd.Time, rd.Id, rd.Xpos, rd.YPos, FloatDist(Tuple32{rd.Xpos, rd.YPos}, Tuple32{float32(s.P.B.X), float32(s.P.B.Y)}), rd.SensorVal))
+			}*/
+
+			fmt.Fprintln(s.P.DetectionFile, fmt.Sprintf("Confirmation T: %v ID: %v %v/%v", rd.Time, rd.Id, validations, s.P.ValidationThreshold))
+
+		} else {
+			/*if FloatDist(Tuple32{rd.Xpos, rd.YPos}, Tuple32{float32(s.P.B.X), float32(s.P.B.Y)}) > s.P.DetectionDistance {
+				fmt.Fprintln(s.P.DetectionFile, fmt.Sprintf("FP Rejection T: %v ID: %v (%v, %v) D: %v C: %v", rd.Time, rd.Id, rd.Xpos, rd.YPos, FloatDist(Tuple32{rd.Xpos, rd.YPos}, Tuple32{float32(s.P.B.X), float32(s.P.B.Y)}) , rd.SensorVal))
+			} else {
+				fmt.Fprintln(s.P.DetectionFile, fmt.Sprintf("TP Rejection T: %v ID: %v (%v, %v) D: %v C: %v", rd.Time, rd.Id, rd.Xpos, rd.YPos, FloatDist(Tuple32{rd.Xpos, rd.YPos}, Tuple32{float32(s.P.B.X), float32(s.P.B.Y)}), rd.SensorVal))
+			}*/
+			fmt.Fprintln(s.P.DetectionFile, fmt.Sprintf("Rejection T: %v ID: %v %v/%v", rd.Time, rd.Id, validations, s.P.ValidationThreshold))
+
+		}
 	}
 }
 

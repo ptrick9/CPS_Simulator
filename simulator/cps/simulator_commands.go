@@ -192,6 +192,8 @@ type Params struct {
 
 
 	NodePositionMap			map[Tuple]*NodeImpl
+	ValidationThreshold	int
+
 	NodeTree				* Quadtree
 	ClusterNetwork			* AdHocNetwork
 	NodeBTRange				float64

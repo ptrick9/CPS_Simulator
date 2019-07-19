@@ -65,10 +65,10 @@ func main() {
 	r = &cps.RegionParams{}
 
 	p.Events = Events
-	p.Server = cps.FusionCenter{p, r, nil, nil, nil, nil, nil, nil, nil}
+	p.Server = cps.FusionCenter{p, r, nil, nil, nil, nil, nil, nil, nil, nil, nil}
 
-	p.Tau1 = 10
-	p.Tau2 = 500
+	p.Tau1 = 3500
+	p.Tau2 = 9000
 	p.FoundBomb = false
 
 	rand.Seed(time.Now().UTC().UnixNano())

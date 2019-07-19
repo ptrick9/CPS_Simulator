@@ -9,6 +9,10 @@ type Tuple struct {
 	X, Y int
 }
 
+type Tuple32 struct {
+	X, Y float32
+}
+
 type RegionParams struct {
 	Point_list []Tuple
 

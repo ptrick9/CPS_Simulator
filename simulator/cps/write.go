@@ -406,14 +406,14 @@ func InitializeNodeParameters(p *Params, nodeNum int) *NodeImpl{
 		BatteryLossBT:			  p.BatteryLossesBT[nodeNum]}
 
 	//values to determine coefficients
-	curNode.SetS0(rand.Float64()*0.2 + 0.1)
-	curNode.SetS1(rand.Float64()*0.2 + 0.1)
-	curNode.SetS2(rand.Float64()*0.2 + 0.1)
+	curNode.SetS0(rand.Float64()*0.005 + 0.33)
+	curNode.SetS1(rand.Float64()*0.005 + 0.33)
+	curNode.SetS2(rand.Float64()*0.005 + 0.33)
 	//values to determine error in coefficients
 	s0, s1, s2 := curNode.GetCoefficients()
-	curNode.SetE0(rand.Float64() * 0.1 * p.ErrorModifierCM * s0)
-	curNode.SetE1(rand.Float64() * 0.1 * p.ErrorModifierCM * s1)
-	curNode.SetE2(rand.Float64() * 0.1 * p.ErrorModifierCM * s2)
+	curNode.SetE0(rand.Float64() * 0.02 * p.ErrorModifierCM * s0)
+	curNode.SetE1(rand.Float64() * 0.02 * p.ErrorModifierCM * s1)
+	curNode.SetE2(rand.Float64() * 0.02 * p.ErrorModifierCM * s2)
 	//Values to determine error in exponents
 	curNode.SetET1(p.Tau1 * rand.Float64() * p.ErrorModifierCM * 0.05)
 	curNode.SetET2(p.Tau1 * rand.Float64() * p.ErrorModifierCM * 0.05)
@@ -875,6 +875,10 @@ func SetupParameters(p *Params) {
 	if p.CSVSensor {
 		readSensorCSV(p)
 	} else {
+
+
+
+
 		p.MaxRaw = 1000
 		//p.EdgeRaw = 36
 		p.EdgeRaw = RawConcentration(float32(p.DetectionDistance/2))
@@ -883,6 +887,7 @@ func SetupParameters(p *Params) {
 		p.EdgeADC = 3
 		p.ADCWidth = p.MaxRaw/p.MaxADC
 		p.ADCOffset = p.EdgeRaw - p.EdgeADC * p.ADCWidth
+		fmt.Printf("%v %v\n", p.ADCWidth, p.ADCOffset)
 	}
 
 	if p.CSVMovement {
@@ -936,21 +941,20 @@ func CalculateADCSetting(reading float64, x, y, time int, p *Params) {
 		{diag_increment, -diag_increment}}	//lower right
 
 
+
 	total = 0
 	counted = 0
-
-	for _,point := range(points) {
-		if point[0] + x > 0 && point[0] + x < p.Width {
-			if point[1] + y > 0 && point[1] + y < p.Height {
+	for _, point := range (points) {
+		if point[0]+x > 0 && point[0]+x < p.Width {
+			if point[1]+y > 0 && point[1]+y < p.Height {
 				//if legal then interpolate the correct value based on distance
-				part := InterpolateFloat(float32(p.SensorReadings[x][y][time]), float32(p.SensorReadings[x + point[0]][y + point[1]][time]), float32(p.DetectionDistance/(Dist(Tuple{x, y}, Tuple{x + point[0], y + point[1]}))))
+				part := InterpolateFloat(float32(p.SensorReadings[x][y][time]), float32(p.SensorReadings[x+point[0]][y+point[1]][time]), float32(p.DetectionDistance/(Dist(Tuple{x, y}, Tuple{x + point[0], y + point[1]}))))
 				total += part
 				//fmt.Println(float32(p.SensorReadings[x][y][time]), float32(p.SensorReadings[x + point[0]][y + point[1]][time]), float32(p.DetectionDistance/(Dist(Tuple{x, y}, Tuple{x + point[0], y + point[1]}))), part)
 				counted += 1
 			}
 		}
 	}
-
 
 
 	fmt.Println(p.MaxRaw)
@@ -1287,6 +1291,7 @@ func GetFlags(p *Params) {
 	flag.StringVar(&p.OutRoutingStatsNameCM, "outRoutingStatsName", "routingStats.txt", "Name of the output file for stats")
 
 	flag.BoolVar(&p.RegionRouting, "regionRouting", true, "True if you want to use the new routing algorithm with regions and cutting")
+	flag.IntVar(&p.ValidationThreshold, "validationThreshold", 1, "Number of detections required to validate a detection")
 
 	flag.Parse()
 	fmt.Println("Natural Loss: ", p.NaturalLossCM)
