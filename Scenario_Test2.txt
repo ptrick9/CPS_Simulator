@@ -1,0 +1,11 @@
+numNodes-0
+superNodeType-0
+maxX-100
+maxY-100
+bombX-0
+bombY-0
+N: 0
+W: 0
+S: 0
+P: 0
+POIS: 0

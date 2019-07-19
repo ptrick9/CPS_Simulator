@@ -12,10 +12,10 @@
 -csvMove=true
 -movementPath=marathon_2k.txt
 -iterations=1000
--csvSensor=false
+-csvSensor=true
 -detectionThreshold=5
 -numSuperNodes=4
--superNodes=false
+-superNodes=true
 -validationThreshold=5
 */
 
@@ -183,7 +183,7 @@ func main() {
 
 	if p.SuperNodes {
 		p.Server.RandomizeSuperNodes()
-		for i:=0;i < 1; i++ {
+		for i:=0;i <2; i++ {
 			p.Server.PlaceSuperNodes()
 		}
 	}

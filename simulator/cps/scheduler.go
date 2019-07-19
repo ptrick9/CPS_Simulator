@@ -103,17 +103,17 @@ func (s *Scheduler) AddRoutePoint0(c Coord, urgent bool) {
 					Pow(float64(s.SNodeList[n].GetX()-c.X), 2.0) + math.
 					Pow(float64(s.SNodeList[n].GetY()-c.Y), 2.0))
 			}
-			fmt.Printf("Node: %v, Distance: %v\n", n, nodeDist)
+			//fmt.Printf("Node: %v, Distance: %v\n", n, nodeDist)
 			if nodeDist < dist {
 				dist = nodeDist
 				closestNode = n
 			}
 		}
 	}
-	fmt.Printf("Closest Node: %v\n", closestNode)
+	//fmt.Printf("Closest Node: %v\n", closestNode)
 	//Tells that super node to add that point
 	//fmt.Printf("\nAdded route point %v\n", c)
-	fmt.Printf("Distance: %v\n", dist)
+	//fmt.Printf("Distance: %v\n", dist)
 	if urgent {
 		s.SNodeList[closestNode].AddRoutePointUrgent(c)
 	} else {

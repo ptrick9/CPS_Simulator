@@ -97,17 +97,22 @@ func ValidPath(reg int, endpoint Coord, first bool, r *RegionParams) bool{
 	}
 	end := RegionContaining(Tuple{endpoint.X, endpoint.Y}, r)
 	//fmt.Printf("Checking for path from region %v to point %v\n", reg, end)
+	if reg == end {
+		//fmt.Println("Valid!")
+		return true
+	}
 	if len(r.Border_dict[reg]) == 0 {
 		r.Checked = make([]int,0)
 		return false
 	} else {
 		if reg == end {
+			//fmt.Println("Valid!")
 			return true
 		}
 		for i := 0; i < len(r.Border_dict[reg]); i++ {
 			//fmt.Printf("Does %v = %v\n", r.Border_dict[reg][i], end)
 			if r.Border_dict[reg][i] == end {
-				//fmt.Println("Yes!")
+				//fmt.Println("Valid!")
 				//r.Checked = append(r.Checked, r.Border_dict[reg][i])
 				return true
 			}
@@ -117,6 +122,7 @@ func ValidPath(reg int, endpoint Coord, first bool, r *RegionParams) bool{
 				r.Checked = append(r.Checked, reg)
 				//fmt.Println(r.Checked)
 				if ValidPath(r.Border_dict[reg][i], endpoint, false, r) {
+					//fmt.Println("Valid!")
 					return true
 				}
 			}
@@ -260,13 +266,12 @@ func GetPath(c1, c2 Coord, r *RegionParams, p *Params) []Coord {
 	}
 	ret_path := make([]Coord, 0)
 
-	//if r.Possible_paths[index] == 5
-
-	if len(r.Possible_paths[index]) == 1 {
-		//fmt.Println("Possible paths length 1")
-		ret_path = append(ret_path, InRegionRouting(p1, p2, r)...)
-	} else {
-		for i, s := range r.Possible_paths[index] {
+	if len(r.Possible_paths) > 0 {
+		if len(r.Possible_paths[index]) == 1 {
+			//fmt.Println("Possible paths length 1")
+			ret_path = append(ret_path, InRegionRouting(p1, p2, r)...)
+		} else {
+			for i, s := range r.Possible_paths[index] {
 				if i == 0 {
 					ret_path = append(ret_path, InRegionRouting(p1, r.Square_list[s].Routers[r.Possible_paths[index][i+1]][index2],r)...)
 				} else if i == len(r.Possible_paths[index])-1 {
@@ -275,23 +280,11 @@ func GetPath(c1, c2 Coord, r *RegionParams, p *Params) []Coord {
 					//fmt.Println(r.Square_list[s].Routers[r.Possible_paths[index][i-1]][index2])
 					ret_path = append(ret_path, InRegionRouting(r.Square_list[s].Routers[r.Possible_paths[index][i-1]][index2], r.Square_list[s].Routers[r.Possible_paths[index][i+1]][index2],r)...)
 				}
-		}
-		/*start_point := p1
-		end_point := Tuple{X: 0, Y: 0}
-
-		for i, s := range r.Possible_paths[index] {
-			if i == len(r.Possible_paths[index])-1 {
-				//fmt.Println("Possible paths[index] length - 1 = i")
-				ret_path = append(ret_path, InRegionRouting(start_point, p2,r)...)
-			} else {
-				end_point = ClosestToSquare(start_point, r.Square_list[s], p)
-				fmt.Printf("Start point: %v, End point after :%v\n", start_point, end_point)
-				ret_path = append(ret_path, InRegionRouting(start_point, end_point, r)...)
-				start_point = end_point
 			}
-		}*/
+		}
 	}
-	fmt.Println(ret_path)
+
+	/*fmt.Println(ret_path)
 	var tmp Coord = ret_path[0]
 	for i := range ret_path {
 		if ret_path[i].X == -1 || ret_path[i].Y == -1 {
@@ -304,7 +297,7 @@ func GetPath(c1, c2 Coord, r *RegionParams, p *Params) []Coord {
 			fmt.Println("Error in path finding! Node teleported on Y")
 		}
 		tmp = ret_path[i]
-	}
+	}*/
 	return ret_path
 }
 
@@ -390,9 +383,16 @@ func GenerateRouting(p *Params, r *RegionParams) {
 	}
 	//fmt.Println("Built all squares")
 	length := len(r.Square_list)
+	for x := 0; x < length; x++ {
+		r.Border_dict[x] = make([]int, 0)
+		r.Square_list[x].Routers = make([][]Tuple, length)
+		for i:= range r.Square_list[x].Routers {
+			r.Square_list[x].Routers[i] = make([]Tuple, 3)
+		}
+	}
+	//fmt.Printf("Regions: %v", r.Square_list)
 	for y, _ := range r.Square_list {
 		square := r.Square_list[y]
-		r.Square_list[y].Routers = make([][]Tuple, length)
 
 		for z := y + 1; z < len(r.Square_list); z++ {
 			new_square := r.Square_list[z]
@@ -402,18 +402,54 @@ func GenerateRouting(p *Params, r *RegionParams) {
 					r.Border_dict[y] = append(r.Border_dict[y], z)
 					r.Border_dict[z] = append(r.Border_dict[z], y)
 
+					r.Square_list[z].Routers[y][0] = Tuple{int(new_square.X1), new_square.Y1}
+					r.Square_list[y].Routers[z][0] = Tuple{int(new_square.X1), square.Y2}
+
+					r.Square_list[z].Routers[y][1] = Tuple{int((new_square.X2-new_square.X1)/2) + new_square.X1, new_square.Y1}
+					r.Square_list[y].Routers[z][1] = Tuple{int((new_square.X2-new_square.X1)/2) + new_square.X1, square.Y2}
+
+					r.Square_list[z].Routers[y][2] = Tuple{int(new_square.X2), new_square.Y1}
+					r.Square_list[y].Routers[z][2] = Tuple{int(new_square.X2), square.Y2}
+
 				} else if new_square.Y2 == square.Y1-1 {
 					r.Border_dict[y] = append(r.Border_dict[y], z)
 					r.Border_dict[z] = append(r.Border_dict[z], y)
+
+					r.Square_list[z].Routers[y][0] = Tuple{int(new_square.X1), new_square.Y2}
+					r.Square_list[y].Routers[z][0] = Tuple{int(new_square.X1), square.Y1}
+
+					r.Square_list[z].Routers[y][1] = Tuple{int((new_square.X2-new_square.X1)/2) + new_square.X1, new_square.Y2}
+					r.Square_list[y].Routers[z][1] = Tuple{int((new_square.X2-new_square.X1)/2) + new_square.X1, square.Y1}
+
+					r.Square_list[z].Routers[y][2] = Tuple{int(new_square.X2), new_square.Y2}
+					r.Square_list[y].Routers[z][2] = Tuple{int(new_square.X2), square.Y1}
 				}
 			} else if new_square.Y1 >= square.Y1 && new_square.Y2 <= square.Y2 {
 				if new_square.X1 == square.X2+1 {
 					r.Border_dict[y] = append(r.Border_dict[y], z)
 					r.Border_dict[z] = append(r.Border_dict[z], y)
 
+					r.Square_list[z].Routers[y][0] = Tuple{new_square.X1, int(new_square.Y1)}
+					r.Square_list[y].Routers[z][0] = Tuple{square.X2, int(new_square.Y1)}
+
+					r.Square_list[z].Routers[y][1] = Tuple{new_square.X1, int((new_square.Y2-new_square.Y1)/2) + new_square.Y1}
+					r.Square_list[y].Routers[z][1] = Tuple{square.X2, int((new_square.Y2-new_square.Y1)/2) + new_square.Y1}
+
+					r.Square_list[z].Routers[y][2] = Tuple{new_square.X1, int(new_square.Y2)}
+					r.Square_list[y].Routers[z][2] = Tuple{square.X2, int(new_square.Y2)}
+
 				} else if new_square.X2 == square.X1-1 {
 					r.Border_dict[y] = append(r.Border_dict[y], z)
 					r.Border_dict[z] = append(r.Border_dict[z], y)
+
+					r.Square_list[z].Routers[y][0] = Tuple{new_square.X2, int(new_square.Y1)}
+					r.Square_list[y].Routers[z][0] = Tuple{square.X1, int(new_square.Y1)}
+
+					r.Square_list[z].Routers[y][1] = Tuple{new_square.X2, int((new_square.Y2-new_square.Y1)/2) + new_square.Y1}
+					r.Square_list[y].Routers[z][1] = Tuple{square.X1, int((new_square.Y2-new_square.Y1)/2) + new_square.Y1}
+
+					r.Square_list[z].Routers[y][2] = Tuple{new_square.X2, int(new_square.Y2)}
+					r.Square_list[y].Routers[z][2] = Tuple{square.X1, int(new_square.Y2)}
 				}
 			}
 			if square.X1 >= new_square.X1 && square.X2 <= new_square.X2 {
@@ -421,18 +457,54 @@ func GenerateRouting(p *Params, r *RegionParams) {
 					r.Border_dict[y] = append(r.Border_dict[y], z)
 					r.Border_dict[z] = append(r.Border_dict[z], y)
 
+					r.Square_list[z].Routers[y][0] = Tuple{int(square.X1), square.Y1}
+					r.Square_list[y].Routers[z][0] = Tuple{int(square.X1), new_square.Y2}
+
+					r.Square_list[z].Routers[y][1] = Tuple{int((square.X2-square.X1)/2) + square.X1, square.Y1}
+					r.Square_list[y].Routers[z][1] = Tuple{int((square.X2-square.X1)/2) + square.X1, new_square.Y2}
+
+					r.Square_list[z].Routers[y][2] = Tuple{int(square.X2), square.Y1}
+					r.Square_list[y].Routers[z][2] = Tuple{int(square.X2), new_square.Y2}
+
 				} else if square.Y2 == new_square.Y1-1 {
 					r.Border_dict[y] = append(r.Border_dict[y], z)
 					r.Border_dict[z] = append(r.Border_dict[z], y)
+
+					r.Square_list[z].Routers[y][0] = Tuple{int(square.X1), square.Y2}
+					r.Square_list[y].Routers[z][0] = Tuple{int(square.X1), new_square.Y1}
+
+					r.Square_list[z].Routers[y][1] = Tuple{int((square.X2-square.X1)/2) + square.X1, square.Y2}
+					r.Square_list[y].Routers[z][1] = Tuple{int((square.X2-square.X1)/2) + square.X1, new_square.Y1}
+
+					r.Square_list[z].Routers[y][1] = Tuple{int(square.X2), square.Y2}
+					r.Square_list[y].Routers[z][1] = Tuple{int(square.X2), new_square.Y1}
 				}
 			} else if square.Y1 >= new_square.Y1 && square.Y2 <= new_square.Y2 {
 				if square.X1 == new_square.X2+1 {
 					r.Border_dict[y] = append(r.Border_dict[y], z)
 					r.Border_dict[z] = append(r.Border_dict[z], y)
 
+					r.Square_list[z].Routers[y][0] = Tuple{square.X1, int(square.Y1)}
+					r.Square_list[y].Routers[z][0] = Tuple{new_square.X2, int(square.Y1)}
+
+					r.Square_list[z].Routers[y][1] = Tuple{square.X1, int((square.Y2-square.Y1)/2) + square.Y1}
+					r.Square_list[y].Routers[z][1] = Tuple{new_square.X2, int((square.Y2-square.Y1)/2) + square.Y1}
+
+					r.Square_list[z].Routers[y][2] = Tuple{square.X1, int(square.Y2)}
+					r.Square_list[y].Routers[z][2] = Tuple{new_square.X2, int(square.Y2)}
+
 				} else if square.X2 == new_square.X1-1 {
 					r.Border_dict[y] = append(r.Border_dict[y], z)
 					r.Border_dict[z] = append(r.Border_dict[z], y)
+
+					r.Square_list[z].Routers[y][0] = Tuple{square.X2, int(square.Y1)}
+					r.Square_list[y].Routers[z][0] = Tuple{new_square.X1, int(square.Y1)}
+
+					r.Square_list[z].Routers[y][1] = Tuple{square.X2, int((square.Y2-square.Y1)/2) + square.Y1}
+					r.Square_list[y].Routers[z][1] = Tuple{new_square.X1, int((square.Y2-square.Y1)/2) + square.Y1}
+
+					r.Square_list[z].Routers[y][2] = Tuple{square.X2, int(square.Y2)}
+					r.Square_list[y].Routers[z][2] = Tuple{new_square.X1, int(square.Y2)}
 				}
 			}
 
@@ -443,6 +515,15 @@ func GenerateRouting(p *Params, r *RegionParams) {
 				if square.X1 <= new_square.X1 && square.X2 < new_square.X2 && square.X2 > new_square.X1 {
 					r.Border_dict[y] = append(r.Border_dict[y], z)
 					r.Border_dict[z] = append(r.Border_dict[z], y)
+
+					r.Square_list[z].Routers[y][0] = Tuple{new_square.X1, int(square.Y1)}
+					r.Square_list[y].Routers[z][0] = Tuple{new_square.X1, int(new_square.Y2)}
+
+					r.Square_list[z].Routers[y][1] = Tuple{(new_square.X1 + square.X2) / 2,  square.Y1}
+					r.Square_list[z].Routers[y][1] = Tuple{(new_square.X1 + square.X2) / 2,  new_square.Y2}
+
+					r.Square_list[z].Routers[y][2] = Tuple{square.X2, int(square.Y1)}
+					r.Square_list[y].Routers[z][2] = Tuple{square.X2, int(new_square.Y2)}
 				}
 
 				// Hanging Case 2
@@ -451,6 +532,15 @@ func GenerateRouting(p *Params, r *RegionParams) {
 				if square.X1 >= new_square.X1 && square.X2 > new_square.X2 && square.X1 < new_square.X2 {
 					r.Border_dict[y] = append(r.Border_dict[y], z)
 					r.Border_dict[z] = append(r.Border_dict[z], y)
+
+					r.Square_list[z].Routers[y][0] = Tuple{square.X1,  square.Y1}
+					r.Square_list[z].Routers[y][0] = Tuple{square.X1,  new_square.Y2}
+
+					r.Square_list[z].Routers[y][1] = Tuple{(square.X1 + new_square.X2) / 2,  square.Y1}
+					r.Square_list[z].Routers[y][1] = Tuple{(square.X1 + new_square.X2) / 2,  new_square.Y2}
+
+					r.Square_list[z].Routers[y][2] = Tuple{new_square.X2,  square.Y1}
+					r.Square_list[z].Routers[y][2] = Tuple{new_square.X2,  new_square.Y2}
 				}
 			}
 
@@ -461,14 +551,32 @@ func GenerateRouting(p *Params, r *RegionParams) {
 				if new_square.X1 <= square.X1 && new_square.X2 < square.X2 && new_square.X2 > square.X1 {
 					r.Border_dict[y] = append(r.Border_dict[y], z)
 					r.Border_dict[z] = append(r.Border_dict[z], y)
+
+					r.Square_list[z].Routers[y][0] = Tuple{square.X1,  square.Y2}
+					r.Square_list[z].Routers[y][0] = Tuple{square.X1,  new_square.Y1}
+
+					r.Square_list[z].Routers[y][1] = Tuple{(square.X1 + new_square.X2) / 2,  square.Y2}
+					r.Square_list[z].Routers[y][1] = Tuple{(square.X1 + new_square.X2) / 2,  new_square.Y1}
+
+					r.Square_list[z].Routers[y][2] = Tuple{new_square.X2,  square.Y2}
+					r.Square_list[z].Routers[y][2] = Tuple{new_square.X2,  new_square.Y1}
 				}
 
 				// Hanging Case 4
 				// square is on top of next_square
-				// # left side of square extends pass the left side of next_square
+				// left side of square extends pass the left side of next_square
 				if new_square.X1 >= square.X1 && new_square.X2 > square.X2 && new_square.X1 < square.X2 {
 					r.Border_dict[y] = append(r.Border_dict[y], z)
 					r.Border_dict[z] = append(r.Border_dict[z], y)
+
+					r.Square_list[z].Routers[y][0] = Tuple{new_square.X1,  square.Y2}
+					r.Square_list[z].Routers[y][0] = Tuple{new_square.X1,  new_square.Y1}
+
+					r.Square_list[z].Routers[y][1] = Tuple{(new_square.X1 + square.X2) / 2,  square.Y2}
+					r.Square_list[z].Routers[y][1] = Tuple{(new_square.X1 + square.X2) / 2,  new_square.Y1}
+
+					r.Square_list[z].Routers[y][2] = Tuple{square.X2,  square.Y2}
+					r.Square_list[z].Routers[y][2] = Tuple{square.X2,  new_square.Y1}
 				}
 			}
 
@@ -479,6 +587,15 @@ func GenerateRouting(p *Params, r *RegionParams) {
 				if square.Y1 >= new_square.Y1 && square.Y2 > new_square.Y2 && square.Y1 < new_square.Y2 {
 					r.Border_dict[y] = append(r.Border_dict[y], z)
 					r.Border_dict[z] = append(r.Border_dict[z], y)
+
+					r.Square_list[y].Routers[z][0] = Tuple{square.X1,new_square.Y2}
+					r.Square_list[y].Routers[z][0] = Tuple{new_square.X2,new_square.Y2}
+
+					r.Square_list[y].Routers[z][1] = Tuple{square.X1,(square.Y1 + new_square.Y2) / 2}
+					r.Square_list[y].Routers[z][1] = Tuple{new_square.X2,(square.Y1 + new_square.Y2) / 2}
+
+					r.Square_list[y].Routers[z][2] = Tuple{square.X1,square.Y1}
+					r.Square_list[y].Routers[z][2] = Tuple{new_square.X2,square.Y1}
 				}
 
 				// Hanging Case 6
@@ -487,6 +604,17 @@ func GenerateRouting(p *Params, r *RegionParams) {
 				if square.Y1 <= new_square.Y1 && square.Y2 < new_square.Y2 && square.Y2 > new_square.Y1 {
 					r.Border_dict[y] = append(r.Border_dict[y], z)
 					r.Border_dict[z] = append(r.Border_dict[z], y)
+
+					r.Square_list[y].Routers[z][0] = Tuple{square.X1,square.Y2}
+					r.Square_list[y].Routers[z][0] = Tuple{new_square.X2,square.Y2}
+
+					r.Square_list[y].Routers[z][1] = Tuple{square.X1,(new_square.Y1 + square.Y2) / 2}
+					r.Square_list[y].Routers[z][1] = Tuple{new_square.X2,(new_square.Y1 + square.Y2) / 2}
+
+					r.Square_list[y].Routers[z][2] = Tuple{square.X1,new_square.Y1}
+					r.Square_list[y].Routers[z][2] = Tuple{new_square.X2,new_square.Y1}
+
+
 				}
 			}
 
@@ -497,6 +625,15 @@ func GenerateRouting(p *Params, r *RegionParams) {
 				if square.Y1 >= new_square.Y1 && square.Y2 > new_square.Y2 && square.Y1 < new_square.Y2 {
 					r.Border_dict[y] = append(r.Border_dict[y], z)
 					r.Border_dict[z] = append(r.Border_dict[z], y)
+
+					r.Square_list[y].Routers[z][0] = Tuple{square.X1,new_square.Y2}
+					r.Square_list[y].Routers[z][0] = Tuple{new_square.X2,new_square.Y2}
+
+					r.Square_list[y].Routers[z][1] = Tuple{square.X1,(square.Y1 + new_square.Y2) / 2}
+					r.Square_list[y].Routers[z][1] = Tuple{new_square.X2,(square.Y1 + new_square.Y2) / 2}
+
+					r.Square_list[y].Routers[z][2] = Tuple{square.X1,square.Y1}
+					r.Square_list[y].Routers[z][2] = Tuple{new_square.X2,square.Y1}
 				}
 
 				// Hanging Case 8
@@ -505,6 +642,15 @@ func GenerateRouting(p *Params, r *RegionParams) {
 				if square.Y1 <= new_square.Y1 && square.Y2 < new_square.Y2 && square.Y2 > new_square.Y1 {
 					r.Border_dict[y] = append(r.Border_dict[y], z)
 					r.Border_dict[z] = append(r.Border_dict[z], y)
+
+					r.Square_list[y].Routers[z][0] = Tuple{square.X2,square.Y2}
+					r.Square_list[y].Routers[z][0] = Tuple{new_square.X1,square.Y2}
+
+					r.Square_list[y].Routers[z][1] = Tuple{square.X2,(new_square.Y1 + square.Y2) / 2}
+					r.Square_list[y].Routers[z][1] = Tuple{new_square.X1,(new_square.Y1 + square.Y2) / 2}
+
+					r.Square_list[y].Routers[z][2] = Tuple{square.X2,new_square.Y1}
+					r.Square_list[y].Routers[z][2] = Tuple{new_square.X1,new_square.Y1}
 				}
 			}
 		}
@@ -512,7 +658,6 @@ func GenerateRouting(p *Params, r *RegionParams) {
 	//fmt.Println(r.Border_dict)
 
 	//Cutting takes place in this loop
-
 	for true {
 		rebuilt := false
 

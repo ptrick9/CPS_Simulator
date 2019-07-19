@@ -151,7 +151,7 @@ func (s FusionCenter) CheckDetections() {
 				yLoc := (y * s.P.YDiv) + int(s.P.YDiv/2)
 				s.P.CenterCoord = Coord{X: xLoc, Y: yLoc}
 				if s.P.SuperNodes {
-					s.Sch.AddRoutePoint(s.P.Grid[x][y].Center)
+					s.Sch.AddRoutePointUrgent(s.P.Grid[x][y].Center)
 				}
 				s.P.Grid[x][y].HasDetected = true
 			}
@@ -527,17 +527,18 @@ func (s FusionCenter) PlaceSuperNodes() {
 							dist += Dist(tmp, Tuple{X: ret_path[i].X, Y: ret_path[i].Y})
 							tmp = Tuple{X: ret_path[i].X, Y: ret_path[i].Y}
 						}
+					} else if s.P.Grid[i][j].Center.X == s.Sch.SNodeList[k].GetX() && s.P.Grid[i][j].Center.Y == s.Sch.SNodeList[k].GetY(){
+						dist = 0
 					} else {
 						dist = 1000000000000.0
-						/*fmt.Printf("Cannot reach point %v in region %v from %v\n", s.P.Grid[i][j].Center,
-							RegionContaining(Tuple{X: s.P.Grid[i][j].Center.X, Y: s.P.Grid[i][j].Center.Y}, s.R),
-							RegionContaining(Tuple{X: s.Sch.SNodeList[k].GetX(), Y: s.Sch.SNodeList[k].GetY()}, s.R))*/
+						//fmt.Printf("Cannot reach point %v from %v\n", s.P.Grid[i][j].Center,
+							//Tuple{X: s.Sch.SNodeList[k].GetX(), Y: s.Sch.SNodeList[k].GetY()})
 					}
 					if dist < minDist {
 						minDist = dist
 						minIndex = k
 					}
-					//fmt.Printf("Distance: %v\n", dist)
+					//fmt.Printf("Distance: %v, MinDist%v\n", dist, minDist)
 				}
 				if minIndex == -1 {
 					minNode := 0
@@ -546,8 +547,9 @@ func (s FusionCenter) PlaceSuperNodes() {
 							minNode = m
 						}
 					}
-					fmt.Printf("Moved node %v to %v\n", minNode, s.P.CenterCoord)
+					fmt.Printf("Moved node %v to %v\n", minNode, s.P.Grid[i][j].Center)
 					s.Sch.SNodeList[minNode].SetLoc(s.P.Grid[i][j].Center)
+					s.Sch.SNodeList[minNode].UpdateLoc()
 					s.PlaceSuperNodes()
 				} else {
 					s.P.Grid[i][j].SuperNodeCluster = minIndex
@@ -610,7 +612,6 @@ func (s FusionCenter) RandomizeSuperNodes() {
 		s.Sch.SNodeList[i].SetLoc(Coord{X: x, Y: y})
 		s.Sch.SNodeList[i].UpdateLoc()
 	}
-
 }
 
 func (s FusionCenter) BuildCluster(id int) {
@@ -820,7 +821,7 @@ func (s *FusionCenter) Send(n *NodeImpl, rd Reading) {
 			//fmt.Println("Valid!")
 			s.P.CenterCoord = Coord{X: int(rd.Xpos), Y: int(rd.YPos)}
 			if s.P.SuperNodes {
-				s.Sch.AddRoutePoint(s.P.CenterCoord)
+				s.Sch.AddRoutePointUrgent(s.P.CenterCoord)
 			}
 			if FloatDist(Tuple32{rd.Xpos, rd.YPos}, Tuple32{float32(s.P.B.X), float32(s.P.B.Y)}) > s.P.DetectionDistance {
 				fmt.Fprintln(s.P.DetectionFile, fmt.Sprintf("FP Confirmation T: %v ID: %v (%v, %v) D: %v C: %v", rd.Time, rd.Id, rd.Xpos, rd.YPos, FloatDist(Tuple32{rd.Xpos, rd.YPos}, Tuple32{float32(s.P.B.X), float32(s.P.B.Y)}) , rd.SensorVal))
