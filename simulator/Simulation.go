@@ -286,6 +286,29 @@ func main() {
 					}
 				}
 				p.Events.Push(&cps.Event{event.Node, cps.CLUSTERFORM, p.CurrentTime+1000, 0})
+			} else if event.Instruction == cps.CMToCH {
+
+				if(event.Node.IsClusterMember){
+					//Print to file
+					oldest,newest := event.Node.GetOldestNewestReadings()
+					fmt.Fprintf(event.Node.P.ClusterReadings,"%d\t %d\t Node to Head\t %d\t %d\t %d\n",p.CurrentTime/1000,event.Node.Id,oldest/1000,newest/1000,len(event.Node.ReadingsBuffer))
+					//fmt.Printf("%d\t%d\tNode to Head\t%d\t%d\t%d\n",p.CurrentTime,event.Node.Id,oldest,newest,len(event.Node.ReadingsBuffer))
+
+					//Send to CH and clear readings
+					event.Node.SendtoClusterHead()
+				}
+				p.Events.Push(&cps.Event{event.Node,cps.CMToCH,p.CurrentTime+2000,0})
+			} else if event.Instruction == cps.CHToServer {
+
+				if(event.Node.IsClusterHead){
+					//Print to file
+					oldest,newest := event.Node.GetOldestNewestReadings()
+					fmt.Fprintf(event.Node.P.ClusterReadings,"%d\t %d\t Head to Server\t %d\t %d\t %d\n",p.CurrentTime/1000,event.Node.Id,oldest/1000,newest/1000,len(event.Node.ReadingsBuffer))
+
+					//Send to Server and clear readings
+					event.Node.SendtoServer()
+				}
+				p.Events.Push(&cps.Event{event.Node,cps.CHToServer,p.CurrentTime+4000,0})
 			}
 		} else {
 			if event.Instruction == cps.POSITION {

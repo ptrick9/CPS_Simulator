@@ -123,7 +123,7 @@ type NodeImpl struct {
 	InitialSensitivity float64
 	Valid 			   bool
 
-	allReadings 	   [1000]float64
+	//allReadings 	   [1000]float64
 	calibrateTimes 	   []int
 	calibrateReading   []float64
 
@@ -139,6 +139,7 @@ type NodeImpl struct {
 	NodeClusterParams	*ClusterMemberParams
 	Recalibrated 		bool
 	CHPenalty			float64
+	ReadingsBuffer		[]Reading
 }
 
 //NodeMovement controls the movement of all the normal nodes
@@ -414,22 +415,6 @@ func (curNode *NodeImpl) LogBatteryPower(t int){
 	//if(curNode.Id%3==0){
 	//	curNode.DecrementPowerSensor()
 	//}
-}
-
-func (curNode *NodeImpl) SendtoServer(packet int){
-	//int packet = num bytes in packet
-	curNode.TotalBytesSent += packet;
-	curNode.TotalPacketsSent += 1;
-
-	//code to send to server goes here
-}
-
-func (curNode *NodeImpl) SendtoClusterHead(packet int){
-	//int packet = num bytes in packet
-	curNode.TotalBytesSent += packet;
-	curNode.TotalPacketsSent += 1;
-
-	//code to send to cluster head goes here
 }
 
 
@@ -743,14 +728,26 @@ func (curNode *NodeImpl) GetReadings() {
 			fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("TP T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, RawConc))
 		}
 
-
-		curNode.P.Server.Send(curNode, Reading{ADCRead, newX, newY, curNode.P.CurrentTime, curNode.GetID()})
-
+		if(curNode.P.ClusteringOn){
+			newReading := Reading{ADCRead, newX, newY, curNode.P.CurrentTime, curNode.GetID(), curNode.GetCHID()}
+			curNode.ReadingsBuffer = append(curNode.ReadingsBuffer, newReading)
+		} else{
+			curNode.P.Server.Send(curNode, Reading{ADCRead, newX, newY, curNode.P.CurrentTime, curNode.GetID(), curNode.GetCHID()})
+		}
 
 	}
 	curNode.P.Events.Push(&Event{curNode, SENSE, curNode.P.CurrentTime + 500, 0})
 
 
+}
+
+
+func (curNode * NodeImpl) GetCHID()(int){
+	if(curNode.NodeClusterParams != nil && curNode.NodeClusterParams.CurrentCluster != nil && curNode.NodeClusterParams.CurrentCluster.ClusterHead != nil){
+		return curNode.NodeClusterParams.CurrentCluster.ClusterHead.Id
+	} else{
+		return -1
+	}
 }
 
 func interpolateReading(x , y float32, time, timeStep int, p *Params) float32{
@@ -889,11 +886,58 @@ func (curNode *NodeImpl) GetReadingsCSV() {
 		//Only do this if the sensor was pinged this iteration
 
 		if curNode.Valid {
-			curNode.P.Server.Send(curNode, Reading{ADCRead, newX, newY, curNode.P.CurrentTime, curNode.GetID()})
+			if(curNode.P.ClusteringOn){
+				newReading := Reading{ADCRead, newX, newY, curNode.P.CurrentTime, curNode.GetID(), curNode.GetCHID()}
+				curNode.ReadingsBuffer = append(curNode.ReadingsBuffer, newReading)
+			} else{
+				curNode.P.Server.Send(curNode, Reading{ADCRead, newX, newY, curNode.P.CurrentTime, curNode.GetID(), curNode.GetCHID()})
+			}
 		}
 
 	}
 	curNode.P.Events.Push(&Event{curNode, SENSE, curNode.P.CurrentTime + 500, 0})
+}
+
+//Get min and max readings
+func (curNode * NodeImpl) GetOldestNewestReadings()(oldest int, newest int){
+
+	oldest = curNode.ReadingsBuffer[0].Time
+	newest = curNode.ReadingsBuffer[0].Time
+
+	for i:=0; i<len(curNode.ReadingsBuffer); i++{
+		if(curNode.ReadingsBuffer[i].Time < oldest){
+			oldest = curNode.ReadingsBuffer[i].Time
+		}
+		if (curNode.ReadingsBuffer[i].Time > newest){
+			newest = curNode.ReadingsBuffer[i].Time
+		}
+	}
+
+	return oldest, newest
+}
+
+//Cluster Head sends all readings to the Server
+func (curNode *NodeImpl) SendtoServer(){
+
+	//Iterates through Readings Buffer sending all readings
+	for i:=0; i<len(curNode.ReadingsBuffer); i++{
+		curNode.P.Server.Send(curNode, curNode.ReadingsBuffer[i])
+	}
+
+	//clears Clusterhead reading buffer
+	curNode.ReadingsBuffer = []Reading{}
+
+}
+
+//Node sends to Cluster Head
+func (curNode *NodeImpl) SendtoClusterHead(){
+
+	//Append to clusterhead readings buffer
+	clusterHead := curNode.NodeClusterParams.CurrentCluster.ClusterHead
+	clusterHead.ReadingsBuffer = append(clusterHead.ReadingsBuffer, curNode.ReadingsBuffer...)
+
+	//clear node's readings
+	curNode.ReadingsBuffer = []Reading{}
 }
 
 func interpolate (start int, end int, portion float32) float32{

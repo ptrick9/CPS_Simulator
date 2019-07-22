@@ -452,6 +452,9 @@ func SetupCSVNodes(p *Params) {
 			p.Events.Push(&Event{newNode,CLUSTERHEADELECT,15,0})
 			p.Events.Push(&Event{newNode,CLUSTERFORM,20,0})
 			p.ClusterNetwork.ClearClusterParams(newNode)
+			p.Events.Push(&Event{newNode,CMToCH,2030,0})
+			p.Events.Push(&Event{newNode,CHToServer,4035,0})
+			newNode.ReadingsBuffer = []Reading{}
 			newNode.CHPenalty = 1.0 //initialized to 1
 		}
 
@@ -506,6 +509,9 @@ func SetupRandomNodes(p *Params) {
 				p.Events.Push(&Event{newNode,CLUSTERHEADELECT,15,0})
 				p.Events.Push(&Event{newNode,CLUSTERFORM,20,0})
 				p.ClusterNetwork.ClearClusterParams(newNode)
+				p.Events.Push(&Event{newNode,CMToCH,2030,0})
+				p.Events.Push(&Event{newNode,CHToServer,4035,0})
+				newNode.ReadingsBuffer = []Reading{}
 				newNode.CHPenalty = 1.0 //initialized to 1
 			}
 
@@ -808,6 +814,11 @@ func SetupFiles(p *Params) {
 	}
 
 	p.ClusterDebug, err = os.Create(p.OutputFileNameCM + "-adhoc_debug.txt")
+	if err != nil{
+		log.Fatal("Cannot create file", err)
+	}
+
+	p.ClusterReadings, err = os.Create(p.OutputFileNameCM + "-cluster_readings.txt")
 	if err != nil{
 		log.Fatal("Cannot create file", err)
 	}

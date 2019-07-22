@@ -19,6 +19,8 @@ const (
 	CLUSTERFORM
 	CLUSTERLESSFORM
 	CLUSTERPRINT
+	CMToCH
+	CHToServer
 )
 
 type Event struct {

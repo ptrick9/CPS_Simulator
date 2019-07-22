@@ -48,12 +48,13 @@ func (s *FusionCenter) Init(){
 }
 
 //Reading packages the data sent by a node
-type   Reading struct {
+type Reading struct {
 	SensorVal float64
 	Xpos      float32
 	YPos      float32
 	Time      int //Time represented by iteration number
 	Id        int //Node Id number
+	CH_Id	  int //ID of the Node's cluster head when the reading was made
 }
 
 //Key for dictionary of sensor readings
