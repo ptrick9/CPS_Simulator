@@ -246,11 +246,14 @@ func (adhoc * AdHocNetwork) FormClusters(clusterHead * NodeImpl){
 	for i:=0; i<len(clusterHead.NodeClusterParams.RecvMsgs) && clusterHead.NodeClusterParams.CurrentCluster.Total<adhoc.Threshold; i++{
 		if(!clusterHead.NodeClusterParams.RecvMsgs[i].Sender.IsClusterHead && !clusterHead.NodeClusterParams.RecvMsgs[i].Sender.IsClusterMember){
 			//if(clusterHead.IsWithinRange(clusterHead.NodeClusterParams.RecvMsgs[i].Sender,8)){
-				clusterHead.NodeClusterParams.CurrentCluster.ClusterMembers = append(clusterHead.NodeClusterParams.CurrentCluster.ClusterMembers, clusterHead.NodeClusterParams.RecvMsgs[i].Sender)
-				clusterHead.NodeClusterParams.CurrentCluster.Total = len(clusterHead.NodeClusterParams.CurrentCluster.ClusterMembers)
+			clusterHead.NodeClusterParams.CurrentCluster.ClusterMembers = append(clusterHead.NodeClusterParams.CurrentCluster.ClusterMembers, clusterHead.NodeClusterParams.RecvMsgs[i].Sender)
+			clusterHead.NodeClusterParams.CurrentCluster.Total = len(clusterHead.NodeClusterParams.CurrentCluster.ClusterMembers)
 
-				clusterHead.NodeClusterParams.RecvMsgs[i].Sender.IsClusterMember = true
-				clusterHead.NodeClusterParams.RecvMsgs[i].Sender.NodeClusterParams.CurrentCluster = clusterHead.NodeClusterParams.CurrentCluster
+			clusterHead.NodeClusterParams.RecvMsgs[i].Sender.IsClusterMember = true
+			clusterHead.NodeClusterParams.RecvMsgs[i].Sender.NodeClusterParams.CurrentCluster = clusterHead.NodeClusterParams.CurrentCluster
+
+			clusterHead.DecrementPowerBT()
+			clusterHead.NodeClusterParams.RecvMsgs[i].Sender.DecrementPowerBT()
 
 			//}
 		}
@@ -375,6 +378,9 @@ func (adhoc * AdHocNetwork) FinalizeClusters(p * Params){
 					p.ClusterNetwork.SingularNodes[i].IsClusterMember = true
 					p.ClusterNetwork.SingularNodes[i].NodeClusterParams.CurrentCluster = clusterHead.NodeClusterParams.CurrentCluster
 					joined = true
+
+					p.ClusterNetwork.SingularNodes[i].DecrementPowerBT()
+					clusterHead.DecrementPowerBT()
 				} else{
 					atj = append(atj, viableOptions[k])
 				}
@@ -392,6 +398,8 @@ func (adhoc * AdHocNetwork) FinalizeClusters(p * Params){
 				p.ClusterNetwork.ClusterHeads = append(p.ClusterNetwork.ClusterHeads, p.ClusterNetwork.SingularNodes[i])
 				p.ClusterNetwork.TotalHeads++
 				p.ClusterNetwork.SingularNodes[i].NodeClusterParams.AttemptedToJoin = append(p.ClusterNetwork.SingularNodes[i].NodeClusterParams.AttemptedToJoin, atj...)
+
+				p.ClusterNetwork.SingularNodes[i].DecrementPowerBT()
 			}
 		}
 

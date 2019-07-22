@@ -948,6 +948,9 @@ func (curNode *NodeImpl) SendtoServer(){
 		curNode.P.Server.Send(curNode, curNode.ReadingsBuffer[i])
 	}
 
+	//Deduct Power for 4G transmission
+	curNode.DecrementPower4G()
+
 	//clears Clusterhead reading buffer
 	curNode.ReadingsBuffer = []Reading{}
 
@@ -959,6 +962,9 @@ func (curNode *NodeImpl) SendtoClusterHead(){
 	//Append to clusterhead readings buffer
 	clusterHead := curNode.NodeClusterParams.CurrentCluster.ClusterHead
 	clusterHead.ReadingsBuffer = append(clusterHead.ReadingsBuffer, curNode.ReadingsBuffer...)
+
+	//Deduct power for BT transmission
+	curNode.DecrementPowerBT()
 
 	//clear node's readings
 	curNode.ReadingsBuffer = []Reading{}
