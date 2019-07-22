@@ -200,4 +200,9 @@ type Params struct {
 	NodeBTRange				float64
 	ClusterThreshold		int
 	ClusteringOn			bool
+
+	CMSensingTime		int
+	CHSensingTime		int
+	MaxCMReadingBufferSize	int
+	MaxCHReadingBufferSize	int
 }

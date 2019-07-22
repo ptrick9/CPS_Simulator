@@ -452,8 +452,7 @@ func SetupCSVNodes(p *Params) {
 			p.Events.Push(&Event{newNode,CLUSTERHEADELECT,15,0})
 			p.Events.Push(&Event{newNode,CLUSTERFORM,20,0})
 			p.ClusterNetwork.ClearClusterParams(newNode)
-			p.Events.Push(&Event{newNode,CMToCH,2030,0})
-			p.Events.Push(&Event{newNode,CHToServer,4035,0})
+			newNode.TimeLastSentReadings = p.CurrentTime
 			newNode.ReadingsBuffer = []Reading{}
 			newNode.CHPenalty = 1.0 //initialized to 1
 		}
@@ -509,8 +508,7 @@ func SetupRandomNodes(p *Params) {
 				p.Events.Push(&Event{newNode,CLUSTERHEADELECT,15,0})
 				p.Events.Push(&Event{newNode,CLUSTERFORM,20,0})
 				p.ClusterNetwork.ClearClusterParams(newNode)
-				p.Events.Push(&Event{newNode,CMToCH,2030,0})
-				p.Events.Push(&Event{newNode,CHToServer,4035,0})
+				newNode.TimeLastSentReadings = p.CurrentTime
 				newNode.ReadingsBuffer = []Reading{}
 				newNode.CHPenalty = 1.0 //initialized to 1
 			}
@@ -1287,6 +1285,11 @@ func GetFlags(p *Params) {
 	flag.IntVar(&p.ClusterThreshold, "clusterThresh,",8, "max size of a node cluster")
 	flag.Float64Var(&p.NodeBTRange, "nodeBTRange",20.0,"bluetooth range of each node")
 	flag.BoolVar(&p.ClusteringOn,"clusteringOn",true,"True: nodes will form clusters, False: no clusters will form")
+
+	flag.IntVar(&p.CMSensingTime, "cmSensingTime,",2, "seconds a cluster member will sense/record readings before sending to cluster head")
+	flag.IntVar(&p.CHSensingTime, "chSensingTime,",4, "seconds a cluster head will sense//collect from CM/record readings before sending to server")
+	flag.IntVar(&p.MaxCMReadingBufferSize, "maxCMReadingBufferSize,",10, "max readings buffer size of a cluster member. CM must send to CH when buffer is this size")
+	flag.IntVar(&p.MaxCHReadingBufferSize, "maxCHReadingBufferSize,",100, "max readings buffer size of a cluster head. CH must send to server when buffer is this size")
 
 	//Range: 0-4
 	//	0: begin in center, routed anywhere

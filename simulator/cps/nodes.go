@@ -140,6 +140,7 @@ type NodeImpl struct {
 	Recalibrated 		bool
 	CHPenalty			float64
 	ReadingsBuffer		[]Reading
+	TimeLastSentReadings	int
 }
 
 //NodeMovement controls the movement of all the normal nodes
@@ -887,8 +888,31 @@ func (curNode *NodeImpl) GetReadingsCSV() {
 
 		if curNode.Valid {
 			if(curNode.P.ClusteringOn){
-				newReading := Reading{ADCRead, newX, newY, curNode.P.CurrentTime, curNode.GetID(), curNode.GetCHID()}
-				curNode.ReadingsBuffer = append(curNode.ReadingsBuffer, newReading)
+				if(curNode.IsClusterHead){
+					if(curNode.P.CurrentTime - curNode.TimeLastSentReadings > curNode.P.CHSensingTime*1000 || len(curNode.ReadingsBuffer)>curNode.P.MaxCHReadingBufferSize){
+						//Print to file
+						oldest,newest := curNode.GetOldestNewestReadings()
+						fmt.Fprintf(curNode.P.ClusterReadings,"%d\t %d\t %d\t Head to Server\t %d\t %d\t %d\n",curNode.P.CurrentTime/1000,curNode.TimeLastSentReadings/1000,curNode.Id,oldest/1000,newest/1000,len(curNode.ReadingsBuffer))
+
+						//Send to Server and clear readings
+						curNode.SendtoServer()
+						curNode.TimeLastSentReadings = curNode.P.CurrentTime
+					}
+				} else if(curNode.IsClusterMember){
+					if(curNode.P.CurrentTime - curNode.TimeLastSentReadings > curNode.P.CMSensingTime*1000 || len(curNode.ReadingsBuffer)>curNode.P.MaxCMReadingBufferSize){
+						//Print to file
+						oldest,newest := curNode.GetOldestNewestReadings()
+						fmt.Fprintf(curNode.P.ClusterReadings,"%d\t %d\t %d\t Node to Head\t %d\t %d\t %d\n",curNode.P.CurrentTime/1000,curNode.TimeLastSentReadings/1000,curNode.Id,oldest/1000,newest/1000,len(curNode.ReadingsBuffer))
+
+						//Send to Server and clear readings
+						curNode.SendtoClusterHead()
+						curNode.TimeLastSentReadings = curNode.P.CurrentTime
+					}
+				}
+
+			newReading := Reading{ADCRead, newX, newY, curNode.P.CurrentTime, curNode.GetID(), curNode.GetCHID()}
+			curNode.ReadingsBuffer = append(curNode.ReadingsBuffer, newReading)
+
 			} else{
 				curNode.P.Server.Send(curNode, Reading{ADCRead, newX, newY, curNode.P.CurrentTime, curNode.GetID(), curNode.GetCHID()})
 			}
