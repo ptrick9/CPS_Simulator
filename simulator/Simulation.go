@@ -74,6 +74,7 @@ func main() {
 	rand.Seed(time.Now().UTC().UnixNano())
 
 	//getFlags()
+	fmt.Fprintf(p.RunParamFile,"Starting file\n")
 	cps.GetFlags(p)
 	if p.CPUProfile != "" {
 		f, err := os.Create(p.CPUProfile)
@@ -173,7 +174,6 @@ func main() {
 	p.Iterations_of_event = p.IterationsCM
 	p.EstimatedPingsNeeded = 10200
 
-
 	cps.SetupFiles(p)
 	cps.SetupParameters(p)
 
@@ -202,6 +202,7 @@ func main() {
 	iters := 0
 	p.TimeStep = 0
 
+	cps.WriteFlags(p)
 
 	if p.CSVMovement {
 		cps.SetupCSVNodes(p)
