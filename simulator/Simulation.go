@@ -291,7 +291,6 @@ func main() {
 		} else {
 			if event.Instruction == cps.POSITION {
 				//fmt.Printf("Current Time: %v \n", p.CurrentTime)
-				fmt.Printf("\rRunning Simulator iteration %d\\%v", int(p.CurrentTime/1000), p.Iterations_of_event)
 				if p.PositionPrint {
 					amount := 0
 					for i := 0; i < p.CurrentNodes; i ++ {
@@ -310,8 +309,10 @@ func main() {
 						}
 					}
 					fmt.Fprint(p.PositionFile, buffer.String())
-					p.Events.Push(&cps.Event{nil, cps.POSITION, p.CurrentTime + 1000, 0})
 				}
+				fmt.Printf("\rRunning Simulator iteration %d\\%v", int(p.CurrentTime/1000), p.Iterations_of_event)
+				p.Events.Push(&cps.Event{nil, cps.POSITION, p.CurrentTime + 1000, 0})
+
 			} else if event.Instruction == cps.SERVER {
 				if !p.SuperNodes {
 					fmt.Fprintln(p.RoutingFile, "Amount:", 0)
