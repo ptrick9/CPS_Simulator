@@ -38,9 +38,10 @@ if __name__ == '__main__':
     m = multiprocessing
     q = m.JoinableQueue()
 
-
-    scenarios = ["-inputFileName=%s -imageFileName=%s -stimFileName=circle_0.txt -outRoutingStatsName=routingStats.txt -logPostion=true -logGrid=false -logEnergy=false -logNodes=false" \
-                 "-regionRouting=true -noEnergy=true -csvSensor=true -csvMove=true -iterations=1000 -superNodes=false -doOptimize=false" % (s[0], s[1]) for s in [['Scenario_3.txt', 'marathon_street_map.png']]]
+	switches = ["-logNodes=false -logPostion=true -logGrid=false -logEnergy=false -regionRouting=true -clusteringOn=true -noEnergy=true -csvSensor=true -csvMove=true"]
+	
+    scenarios = ["-inputFileName=%s -imageFileName=%s -stimFileName=circle_0.txt -outRoutingStatsName=routingStats.txt   \
+                 -iterations=1000 -superNodes=false -doOptimize=false" % (s[0], s[1]) for s in [['Scenario_3.txt', 'marathon_street_map.png']]]
 
     row = ["-squareRow=%d" % d for d in [60, 120]]
     col = ["-squareCXol=%d" % d for d in [320, 640]]
@@ -80,9 +81,14 @@ if __name__ == '__main__':
 	SquareRowCM = ["-SquareRowCM=%d" % d for d in [60]]
 	SquareColCM = ["-SquareColCM=%d" % d for d in [320]]
 	validationThreshold = ["-validationThreshold=%d" % d for d in [1]]
+	clusterThresh = ["-clusterThresh=%d" % d for d in [8]] 
+	nodeBTRange = ["-nodeBTRange=%d" % d for d in [20]]
+	cmSensingTime = ["-cmSensingTime=%d" % d for d in [2]]
+	chSensingTime = ["-chSensingTime=%d" % d for d in [4]]
+	maxCMReadingBufferSize = ["-maxCMReadingBufferSize=%d" % d for d in [10]]
+	maxCHReadingBufferSize = ["-maxCHReadingBufferSize=%d" % d for d in [100]]
 
-
-    runs = (list(itertools.product(*[scenarios, row, col, movementPath, detectionThreshold, detectionDistance, outputFileName, sittingStopThreshold, negativeSittingStopThreshold, GridCapacityPercentage, naturalLoss,sensorSamplingLoss,GPSSamplingLoss,serverSamplingLoss,SamplingLossBTCM,SamplingLossWifiCM,SamplingLoss4GCM,SamplingLossAccelCM,thresholdBatteryToHave,thresholdBatteryToUse,movementSamplingSpeed,movementSamplingPeriod,maxBufferCapacity,sensorSamplingPeriod,GPSSamplingPeriod,serverSamplingPeriod,nodeStoredSamples,gridStoredSample,detectionThreshold,errorMultiplier,numSuperNodes,recalibThresh,StandardDeviationThreshold,detectionDistance,SuperNodeSpeed,SquareRowCM,SquareColCM,validationThreshold])))
+    runs = (list(itertools.product(*[switches, scenarios, row, col, movementPath, detectionThreshold, detectionDistance, outputFileName, sittingStopThreshold, negativeSittingStopThreshold, GridCapacityPercentage, naturalLoss,sensorSamplingLoss,GPSSamplingLoss,serverSamplingLoss,SamplingLossBTCM,SamplingLossWifiCM,SamplingLoss4GCM,SamplingLossAccelCM,thresholdBatteryToHave,thresholdBatteryToUse,movementSamplingSpeed,movementSamplingPeriod,maxBufferCapacity,sensorSamplingPeriod,GPSSamplingPeriod,serverSamplingPeriod,nodeStoredSamples,gridStoredSample,detectionThreshold,errorMultiplier,numSuperNodes,recalibThresh,StandardDeviationThreshold,detectionDistance,SuperNodeSpeed,SquareRowCM,SquareColCM,validationThreshold])))
     
     x = 0
     for r in runs:

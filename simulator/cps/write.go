@@ -458,6 +458,9 @@ func SetupCSVNodes(p *Params) {
 			newNode.CHPenalty = 1.0 //initialized to 1
 		}
 
+		newNode.AccelerometerSpeed = []float32{}
+		newNode.TimeLastAccel = p.CurrentTime
+
 		bNewNode := Bounds{
 			X:	float64(newNode.X),
 			Y:	float64(newNode.Y),
@@ -1224,20 +1227,20 @@ func GetFlags(p *Params) {
 	flag.Float64Var(&p.SamplingLossSensorCM, "sensorSamplingLoss", .001,
 		"battery loss due to sensor sampling")
 
-	flag.Float64Var(&p.SamplingLossGPSCM, "GPSSamplingLoss", .005,
+	flag.Float64Var(&p.SamplingLossGPSCM, "GPSSamplingLoss", .012,
 		"battery loss due to GPS sampling")
 
 	flag.Float64Var(&p.SamplingLossSensorCM, "serverSamplingLoss", .01,
 		"battery loss due to server sampling")
 
-	flag.Float64Var(&p.SamplingLossBTCM, "SamplingLossBTCM", .0001,
+	flag.Float64Var(&p.SamplingLossBTCM, "SamplingLossBTCM", .005,
 		"battery loss due to BlueTooth sampling")
-	flag.Float64Var(&p.SamplingLossWifiCM, "SamplingLossWifiCM", .0005,
+	flag.Float64Var(&p.SamplingLossWifiCM, "SamplingLossWifiCM", .01,
 		"battery loss due to WiFi sampling")
-	flag.Float64Var(&p.SamplingLoss4GCM, "SamplingLoss4GCM", .001,
+	flag.Float64Var(&p.SamplingLoss4GCM, "SamplingLoss4GCM", .1,
 		"battery loss due to 4G sampling")
 
-	flag.Float64Var(&p.SamplingLossAccelCM, "SamplingLossAccelCM", .001,
+	flag.Float64Var(&p.SamplingLossAccelCM, "SamplingLossAccelCM", .0000018,
 		"battery loss due to accelerometer sampling")
 
 	flag.IntVar(&p.ThresholdBatteryToHaveCM, "thresholdBatteryToHave", 30,
@@ -1453,5 +1456,12 @@ func WriteFlags(p * Params){
 	buf.WriteString(fmt.Sprintf("outRoutingStatsName=%v\n", p.OutRoutingStatsNameCM))
 	buf.WriteString(fmt.Sprintf("regionRouting=%v\n", p.RegionRouting))
 	buf.WriteString(fmt.Sprintf("validationThreshold=%v\n", p.ValidationThreshold))
+	buf.WriteString(fmt.Sprintf("clusterThresh=%v\n", p.ClusterThreshold))
+	buf.WriteString(fmt.Sprintf("nodeBTRange=%v\n", p.NodeBTRange))
+	buf.WriteString(fmt.Sprintf("clusteringOn=%v\n",p.ClusteringOn))
+	buf.WriteString(fmt.Sprintf("cmSensingTime=%v\n",p.CMSensingTime))
+	buf.WriteString(fmt.Sprintf("chSensingTime=%v\n",p.CHSensingTime))
+	buf.WriteString(fmt.Sprintf("maxCMReadingBufferSize=%v\n",p.MaxCMReadingBufferSize))
+	buf.WriteString(fmt.Sprintf("maxCHReadingBufferSize=%v\n",p.MaxCHReadingBufferSize))
 	fmt.Fprintf(p.RunParamFile,buf.String())
 }

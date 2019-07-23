@@ -141,6 +141,7 @@ type NodeImpl struct {
 	CHPenalty			float64
 	ReadingsBuffer		[]Reading
 	TimeLastSentReadings	int
+	TimeLastAccel		int
 }
 
 //NodeMovement controls the movement of all the normal nodes
@@ -974,6 +975,16 @@ func interpolate (start int, end int, portion float32) float32{
 	return (float32(end-start) * portion + float32(start))
 }
 
+//Acceleration
+func (curNode *NodeImpl) UpdateAcceleration(curTime int, newX float32, newY float32, oldX float32, oldY float32){
+	t_elapsed := float32((curTime - curNode.TimeLastAccel)/1000)
+	ax := (newX/2-oldX/2)/(t_elapsed*t_elapsed)
+	ay := (newY/2-oldY/2)/(t_elapsed*t_elapsed)
+	a_t := float32(math.Sqrt(float64(ax*ax + ay*ay)))
+	curNode.AccelerometerSpeed[curTime/1000] = a_t
+	curNode.TimeLastAccel = curTime
+}
+
 //HandleMovementCSV does the same as HandleMovement
 func (curNode *NodeImpl) MoveCSV(p *Params) {
 	//time := p.Iterations_used
@@ -997,6 +1008,8 @@ func (curNode *NodeImpl) MoveCSV(p *Params) {
 		curNode.NodeBounds.X = float64(newX)
 		curNode.NodeBounds.Y = float64(newY)
 		curNode.P.NodeTree.NodeMovement(curNode.NodeBounds)
+
+		curNode.UpdateAcceleration(p.CurrentTime,newX, newY, oldX, oldY)
 	}
 
 
