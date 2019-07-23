@@ -981,7 +981,7 @@ func (curNode *NodeImpl) UpdateAcceleration(curTime int, newX float32, newY floa
 	ax := (newX/2-oldX/2)/(t_elapsed*t_elapsed)
 	ay := (newY/2-oldY/2)/(t_elapsed*t_elapsed)
 	a_t := float32(math.Sqrt(float64(ax*ax + ay*ay)))
-	curNode.AccelerometerSpeed[curTime/1000] = a_t
+	curNode.AccelerometerSpeed = append(curNode.AccelerometerSpeed, a_t)
 	curNode.TimeLastAccel = curTime
 }
 
