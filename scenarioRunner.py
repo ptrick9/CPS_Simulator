@@ -28,7 +28,7 @@ def runner(queue):
     while True:
         job = queue.get()
         #print(job)
-        command = "./simulator "+' '.join(job)
+        command = "./simulator/Simulation "+' '.join(job)
         print(command)
         #os.system(command)
         queue.task_done()
@@ -39,18 +39,16 @@ if __name__ == '__main__':
     q = m.JoinableQueue()
 
 
-    switches = ["-logNodes=false -logPostion=true -logGrid=false -logEnergy=false -regionRouting=true -clusteringOn=true -noEnergy=true -csvSensor=true -csvMove=true"]
+    switches = ["-logNodes=false -logPosition=true -logGrid=false -logEnergy=false -regionRouting=true -noEnergy=true -csvSensor=true -csvMove=true"]
 
     scenarios = ["-inputFileName=%s -imageFileName=%s -stimFileName=circle_0.txt -outRoutingStatsName=routingStats.txt   \
                 -iterations=1000 -superNodes=false -doOptimize=false" % (s[0], s[1]) for s in [['Scenario_3.txt', 'marathon_street_map.png']]]
 
-    row = ["-squareRow=%d" % d for d in [60, 120]]
-    col = ["-squareCXol=%d" % d for d in [320, 640]]
+
     movementPath = ["-movementPath=%s" % s for s in ["marathon_street_2k.txt"]]
     sensorPath = ["-sensorPath=%s" %s for s in ["smoothed_marathon.csv"]]
-    detectionThreshold = ["-detectionThreshold=%d" % d for d in[5, 6, 7]]
+    detectionThreshold = ["-detectionThreshold=%d" % d for d in[5, 6]]
     detectionDistance = ["-detectionDistance=%d" % d for d in [6, 7]]
-    outputFileName = ["-p.OutputFileName=%s" % s for s in ["Log"]]
     sittingStopThreshold = ["-sittingStopThreshold=%d" % d for d in [5]]
     negativeSittingStopThreshold = ["-negativeSittingStopThreshold=%d" % d for d in [-10]]
     GridCapacityPercentage = ["-GridCapacityPercentage=%f" % f for f in [0.9]]
@@ -71,10 +69,10 @@ if __name__ == '__main__':
     GPSSamplingPeriod = ["-GPSSamplingPeriod=%d" % d for d in [1000]]
     serverSamplingPeriod = ["-serverSamplingPeriod=%d" % d for d in [1000]]
     nodeStoredSamples = ["-nodeStoredSamples=%d" % d for d in [10]]
-    gridStoredSample = ["-p.GridStoredSample=%d" % d for d in [10]]
+    gridStoredSample = ["-GridStoredSamples=%d" % d for d in [10]]
     errorMultiplier = ["-errorMultiplier=%f" % f for f in [1.0]]
     numSuperNodes = ["-numSuperNodes=%d" %d for d in [4]]
-    recalibThresh = ["-Recalibration Threshold=%d" % d for d in [3]]
+    recalibThresh = ["-RecalibrationThreshold=%d" % d for d in [3]]
     StandardDeviationThreshold = ["-StandardDeviationThreshold=%f" % f for f in [1.7]]
     SuperNodeSpeed = ["-SuperNodeSpeed=%d" % d for d in [3]]
     SquareRowCM = ["-SquareRowCM=%d" % d for d in [60]]
@@ -82,13 +80,13 @@ if __name__ == '__main__':
     validationThreshold = ["-validationThreshold=%d" % d for d in [1]]
 
 
-    runs = (list(itertools.product(*[scenarios, row, col, movementPath, detectionThreshold, detectionDistance, outputFileName, sittingStopThreshold, negativeSittingStopThreshold, GridCapacityPercentage, naturalLoss,sensorSamplingLoss,GPSSamplingLoss,serverSamplingLoss,SamplingLossBTCM,SamplingLossWifiCM,SamplingLoss4GCM,SamplingLossAccelCM,thresholdBatteryToHave,thresholdBatteryToUse,movementSamplingSpeed,movementSamplingPeriod,maxBufferCapacity,sensorSamplingPeriod,GPSSamplingPeriod,serverSamplingPeriod,nodeStoredSamples,gridStoredSample,detectionThreshold,errorMultiplier,numSuperNodes,recalibThresh,StandardDeviationThreshold,detectionDistance,SuperNodeSpeed,SquareRowCM,SquareColCM,validationThreshold])))
+    runs = (list(itertools.product(*[switches, scenarios, movementPath, sensorPath, detectionThreshold, detectionDistance, sittingStopThreshold, negativeSittingStopThreshold, GridCapacityPercentage, naturalLoss,sensorSamplingLoss,GPSSamplingLoss,serverSamplingLoss,SamplingLossBTCM,SamplingLossWifiCM,SamplingLoss4GCM,SamplingLossAccelCM,thresholdBatteryToHave,thresholdBatteryToUse,movementSamplingSpeed,movementSamplingPeriod,maxBufferCapacity,sensorSamplingPeriod,GPSSamplingPeriod,serverSamplingPeriod,nodeStoredSamples,gridStoredSample,errorMultiplier,numSuperNodes,recalibThresh,StandardDeviationThreshold,SuperNodeSpeed,SquareRowCM,SquareColCM,validationThreshold])))
     
     x = 0
     for r in runs:
         for i in range(10):
             j = [zz for zz in r]
-            j.append("-outputFileName=big_data/Log_%d" % x)
+            j.append("-OutputFileName=/home/simulator/bigData/Log_%d" % x)
             v = j
             q.put(v)
             x+= 1

@@ -1136,7 +1136,7 @@ func GetFlags(p *Params) {
 
 	flag.StringVar(&p.MovementPath, "movementPath", "Circle_2D.csv", "Movement Inputs")
 
-	flag.StringVar(&p.OutputFileNameCM, "p.OutputFileName", "Log",
+	flag.StringVar(&p.OutputFileNameCM, "OutputFileName", "Log",
 		"Name of the output text file prefix")
 
 	flag.Float64Var(&p.NaturalLossCM, "naturalLoss", .005,
@@ -1198,7 +1198,7 @@ func GetFlags(p *Params) {
 	flag.IntVar(&p.NumStoredSamplesCM, "nodeStoredSamples", 10,
 		"number of samples stored by individual nodes for averaging")
 
-	flag.IntVar(&p.GridStoredSamplesCM, "p.GridStoredSamples", 10,
+	flag.IntVar(&p.GridStoredSamplesCM, "GridStoredSamples", 10,
 		"number of samples stored by p.Grid squares for averaging")
 
 	flag.Float64Var(&p.DetectionThresholdCM, "detectionThreshold", 4000.0, //11180.0,
@@ -1238,12 +1238,12 @@ func GetFlags(p *Params) {
 	//	5: sophisticated routing algorithm, begin inside regions, only routed inside region
 	//	6: regional return trip routing algorithm, routed inside region based on most points
 	//	7: regional return trip routing algorithm, routed inside region based on oldest point
-	flag.IntVar(&p.SuperNodeType, "p.SuperNodeType", 0, "the type of super node used in the simulator")
+	flag.IntVar(&p.SuperNodeType, "SuperNodeType", 0, "the type of super node used in the simulator")
 
 	//Range: 0-...
 	//Theoretically could be as high as possible
 	//Realistically should remain around 10
-	flag.IntVar(&p.SuperNodeSpeed, "p.SuperNodeSpeed", 3, "the speed of the super node")
+	flag.IntVar(&p.SuperNodeSpeed, "SuperNodeSpeed", 3, "the speed of the super node")
 
 
 	//Range: true/false
