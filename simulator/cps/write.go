@@ -1236,6 +1236,7 @@ func GetFlags(p *Params) {
 
 	flag.BoolVar(&p.RegionRouting, "regionRouting", true, "True if you want to use the new routing algorithm with regions and cutting")
 	flag.IntVar(&p.ValidationThreshold, "validationThreshold", 1, "Number of detections required to validate a detection")
+	flag.BoolVar(&p.BombFindingCM, "bombFinding", false, "Controls whether or not a found bomb ends the simulation")
 
 	flag.Parse()
 	fmt.Println("Natural Loss: ", p.NaturalLossCM)
@@ -1258,6 +1259,7 @@ func GetFlags(p *Params) {
 	fmt.Println("Number of Node Stored Samples:", p.NumStoredSamplesCM)
 	fmt.Println("Number of Grid Stored Samples:", p.GridStoredSamplesCM)
 	fmt.Println("Detection Threshold:", p.DetectionThresholdCM)
+	fmt.Println("Bomb finding:", p.BombFindingCM)
 
 	//fmt.Println("tail:", flag.Args())
 }

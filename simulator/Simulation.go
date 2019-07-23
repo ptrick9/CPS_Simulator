@@ -196,7 +196,7 @@ func main() {
 	fmt.Println("Starting super node clustering...")
 	if p.SuperNodes {
 		p.Server.RandomizeSuperNodes()
-		for i:=0;i <2; i++ {
+		for i:=0;i <4; i++ {
 			p.Server.PlaceSuperNodes()
 		}
 	}
@@ -238,7 +238,7 @@ func main() {
 
 
 	p.CurrentTime = 0
-	for len(p.Events) > 0 && p.CurrentTime < 1000*p.Iterations_of_event{
+	for len(p.Events) > 0 && p.CurrentTime < 1000*p.Iterations_of_event && !p.FoundBomb{
 		event := heap.Pop(&p.Events).(*cps.Event)
 		//fmt.Println(event)
 		//fmt.Println(p.CurrentNodes)
@@ -472,7 +472,7 @@ func main() {
 	fmt.Fprintln(p.PositionFile, "Height:", p.MaxY)
 	fmt.Fprintf(p.PositionFile, "Amount: %-8v\n", int(p.CurrentTime/1000))
 
-	if iters < p.Iterations_of_event-1 {
+	if iters < p.Iterations_of_event-1 && !p.FoundBomb{
 		fmt.Printf("\nFound bomb at iteration: %v \nSimulation Complete\n", int(p.CurrentTime/1000))
 	} else {
 		fmt.Println("\nSimulation Complete")

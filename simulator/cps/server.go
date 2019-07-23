@@ -276,7 +276,7 @@ func (srv FusionCenter) Tick() {
 		//Optimization will only be done if he optimization requirements are met
 		//	AND if the simulator is currently in a mode that requests optimization
 
-		if length != len(s.GetRoutePoints()) {
+		if length == len(s.GetRoutePoints()) && srv.P.BombFindingCM {
 			bombSquare := srv.P.Grid[srv.P.B.X/srv.P.XDiv][srv.P.B.Y/srv.P.YDiv]
 			sSquare := srv.P.Grid[s.GetX()/srv.P.XDiv][s.GetY()/srv.P.YDiv]
 			srv.P.Grid[s.GetX()/srv.P.XDiv][s.GetY()/srv.P.YDiv].HasDetected = false
@@ -541,10 +541,11 @@ func (s FusionCenter) PlaceSuperNodes() {
 									dist += Dist(tmp, Tuple{X: ret_path[i].X, Y: ret_path[i].Y})
 									tmp = Tuple{X: ret_path[i].X, Y: ret_path[i].Y}
 								}
-							} else if s.P.Grid[i][j].Center.X == s.Sch.SNodeList[k].GetX() && s.P.Grid[i][j].Center.Y == s.Sch.SNodeList[k].GetY(){
+							} else if s.P.Grid[i][j].Center.X == s.Sch.SNodeList[k].GetX() && s.P.Grid[i][j].Center.Y == s.Sch.SNodeList[k].GetY() ||
+								(snodeSquare.Center.X == s.P.Grid[i][j].Center.X && snodeSquare.Center.Y == s.P.Grid[i][j].Center.Y){
 								dist = 0
 							} else {
-								dist = 1000000000000.0
+								//dist = 1000000000000.0
 							}
 							s.P.DistanceMap[pair] = dist
 							s.P.DistanceMap[pair2] = dist
@@ -602,9 +603,9 @@ func (s FusionCenter) PlaceSuperNodes() {
 		}
 	}
 
-	/*for d := range diameters {
+	for d := range diameters {
 		fmt.Println(diameters[d])
-	}*/
+	}
 
 	minDiam := 800.0
 	minDiamIndex := -1

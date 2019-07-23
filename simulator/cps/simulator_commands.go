@@ -190,7 +190,8 @@ type Params struct {
 	ReachableTable	[][]bool
 	DistanceMap		map[Pair]float64
 
-	NodePositionMap			map[Tuple]*NodeImpl
+	NodePositionMap		map[Tuple]*NodeImpl
 	ValidationThreshold	int
+	BombFindingCM		bool
 
 }
