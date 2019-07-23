@@ -91,6 +91,6 @@ if __name__ == '__main__':
             x+= 1
 
        
-    p = multiprocessing.Pool(40, runner, (q,))
+    p = multiprocessing.Pool(10, runner, (q,))
 
     q.join()
