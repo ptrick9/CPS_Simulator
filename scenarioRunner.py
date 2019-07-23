@@ -84,7 +84,7 @@ if __name__ == '__main__':
 	maxCMReadingBufferSize = ["-maxCMReadingBufferSize=%d" % d for d in [10]]
 	maxCHReadingBufferSize = ["-maxCHReadingBufferSize=%d" % d for d in [100]]
 
-    runs = (list(itertools.product(*[switches, scenarios, movementPath, outputFileName, sittingStopThreshold, negativeSittingStopThreshold, GridCapacityPercentage, naturalLoss,sensorSamplingLoss,GPSSamplingLoss,serverSamplingLoss,SamplingLossBTCM,SamplingLossWifiCM,SamplingLoss4GCM,SamplingLossAccelCM,thresholdBatteryToHave,thresholdBatteryToUse,movementSamplingSpeed,movementSamplingPeriod,maxBufferCapacity,sensorSamplingPeriod,GPSSamplingPeriod,serverSamplingPeriod,nodeStoredSamples,gridStoredSample,detectionThreshold,errorMultiplier,numSuperNodes,recalibThresh,StandardDeviationThreshold,detectionDistance,SuperNodeSpeed,SquareRowCM,SquareColCM,validationThreshold])))
+    runs = (list(itertools.product(*[switches, scenarios, movementPath, outputFileName, sittingStopThreshold, negativeSittingStopThreshold, GridCapacityPercentage, naturalLoss,sensorSamplingLoss,GPSSamplingLoss,serverSamplingLoss,SamplingLossBTCM,SamplingLossWifiCM,SamplingLoss4GCM,SamplingLossAccelCM,thresholdBatteryToHave,thresholdBatteryToUse,movementSamplingSpeed,movementSamplingPeriod,maxBufferCapacity,sensorSamplingPeriod,GPSSamplingPeriod,serverSamplingPeriod,nodeStoredSamples,gridStoredSample,detectionThreshold,errorMultiplier,numSuperNodes,recalibThresh,StandardDeviationThreshold,detectionDistance,SuperNodeSpeed,SquareRowCM,SquareColCM,validationThreshold,clusterThresh,nodeBTRange,cmSensingTime,chSensingTime,maxCMReadingBufferSize,maxCHReadingBufferSize])))
     
     x = 0
     for r in runs:
