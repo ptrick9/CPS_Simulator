@@ -47,8 +47,8 @@ if __name__ == '__main__':
 
     movementPath = ["-movementPath=%s" % s for s in ["marathon_street_2k.txt"]]
     sensorPath = ["-sensorPath=%s" %s for s in ["smoothed_marathon.csv"]]
-    detectionThreshold = ["-detectionThreshold=%d" % d for d in[5, 6]]
-    detectionDistance = ["-detectionDistance=%d" % d for d in [6, 7]]
+    detectionThreshold = ["-detectionThreshold=%d" % d for d in[5]]
+    detectionDistance = ["-detectionDistance=%d" % d for d in [6]]
     sittingStopThreshold = ["-sittingStopThreshold=%d" % d for d in [5]]
     negativeSittingStopThreshold = ["-negativeSittingStopThreshold=%d" % d for d in [-10]]
     GridCapacityPercentage = ["-GridCapacityPercentage=%f" % f for f in [0.9]]
@@ -77,7 +77,7 @@ if __name__ == '__main__':
     SuperNodeSpeed = ["-SuperNodeSpeed=%d" % d for d in [3]]
     SquareRowCM = ["-SquareRowCM=%d" % d for d in [60]]
     SquareColCM = ["-SquareColCM=%d" % d for d in [320]]
-    validationThreshold = ["-validationThreshold=%d" % d for d in [1]]
+    validationThreshold = ["-validationThreshold=%d" % d for d in [0, 1, 2, 3, 4, 5]]
 
 
     runs = (list(itertools.product(*[switches, scenarios, movementPath, sensorPath, detectionThreshold, detectionDistance, sittingStopThreshold, negativeSittingStopThreshold, GridCapacityPercentage, naturalLoss,sensorSamplingLoss,GPSSamplingLoss,serverSamplingLoss,SamplingLossBTCM,SamplingLossWifiCM,SamplingLoss4GCM,SamplingLossAccelCM,thresholdBatteryToHave,thresholdBatteryToUse,movementSamplingSpeed,movementSamplingPeriod,maxBufferCapacity,sensorSamplingPeriod,GPSSamplingPeriod,serverSamplingPeriod,nodeStoredSamples,gridStoredSample,errorMultiplier,numSuperNodes,recalibThresh,StandardDeviationThreshold,SuperNodeSpeed,SquareRowCM,SquareColCM,validationThreshold])))
