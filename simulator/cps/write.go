@@ -2,6 +2,7 @@
 package cps
 
 import (
+	"bytes"
 	"encoding/csv"
 	"flag"
 	"math/rand"
@@ -730,6 +731,11 @@ func SetupFiles(p *Params) {
 		log.Fatal("Cannot create file", err)
 	}
 
+	p.RunParamFile, err = os.Create(p.OutputFileNameCM + "-parameters.txt")
+	if err != nil {
+		log.Fatal("Cannot create file", err)
+	}
+
 	p.RoutingFile, err = os.Create(p.OutputFileNameCM + "-path.txt")
 	if err != nil {
 		log.Fatal("Cannot create file", err)
@@ -1110,75 +1116,115 @@ func GetFlags(p *Params) {
 	//p = cps.Params{}
 
 	flag.StringVar(&p.CPUProfile, "cpuprofile", "", "write cpu profile to `file`")
+
 	flag.StringVar(&p.MemProfile, "memprofile", "", "write memory profile to `file`")
 
 	//fmt.Println(os.Args[1:], "\nhmmm? \n ") //C:\Users\Nick\Desktop\comand line experiments\src
 	flag.IntVar(&p.NegativeSittingStopThresholdCM, "negativeSittingStopThreshold", -10,
 		"Negative number sitting is set to when board map is reset")
+
 	flag.IntVar(&p.SittingStopThresholdCM, "sittingStopThreshold", 5,
 		"How long it takes for a node to stay seated")
+
 	flag.Float64Var(&p.GridCapacityPercentageCM, "GridCapacityPercentage", .9,
 		"Percent the sub-Grid can be filled")
+
 	flag.StringVar(&p.InputFileNameCM, "inputFileName", "Log1_in.txt",
 		"Name of the input text file")
+
 	flag.StringVar(&p.SensorPath, "sensorPath", "Circle_2D.csv", "Sensor Reading Inputs")
+
 	flag.StringVar(&p.MovementPath, "movementPath", "Circle_2D.csv", "Movement Inputs")
+
 	flag.StringVar(&p.OutputFileNameCM, "p.OutputFileName", "Log",
 		"Name of the output text file prefix")
+
 	flag.Float64Var(&p.NaturalLossCM, "naturalLoss", .005,
 		"battery loss due to natural causes")
+
+
 	flag.Float64Var(&p.SamplingLossSensorCM, "sensorSamplingLoss", .001,
 		"battery loss due to sensor sampling")
+
 	flag.Float64Var(&p.SamplingLossGPSCM, "GPSSamplingLoss", .005,
 		"battery loss due to GPS sampling")
+
 	flag.Float64Var(&p.SamplingLossSensorCM, "serverSamplingLoss", .01,
 		"battery loss due to server sampling")
+
 	flag.Float64Var(&p.SamplingLossBTCM, "SamplingLossBTCM", .0001,
 		"battery loss due to BlueTooth sampling")
+
+
 	flag.Float64Var(&p.SamplingLossWifiCM, "SamplingLossWifiCM", .001,
 		"battery loss due to WiFi sampling")
+
 	flag.Float64Var(&p.SamplingLoss4GCM, "SamplingLoss4GCM", .005,
 		"battery loss due to 4G sampling")
+
 	flag.Float64Var(&p.SamplingLossAccelCM, "SamplingLossAccelCM", .001,
 		"battery loss due to accelerometer sampling")
+
 	flag.IntVar(&p.ThresholdBatteryToHaveCM, "thresholdBatteryToHave", 30,
 		"Threshold battery phones should have")
+
 	flag.IntVar(&p.ThresholdBatteryToUseCM, "thresholdBatteryToUse", 10,
 		"Threshold of battery phones should consume from all forms of sampling")
+
 	flag.IntVar(&p.MovementSamplingSpeedCM, "movementSamplingSpeed", 20,
 		"the threshold of speed to increase sampling rate")
+
 	flag.IntVar(&p.MovementSamplingPeriodCM, "movementSamplingPeriod", 1,
 		"the threshold of speed to increase sampling rate")
+
 	flag.IntVar(&p.MaxBufferCapacityCM, "maxBufferCapacity", 25,
 		"maximum capacity for the buffer before it sends data to the server")
+
 	flag.StringVar(&p.EnergyModelCM, "energyModel", "variable",
 		"this determines the energy loss model that will be used")
+
 	flag.BoolVar(&p.NoEnergyModelCM, "noEnergy", false,
 		"Whether or not to ignore energy model for simulation")
+
 	flag.IntVar(&p.SensorSamplingPeriodCM, "sensorSamplingPeriod", 1000,
 		"rate of the sensor sampling period when custom energy model is chosen")
+
 	flag.IntVar(&p.GPSSamplingPeriodCM, "GPSSamplingPeriod", 1000,
 		"rate of the GridGPS sampling period when custom energy model is chosen")
+
 	flag.IntVar(&p.ServerSamplingPeriodCM, "serverSamplingPeriod", 1000,
 		"rate of the server sampling period when custom energy model is chosen")
+
 	flag.IntVar(&p.NumStoredSamplesCM, "nodeStoredSamples", 10,
 		"number of samples stored by individual nodes for averaging")
+
 	flag.IntVar(&p.GridStoredSamplesCM, "p.GridStoredSamples", 10,
 		"number of samples stored by p.Grid squares for averaging")
+
 	flag.Float64Var(&p.DetectionThresholdCM, "detectionThreshold", 4000.0, //11180.0,
 		"Value where if a node gets this reading or higher, it will trigger a detection")
+
 	flag.Float64Var(&p.ErrorModifierCM, "errorMultiplier", 1.0,
 		"Multiplier for error values in system")
+
 	flag.BoolVar(&p.CSVSensor, "csvSensor", true, "Read Sensor Values from CSV")
+
 	flag.BoolVar(&p.CSVMovement, "csvMove", true, "Read Movements from CSV")
+
 	flag.BoolVar(&p.SuperNodes, "superNodes", true, "Enable SuperNodes")
+
 	flag.IntVar(&p.IterationsCM, "iterations", 200, "Read Movements from CSV")
+
 	//Range 1, 2, or 4
 	//Currently works for only a few numbers, can be easily expanded but is not currently dynamic
 	flag.IntVar(&p.NumSuperNodes, "numSuperNodes", 4, "the number of super nodes in the simulator")
+
 	flag.Float64Var(&p.CalibrationThresholdCM, "Recalibration Threshold", 3.0, "Value over grid average to recalibrate node")
+
 	flag.Float64Var(&p.StdDevThresholdCM, "StandardDeviationThreshold", 1.7, "Detection Threshold based on standard deviations from mean")
+
 	flag.Float64Var(&p.DetectionDistance, "detectionDistance", 6.0, "Detection Distance")
+
 	//Range: 0-2
 	//0: default routing algorithm, points added onto the end of the path and routed to in that order
 	//flag.IntVar(&p.SuperNodeType, "p.SuperNodeType", 0, "the type of super node used in the simulator")
@@ -1199,10 +1245,12 @@ func GetFlags(p *Params) {
 	//Realistically should remain around 10
 	flag.IntVar(&p.SuperNodeSpeed, "p.SuperNodeSpeed", 3, "the speed of the super node")
 
+
 	//Range: true/false
 	//Tells the simulator whether or not to optimize the path of all the super nodes
 	//Only works when multiple super nodes are active in the same area
 	flag.BoolVar(&p.DoOptimize, "doOptimize", false, "whether or not to optimize the simulator")
+
 
 	//Range: 0-4
 	//	0: begin in center, routed anywhere
@@ -1214,19 +1262,32 @@ func GetFlags(p *Params) {
 	//flag.IntVar(&p.SuperNodeVariation, "p.SuperNodeVariation", 3, "super nodes of type 1 have different variations")
 
 	flag.BoolVar(&p.PositionPrintCM, "logPosition", false, "Whether you want to write position info to a log file")
+
 	flag.BoolVar(&p.GridPrintCM, "logGrid", false, "Whether you want to write p.Grid info to a log file")
+
 	flag.BoolVar(&p.EnergyPrintCM, "logEnergy", false, "Whether you want to write energy into to a log file")
+
 	flag.BoolVar(&p.NodesPrintCM, "logNodes", false, "Whether you want to write node readings to a log file")
+
 	flag.IntVar(&p.SquareRowCM, "SquareRowCM", 50, "Number of rows of p.Grid squares, 1 through p.MaxX")
+
 	flag.IntVar(&p.SquareColCM, "SquareColCM", 50, "Number of columns of p.Grid squares, 1 through p.MaxY")
 
+
 	flag.StringVar(&p.ImageFileNameCM, "imageFileName", "circle_justWalls_x4.png", "Name of the input text file")
+
 	flag.StringVar(&p.StimFileNameCM, "stimFileName", "circle_0.txt", "Name of the stimulus text file")
+
+
 	flag.StringVar(&p.OutRoutingNameCM, "outRoutingName", "log.txt", "Name of the stimulus text file")
+
 	flag.StringVar(&p.OutRoutingStatsNameCM, "outRoutingStatsName", "routingStats.txt", "Name of the output file for stats")
 
+
 	flag.BoolVar(&p.RegionRouting, "regionRouting", true, "True if you want to use the new routing algorithm with regions and cutting")
+
 	flag.IntVar(&p.ValidationThreshold, "validationThreshold", 1, "Number of detections required to validate a detection")
+
 
 	flag.Parse()
 	fmt.Println("Natural Loss: ", p.NaturalLossCM)
@@ -1251,4 +1312,63 @@ func GetFlags(p *Params) {
 	fmt.Println("Detection Threshold:", p.DetectionThresholdCM)
 
 	//fmt.Println("tail:", flag.Args())
+}
+
+func WriteFlags(p * Params){
+
+	var buf bytes.Buffer
+	buf.WriteString(fmt.Sprintf("cpuprofile=%v\n", p.CPUProfile))
+	buf.WriteString(fmt.Sprintf("memprofile=%v\n", p.MemProfile))
+	buf.WriteString(fmt.Sprintf("negativeSittingStopThreshold=%v\n", p.NegativeSittingStopThresholdCM))
+	buf.WriteString(fmt.Sprintf("sittingStopThreshold=%v\n", p.SittingStopThresholdCM))
+	buf.WriteString(fmt.Sprintf("GridCapacityPercentage=%v\n", p.GridCapacityPercentageCM))
+	buf.WriteString(fmt.Sprintf("inputFileName=%v\n", p.InputFileNameCM))
+	buf.WriteString(fmt.Sprintf("sensorPath=%v\n", p.SensorPath))
+	buf.WriteString(fmt.Sprintf("movementPath=%v\n", p.MovementPath))
+	buf.WriteString(fmt.Sprintf("OutputFileName=%v\n", p.OutputFileNameCM))
+	buf.WriteString(fmt.Sprintf("naturalLoss=%v\n", p.NaturalLossCM))
+	buf.WriteString(fmt.Sprintf("sensorSamplingLoss=%v\n", p.SamplingLossSensorCM))
+	buf.WriteString(fmt.Sprintf("GPSSamplingLoss=%v\n", p.SamplingLossGPSCM))
+	buf.WriteString(fmt.Sprintf("serverSamplingLoss=%v\n", p.SamplingLossSensorCM))
+	buf.WriteString(fmt.Sprintf("SamplingLossBTCM=%v\n", p.SamplingLossBTCM))
+	buf.WriteString(fmt.Sprintf("SamplingLossWifiCM=%v\n", p.SamplingLossWifiCM))
+	buf.WriteString(fmt.Sprintf("SamplingLoss4GCM=%v\n", p.SamplingLoss4GCM))
+	buf.WriteString(fmt.Sprintf("SamplingLossAccelCM=%v\n", p.SamplingLossAccelCM))
+	buf.WriteString(fmt.Sprintf("thresholdBatteryToHave=%v\n", p.ThresholdBatteryToHaveCM))
+	buf.WriteString(fmt.Sprintf("thresholdBatteryToUse=%v\n", p.ThresholdBatteryToUseCM))
+	buf.WriteString(fmt.Sprintf("movementSamplingSpeed=%v\n", p.MovementSamplingSpeedCM))
+	buf.WriteString(fmt.Sprintf("movementSamplingPeriod=%v\n", p.MovementSamplingPeriodCM))
+	buf.WriteString(fmt.Sprintf("maxBufferCapacity=%v\n", p.MaxBufferCapacityCM))
+	buf.WriteString(fmt.Sprintf("energyModel=%v\n", p.EnergyModelCM))
+	buf.WriteString(fmt.Sprintf("noEnergy=%v\n", p.NoEnergyModelCM))
+	buf.WriteString(fmt.Sprintf("sensorSamplingPeriod=%v\n", p.SensorSamplingPeriodCM))
+	buf.WriteString(fmt.Sprintf("GPSSamplingPeriod=%v\n", p.GPSSamplingPeriodCM))
+	buf.WriteString(fmt.Sprintf("serverSamplingPeriod=%v\n", p.ServerSamplingPeriodCM))
+	buf.WriteString(fmt.Sprintf("nodeStoredSamples=%v\n", p.NumStoredSamplesCM))
+	buf.WriteString(fmt.Sprintf("GridStoredSamples=%v\n", p.GridStoredSamplesCM))
+	buf.WriteString(fmt.Sprintf("detectionThreshold=%v\n", p.DetectionThresholdCM))
+	buf.WriteString(fmt.Sprintf("errorMultiplier=%v\n", p.ErrorModifierCM))
+	buf.WriteString(fmt.Sprintf("csvSensor=%v\n", p.CSVSensor))
+	buf.WriteString(fmt.Sprintf("csvMove=%v\n", p.CSVMovement))
+	buf.WriteString(fmt.Sprintf("superNodes=%v\n", p.SuperNodes))
+	buf.WriteString(fmt.Sprintf("iterations=%v\n", p.IterationsCM))
+	buf.WriteString(fmt.Sprintf("numSuperNodes=%v\n", p.NumSuperNodes))
+	buf.WriteString(fmt.Sprintf("Recalibration Threshold=%v\n", p.CalibrationThresholdCM))
+	buf.WriteString(fmt.Sprintf("StandardDeviationThreshold=%v\n", p.StdDevThresholdCM))
+	buf.WriteString(fmt.Sprintf("detectionDistance=%v\n", p.DetectionDistance))
+	buf.WriteString(fmt.Sprintf("inputFileName=%v\n", p.InputFileNameCM))
+	buf.WriteString(fmt.Sprintf("SuperNodeSpeed=%v\n", p.SuperNodeSpeed))
+	buf.WriteString(fmt.Sprintf("doOptimize=%v\n", p.DoOptimize))
+	buf.WriteString(fmt.Sprintf("logPosition=%v\n", p.PositionPrintCM))
+	buf.WriteString(fmt.Sprintf("logGrid=%v\n", p.GridPrintCM))
+	buf.WriteString(fmt.Sprintf("logEnergy=%v\n", p.EnergyPrintCM))
+	buf.WriteString(fmt.Sprintf("logNodes=%v\n", p.NodesPrintCM))
+	buf.WriteString(fmt.Sprintf("SquareRowCM=%v\n", p.SquareRowCM))
+	buf.WriteString(fmt.Sprintf("SquareColCM=%v\n", p.SquareColCM))
+	buf.WriteString(fmt.Sprintf("imageFileName=%v\n", p.ImageFileNameCM))
+	buf.WriteString(fmt.Sprintf("stimFileName=%v\n", p.StimFileNameCM))
+	buf.WriteString(fmt.Sprintf("outRoutingStatsName=%v\n", p.OutRoutingStatsNameCM))
+	buf.WriteString(fmt.Sprintf("regionRouting=%v\n", p.RegionRouting))
+	buf.WriteString(fmt.Sprintf("validationThreshold=%v\n", p.ValidationThreshold))
+	fmt.Fprintf(p.RunParamFile,buf.String())
 }
