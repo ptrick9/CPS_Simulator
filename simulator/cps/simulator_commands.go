@@ -187,7 +187,8 @@ type Params struct {
 	EdgeADC 		float32
 	ADCWidth 		float32
 	ADCOffset		float32
-
+	ReachableTable	[][]bool
+	DistanceMap		map[Pair]float64
 
 	NodePositionMap			map[Tuple]*NodeImpl
 	ValidationThreshold	int

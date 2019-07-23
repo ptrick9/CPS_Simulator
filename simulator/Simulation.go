@@ -181,12 +181,27 @@ func main() {
 
 	p.Server.MakeGrid()
 
+	p.ReachableTable = make([][]bool, len(r.Square_list))
+	for i:= range p.ReachableTable {
+		p.ReachableTable[i] = make([]bool, len(r.Square_list))
+	}
+
+	for reg:= range r.Square_list {
+		for end := range r.Square_list {
+			p.ReachableTable[reg][end] = cps.ValidPath(reg, cps.Coord{X: r.Square_list[end].X1, Y: r.Square_list[end].Y1}, true, r)
+		}
+	}
+
+	start := time.Now()
+	fmt.Println("Starting super node clustering...")
 	if p.SuperNodes {
 		p.Server.RandomizeSuperNodes()
 		for i:=0;i <2; i++ {
 			p.Server.PlaceSuperNodes()
 		}
 	}
+	fmt.Println("Done!")
+	fmt.Println(time.Since(start))
 
 	var buffer bytes.Buffer
 	for x:= range p.Grid {

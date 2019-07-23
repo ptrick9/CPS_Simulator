@@ -1,7 +1,6 @@
 package cps
 
 import (
-	"fmt"
 	"math"
 )
 
@@ -83,7 +82,7 @@ func (s *Scheduler) AddRoutePoint0(c Coord, urgent bool) {
 	dist := 1000000.0//100000.0
 	nodeDist := 100000.0
 	closestNode := -1
-	fmt.Printf("\nCoordinate: X:%v Y:%v\n", c.X, c.Y)
+	//fmt.Printf("\nCoordinate: X:%v Y:%v\n", c.X, c.Y)
 	//Finds the super node closest to the newly added point
 	for n, _ := range s.SNodeList {
 		length := len(s.SNodeList[n].GetRoutePath())

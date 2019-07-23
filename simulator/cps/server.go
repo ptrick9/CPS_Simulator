@@ -45,6 +45,7 @@ func (s *FusionCenter) Init(){
 
 	s.Readings = make(map[Key][]Reading)
 	s.CheckedIds = make([]int, 0)
+	s.P.DistanceMap = make(map[Pair]float64, 0)
 }
 
 //Reading packages the data sent by a node
@@ -164,8 +165,8 @@ func (s FusionCenter) CheckDetections() {
 				yLoc := (y * s.P.YDiv) + int(s.P.YDiv/2)
 				s.P.CenterCoord = Coord{X: xLoc, Y: yLoc}
 				if s.P.SuperNodes {
-					fmt.Println(s.P.CenterCoord)
-					s.Sch.AddRoutePoint(s.P.CenterCoord)
+					//fmt.Println(s.P.CenterCoord)
+					s.Sch.AddRoutePointUrgent(s.P.CenterCoord)
 				}
 				s.P.Grid[x][y].HasDetected = true
 			}
@@ -519,21 +520,39 @@ func (s FusionCenter) PlaceSuperNodes() {
 
 				for k := range s.Sch.SNodeList {
 					dist := 0.0
-					ret_path := GetPath(Coord{X: s.Sch.SNodeList[k].GetX(), Y: s.Sch.SNodeList[k].GetY()}, s.P.Grid[i][j].Center, s.R, s.P)
+					//fmt.Printf("Snode Region: %v\n", RegionContaining(Tuple{s.Sch.SNodeList[k].GetX(), s.Sch.SNodeList[k].GetY()},s.R))
+					//fmt.Printf("Destination Region: %v\n", RegionContaining(Tuple{s.P.Grid[i][j].Center.X, s.P.Grid[i][j].Center.Y}, s.R))
+					if s.P.ReachableTable[RegionContaining(Tuple{s.Sch.SNodeList[k].GetX(), s.Sch.SNodeList[k].GetY()},s.R)][RegionContaining(Tuple{s.P.Grid[i][j].Center.X, s.P.Grid[i][j].Center.Y}, s.R)] {
+						snodeSquare := s.P.Grid[s.Sch.SNodeList[k].GetX()/s.P.XDiv][s.Sch.SNodeList[k].GetY()/s.P.YDiv]
+						pair := Pair{snodeSquare, s.P.Grid[i][j]}
+						pair2 := Pair{s.P.Grid[i][j], snodeSquare}
+						_,ok := s.P.DistanceMap[pair]
+						_,ok2 := s.P.DistanceMap[pair2]
+						if ok && ok2{
+							//fmt.Printf("%v in distance map!\n", pair.Center1.Center)
+							dist = s.P.DistanceMap[pair]
+						} else {
+							//ret_path := GetPath(Coord{X: s.Sch.SNodeList[k].GetX(), Y: s.Sch.SNodeList[k].GetY()}, s.P.Grid[i][j].Center, s.R, s.P)
+							ret_path := GetPath(snodeSquare.Center, s.P.Grid[i][j].Center, s.R, s.P)
 
-					if len(ret_path) > 0 && ValidPath(RegionContaining(Tuple{X: s.Sch.SNodeList[k].GetX(), Y: s.Sch.SNodeList[k].GetY()}, s.R), s.P.Grid[i][j].Center, true, s.R){
-						tmp := Tuple{X: ret_path[0].X, Y: ret_path[0].Y}
-						for i := 1; i < len(ret_path); i++ {
-							dist += Dist(tmp, Tuple{X: ret_path[i].X, Y: ret_path[i].Y})
-							tmp = Tuple{X: ret_path[i].X, Y: ret_path[i].Y}
+							if len(ret_path) > 0{
+								tmp := Tuple{X: ret_path[0].X, Y: ret_path[0].Y}
+								for i := 1; i < len(ret_path); i++ {
+									dist += Dist(tmp, Tuple{X: ret_path[i].X, Y: ret_path[i].Y})
+									tmp = Tuple{X: ret_path[i].X, Y: ret_path[i].Y}
+								}
+							} else if s.P.Grid[i][j].Center.X == s.Sch.SNodeList[k].GetX() && s.P.Grid[i][j].Center.Y == s.Sch.SNodeList[k].GetY(){
+								dist = 0
+							} else {
+								dist = 1000000000000.0
+							}
+							s.P.DistanceMap[pair] = dist
+							s.P.DistanceMap[pair2] = dist
 						}
-					} else if s.P.Grid[i][j].Center.X == s.Sch.SNodeList[k].GetX() && s.P.Grid[i][j].Center.Y == s.Sch.SNodeList[k].GetY(){
-						dist = 0
 					} else {
 						dist = 1000000000000.0
-						//fmt.Printf("Cannot reach point %v from %v\n", s.P.Grid[i][j].Center,
-							//Tuple{X: s.Sch.SNodeList[k].GetX(), Y: s.Sch.SNodeList[k].GetY()})
 					}
+
 					if dist < minDist {
 						minDist = dist
 						minIndex = k
@@ -564,14 +583,16 @@ func (s FusionCenter) PlaceSuperNodes() {
 	}
 
 	num2:=0
+	diameters := make([]float64, 0)
+	farthestSquares := make([]*Square, 0)
 	for i := range s.Sch.SNodeList {
 		if i > -1 {
 			s.BuildCluster(i)
 			fmt.Printf("There are %v squares in cluster %v\n", len(closestSnodes[i]), i)
 			num2+= len(closestSnodes[i])
-			centers := s.FindCenter(closestSnodes[i])
-			/*coord := Coord{ X: s.P.Grid[centers[0].X][centers[0].Y].X * s.P.XDiv + int(s.P.XDiv/2),
-				Y: s.P.Grid[centers[0].X][centers[0].Y].Y * s.P.YDiv + int(s.P.YDiv/2)}*/
+			centers, diameter, farthest := s.FindCenter(closestSnodes[i])
+			diameters = append(diameters, diameter)
+			farthestSquares = append(farthestSquares, farthest)
 			coord := s.P.Grid[centers[0].X][centers[0].Y].Center
 			s.Sch.SNodeList[i].SetLoc(coord)
 			s.Sch.SNodeList[i].UpdateLoc()
@@ -580,31 +601,42 @@ func (s FusionCenter) PlaceSuperNodes() {
 			fmt.Printf("New coordinate is %v\n", coord)
 		}
 	}
-	fmt.Printf("There are %v navigable squares\n", num)
-	fmt.Printf("There are %v squares in a cluster\n", num2)
-	//Update
-	/*for i := range closestSnodes {
-		meanX := int(getMean(closestSnodes[i][0]))
-		meanY := int(getMean(closestSnodes[i][1]))
-		if !s.P.Grid[meanX / s.P.XDiv][meanY / s.P.YDiv].Navigable {
-			meanX+=10
-		}
-		fmt.Printf("New location for super node %v is (%v,%v)\n", i, int(meanX), int(meanY))
-		//starting_locs[i] = Coord{X: int(meanX), Y: int(meanY)}
-		s.Sch.SNodeList[i].SetLoc(Coord{X: int(meanX), Y: int(meanY)})
 
-		mean := getMean(closestSnodes[i])
-		s.Sch.SNodeList[i].SetLoc(Coord{X: int(mean), Y: int(mean)})
-
+	/*for d := range diameters {
+		fmt.Println(diameters[d])
 	}*/
 
+	minDiam := 800.0
+	minDiamIndex := -1
+	for i := range diameters {
+		if diameters[i] < minDiam {
+			minDiam = diameters[i]
+			minDiamIndex = i
+		}
+	}
+	maxDiam := 0.0
+	maxDiamIndex := -1
+	for i := range diameters {
+		if diameters[i] > maxDiam {
+			maxDiam = diameters[i]
+			maxDiamIndex = i
+		}
+	}
+	if maxDiam > 2.75 * minDiam {
+		fmt.Println("Cluster too big!")
+		s.Sch.SNodeList[minDiamIndex].SetLoc(farthestSquares[maxDiamIndex].Center)
+		s.Sch.SNodeList[minDiamIndex].UpdateLoc()
+		s.PlaceSuperNodes()
+	}
+	fmt.Printf("There are %v navigable squares\n", num)
+	fmt.Printf("There are %v squares in a cluster\n", num2)
 }
 
 func (s FusionCenter) RandomizeSuperNodes() {
 	for i := range s.Sch.SNodeList {
 		x := RandomInt(0, s.P.Width)
 		y := RandomInt(0, s.P.Height)
-		for !s.P.Grid[x  / s.P.XDiv][y / s.P.YDiv].Navigable {
+		for !s.P.Grid[x  / s.P.XDiv][y / s.P.YDiv].Navigable || RegionContaining(Tuple{x, y}, s.R) == -1{
 			x = RandomInt(0, s.P.Width)
 			y = RandomInt(0, s.P.Height)
 		}
@@ -650,10 +682,12 @@ func (s FusionCenter) BuildCluster(id int) {
 	}
 }
 
-func (s FusionCenter) FindCenter(squares []*Square) []*Square{
+func (s FusionCenter) FindCenter(squares []*Square) ([]*Square, float64, *Square){
 	distances := make([][]float64,len(squares))
 	eccentricity := make([]float64, len(squares))
 	radius := 1000000.0
+	diameter := 0.0
+	var farthestSquare *Square
 	center := make([]*Square, 0)
 
 	for i:= range distances {
@@ -669,6 +703,7 @@ func (s FusionCenter) FindCenter(squares []*Square) []*Square{
 			yLoc := (squares[j].Y * s.P.YDiv) + int(s.P.YDiv/2)
 			centerCoord2 := Tuple{X: xLoc, Y: yLoc}
 			distances[i][j] = Dist(centerCoord, centerCoord2)
+			//distances[i][j] = s.P.DistanceMap[Pair{squares[i], squares[j]}]
 		}
 	}
 
@@ -690,7 +725,9 @@ func (s FusionCenter) FindCenter(squares []*Square) []*Square{
 
 
 	for i := range distances {
-		radius = min(radius, eccentricity[i]);
+		radius = min(radius, eccentricity[i])
+		diameter = max(diameter, eccentricity[i])
+		farthestSquare = squares[i]
 	}
 
 	for i := range distances {
@@ -698,7 +735,7 @@ func (s FusionCenter) FindCenter(squares []*Square) []*Square{
 			center = append(center, squares[i])
 		}
 	}
-	return center
+	return center, diameter, farthestSquare
 }
 
 func min(num1, num2 float64) float64{
@@ -1006,4 +1043,27 @@ func (s FusionCenter) PrintStatsFile() {
 	fmt.Fprintf(s.P.DetectionFile, "Number of true positives:%v\n", truePositives)
 	fmt.Fprintf(s.P.DetectionFile, "Last Recalibration times:%v\n", s.LastRecal)
 
+}
+
+func (s FusionCenter) BuildDistanceMap() map[Pair]float64{
+	DistanceMap := make(map[Pair]float64, 0)
+	for x:= range s.P.Grid {
+		for y:= range s.P.Grid[x] {
+			reg := RegionContaining(Tuple{s.P.Grid[x][y].Center.X, s.P.Grid[x][y].Center.Y}, s.R)
+			for x2:= range s.P.Grid {
+				for y2:= range s.P.Grid[x2] {
+					reg2 := RegionContaining(Tuple{s.P.Grid[x2][y2].Center.X, s.P.Grid[x2][y2].Center.Y}, s.R)
+					if s.P.ReachableTable[reg][reg2] {
+						DistanceMap[Pair{s.P.Grid[x][y], s.P.Grid[x2][y2]}] = DistCoord(s.P.Grid[x][y].Center, s.P.Grid[x2][y2].Center)
+					}
+				}
+			}
+		}
+	}
+	return DistanceMap
+}
+
+type Pair struct {
+	Center1	*Square
+	Center2 *Square
 }
