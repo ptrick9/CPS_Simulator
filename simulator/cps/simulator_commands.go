@@ -191,5 +191,6 @@ type Params struct {
 
 	NodePositionMap			map[Tuple]*NodeImpl
 	ValidationThreshold	int
+	WindRegion []Coord
 
 }

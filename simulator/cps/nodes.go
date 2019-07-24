@@ -565,6 +565,10 @@ func (curNode *NodeImpl) GetLoc() (float32, float32) {
 	return curNode.X, curNode.Y
 }
 
+func (curNode *NodeImpl) GetLocCoord() Coord {
+	return Coord{X: int(curNode.X), Y: int(curNode.Y)}
+}
+
 //setter function for S0
 func (curNode *NodeImpl) SetS0(s0 float64) {
 	curNode.S0 = s0

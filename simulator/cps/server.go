@@ -617,3 +617,91 @@ func (s FusionCenter) PrintStatsFile() {
 	fmt.Fprintf(s.P.DetectionFile, "Last Recalibration times:%v\n", s.LastRecal)
 
 }
+
+//Intersects returns true if line segment 'p1q1' and 'p2q2' intersect.
+func Intersects(p1, q1, p2, q2 Coord) bool {
+	//Orientations
+	o1 := orientation(p1, q1, p2)
+	o2 := orientation(p1, q1, q2)
+	o3 := orientation(p2, q2, p1)
+	o4 := orientation(p2, q2, q1)
+
+	if o1 != o2 && o3 != o4 {
+		return true
+	}
+	if o1 == 0 && onSegment(p1, p2, q1) {
+		return true
+	}
+
+	// p1, q1 and q2 are colinear and q2 lies on segment p1q1
+	if o2 == 0 && onSegment(p1, q2, q1) {
+		return true
+	}
+
+	// p2, q2 and p1 are colinear and p1 lies on segment p2q2
+	if o3 == 0 && onSegment(p2, p1, q2) {
+		return true
+	}
+
+	// p2, q2 and q1 are colinear and q1 lies on segment p2q2
+	if o4 == 0 && onSegment(p2, q1, q2) {
+		return true
+	}
+
+	return false
+}
+
+func orientation(p, q, r Coord) int {
+	val := (q.Y - p.Y) * (r.X - q.X) - (q.X - p.X) * (r.Y - q.Y)
+	//colinear
+	if val == 0 {
+		return 0
+	} else if val > 0 { //clockwise
+		return 1
+	} else { //counterclockwise
+		return 2
+	}
+}
+
+func onSegment(p, q, r Coord) bool {
+	if q.X <= max(p.X, r.X) && q.X >= min(p.X, r.X) && q.Y <= max(p.Y, r.Y) && q.Y >= min(p.Y, r.Y){
+		return true
+	}
+
+	return false
+}
+
+func min(num1, num2 int) int{
+	if num1 < num2 {
+		return num1
+	} else {
+		return  num2
+	}
+}
+
+func max(num1, num2 int) int{
+	if num1 > num2 {
+		return num1
+	} else {
+		return  num2
+	}
+}
+
+func (s *FusionCenter) CheckFalsePosWind(n NodeImpl) bool {
+	sumX := 0
+	sumY := 0
+	for i:= range s.P.WindRegion {
+		sumX += s.P.WindRegion[i].X
+		sumY += s.P.WindRegion[i].Y
+	}
+	center := Coord{X: sumX/len(s.P.WindRegion), Y: sumY/len(s.P.WindRegion)}
+
+	tmp := s.P.WindRegion[0]
+	for i:= 1; i < len(s.P.WindRegion); i++ {
+		if Intersects(tmp, s.P.WindRegion[i], center, n.GetLocCoord()) {
+			return true
+		}
+		tmp = s.P.WindRegion[i]
+	}
+	return false
+}
