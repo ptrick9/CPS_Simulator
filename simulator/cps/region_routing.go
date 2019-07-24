@@ -363,7 +363,7 @@ func GenerateRouting(p *Params, r *RegionParams) {
 		for !collide {
 			y_test.Y += 1
 
-			for x_val := top_left.X; x_val < temp.X; x_val++ {
+			for x_val := top_left.X; x_val <= temp.X; x_val++ {
 				if !r.Point_dict[Tuple{x_val, y_test.Y}] {
 					collide = true
 				}

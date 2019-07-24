@@ -603,9 +603,9 @@ func (s FusionCenter) PlaceSuperNodes() {
 		}
 	}
 
-	for d := range diameters {
+	/*for d := range diameters {
 		fmt.Println(diameters[d])
-	}
+	}*/
 
 	minDiam := 800.0
 	minDiamIndex := -1

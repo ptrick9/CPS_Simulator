@@ -46,6 +46,7 @@ type Params struct {
 	StdDevThresholdCM			   float64 //Detection Threshold based on standard deviations from mean
 	CalibrationThresholdCM		   float64
 	DetectionDistance 			   float64
+	SuperNodeClusteringCSVCM		   bool
 
 
 	StimFileNameCM        string
@@ -86,9 +87,12 @@ type Params struct {
 	DetectionFile  *os.File
 	BatteryFile    *os.File
 	SnodeClusters  *os.File
+	SuperNodeLocs  *os.File
 
-	SensorPath  string
-	MovementPath  string
+	SensorPath  		 string
+	MovementPath  		 string
+	SuperNodeClusterPath string
+	SuperNodePath		 string
 
 	SensorTimes []int
 	TimeStep    int

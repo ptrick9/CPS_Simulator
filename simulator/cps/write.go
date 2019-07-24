@@ -779,10 +779,6 @@ func SetupFiles(p *Params) {
 	}
 	//defer p.ServerFile.Close()
 
-	p.SnodeClusters, err = os.Create(p.OutputFileNameCM + "-snodeClusters.txt")
-	if err != nil {
-		log.Fatal("Cannot create file", err)
-	}
 	//defer p.ServerFile.Close()
 }
 
@@ -1001,6 +997,51 @@ func readSensorCSV(p *Params) {
 
 
 
+}
+
+func ReadSNodeLocs(p *Params) {
+	in, err := os.Open(p.SuperNodePath)
+	if err != nil {
+		println("error opening file")
+	}
+	defer in.Close()
+
+	r := csv.NewReader(in)
+	r.FieldsPerRecord = -1
+	record, err := r.ReadAll()
+
+	for i:= range p.Server.Sch.SNodeList {
+		x,_:= strconv.ParseInt(record[i][0], 10, 32)
+		y,_:= strconv.ParseInt(record[i][1], 10, 32)
+		newLoc := Coord{X: int(x), Y: int(y)}
+		p.Server.Sch.SNodeList[i].SetLoc(newLoc)
+		p.Server.Sch.SNodeList[i].UpdateLoc()
+	}
+}
+
+func ReadSNodeClusterCSV(p *Params) {
+	in, err := os.Open(p.SuperNodeClusterPath)
+	if err != nil {
+		println("error opening file")
+	}
+	defer in.Close()
+
+	r := csv.NewReader(in)
+	r.FieldsPerRecord = -1
+	record, err := r.ReadAll()
+
+	for i := range record {
+		x,_:= strconv.ParseInt(record[i][0], 10, 32)
+		y,_ := strconv.ParseInt(record[i][1], 10, 32)
+		cluster,_ := strconv.ParseInt(record[i][2], 10, 32)
+		centerx,_ := strconv.ParseInt(record[i][3], 10, 32)
+		centery,_ := strconv.ParseInt(record[i][4], 10, 32)
+		center := Coord{X: int(centerx), Y: int(centery)}
+		square := p.Grid[x][y]
+
+		square.Center = center
+		square.SuperNodeCluster = int(cluster)
+	}
 }
 
 //readMovementCSV reads the movement parameters from a file
@@ -1237,6 +1278,9 @@ func GetFlags(p *Params) {
 	flag.BoolVar(&p.RegionRouting, "regionRouting", true, "True if you want to use the new routing algorithm with regions and cutting")
 	flag.IntVar(&p.ValidationThreshold, "validationThreshold", 1, "Number of detections required to validate a detection")
 	flag.BoolVar(&p.BombFindingCM, "bombFinding", false, "Controls whether or not a found bomb ends the simulation")
+	flag.StringVar(&p.SuperNodeClusterPath, "SNodeClusterPath", "Log-snodeClusters.csv", "CSV file containing super node clusters and grid centers")
+	flag.BoolVar(&p.SuperNodeClusteringCSVCM, "sNodeClusteringCSV", false, "True if you want a csv to dictate super node clusters")
+	flag.StringVar(&p.SuperNodePath, "superNodePath", "Log-snodeLocs.csv", "CSV containing location of super nodes")
 
 	flag.Parse()
 	fmt.Println("Natural Loss: ", p.NaturalLossCM)

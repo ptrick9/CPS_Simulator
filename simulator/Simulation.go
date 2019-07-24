@@ -14,9 +14,11 @@
 -iterations=1000
 -csvSensor=true
 -detectionThreshold=5
--numSuperNodes=4
+-numSuperNodes=15
 -superNodes=true
 -validationThreshold=5
+-bombFinding=true
+-sNodeClusteringCSV=true
 */
 
 
@@ -193,26 +195,47 @@ func main() {
 	}
 
 	start := time.Now()
-	fmt.Println("Starting super node clustering...")
-	if p.SuperNodes {
+	if p.SuperNodes && !p.SuperNodeClusteringCSVCM{
+		fmt.Println("Starting super node clustering...")
 		p.Server.RandomizeSuperNodes()
 		for i:=0;i <4; i++ {
 			p.Server.PlaceSuperNodes()
 		}
+
+		p.SnodeClusters, err = os.Create(p.OutputFileNameCM + "-snodeClusters.csv")
+		if err != nil {
+			log.Fatal("Cannot create file", err)
+		}
+		p.SuperNodeLocs, err = os.Create(p.OutputFileNameCM + "-snodeLocs.csv")
+		if err != nil {
+			log.Fatal("Cannot create file", err)
+		}
+
+		var buffer bytes.Buffer
+		for x:= range p.Grid {
+			for y := range p.Grid[x] {
+				//xLoc := x * p.XDiv
+				//yLoc := y * p.YDiv
+				//X,Y of corner, super node cluster, and navigable
+				//buffer.WriteString(fmt.Sprintf("X:%v Y:%v C:%v N:%v\n", xLoc, yLoc, p.Grid[x][y].SuperNodeCluster, p.Grid[x][y].Navigable))
+				buffer.WriteString(fmt.Sprintf("%v,%v,%v,%v,%v\n", x, y, p.Grid[x][y].SuperNodeCluster, p.Grid[x][y].Center.X, p.Grid[x][y].Center.Y))
+			}
+		}
+		fmt.Fprintln(p.SnodeClusters, buffer.String())
+
+		var buffer2 bytes.Buffer
+		for i:= range p.Server.Sch.SNodeList {
+			buffer2.WriteString(fmt.Sprintf("%v,%v\n", p.Server.Sch.SNodeList[i].GetX(), p.Server.Sch.SNodeList[i].GetY()))
+		}
+		fmt.Fprintln(p.SuperNodeLocs, buffer2.String())
+
+	} else if p.SuperNodeClusteringCSVCM {
+		fmt.Println("Reading super node clusters from CSV...")
+		cps.ReadSNodeClusterCSV(p)
+		cps.ReadSNodeLocs(p)
 	}
 	fmt.Println("Done!")
 	fmt.Println(time.Since(start))
-
-	var buffer bytes.Buffer
-	for x:= range p.Grid {
-		for y := range p.Grid[x] {
-			xLoc := x * p.XDiv
-			yLoc := y * p.YDiv
-			//X,Y of corner, super node cluster, and navigable
-			buffer.WriteString(fmt.Sprintf("X:%v Y:%v C:%v N:%v\n", xLoc, yLoc, p.Grid[x][y].SuperNodeCluster, p.Grid[x][y].Navigable))
-		}
-	}
-	fmt.Fprintln(p.SnodeClusters, buffer.String())
 
 	fmt.Println("Super Node Type", p.SuperNodeType)
 	fmt.Println("Dimensions: ", p.MaxX, "x", p.MaxY)
@@ -472,11 +495,23 @@ func main() {
 	fmt.Fprintln(p.PositionFile, "Height:", p.MaxY)
 	fmt.Fprintf(p.PositionFile, "Amount: %-8v\n", int(p.CurrentTime/1000))
 
-	if iters < p.Iterations_of_event-1 && !p.FoundBomb{
+	if iters < p.Iterations_of_event-1 && p.FoundBomb{
 		fmt.Printf("\nFound bomb at iteration: %v \nSimulation Complete\n", int(p.CurrentTime/1000))
 	} else {
 		fmt.Println("\nSimulation Complete")
 	}
+
+	RegionVisual, err := os.Create(p.OutputFileNameCM + "-regionVisual.txt")
+	if err != nil {
+		log.Fatal("Cannot create file", err)
+	}
+
+	var buffer2 bytes.Buffer
+	for i:= range r.Square_list {
+		buffer2.WriteString(fmt.Sprintf("X:%v Y:%v X:%v Y:%v\n", r.Square_list[i].X1, r.Square_list[i].Y1, r.Square_list[i].X2, r.Square_list[i].Y2))
+	}
+	fmt.Fprintf(RegionVisual, buffer2.String())
+
 
 	for i := range p.BoolGrid {
 		fmt.Fprintln(p.BoolFile, p.BoolGrid[i])
