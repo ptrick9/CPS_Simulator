@@ -235,8 +235,14 @@ func main() {
 
 					if (p.CSVMovement) {
 						event.Node.MoveCSV(p)
+						if(event.Node.Valid){
+							event.Node.DecrementPowerGPS()
+						}
 					} else {
 						event.Node.MoveNormal(p)
+						if(event.Node.Valid){
+							event.Node.DecrementPowerGPS()
+						}
 					}
 
 					if (p.CSVSensor) {
@@ -260,11 +266,6 @@ func main() {
 						event.Node.DecrementPowerGPS()
 					}
 
-					if (event.Node.IsClusterHead) {
-						event.Node.DecrementPower4G()
-					} else if (event.Node.IsClusterMember) {
-						event.Node.DecrementPowerBT()
-					}
 
 					//if(p.CurrentTime/1000 <= 100){
 					p.Events.Push(&cps.Event{event.Node, cps.MOVE, p.CurrentTime + 100, 0})
@@ -301,6 +302,20 @@ func main() {
 			}
 		} else {
 			if event.Instruction == cps.POSITION {
+				var avBuffer bytes.Buffer
+				validCount := 0
+				aliveCount := 0
+				for i:=0; i<len(p.NodeList); i++{
+					if(p.NodeList[i].Valid){
+						validCount++
+						if(p.NodeList[i].Battery>p.ThreshHoldBatteryToHave){
+							aliveCount++
+						}
+					}
+				}
+				avBuffer.WriteString(fmt.Sprintf("Valid Nodes:%v,Alive Nodes:%v\n",validCount,aliveCount))
+				fmt.Fprintf(p.AliveValidNodes, avBuffer.String())
+
 				//fmt.Printf("Current Time: %v \n", p.CurrentTime)
 				if p.PositionPrint {
 					amount := 0
@@ -445,7 +460,6 @@ func main() {
 
 					}
 				}
-
 				fmt.Fprintf(p.ClusterFile, clusterBuffer.String())
 				fmt.Fprintf(p.ClusterStatsFile, clusterStatsBuffer.String())
 				fmt.Fprintf(p.ClusterDebug, clusterDebugBuffer.String())

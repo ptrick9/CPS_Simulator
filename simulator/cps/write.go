@@ -838,6 +838,19 @@ func SetupFiles(p *Params) {
 		log.Fatal("Cannot create file", err)
 	}
 
+
+	if(p.ClusteringOn){
+		p.AliveValidNodes, err = os.Create(p.OutputFileNameCM + "-nodes_alive_valid_CL_ON.txt")
+		if err != nil{
+			log.Fatal("Cannot create file", err)
+		}
+	} else{
+		p.AliveValidNodes, err = os.Create(p.OutputFileNameCM + "-nodes_alive_valid_CL_OFF.txt")
+		if err != nil{
+			log.Fatal("Cannot create file", err)
+		}
+	}
+
 	p.ClusterFile, err = os.Create(p.OutputFileNameCM + "-adhoc.txt")
 	if err != nil{
 		log.Fatal("Cannot create file", err)
@@ -1241,7 +1254,7 @@ func GetFlags(p *Params) {
 	flag.Float64Var(&p.SamplingLossSensorCM, "serverSamplingLoss", .01,
 		"battery loss due to server sampling")
 
-	flag.Float64Var(&p.SamplingLossBTCM, "SamplingLossBTCM", .005,
+	flag.Float64Var(&p.SamplingLossBTCM, "SamplingLossBTCM", .001,
 		"battery loss due to BlueTooth sampling")
 	flag.Float64Var(&p.SamplingLossWifiCM, "SamplingLossWifiCM", .01,
 		"battery loss due to WiFi sampling")

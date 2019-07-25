@@ -91,6 +91,7 @@ type Params struct {
 	ClusterDebug	*os.File
 	ClusterReadings *os.File
 	ClusterMessages *os.File
+	AliveValidNodes	*os.File
 
 	SensorPath  string
 	MovementPath  string

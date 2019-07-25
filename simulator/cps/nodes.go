@@ -915,6 +915,7 @@ func (curNode *NodeImpl) GetReadingsCSV() {
 
 			} else{
 				curNode.P.Server.Send(curNode, Reading{ADCRead, newX, newY, curNode.P.CurrentTime, curNode.GetID(), curNode.GetCHID()})
+				curNode.DecrementPower4G()
 			}
 		}
 
@@ -963,8 +964,10 @@ func (curNode *NodeImpl) SendtoClusterHead(){
 	clusterHead := curNode.NodeClusterParams.CurrentCluster.ClusterHead
 	clusterHead.ReadingsBuffer = append(clusterHead.ReadingsBuffer, curNode.ReadingsBuffer...)
 
-	//Deduct power for BT transmission
-	curNode.DecrementPowerBT()
+	for i:=0; i<len(curNode.ReadingsBuffer); i++{
+		//Deduct power for BT transmission
+		curNode.DecrementPowerBT()
+	}
 
 	//clear node's readings
 	curNode.ReadingsBuffer = []Reading{}
