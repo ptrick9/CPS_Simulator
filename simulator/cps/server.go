@@ -209,7 +209,7 @@ func (srv FusionCenter) Tick() {
 			srv.P.Grid[gridX][gridY+1].Visited = true
 		}
 	}
-	if srv.P.Iterations_used % 60 == 0 && srv.P.Iterations_used !=0{
+	if srv.P.CurrentTime / 1000 % 60 == 0 && srv.P.CurrentTime > 1000{
 		/*var packet []Coord
 		if srv.P.Iterations_used == 30 {
 			//packet = []Coord{Coord{X: 167, Y: 140}, Coord{X:167, Y:145}, Coord{X:80, Y:140}, Coord{X: 273, Y:298 }}
@@ -232,35 +232,14 @@ func (srv FusionCenter) Tick() {
 			//srv.Sch.AddRoutePointArray(packet)
 			srv.Sch.AddRoutePointUrgent(Coord{X:160, Y:100})
 		}*/
-
-		leastDense := make(Squares, 0)
 		DensitySquares := srv.GetLeastDenseSquares()
-		numDestinations := 0
-		for i:=0; i < len(DensitySquares); i++{
-			for j:=0; j < len(DensitySquares[i]); j++ {
-				if numDestinations < 2 {
-					leastDense = append(leastDense, DensitySquares[i][j])
-					numDestinations++
-				} else {
-					//break
+		for i:= range DensitySquares {
+			for j:= 0; j < 2; j++ {
+				if len(DensitySquares[i]) > 2 {
+					srv.Sch.SNodeList[i].AddRoutePoint(DensitySquares[i][j].Center)
 				}
 			}
-			numDestinations = 0
 		}
-		fmt.Printf("Number of destinations: %v\n", len(leastDense))
-
-		destinations := make([]Coord, 0)
-		for j := range leastDense {
-			xLoc := (leastDense[j].X * srv.P.XDiv) + int(srv.P.XDiv/2)
-			yLoc := (leastDense[j].Y * srv.P.YDiv) + int(srv.P.YDiv/2)
-			srv.P.CenterCoord = Coord{X: xLoc, Y: yLoc}
-			//fmt.Printf("Destination Coordinate: %v\n",srv.P.CenterCoord)
-			//fmt.Printf("Destination Region:%v\n",RegionContaining(Tuple{srv.P.CenterCoord.X, srv.P.CenterCoord.Y}, srv.R))
-			//srv.Sch.AddRoutePoint(srv.P.CenterCoord)
-			destinations = append(destinations, srv.P.CenterCoord)
-		}//
-		fmt.Printf("Destinations: %v\n", destinations)
-		srv.Sch.AddRoutePointArray(destinations)
 	}
 
 	for _, s := range srv.Sch.SNodeList {
@@ -957,7 +936,8 @@ func (s FusionCenter) GetMedian(arr []float64) float64{
 }
 
 func (s FusionCenter) GetLeastDenseSquares() []Squares{
-	orderedSquares := make([]Squares, 4)
+	orderedSquares := make([]Squares, len(s.Sch.SNodeList))
+	//orderedSquares := make([]Squares, 4)
 	for i:= range  orderedSquares {
 		orderedSquares[i] = make(Squares, 0)
 	}
@@ -965,7 +945,7 @@ func (s FusionCenter) GetLeastDenseSquares() []Squares{
 	yMax := s.P.Height / s.P.YDiv
 
 
-	for x := 0; x < xMax / 2; x++ {
+	/*for x := 0; x < xMax / 2; x++ {
 		for y := 0; y < yMax / 2; y++ {
 			if !s.P.Grid[x][y].Visited && s.P.Grid[x][y].Navigable{
 				orderedSquares[0] = append(orderedSquares[0], s.P.Grid[x][y])
@@ -995,6 +975,14 @@ func (s FusionCenter) GetLeastDenseSquares() []Squares{
 				orderedSquares[3] = append(orderedSquares[3], s.P.Grid[x][y])
 			}
 		}
+	}*/
+
+	for x := 0; x < xMax; x++ {
+		for y := 0; y < yMax; y++ {
+			if s.P.Grid[x][y].Navigable && !s.P.Grid[x][y].Visited{
+				orderedSquares[s.P.Grid[x][y].SuperNodeCluster] = append(orderedSquares[s.P.Grid[x][y].SuperNodeCluster], s.P.Grid[x][y])
+			}
+		}
 	}
 
 	for i:= range orderedSquares {
@@ -1010,6 +998,7 @@ func (s FusionCenter) GetLeastDenseSquares() []Squares{
 	sort.Sort(&orderedSquares)*/
 	//fmt.Printf("Least Dense:\nTop left: %v\nBottom left: %v\nTop right: %v\nBottom right: %v\n",
 	//	orderedSquares[0], orderedSquares[1], orderedSquares[2], orderedSquares[3])
+
 	return orderedSquares
 }
 
