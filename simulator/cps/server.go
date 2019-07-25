@@ -699,9 +699,9 @@ func (s *FusionCenter) CheckFalsePosWind(n *NodeImpl) bool {
 	tmp := s.P.WindRegion[s.P.CurrentTime/10000][0]
 	for i:= 1; i < len(s.P.WindRegion[s.P.CurrentTime/100000]); i++ {
 		if Intersects(tmp, s.P.WindRegion[s.P.CurrentTime/10000][i], center, n.GetLocCoord()) {
-			return true
+			return false
 		}
 		tmp = s.P.WindRegion[s.P.CurrentTime/10000][i]
 	}
-	return false
+	return true
 }

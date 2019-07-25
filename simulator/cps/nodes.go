@@ -742,6 +742,9 @@ func (curNode *NodeImpl) GetReadings() {
 		}
 
 
+		if curNode.P.CurrentTime > 10000 && ADCRead > float64(curNode.P.DetectionThreshold) && curNode.P.Server.CheckFalsePosWind(curNode){
+			fmt.Println("Wind false positive")
+		}
 		curNode.P.Server.Send(curNode, Reading{ADCRead, newX, newY, curNode.P.CurrentTime, curNode.GetID()})
 
 
