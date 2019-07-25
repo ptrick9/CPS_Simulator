@@ -224,70 +224,80 @@ func main() {
 
 	p.CurrentTime = 0
 	for len(p.Events) > 0 && p.CurrentTime < 1000*p.Iterations_of_event{
-		//fmt.Println(p.CurrentTime,1000*p.Iterations_of_event)
+		//fmt.Println(p.CurFrentTime,1000*p.Iterations_of_event)
 		event := heap.Pop(&p.Events).(*cps.Event)
 		//fmt.Println(event)
 		//fmt.Println(p.CurrentNodes)
 		p.CurrentTime = event.Time
-		if event.Node != nil && event.Node.Online{
+		if event.Node != nil{
 			if event.Instruction == cps.SENSE {
+				if event.Node.Battery > p.ThreshHoldBatteryToHave {
 
-				if(p.CSVMovement) {
-					event.Node.MoveCSV(p)
-				} else {
-					event.Node.MoveNormal(p)
-				}
+					if (p.CSVMovement) {
+						event.Node.MoveCSV(p)
+					} else {
+						event.Node.MoveNormal(p)
+					}
 
-				if(p.CSVSensor) {
-					event.Node.GetReadingsCSV()
-				} else {
-					event.Node.GetReadings()
+					if (p.CSVSensor) {
+						event.Node.GetReadingsCSV()
+					} else {
+						event.Node.GetReadings()
+					}
+					event.Node.DecrementPowerSensor()
 				}
-				event.Node.DecrementPowerSensor()
 
 			} else if event.Instruction == cps.MOVE {
-				if(p.CSVMovement) {
-					event.Node.MoveCSV(p)
-				} else {
-					event.Node.MoveNormal(p)
-				}
+				if event.Node.Battery > p.ThreshHoldBatteryToHave {
+					if (p.CSVMovement) {
+						event.Node.MoveCSV(p)
+					} else {
+						event.Node.MoveNormal(p)
+					}
 
-				if(event.Node.Valid){
-					p.ClusterNetwork.ClearClusterParams(event.Node)
-					event.Node.DecrementPowerGPS()
-				}
+					if (event.Node.Valid) {
+						p.ClusterNetwork.ClearClusterParams(event.Node)
+						event.Node.DecrementPowerGPS()
+					}
 
-				if(event.Node.IsClusterHead){
-					event.Node.DecrementPower4G()
-				} else {
-					event.Node.DecrementPowerBT()
-				}
+					if (event.Node.IsClusterHead) {
+						event.Node.DecrementPower4G()
+					} else if (event.Node.IsClusterMember) {
+						event.Node.DecrementPowerBT()
+					}
 
-				//if(p.CurrentTime/1000 <= 100){
-					p.Events.Push(&cps.Event{event.Node, cps.MOVE, p.CurrentTime+100, 0})
+					//if(p.CurrentTime/1000 <= 100){
+					p.Events.Push(&cps.Event{event.Node, cps.MOVE, p.CurrentTime + 100, 0})
+				}
 				//}
 
 			}else if event.Instruction == cps.CLUSTERMSG {
-				if(event.Node.Valid){
-					p.ClusterNetwork.SendHelloMessage(p.NodeBTRange, event.Node)
+				if event.Node.Battery > p.ThreshHoldBatteryToHave {
+					if (event.Node.Valid) {
+						p.ClusterNetwork.SendHelloMessage(p.NodeBTRange, event.Node)
+					}
+					p.Events.Push(&cps.Event{event.Node, cps.CLUSTERMSG, p.CurrentTime + 1000, 0})
 				}
-				p.Events.Push(&cps.Event{event.Node, cps.CLUSTERMSG, p.CurrentTime+1000, 0})
 
 			} else if event.Instruction == cps.CLUSTERHEADELECT {
-				if(event.Node.Valid){
-					event.Node.SortMessages()
-					p.ClusterNetwork.ElectClusterHead(event.Node)
+				if event.Node.Battery > p.ThreshHoldBatteryToHave {
+					if (event.Node.Valid) {
+						event.Node.SortMessages()
+						p.ClusterNetwork.ElectClusterHead(event.Node)
+					}
+					p.Events.Push(&cps.Event{event.Node, cps.CLUSTERHEADELECT, p.CurrentTime + 1000, 0})
 				}
-				p.Events.Push(&cps.Event{event.Node, cps.CLUSTERHEADELECT, p.CurrentTime+1000, 0})
 
 			} else if event.Instruction == cps.CLUSTERFORM {
-				if(event.Node.Valid){
-					//p.ClusterNetwork.GenerateClusters(event.Node)
-					if(event.Node.IsClusterHead){
-						p.ClusterNetwork.FormClusters(event.Node)
+				if event.Node.Battery > p.ThreshHoldBatteryToHave {
+					if (event.Node.Valid) {
+						//p.ClusterNetwork.GenerateClusters(event.Node)
+						if (event.Node.IsClusterHead) {
+							p.ClusterNetwork.FormClusters(event.Node)
+						}
 					}
+					p.Events.Push(&cps.Event{event.Node, cps.CLUSTERFORM, p.CurrentTime + 1000, 0})
 				}
-				p.Events.Push(&cps.Event{event.Node, cps.CLUSTERFORM, p.CurrentTime+1000, 0})
 			}
 		} else {
 			if event.Instruction == cps.POSITION {

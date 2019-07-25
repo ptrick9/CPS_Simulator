@@ -474,7 +474,6 @@ func SetupCSVNodes(p *Params) {
 		p.NodeList[len(p.NodeList)-1].NodeBounds = &bNewNode
 		p.NodeTree.Insert(&bNewNode)
 
-		newNode.Online = true
 	}
 
 }
@@ -533,7 +532,7 @@ func SetupRandomNodes(p *Params) {
 				p.NodeList[len(p.NodeList)-1].NodeBounds = &bNewNode
 				p.NodeTree.Insert(&bNewNode)
 			}
-			newNode.Online = true
+			//newNode.Online = true
 		}
 	}
 }
@@ -890,8 +889,8 @@ func SetupParameters(p *Params) {
 
 	p.TotalPercentBatteryToUse = float32(p.ThresholdBatteryToUseCM)
 	//p.BatteryCharges = GetLinearBatteryValues(len(p.NodeEntryTimes))
-	p.BatteryCharges = GetNormDistro(p.TotalNodes, 70.0, 15) //battery values come from normal distribution
-																		//mean = 70%, std = 15%
+	p.BatteryCharges = GetNormDistro(p.TotalNodes, 70.0, 8) //battery values come from normal distribution
+																		//mean = 70%, std = 8%
 	p.BatteryLosses = GetLinearBatteryLossConstant(len(p.NodeEntryTimes), float32(p.NaturalLossCM))
 
 	//updated because of the variable renaming to BatteryLosses__ and SamplingLoss__CM

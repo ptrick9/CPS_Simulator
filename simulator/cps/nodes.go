@@ -142,7 +142,7 @@ type NodeImpl struct {
 	ReadingsBuffer		[]Reading
 	TimeLastSentReadings	int
 	TimeLastAccel		int
-	Online				bool //whether the node is still online (battery is still high enough)
+	//Online				bool //whether the node is still online (battery is still high enough)
 }
 
 //NodeMovement controls the movement of all the normal nodes
@@ -228,8 +228,6 @@ func (curNode *NodeImpl) TurnValid(x, y int, p *Params) bool {
 	}
 	return false
 }
-
-
 
 func (curNode *NodeImpl) ADCReading(raw float32) int {
 
