@@ -818,11 +818,12 @@ func SetupParameters(p *Params) {
 
 	if p.CSVSensor {
 		readSensorCSV(p)
+		readFineSensorCSV(p)
 	} else {
 
+		readFineSensorCSV(p)
 
-
-
+		/*
 		p.MaxRaw = 1000
 		//p.EdgeRaw = 36
 		p.EdgeRaw = RawConcentration(float32(p.DetectionDistance/2))
@@ -831,7 +832,7 @@ func SetupParameters(p *Params) {
 		p.EdgeADC = 3
 		p.ADCWidth = p.MaxRaw/p.MaxADC
 		p.ADCOffset = p.EdgeRaw - p.EdgeADC * p.ADCWidth
-		fmt.Printf("%v %v\n", p.ADCWidth, p.ADCOffset)
+		fmt.Printf("%v %v\n", p.ADCWidth, p.ADCOffset)*/
 	}
 
 	if p.CSVMovement {
@@ -846,8 +847,6 @@ func InterpolateFloat (start float32, end float32, portion float32) float32{
 }
 
 func CalculateADCSetting(reading float64, x, y, time int, p *Params) {
-
-
 	fmt.Println("\n", reading, time, x, y)
 	total := float32(0.0)
 	counted := float32(0.0)
@@ -867,8 +866,6 @@ func CalculateADCSetting(reading float64, x, y, time int, p *Params) {
 	}
 
 	p.MaxRaw = total/counted
-
-
 	straight_increment := int(math.Ceil(p.DetectionDistance))
 	fmt.Println(straight_increment)
 	diag_increment := int(math.Ceil(p.DetectionDistance/math.Sqrt2))
@@ -884,8 +881,6 @@ func CalculateADCSetting(reading float64, x, y, time int, p *Params) {
 		{0, -straight_increment},			//down
 		{diag_increment, -diag_increment}}	//lower right
 
-
-
 	total = 0
 	counted = 0
 	for _, point := range (points) {
@@ -900,6 +895,75 @@ func CalculateADCSetting(reading float64, x, y, time int, p *Params) {
 		}
 	}
 
+	fmt.Println(p.MaxRaw)
+	//p.EdgeRaw = 36
+	p.EdgeRaw = total/counted
+	fmt.Println(p.EdgeRaw)
+	p.MaxADC = 4095
+	p.EdgeADC = 3
+	p.ADCWidth = p.MaxRaw/p.MaxADC
+	p.ADCOffset = p.EdgeRaw - p.EdgeADC * p.ADCWidth
+
+	fmt.Println("Raw:", p.EdgeRaw)
+	fmt.Printf("%v %v\n", p.ADCWidth, p.ADCOffset)
+
+	fmt.Printf("\n")
+}
+
+
+func CalculateFineADCSetting(reading float64, x, y, time int, p *Params) {
+	fmt.Println("\n", reading, time, x, y)
+	total := float32(0.0)
+	counted := float32(0.0)
+	for i := -1; i < 2; i++ {
+		for j := -1; j < 2; j++ {
+			if i != 0 || j != 0 {
+				if i+x > 0 && i+x < p.Width {
+					if j+y > 0 && j+y < p.Height {
+						part := InterpolateFloat(float32(p.FineSensorReadings[x][y][time]),  float32(p.FineSensorReadings[i + x][j + y][time]), .2/float32(Dist(Tuple{x, y}, Tuple{x+i, y+j})))
+						total += part
+						//fmt.Println(i, j, float32(p.FineSensorReadings[x][y][time]),  float32(p.FineSensorReadings[i + x][j + y][time]), .2/float32(Dist(Tuple{x, y}, Tuple{x+i, y+j})), part)
+						counted += 1
+					}
+				}
+			}
+		}
+	}
+
+
+	p.MaxRaw = total/counted
+	fmt.Printf("Raw: %v\n", p.MaxRaw)
+	straight_increment := int(math.Ceil((p.DetectionDistance/2.0)*float64(p.FineScale)))
+	fmt.Printf("straight: %v\n", straight_increment)
+	diag_increment := int(math.Ceil(((p.DetectionDistance/2.0)*float64(p.FineScale))/math.Sqrt2))
+	fmt.Printf("diag: %v\n", diag_increment)
+
+
+
+
+	points := [8][2]int{
+		{straight_increment, 0},			//right
+		{diag_increment, diag_increment}, 	//upper right
+		{0, straight_increment},			//up
+		{-diag_increment, diag_increment}, 	//upper left
+		{-straight_increment, 0},			//left
+		{-diag_increment, -diag_increment}, //lower left
+		{0, -straight_increment},			//down
+		{diag_increment, -diag_increment}}	//lower right
+
+	total = 0
+	counted = 0
+	for _, point := range (points) {
+		if point[0]+x > 0 && point[0]+x < p.Width {
+			if point[1]+y > 0 && point[1]+y < p.Height {
+				//if legal then interpolate the correct value based on distance
+				part := InterpolateFloat(float32(p.FineSensorReadings[x][y][time]), float32(p.FineSensorReadings[x+point[0]][y+point[1]][time]), float32(p.DetectionDistance/(Dist(Tuple{x, y}, Tuple{x + point[0], y + point[1]}))))
+				total += part
+				//fmt.Println(float32(p.FineSensorReadings[x][y][time]), float32(p.FineSensorReadings[x + point[0]][y + point[1]][time]), float32(p.DetectionDistance/(Dist(Tuple{x, y}, Tuple{x + point[0], y + point[1]}))), part)
+				counted += 1
+			}
+		}
+	}
 
 	fmt.Println(p.MaxRaw)
 	//p.EdgeRaw = 36
@@ -910,8 +974,11 @@ func CalculateADCSetting(reading float64, x, y, time int, p *Params) {
 	p.ADCWidth = p.MaxRaw/p.MaxADC
 	p.ADCOffset = p.EdgeRaw - p.EdgeADC * p.ADCWidth
 
-
 	fmt.Printf("\n")
+
+
+	fmt.Println("Raw:", p.EdgeRaw)
+	fmt.Printf("%v %v\n", p.ADCWidth, p.ADCOffset)
 }
 
 //readSensorCSV reads the sensor values from a file
@@ -936,7 +1003,10 @@ func readSensorCSV(p *Params) {
 	}
 	p.MaxTimeStep = len(times)
 
-	numSamples := len(record[2]) - 2
+	numSamples := len(record[2]) - 3
+
+	p.FineScale, _ = strconv.Atoi(record[2][0])
+
 
 	p.SensorReadings = make([][][]float64, p.Width)
 	for i := range p.SensorReadings {
@@ -949,36 +1019,20 @@ func readSensorCSV(p *Params) {
 		}
 	}
 
-
-
 	i := 1
 	fmt.Printf("Sensor CSV Processing\n")
-	/*maxReading := 0.0
-	maxLocX := 0
-	maxLocY := 0
-	maxTime := 0*/
+
 	for i < len(record) {
+		x, _ := strconv.ParseInt(record[i][1], 10, 32);
+		y, _ := strconv.ParseInt(record[i][2], 10, 32);
 
-
-		x, _ := strconv.ParseInt(record[i][0], 10, 32);
-		y, _ := strconv.ParseInt(record[i][1], 10, 32);
-
-		j := 2
-
+		j := 3
 		for j < len(record[i]) {
 			read1, _ := strconv.ParseFloat(record[i][j], 32);
 			if read1 < 0 {
 				read1 = 0
 			}
-			//fmt.Printf("x:%v, y:%v, j:%v\n",x,y,j)
-			p.SensorReadings[x][y][j-2] = read1
-
-			/*if read1 > maxReading {
-				maxReading = read1
-				maxLocX = int(x)
-				maxLocY = int(y)
-				maxTime = j-2
-			}*/
+			p.SensorReadings[x][y][j-3] = read1
 
 			j += 1
 
@@ -991,15 +1045,87 @@ func readSensorCSV(p *Params) {
 		}
 	}
 
+	//CalculateADCSetting(maxReading, maxLocX, maxLocY, maxTime, p)
+	//fmt.Println(p.BombX, p.BombY)
+	CalculateADCSetting(p.SensorReadings[p.B.X][p.B.Y][10], p.B.X, p.B.Y, 10, p)
+}
 
+//readSensorCSV reads the sensor values from a file
+func readFineSensorCSV(p *Params) {
+
+	in, err := os.Open(p.FineSensorPath)
+	if err != nil {
+		println("error opening file")
+	}
+	defer in.Close()
+
+	fmt.Printf("Reading Fine Sensor File\n")
+	r := csv.NewReader(in)
+	r.FieldsPerRecord = -1
+	record, err := r.ReadAll()
+
+	reg, _ := regexp.Compile("([0-9]+)")
+	times := reg.FindAllStringSubmatch(strings.Join(record[0], " "), -1)
+
+	p.SensorTimes = make([]int, len(times))
+	for i := range times {
+		p.SensorTimes[i], _ = strconv.Atoi(times[i][1])
+	}
+	p.MaxTimeStep = len(times)
+
+	numSamples := len(record[2]) - 3
+
+	fmt.Printf("%v %v %v", len(record), record[2][0], math.Sqrt(float64(len(record)-1)))
+
+	p.FineScale, _ = strconv.Atoi(record[2][0])
+	p.FineWidth = int(math.Sqrt(float64(len(record)-1)))
+	p.FineHeight = int(math.Sqrt(float64(len(record)-1)))
+
+
+	p.FineSensorReadings = make([][][]float64, p.FineWidth)
+	for i := range p.FineSensorReadings {
+		p.FineSensorReadings[i] = make([][]float64, p.FineHeight)
+		for j := range p.FineSensorReadings[i] {
+			p.FineSensorReadings[i][j] = make([]float64, numSamples)
+			for k := range p.FineSensorReadings[i][j] {
+				p.FineSensorReadings[i][j][k] = 0
+			}
+		}
+	}
+
+	i := 1
+	fmt.Printf("Fine Sensor CSV Processing\n")
+
+	for i < len(record) {
+		x, _ := strconv.ParseInt(record[i][1], 10, 32);
+		y, _ := strconv.ParseInt(record[i][2], 10, 32);
+		//fmt.Printf("%d %d\n", x, y)
+
+		j := 3
+
+		for j < len(record[i]) {
+			read1, _ := strconv.ParseFloat(record[i][j], 32);
+			//fmt.Printf("%d %d %v\n", x, y, read1)
+			if read1 < 0 {
+				read1 = 0
+			}
+			p.FineSensorReadings[x][y][j-3] = read1
+			/*if(x == 25 && y == 25) {
+				fmt.Printf("%d %d %v\n", x, y, p.FineSensorReadings[x][y][j-3])
+			}*/
+			j += 1
+		}
+		i++
+
+		if(i % 1000 == 0) {
+			prog := int(float32(i)/float32(len(record))*100)
+			fmt.Printf("\rProgress [%s%s] %d ", strings.Repeat("=", prog), strings.Repeat(".", 100-prog), prog)
+		}
+	}
 
 	//CalculateADCSetting(maxReading, maxLocX, maxLocY, maxTime, p)
 	fmt.Println(p.BombX, p.BombY)
-	CalculateADCSetting(p.SensorReadings[p.B.X][p.B.Y][10], p.B.X, p.B.Y, 10, p)
-
-
-
-
+	CalculateFineADCSetting(p.FineSensorReadings[p.FineWidth/2][p.FineHeight/2][100], p.FineWidth/2, p.FineHeight/2, 10, p)
 }
 
 //readMovementCSV reads the movement parameters from a file
@@ -1133,6 +1259,8 @@ func GetFlags(p *Params) {
 		"Name of the input text file")
 
 	flag.StringVar(&p.SensorPath, "sensorPath", "Circle_2D.csv", "Sensor Reading Inputs")
+
+	flag.StringVar(&p.FineSensorPath, "fineSensorPath", "Circle_2D.csv", "Sensor Reading Inputs")
 
 	flag.StringVar(&p.MovementPath, "movementPath", "Circle_2D.csv", "Movement Inputs")
 
@@ -1324,6 +1452,7 @@ func WriteFlags(p * Params){
 	buf.WriteString(fmt.Sprintf("GridCapacityPercentage=%v\n", p.GridCapacityPercentageCM))
 	buf.WriteString(fmt.Sprintf("inputFileName=%v\n", p.InputFileNameCM))
 	buf.WriteString(fmt.Sprintf("sensorPath=%v\n", p.SensorPath))
+	buf.WriteString(fmt.Sprintf("fineSensorPath=%v\n", p.FineSensorPath))
 	buf.WriteString(fmt.Sprintf("movementPath=%v\n", p.MovementPath))
 	buf.WriteString(fmt.Sprintf("OutputFileName=%v\n", p.OutputFileNameCM))
 	buf.WriteString(fmt.Sprintf("naturalLoss=%v\n", p.NaturalLossCM))

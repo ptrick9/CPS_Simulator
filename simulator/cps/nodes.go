@@ -674,7 +674,18 @@ func (curNode *NodeImpl) GetReadings() {
 	if curNode.Valid { //Check if node should actually take readings or if it hasn't shown up yet
 		newX, newY := curNode.GetLoc()
 
-		RawConc := RawConcentration(curNode.Distance(*curNode.P.B)/2) //this is the node's reported Value without error
+		//RawConc := RawConcentration(curNode.Distance(*curNode.P.B)/2) //this is the node's reported Value without error
+
+		RawConc := 0.0
+
+		if curNode.Distance(*curNode.P.B)/2 < float32((curNode.P.FineWidth/2)/curNode.P.FineScale) {
+			//fmt.Printf("\n %v %v %v %v", curNode.P.B.X, curNode.P.B.Y, curNode.Distance(*curNode.P.B)/2, float32((curNode.P.FineWidth/2)/curNode.P.FineScale))
+			RawConc = float64(interpolateReadingFine(newX, newY, curNode.P.CurrentTime, curNode.P.TimeStep, curNode.P))
+			if RawConc == -1.0 {
+				RawConc = 0.0
+			}
+
+		}
 
 		//need to get the correct Time reading Value from system
 		//need to verify where we read from
@@ -747,6 +758,85 @@ func (curNode *NodeImpl) GetReadings() {
 
 }
 
+func transformX(x int, p *Params) int {
+	return int(float32(p.FineWidth/2) -  ((float32(p.B.X - x)/2.0)*float32(p.FineScale)))
+}
+
+func transformY(y int, p *Params) int {
+	return int(float32(p.FineHeight/2) -  ((float32(p.B.Y - y)/2.0)*float32(p.FineScale)))
+}
+
+
+func interpolateReadingFine(x , y float32, time, timeStep int, p *Params) float32{
+
+	oldX := transformX(int(x), p)
+	oldY := transformY(int(y), p)
+	nextX := transformX(int(math.Ceil(float64(x))), p)
+	nextY := transformY(int(math.Ceil(float64(y))), p)
+
+
+	//fmt.Printf("\n%v %v %v %v %v %v\n", x, y ,oldX, oldY, nextX, nextY)
+	//calculate reading at last 'even' position
+
+	if oldX >= p.FineWidth || oldX < 0 {
+		return -1.0
+	} else if oldY >= p.FineHeight || oldY < 0 {
+		return -1.0
+	} else if nextX >= p.FineWidth || nextX < 0 {
+		return -1.0
+	} else if nextY >= p.FineHeight || nextY < 0 {
+		return -1.0
+	}
+
+
+	oldReadingA := p.FineSensorReadings[oldX][oldY][timeStep]
+	futureReadingA := p.FineSensorReadings[oldX][oldY][timeStep]
+	if(timeStep < p.MaxTimeStep) {
+		futureReadingA = p.FineSensorReadings[oldX][oldY][timeStep+1]
+	}
+
+	//calculate reading at next 'even' position
+	oldReadingB := p.FineSensorReadings[nextX][nextY][timeStep]
+	futureReadingB := p.FineSensorReadings[nextX][nextY][timeStep]
+	if(timeStep < p.MaxTimeStep) {
+		futureReadingB = p.FineSensorReadings[nextX][nextY][timeStep+1]
+	}
+
+	//fmt.Printf("%v %v %v %v\n", oldReadingA, oldReadingB, futureReadingA, futureReadingB)
+	totalDistance := float32(math.Sqrt(math.Pow(math.Abs(float64(nextX - oldX)), 2) + math.Pow(math.Abs(float64(nextY - oldY)), 2)))
+	partialDist := float32((math.Sqrt(math.Pow(math.Abs(float64(float32(nextX) - x)), 2) + math.Pow(math.Abs(float64(float32(nextY) - y)), 2))))
+
+
+	//determine distance we have covered between the two positions
+	portionDist := partialDist / totalDistance
+	if (totalDistance == 0) {
+		portionDist = 1.0
+	}
+
+	//fmt.Printf("%v %v %v\n", totalDistance, partialDist, portionDist)
+
+
+	oldReading := (float32(oldReadingA - oldReadingB) * portionDist + float32(oldReadingA))  //t = 0 original and next position average
+	futureReading := (float32(futureReadingA - futureReadingB) * portionDist + float32(futureReadingA)) //t = 1 original and next position average
+	//fmt.Printf("%v %v\n", oldReading, futureReading)
+
+	floatTime := float32(time)/1000
+	oldTime := p.SensorTimes[timeStep]
+	nextTime := p.SensorTimes[timeStep]
+	if(timeStep < p.MaxTimeStep) {
+		nextTime = p.SensorTimes[timeStep + 1]
+	}
+
+
+	portionTime := (floatTime - float32(oldTime))/float32(nextTime - oldTime)
+	if(oldTime == nextTime) {
+		portionTime = 1.0
+	}
+	//fmt.Printf("%v %v %v %v\n", floatTime, oldTime, nextTime, portionTime)
+
+	return (futureReading - oldReading)*portionTime + oldReading
+}
+
 func interpolateReading(x , y float32, time, timeStep int, p *Params) float32{
 	oldX := int(x)
 	oldY := int(y)
@@ -811,7 +901,15 @@ func (curNode *NodeImpl) GetReadingsCSV() {
 		newX, newY := curNode.GetLoc()
 
 
-		RawConcentration := interpolateReading(newX, newY, curNode.P.CurrentTime, curNode.P.TimeStep, curNode.P)
+		RawConcentration := 0.0
+		if curNode.Distance(*curNode.P.B)/2 < float32((curNode.P.FineWidth/2)/curNode.P.FineScale) {
+			//fmt.Printf("\n %v %v %v %v", curNode.P.B.X, curNode.P.B.Y, curNode.Distance(*curNode.P.B)/2, float32((curNode.P.FineWidth/2)/curNode.P.FineScale))
+			RawConcentration = float64(interpolateReadingFine(newX, newY, curNode.P.CurrentTime, curNode.P.TimeStep, curNode.P))
+			if RawConcentration == -1.0 {
+				RawConcentration = float64(interpolateReading(newX, newY, curNode.P.CurrentTime, curNode.P.TimeStep, curNode.P))
+			}
+
+		}
 
 		//need to get the correct Time reading Value from system
 		//need to verify where we read from
