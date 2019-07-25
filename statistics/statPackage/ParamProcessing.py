@@ -18,11 +18,10 @@ def isBool(s):
 def getParameters(basename):
     filename = "%s-parameters.txt" % basename
     params = dict()
-    with open(filename) as f:
-        lines = f.readlines()
 
-    for i in range(0,len(lines)-1):
-        l=lines[i].split('=')
+    f = open(filename)
+    for line in f:
+        l=line.split('=')
         key = l[0]
         if(isBool(l[1])):
             val = bool(l[1])

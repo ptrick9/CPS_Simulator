@@ -42,6 +42,9 @@ class Detection:
 
     def FN(self):
         return self.typ == 'FN'
+
+    def FP(self):
+        return self.typ == 'FP'
     #def FNConf(self):
     #    return self.typ == 'FN' and self.status == 'Confirmation'
 
@@ -100,21 +103,23 @@ def BuildDetections(basename):
     confMatches = re.finditer(regexConf, longBoi, re.MULTILINE)
 
     for matchNum, match in enumerate(confMatches, start=1):
-        detail = initialDetections[(match.group('ident'), match.group('time'))]
-
-        ident = int(detail.group('ident'))
-        time = float(detail.group('time'))/1000
-        status = match.group('status')
-        conf = int(match.group('conf'))
-        need = int(match.group('need'))
-        typ = detail.group('type')
-        dist = float(detail.group('distance'))
-        cleanADC = int(detail.group('clean'))
-        errorADC = int(detail.group('error'))
-        senseError = float(detail.group('errorSense'))
-        senseClean = float(detail.group('cleanSense'))
-        rawConc = float(detail.group('raw'))
-        detections.append(Detection(ident, time, status, conf, need, typ, dist, cleanADC, errorADC, senseError, senseClean, rawConc))
+        try:
+            detail = initialDetections[(match.group('ident'), match.group('time'))]
+            ident = int(detail.group('ident'))
+            time = float(detail.group('time'))/1000
+            status = match.group('status')
+            conf = int(match.group('conf'))
+            need = int(match.group('need'))
+            typ = detail.group('type')
+            dist = float(detail.group('distance'))
+            cleanADC = int(detail.group('clean'))
+            errorADC = int(detail.group('error'))
+            senseError = float(detail.group('errorSense'))
+            senseClean = float(detail.group('cleanSense'))
+            rawConc = float(detail.group('raw'))
+            detections.append(Detection(ident, time, status, conf, need, typ, dist, cleanADC, errorADC, senseError, senseClean, rawConc))
+        except:
+            print(basename, (match.group('ident'), match.group('time')))
 
     detections = sorted(detections)
     return detections

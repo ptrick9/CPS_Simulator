@@ -3,7 +3,11 @@ from statPackage.ParamProcessing import *
 import os
 import itertools
 
-basePath = "C:/Users/patrick/Dropbox/Patrick/udel/SUMMER2019/data/bigData/"
+#basePath = "C:/Users/patrick/Dropbox/Patrick/udel/SUMMER2019/data/bigData/"
+basePath = "C:/Users/patrick/Downloads/bigData/"
+
+X_VAL = 'validationThreshold'
+
 
 def buildDetectionList(basePath, runs):
     runData = []
@@ -22,6 +26,7 @@ def determineDifferences(basePath, runs):
     params = {}
     for r in runs:
         p = getParameters("%s%s" % (basePath, r))
+        #print(p['validationThreshold'])
         for k in p.keys():
             if 'file' not in k and 'File' not in k:
                 if k in params:
@@ -61,20 +66,28 @@ print(list(itertools.product(*vals)))
 
 data = {}
 
-for file in uniqueRuns:
+for i,file in enumerate(uniqueRuns):
     run = {}
     p = getParameters("%s%s" % (basePath, file))
     det = getDetections(basePath, file)
-    run['detectionTime'] = next(x for x in det if x.TPConf()).time
-
-    k = tuple(p[x] for x in order)
+    firstDet = next(x for x in det if x.TPConf()).time
+    run['Detection Time'] = firstDet
+    run['# True Positive Rejections'] = sum([1 if x.TPRej() and x.time < firstDet else 0 for x in det])
+    run['# False Positives'] = sum([1 if x.FP() and x.time < firstDet else 0 for x in det])
+    run['# False Positive Rejections'] = sum([1 if x.FPRej() and x.time < firstDet else 0 for x in det])
+    run['# False Negatives'] = sum([1 if x.FN() and x.time < firstDet else 0 for x in det])
+    run['# Total False Negatives'] = sum([1 if x.FN() else 0 for x in det])
+    run['# Total False Positives'] = sum([1 if x.FP() else 0 for x in det])
+#k = tuple(p[x] for x in order)
+    k = p[X_VAL]
     if k in data:
         data[k].append(run)
     else:
         data[k] = [run]
 
     #processed
-    print(run)
+    #print(run)
+    print("%d\%d" % (i, len(uniqueRuns)))
 print(data)
 
 
