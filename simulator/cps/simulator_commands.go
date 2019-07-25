@@ -87,8 +87,9 @@ type Params struct {
 	BatteryFile    *os.File
 	RunParamFile   *os.File
 
-	SensorPath  string
-	MovementPath  string
+	SensorPath     string
+	MovementPath   string
+	WindRegionPath string
 
 	SensorTimes []int
 	TimeStep    int
@@ -191,6 +192,6 @@ type Params struct {
 
 	NodePositionMap			map[Tuple]*NodeImpl
 	ValidationThreshold	int
-	WindRegion []Coord
+	WindRegion [][]Coord
 
 }

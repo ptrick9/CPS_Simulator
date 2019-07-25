@@ -914,6 +914,44 @@ func CalculateADCSetting(reading float64, x, y, time int, p *Params) {
 	fmt.Printf("\n")
 }
 
+func ReadWindRegion(p *Params) {
+	in, err := os.Open(p.WindRegionPath)
+	if err != nil {
+		println("error opening file", err)
+	}
+	defer in.Close()
+
+	record, err := ioutil.ReadAll(in)
+	line := strings.Split(string(record), "\r\n")
+
+	data := make([][]string, 0)
+	for i := range line {
+		data = append(data, strings.Split(line[i], ","))
+	}
+	//fmt.Println(data[1])
+	count := 0
+	x := int64(0)
+	y := int64(0)
+	p.WindRegion = make([][]Coord, len(data))
+	for t := range data {
+		for i:= 0; i < len(data[t]); i++ {
+			if i % 2 == 0 {
+				x,_ = strconv.ParseInt(data[t][i], 10, 32)
+				count ++
+			} else {
+				y,_ = strconv.ParseInt(data[t][i], 10, 32)
+				count ++
+			}
+			if count == 2 {
+				p.WindRegion[t] = append(p.WindRegion[t], Coord{X: int(x), Y: int(y)})
+				count = 0
+			}
+		}
+	}
+	//fmt.Println(p.WindRegion[0])
+	//fmt.Println(p.WindRegion[1])
+}
+
 //readSensorCSV reads the sensor values from a file
 func readSensorCSV(p *Params) {
 
@@ -1287,7 +1325,7 @@ func GetFlags(p *Params) {
 	flag.BoolVar(&p.RegionRouting, "regionRouting", true, "True if you want to use the new routing algorithm with regions and cutting")
 
 	flag.IntVar(&p.ValidationThreshold, "validationThreshold", 1, "Number of detections required to validate a detection")
-
+	flag.StringVar(&p.WindRegionPath, "windRegionPath", "hull_testing.txt", "File containing regions formed by wind")
 
 	flag.Parse()
 	fmt.Println("Natural Loss: ", p.NaturalLossCM)

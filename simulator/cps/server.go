@@ -691,17 +691,17 @@ func (s *FusionCenter) CheckFalsePosWind(n NodeImpl) bool {
 	sumX := 0
 	sumY := 0
 	for i:= range s.P.WindRegion {
-		sumX += s.P.WindRegion[i].X
-		sumY += s.P.WindRegion[i].Y
+		sumX += s.P.WindRegion[s.P.CurrentTime/1000][i].X
+		sumY += s.P.WindRegion[s.P.CurrentTime/1000][i].Y
 	}
 	center := Coord{X: sumX/len(s.P.WindRegion), Y: sumY/len(s.P.WindRegion)}
 
-	tmp := s.P.WindRegion[0]
+	tmp := s.P.WindRegion[s.P.CurrentTime/1000][0]
 	for i:= 1; i < len(s.P.WindRegion); i++ {
-		if Intersects(tmp, s.P.WindRegion[i], center, n.GetLocCoord()) {
+		if Intersects(tmp, s.P.WindRegion[s.P.CurrentTime/1000][i], center, n.GetLocCoord()) {
 			return true
 		}
-		tmp = s.P.WindRegion[i]
+		tmp = s.P.WindRegion[s.P.CurrentTime/1000][i]
 	}
 	return false
 }

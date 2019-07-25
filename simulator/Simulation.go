@@ -75,6 +75,11 @@ func main() {
 	//getFlags()
 	fmt.Fprintf(p.RunParamFile,"Starting file\n")
 	cps.GetFlags(p)
+
+	fmt.Println("Getting Wind regions...")
+	cps.ReadWindRegion(p)
+	fmt.Println("Done!")
+
 	if p.CPUProfile != "" {
 		f, err := os.Create(p.CPUProfile)
 		if err != nil {
