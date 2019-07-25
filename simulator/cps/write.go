@@ -948,7 +948,7 @@ func ReadWindRegion(p *Params) {
 			}
 		}
 	}
-	//fmt.Println(p.WindRegion[0])
+	fmt.Println(len(p.WindRegion))
 	//fmt.Println(p.WindRegion[1])
 }
 

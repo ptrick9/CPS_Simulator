@@ -687,21 +687,21 @@ func max(num1, num2 int) int{
 	}
 }
 
-func (s *FusionCenter) CheckFalsePosWind(n NodeImpl) bool {
+func (s *FusionCenter) CheckFalsePosWind(n *NodeImpl) bool {
 	sumX := 0
 	sumY := 0
-	for i:= range s.P.WindRegion {
-		sumX += s.P.WindRegion[s.P.CurrentTime/1000][i].X
-		sumY += s.P.WindRegion[s.P.CurrentTime/1000][i].Y
+	for i:= 0; i < len(s.P.WindRegion[s.P.CurrentTime/10000]); i++ {
+		sumX += s.P.WindRegion[s.P.CurrentTime/10000][i].X
+		sumY += s.P.WindRegion[s.P.CurrentTime/10000][i].Y
 	}
 	center := Coord{X: sumX/len(s.P.WindRegion), Y: sumY/len(s.P.WindRegion)}
 
-	tmp := s.P.WindRegion[s.P.CurrentTime/1000][0]
-	for i:= 1; i < len(s.P.WindRegion); i++ {
-		if Intersects(tmp, s.P.WindRegion[s.P.CurrentTime/1000][i], center, n.GetLocCoord()) {
+	tmp := s.P.WindRegion[s.P.CurrentTime/10000][0]
+	for i:= 1; i < len(s.P.WindRegion[s.P.CurrentTime/100000]); i++ {
+		if Intersects(tmp, s.P.WindRegion[s.P.CurrentTime/10000][i], center, n.GetLocCoord()) {
 			return true
 		}
-		tmp = s.P.WindRegion[s.P.CurrentTime/1000][i]
+		tmp = s.P.WindRegion[s.P.CurrentTime/10000][i]
 	}
 	return false
 }

@@ -892,6 +892,9 @@ func (curNode *NodeImpl) GetReadingsCSV() {
 		//Only do this if the sensor was pinged this iteration
 
 		if curNode.Valid {
+			if curNode.P.CurrentTime > 10000 && ADCRead > float64(curNode.P.ValidationThreshold) && !curNode.P.Server.CheckFalsePosWind(curNode){
+				fmt.Println("Wind false positive")
+			}
 			curNode.P.Server.Send(curNode, Reading{ADCRead, newX, newY, curNode.P.CurrentTime, curNode.GetID()})
 		}
 
