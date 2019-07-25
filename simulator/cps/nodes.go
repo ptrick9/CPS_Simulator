@@ -142,6 +142,7 @@ type NodeImpl struct {
 	ReadingsBuffer		[]Reading
 	TimeLastSentReadings	int
 	TimeLastAccel		int
+	Online				bool //whether the node is still online (battery is still high enough)
 }
 
 //NodeMovement controls the movement of all the normal nodes
@@ -427,7 +428,7 @@ func (curNode *NodeImpl) DecrementPowerBT(){
 
 //decrement battery due to transmitting/receiving over WiFi
 func (curNode *NodeImpl) DecrementPowerWifi(packet int){
-	curNode.Battery = curNode.Battery - float32(curNode.P.SamplingLossWifiCM) *curNode.Battery
+	curNode.Battery = curNode.Battery - float32(curNode.P.SamplingLossWifiCM)
 }
 
 //decrement battery due to transmitting/receiving over 4G
@@ -437,7 +438,7 @@ func (curNode *NodeImpl) DecrementPower4G(){
 
 //decrement battery due to sampling Accelerometer
 func (curNode *NodeImpl) DecrementPowerAccel(){
-	curNode.Battery = curNode.Battery - float32(curNode.P.SamplingLossAccelCM) *curNode.Battery
+	curNode.Battery = curNode.Battery - float32(curNode.P.SamplingLossAccelCM)
 }
 
 //decrement battery due to transmitting/receiving GPS

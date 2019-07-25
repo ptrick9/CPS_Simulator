@@ -434,6 +434,8 @@ func SetupCSVNodes(p *Params) {
 		newNode.X = float32(p.NodeMovements[i][0].X)
 		newNode.Y = float32(p.NodeMovements[i][1].Y)
 
+		newNode.BatteryOverTime = map[int]float32{}
+
 		if newNode.InBounds(p) {
 			newNode.Valid = true
 			p.BoolGrid[int(newNode.X)][int(newNode.Y)] = true
@@ -472,7 +474,7 @@ func SetupCSVNodes(p *Params) {
 		p.NodeList[len(p.NodeList)-1].NodeBounds = &bNewNode
 		p.NodeTree.Insert(&bNewNode)
 
-
+		newNode.Online = true
 	}
 
 }
@@ -482,6 +484,8 @@ func SetupRandomNodes(p *Params) {
 		if p.Iterations_used == p.NodeEntryTimes[i][2] {
 
 			newNode := InitializeNodeParameters(p, i)
+
+			newNode.BatteryOverTime = map[int]float32{}
 
 			xx := rangeInt(1, p.MaxX)
 			yy := rangeInt(1, p.MaxY)
@@ -529,7 +533,7 @@ func SetupRandomNodes(p *Params) {
 				p.NodeList[len(p.NodeList)-1].NodeBounds = &bNewNode
 				p.NodeTree.Insert(&bNewNode)
 			}
-
+			newNode.Online = true
 		}
 	}
 }
@@ -788,7 +792,7 @@ func SetupFiles(p *Params) {
 	}
 	//defer p.EnergyFile.Close()
 
-	p.BatteryFile, err = os.Create(p.OutputFileNameCM + "-batteryusage.txt")
+	p.BatteryFile, err = os.Create(p.OutputFileNameCM + "-batteryusage.csv")
 	if err != nil {
 		log.Fatal("Cannot create file", err)
 	}
@@ -826,6 +830,11 @@ func SetupFiles(p *Params) {
 	}
 
 	p.ClusterReadings, err = os.Create(p.OutputFileNameCM + "-cluster_readings.txt")
+	if err != nil{
+		log.Fatal("Cannot create file", err)
+	}
+
+	p.ClusterMessages, err = os.Create(p.OutputFileNameCM + "-cluster_messages.txt")
 	if err != nil{
 		log.Fatal("Cannot create file", err)
 	}

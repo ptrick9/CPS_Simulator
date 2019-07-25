@@ -151,6 +151,7 @@ func main() {
 		ClusterHeads:	[]*cps.NodeImpl{},
 		TotalHeads:			0,
 		Threshold:			p.ClusterThreshold,
+		TotalMsgs:			0,
 	}
 
 	//This is where the text file reading ends
@@ -228,7 +229,7 @@ func main() {
 		//fmt.Println(event)
 		//fmt.Println(p.CurrentNodes)
 		p.CurrentTime = event.Time
-		if event.Node != nil{
+		if event.Node != nil && event.Node.Online{
 			if event.Instruction == cps.SENSE {
 
 				if(p.CSVMovement) {
@@ -268,7 +269,7 @@ func main() {
 
 			}else if event.Instruction == cps.CLUSTERMSG {
 				if(event.Node.Valid){
-					event.Node.SendHelloMessage(p.NodeBTRange)
+					p.ClusterNetwork.SendHelloMessage(p.NodeBTRange, event.Node)
 				}
 				p.Events.Push(&cps.Event{event.Node, cps.CLUSTERMSG, p.CurrentTime+1000, 0})
 
@@ -339,6 +340,7 @@ func main() {
 				if p.EnergyPrint {
 					var buffer bytes.Buffer
 					for i := 0; i < p.CurrentNodes; i ++ {
+							p.NodeList[i].BatteryOverTime[p.CurrentTime/1000] = p.NodeList[i].Battery
 							buffer.WriteString(fmt.Sprintf("%v\n", p.NodeList[i]))
 					}
 					fmt.Fprintf(p.EnergyFile, buffer.String())
@@ -437,6 +439,8 @@ func main() {
 				fmt.Fprintf(p.ClusterFile, clusterBuffer.String())
 				fmt.Fprintf(p.ClusterStatsFile, clusterStatsBuffer.String())
 				fmt.Fprintf(p.ClusterDebug, clusterDebugBuffer.String())
+
+				fmt.Fprintf(p.ClusterMessages, "%d,%d\n",p.CurrentTime/1000,p.ClusterNetwork.TotalMsgs)
 
 				p.Events.Push(&cps.Event{nil, cps.CLUSTERPRINT, p.CurrentTime + 1000, 0})
 				p.ClusterNetwork.ResetClusters()
@@ -577,7 +581,7 @@ func main() {
 	}
 
  */
-	PrintNodeBatteryOverTimeFast(p)
+	PrintNodeBatteryOverTime(p)
 
 	p.PositionFile.Seek(0, 0)
 	fmt.Fprintln(p.PositionFile, "Image:", p.ImageFileNameCM)
@@ -648,22 +652,28 @@ func printSuperStats(SNodeList []cps.SuperNodeParent) bytes.Buffer {
 
 func PrintNodeBatteryOverTime(p * cps.Params)  {
 
-	fmt.Fprint(p.BatteryFile, "Time,")
-	for i := range p.NodeList{
-		n := p.NodeList[i]
-		fmt.Fprint(p.BatteryFile, "Node",n.GetID(),",")
-	}
-	fmt.Fprint(p.BatteryFile, "\n")
+	//fmt.Fprint(p.BatteryFile, "Time,")
+	//for i := range p.NodeList{
+	//	n := p.NodeList[i]
+	//	fmt.Fprintf(p.BatteryFile, "Node %d",n.Id)
+	//	if(i<len(p.NodeList)){
+	//		fmt.Fprint(p.BatteryFile, ",")
+	//	}
+	//}
+	//fmt.Fprint(p.BatteryFile, "\n")
 
 	for t:=0; t<p.Iterations_of_event; t++{
-		fmt.Fprint(p.BatteryFile, t, ",")
+		fmt.Fprintf(p.BatteryFile, "%d,",t)
 		for i := range p.NodeList{
 			n := p.NodeList[i]
-			fmt.Fprint(p.BatteryFile, n.BatteryOverTime[t],",")
+			fmt.Fprintf(p.BatteryFile, "%.4f",n.BatteryOverTime[t],)
+			if(i<len(p.NodeList)){
+				fmt.Fprint(p.BatteryFile, ",")
+			}
 		}
 		fmt.Fprint(p.BatteryFile, "\n")
 	}
-	p.BatteryFile.Sync()
+	//p.BatteryFile.Sync()
 }
 func PrintNodeBatteryOverTimeFast(p * cps.Params)  {
 	var buffer bytes.Buffer

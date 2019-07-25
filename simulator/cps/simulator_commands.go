@@ -90,6 +90,7 @@ type Params struct {
 	ClusterStatsFile *os.File
 	ClusterDebug	*os.File
 	ClusterReadings *os.File
+	ClusterMessages *os.File
 
 	SensorPath  string
 	MovementPath  string
