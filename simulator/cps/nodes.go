@@ -739,10 +739,12 @@ func (curNode *NodeImpl) GetReadings() {
 			fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("FN T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, RawConc))
 		} else if ADCRead > curNode.P.DetectionThreshold && ADCClean > curNode.P.DetectionThreshold {
 			fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("TP T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, RawConc))
-		}
+		} /*else if {
 
+		}*/
 
-		if curNode.P.CurrentTime > 10000 && ADCRead > float64(curNode.P.DetectionThreshold) && curNode.P.Server.CheckFalsePosWind(curNode){
+		fmt.Println(curNode.P.Server.CheckFalsePosWind(curNode))
+		if curNode.P.Server.CheckFalsePosWind(curNode) == 0{ //ADCRead > float64(curNode.P.DetectionThreshold) &&
 			fmt.Println("Wind false positive")
 		}
 		curNode.P.Server.Send(curNode, Reading{ADCRead, newX, newY, curNode.P.CurrentTime, curNode.GetID()})
@@ -885,7 +887,9 @@ func (curNode *NodeImpl) GetReadingsCSV() {
 		} else if ADCRead > curNode.P.DetectionThreshold && ADCClean > curNode.P.DetectionThreshold {
 			fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("TP T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, RawConcentration))
 		}
-
+		if ADCRead > float64(curNode.P.DetectionThreshold) && curNode.P.Server.CheckFalsePosWind(curNode) == 0{
+			fmt.Println("Wind false positive")
+		}
 
 
 
@@ -895,9 +899,6 @@ func (curNode *NodeImpl) GetReadingsCSV() {
 		//Only do this if the sensor was pinged this iteration
 
 		if curNode.Valid {
-			if curNode.P.CurrentTime > 10000 && ADCRead > float64(curNode.P.ValidationThreshold) && !curNode.P.Server.CheckFalsePosWind(curNode){
-				fmt.Println("Wind false positive")
-			}
 			curNode.P.Server.Send(curNode, Reading{ADCRead, newX, newY, curNode.P.CurrentTime, curNode.GetID()})
 		}
 

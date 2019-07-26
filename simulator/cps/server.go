@@ -27,6 +27,7 @@ type FusionCenter struct {
 	Sch		*Scheduler
 	Readings		map[Key][]Reading
 	CheckedIds		[]int
+	NodeDataList	[]NodeData
 }
 
 //Init initializes the values for the server
@@ -45,10 +46,16 @@ func (s *FusionCenter) Init(){
 
 	s.Readings = make(map[Key][]Reading)
 	s.CheckedIds = make([]int, 0)
+	s.NodeDataList = make([]NodeData, s.P.TotalNodes)
+	for i := range s.P.NodeList {
+		s.NodeDataList[i] = NodeData{i, s.P.NodeList[i].S0,s.P.NodeList[i].S1, s.P.NodeList[i].S2,
+			s.P.NodeList[i].E0, s.P.NodeList[i].E1, s.P.NodeList[i].E2, s.P.NodeList[i].ET1,
+			s.P.NodeList[i].ET2, make([]int, 0)}
+	}
 }
 
 //Reading packages the data sent by a node
-type   Reading struct {
+type Reading struct {
 	SensorVal float64
 	Xpos      float32
 	YPos      float32
@@ -61,6 +68,12 @@ type Key struct {
 	X 		int
 	Y		int
 	Time 	int
+}
+
+type NodeData struct {
+	Id 			int
+	S0, S1, S2, E0, E1, E2, ET1, ET2 float64
+	RecalTimes	[]int
 }
 
 //MakeGrid initializes a grid of Square objects according to the size of the map
@@ -440,6 +453,7 @@ func (s *FusionCenter) Send(n *NodeImpl, rd Reading) {
 	if rd.SensorVal > (float64(s.GetSquareAverage(s.P.Grid[int(rd.Xpos)/s.P.XDiv][int(rd.YPos)/s.P.YDiv])) + s.P.CalibrationThresholdCM){ //Check if x over grid avg
 		n.Recalibrate()
 		s.LastRecal[n.Id] = s.P.Iterations_used
+		s.NodeDataList[rd.Id].RecalTimes = append(s.NodeDataList[rd.Id].RecalTimes, rd.Time/1000)
 		//fmt.Println(s.LastRecal)
 	}
 
@@ -687,21 +701,32 @@ func max(num1, num2 int) int{
 	}
 }
 
-func (s *FusionCenter) CheckFalsePosWind(n *NodeImpl) bool {
+func (s *FusionCenter) CheckFalsePosWind(n *NodeImpl) int {
 	sumX := 0
 	sumY := 0
+
+	if len(s.P.WindRegion[s.P.CurrentTime/10000]) == 0{
+		return -1
+	}
 	for i:= 0; i < len(s.P.WindRegion[s.P.CurrentTime/10000]); i++ {
 		sumX += s.P.WindRegion[s.P.CurrentTime/10000][i].X
 		sumY += s.P.WindRegion[s.P.CurrentTime/10000][i].Y
 	}
-	center := Coord{X: sumX/len(s.P.WindRegion), Y: sumY/len(s.P.WindRegion)}
 
+	center := Coord{X: sumX/len(s.P.WindRegion[s.P.CurrentTime/10000]), Y: sumY/len(s.P.WindRegion[s.P.CurrentTime/10000])}
 	tmp := s.P.WindRegion[s.P.CurrentTime/10000][0]
-	for i:= 1; i < len(s.P.WindRegion[s.P.CurrentTime/100000]); i++ {
+	for i:= 1; i < len(s.P.WindRegion[s.P.CurrentTime/10000]); i++ {
+		//fmt.Printf("Checking if [ %v, %v ] intersects with [ %v, %v ]\n", tmp, s.P.WindRegion[s.P.CurrentTime/10000][i], center, n.GetLocCoord())
 		if Intersects(tmp, s.P.WindRegion[s.P.CurrentTime/10000][i], center, n.GetLocCoord()) {
-			return false
+			//fmt.Println("True!")
+			return 1
 		}
 		tmp = s.P.WindRegion[s.P.CurrentTime/10000][i]
 	}
-	return true
+	//fmt.Printf("Checking if [ %v, %v ] intersects with [ %v, %v ]\n", tmp, s.P.WindRegion[s.P.CurrentTime/10000][0], center, n.GetLocCoord())
+	if Intersects(tmp, s.P.WindRegion[s.P.CurrentTime/10000][0], center, n.GetLocCoord()) {
+		//fmt.Println("True!")
+		return 1
+	}
+	return 0
 }

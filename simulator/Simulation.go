@@ -24,15 +24,15 @@
 package main
 
 import (
-	"./cps"
+	"CPS_Simulator/simulator/cps"
+	//"./cps"
 	"bytes"
 	"container/heap"
-	"runtime"
-	//"CPS_Simulator/simulator/cps"
 	"fmt"
 	"log"
 	"math/rand"
 	"os"
+	"runtime"
 	"runtime/pprof"
 	"time"
 
@@ -64,7 +64,7 @@ func main() {
 	r = &cps.RegionParams{}
 
 	p.Events = Events
-	p.Server = cps.FusionCenter{p, r, nil, nil, nil, nil, nil, nil, nil, nil, nil}
+	p.Server = cps.FusionCenter{p, r, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil}
 
 	p.Tau1 = 3500
 	p.Tau2 = 9000
@@ -521,10 +521,10 @@ func PrintNodeBatteryOverTime(p * cps.Params)  {
 func PrintNodeBatteryOverTimeFast(p * cps.Params)  {
 	var buffer bytes.Buffer
 	buffer.WriteString("Time,")
-	for i := range p.NodeList{
+	/*for i := range p.NodeList{
 		n := p.NodeList[i]
 		buffer.WriteString(fmt.Sprintf("Node",n.GetID(),","))
-	}
+	}*/
 	buffer.WriteString("\n")
 
 	for t:=0; t<p.Iterations_of_event; t++{
