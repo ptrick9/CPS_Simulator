@@ -28,6 +28,7 @@ import (
 	"bytes"
 	"container/heap"
 	"runtime"
+
 	//"CPS_Simulator/simulator/cps"
 	"fmt"
 	"log"
@@ -194,6 +195,7 @@ func main() {
 	p.Events.Push(&cps.Event{nil, cps.SERVER, 999, 0})
 	p.Events.Push(&cps.Event{nil, cps.GRID, 999, 0})
 	p.Events.Push(&cps.Event{nil, cps.TIME, -1, 0})
+	p.Events.Push(&cps.Event{nil, cps.GARBAGECOLLECT, 999, 0})
 
 
 
@@ -229,6 +231,7 @@ func main() {
 		} else {
 			if event.Instruction == cps.POSITION {
 				//fmt.Printf("Current Time: %v \n", p.CurrentTime)
+
 				if p.PositionPrint {
 					amount := 0
 					for i := 0; i < p.CurrentNodes; i ++ {
@@ -268,7 +271,7 @@ func main() {
 						break
 					}
 				}
-				if (p.TimeStep < len(p.SensorTimes)) {
+				if (p.TimeStep+1 < len(p.SensorTimes)) {
 					p.Events.Push(&cps.Event{nil, cps.TIME, p.SensorTimes[p.TimeStep+1]*1000, 0})
 				}
 				//fmt.Printf("\nSetting timestep to %v at %v next event at %v\n", p.SensorTimes[p.TimeStep], p.CurrentTime, p.SensorTimes[p.TimeStep+1]*1000)
@@ -293,138 +296,39 @@ func main() {
 					//fmt.Println(p.Grid)
 
 				}
+			} else if event.Instruction == cps.GARBAGECOLLECT {
+				runtime.GC()
+				if p.MemProfile != "" {
+					s := fmt.Sprintf("%s-%v", p.MemProfile, p.CurrentTime/1000)
+					f, err := os.Create(s)
+					if err != nil {
+						log.Fatal("could not create memory profile: ", err)
+					}
+					defer f.Close()
+					runtime.GC() // get up-to-date statistics
+					if err := pprof.WriteHeapProfile(f); err != nil {
+						log.Fatal("could not write memory profile: ", err)
+					}
+				}
+				p.Events.Push(&cps.Event{nil, cps.GARBAGECOLLECT, p.CurrentTime + 100000, 0})
 			}
 		}
 
 	}
 
-/*
-
-	//p.Iterations_used = 800
-	for iters = 0; iters < p.Iterations_of_event && !p.FoundBomb; iters++ {
-
-		for i := 0; i < len(p.SensorTimes); i++ {
-			if p.Iterations_used == p.SensorTimes[i] {
-				p.TimeStep = i
-			}
-
+	if p.MemProfile != "" {
+		f, err := os.Create(p.MemProfile)
+		if err != nil {
+			log.Fatal("could not create memory profile: ", err)
 		}
-		//fmt.Printf("Current time: %d\n", p.TimeStep)
-
-
-
-
-		//fmt.Println(iterations_used)
-		fmt.Printf("\rRunning Simulator iteration %d\\%v", iters, p.Iterations_of_event)
-
-		for i := 0; i < len(p.Poispos); i++ {
-			if p.Iterations_used == p.Poispos[i][2] || p.Iterations_used == p.Poispos[i][3] {
-				for i := 0; i < len(p.NodeList); i++ {
-					p.NodeList[i].Sitting = p.NegativeSittingStopThresholdCM
-				}
-				cps.CreateBoard(p.MaxX, p.MaxY, p)
-				cps.FillInWallsToBoard(p)
-				cps.FillInBufferCurrent(p)
-				cps.FillPointsToBoard(p)
-				cps.FillInMap(p)
-				i = len(p.Poispos)
-			}
+		defer f.Close()
+		runtime.GC() // get up-to-date statistics
+		if err := pprof.WriteHeapProfile(f); err != nil {
+			log.Fatal("could not write memory profile: ", err)
 		}
-
-		if p.PositionPrint {
-			amount := 0
-			for i := 0; i < p.CurrentNodes; i ++ {
-				if p.NodeList[i].Valid {
-					amount += 1
-				}
-			}
-			fmt.Fprintln(p.PositionFile, "t= ", p.Iterations_used, " amount= ", amount)
-		}
-
-		//start := time.Now()
-
-		//is square thread safe
-		//var wg sync.WaitGroup
-		//wg.Add(len(p.NodeList))
-		fmt.Fprintln(p.MoveReadingsFile, "T=", p.Iterations_used)
-		for i := 0; i < len(p.NodeList); i++ {
-			//go func(i int) {
-			//	defer wg.Done()
-			if !p.NoEnergyModelCM {
-				//fmt.Println("entered if statement")
-				//p.NodeList[i].BatteryLossMostDynamic()
-
-				//these two functions to replace batterylossmostdynamic
-				//p.NodeList[i].TrackAccelerometer()
-				p.NodeList[i].HandleBatteryLoss()
-				p.NodeList[i].LogBatteryPower(iters) //added for logging battery
-			} else {
-				p.NodeList[i].HasCheckedSensor = true
-				p.NodeList[i].Sitting = 0
-			}
-			if(p.CSVSensor) {
-				p.NodeList[i].GetReadingsCSV()
-			} else {
-				p.NodeList[i].GetReadings()
-			}
-			//}(i)
-		}
-
-		//wg.Wait()
-		p.DriftFile.Sync()
-		p.NodeFile.Sync()
-		p.PositionFile.Sync()
-
-		fmt.Fprintln(p.EnergyFile, "Amount:", len(p.NodeList))
-
-
-		if p.CSVMovement {
-			cps.HandleMovementCSV(p)
-		} else {
-			cps.HandleMovement(p)
-		}
-
-		fmt.Fprintln(p.RoutingFile, "Amount:", p.NumSuperNodes)
-
-		//Alerts the scheduler to redraw the paths of super nodes as efficiently
-		// as possible
-		//This should optimize the distances the super nodes have to travel as the
-		//	longer the simulator runs the more inefficient the paths can become
-		//optimize := false
-
-		p.Server.Tick()
-
-		//Adding random points that the supernodes must visit
-		if (iters%10 == 0) && (iters <= 990) {
-			//fmt.Println(p.SuperNodeType)
-			//fmt.Println(p.SuperNodeVariation)
-			//scheduler.addRoutePoint(Coord{nil, rangeInt(0, p.MaxX), ranpositionPrintgeInt(0, p.MaxY), 0, 0, 0, 0})
-		}
-
-		//printing to log files
-		if p.GridPrint {
-			x := printGrid(p.Grid)
-			for number := range p.Attractions {
-				fmt.Fprintln(p.AttractionFile, p.Attractions[number])
-			}
-			fmt.Fprint(p.AttractionFile, "----------------\n")
-			fmt.Fprintln(p.GridFile, x.String())
-		}
-		fmt.Fprint(p.DriftFile, "----------------\n")
-		if p.EnergyPrint {
-			//fmt.Fprint(energyFile, "----------------\n")
-		}
-		fmt.Fprint(p.GridFile, "----------------\n")
-		if p.NodesPrint {
-			fmt.Fprint(p.NodeFile, "----------------\n")
-		}
-
-		p.Iterations_used++
-		p.Server.CalcStats()
-
 	}
 
- */
+
 	PrintNodeBatteryOverTimeFast(p)
 
 	p.PositionFile.Seek(0, 0)
@@ -443,17 +347,7 @@ func main() {
 		fmt.Fprintln(p.BoolFile, p.BoolGrid[i])
 	}
 
-	if p.MemProfile != "" {
-		f, err := os.Create(p.MemProfile)
-		if err != nil {
-			log.Fatal("could not create memory profile: ", err)
-		}
-		defer f.Close()
-		runtime.GC() // get up-to-date statistics
-		if err := pprof.WriteHeapProfile(f); err != nil {
-			log.Fatal("could not write memory profile: ", err)
-		}
-	}
+
 	p.Server.PrintStatsFile()
 
 }

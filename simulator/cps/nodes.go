@@ -343,7 +343,7 @@ func (curNode *NodeImpl) Move(p *Params) {
 
 func (curNode *NodeImpl) Recalibrate() {
 	curNode.Sensitivity = curNode.InitialSensitivity
-	curNode.NodeTime = 0
+	curNode.NodeTime = (curNode.P.CurrentTime/1000)
 	//fmt.Printf("Node %v recalibrated!\curNode", curNode.Id)
 	curNode.Recalibrated = true
 }
@@ -682,6 +682,7 @@ func (curNode *NodeImpl) GetReadings() {
 			//fmt.Printf("\n %v %v %v %v", curNode.P.B.X, curNode.P.B.Y, curNode.Distance(*curNode.P.B)/2, float32((curNode.P.FineWidth/2)/curNode.P.FineScale))
 			RawConc = float64(interpolateReadingFine(newX, newY, curNode.P.CurrentTime, curNode.P.TimeStep, curNode.P))
 			if RawConc == -1.0 {
+				//fmt.Printf("\n %v %v %v %v", curNode.P.B.X, curNode.P.B.Y, curNode.Distance(*curNode.P.B)/2, float32((curNode.P.FineWidth/2)/curNode.P.FineScale))
 				RawConc = 0.0
 			}
 
@@ -692,12 +693,16 @@ func (curNode *NodeImpl) GetReadings() {
 
 		//Calculate error, sensitivity, and noise, as per the matlab code
 		S0, S1, S2, E0, E1, E2, ET1, ET2 := curNode.GetParams()
-		sError := (S0 + E0) + (S1+E1)*math.Exp(-float64(curNode.NodeTime)/(curNode.P.Tau1+ET1)) + (S2+E2)*math.Exp(-float64(curNode.NodeTime)/(curNode.P.Tau2+ET2))
-		curNode.Sensitivity = S0 + (S1)*math.Exp(-float64(curNode.NodeTime)/curNode.P.Tau1) + (S2)*math.Exp(-float64(curNode.NodeTime)/curNode.P.Tau2)
+		sError := (S0 + E0) + (S1+E1)*math.Exp(-float64(((curNode.P.CurrentTime/1000)-curNode.NodeTime))/(curNode.P.Tau1+ET1)) + (S2+E2)*math.Exp(-float64(((curNode.P.CurrentTime/1000)-curNode.NodeTime))/(curNode.P.Tau2+ET2))
+		curNode.Sensitivity = S0 + (S1)*math.Exp(-float64(((curNode.P.CurrentTime/1000)-curNode.NodeTime))/curNode.P.Tau1) + (S2)*math.Exp(-float64(((curNode.P.CurrentTime/1000)-curNode.NodeTime))/curNode.P.Tau2)
 		sNoise := rand.NormFloat64()*0.5*curNode.P.ErrorModifierCM + float64(RawConc)*sError
 
 		errorDist := sNoise / curNode.Sensitivity //this is the node's actual reading with error
 		clean := float64(RawConc) / curNode.Sensitivity
+
+		/*if(curNode.P.CurrentTime/1000 == 855 && curNode.Id == 1291) {
+			fmt.Printf("%v\n", RawConc)
+		}*/
 
 
 		ADCRead := float64(curNode.ADCReading(float32(errorDist)))
@@ -710,7 +715,7 @@ func (curNode *NodeImpl) GetReadings() {
 
 
 		//increment node Time
-		curNode.NodeTime++
+		//curNode.NodeTime++
 
 		curNode.IncrementTotalSamples()
 		curNode.UpdateHistory(float32(errorDist))
@@ -741,11 +746,11 @@ func (curNode *NodeImpl) GetReadings() {
 
 
 		if (ADCRead > curNode.P.DetectionThreshold && ADCClean < curNode.P.DetectionThreshold) || (ADCRead > curNode.P.DetectionThreshold && d > float32(curNode.P.DetectionDistance/2.0)){
-			fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("FP T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, RawConc))
+			fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("FP T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f SR: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, RawConc, curNode.Sensitivity/curNode.InitialSensitivity))
 		} else if ADCRead < curNode.P.DetectionThreshold && ADCClean > curNode.P.DetectionThreshold && d < float32(curNode.P.DetectionDistance/2.0) {
-			fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("FN T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, RawConc))
+			fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("FN T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f SR: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, RawConc, curNode.Sensitivity/curNode.InitialSensitivity))
 		} else if ADCRead > curNode.P.DetectionThreshold && ADCClean > curNode.P.DetectionThreshold {
-			fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("TP T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, RawConc))
+			fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("TP T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f SR: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, RawConc, curNode.Sensitivity/curNode.InitialSensitivity))
 		}
 
 
@@ -791,14 +796,14 @@ func interpolateReadingFine(x , y float32, time, timeStep int, p *Params) float3
 
 	oldReadingA := p.FineSensorReadings[oldX][oldY][timeStep]
 	futureReadingA := p.FineSensorReadings[oldX][oldY][timeStep]
-	if(timeStep < p.MaxTimeStep) {
+	if(timeStep+1 < p.MaxTimeStep) {
 		futureReadingA = p.FineSensorReadings[oldX][oldY][timeStep+1]
 	}
 
 	//calculate reading at next 'even' position
 	oldReadingB := p.FineSensorReadings[nextX][nextY][timeStep]
 	futureReadingB := p.FineSensorReadings[nextX][nextY][timeStep]
-	if(timeStep < p.MaxTimeStep) {
+	if(timeStep+1 < p.MaxTimeStep) {
 		futureReadingB = p.FineSensorReadings[nextX][nextY][timeStep+1]
 	}
 
@@ -823,7 +828,7 @@ func interpolateReadingFine(x , y float32, time, timeStep int, p *Params) float3
 	floatTime := float32(time)/1000
 	oldTime := p.SensorTimes[timeStep]
 	nextTime := p.SensorTimes[timeStep]
-	if(timeStep < p.MaxTimeStep) {
+	if(timeStep+1 < p.MaxTimeStep) {
 		nextTime = p.SensorTimes[timeStep + 1]
 	}
 
@@ -916,8 +921,8 @@ func (curNode *NodeImpl) GetReadingsCSV() {
 
 		//Calculate error, sensitivity, and noise, as per the matlab code
 		S0, S1, S2, E0, E1, E2, ET1, ET2 := curNode.GetParams()
-		sError := (S0 + E0) + (S1+E1)*math.Exp(-float64(curNode.NodeTime)/(curNode.P.Tau1+ET1)) + (S2+E2)*math.Exp(-float64(curNode.NodeTime)/(curNode.P.Tau2+ET2))
-		curNode.Sensitivity = S0 + (S1)*math.Exp(-float64(curNode.NodeTime)/curNode.P.Tau1) + (S2)*math.Exp(-float64(curNode.NodeTime)/curNode.P.Tau2)
+		sError := (S0 + E0) + (S1+E1)*math.Exp(-float64(((curNode.P.CurrentTime/1000)-curNode.NodeTime))/(curNode.P.Tau1+ET1)) + (S2+E2)*math.Exp(-float64(((curNode.P.CurrentTime/1000)-curNode.NodeTime))/(curNode.P.Tau2+ET2))
+		curNode.Sensitivity = S0 + (S1)*math.Exp(-float64(((curNode.P.CurrentTime/1000)-curNode.NodeTime))/curNode.P.Tau1) + (S2)*math.Exp(-float64(((curNode.P.CurrentTime/1000)-curNode.NodeTime))/curNode.P.Tau2)
 		sNoise := rand.NormFloat64()*0.5*curNode.P.ErrorModifierCM + float64(RawConcentration)*sError
 
 		errorDist := sNoise / curNode.Sensitivity //this is the node's actual reading with error
@@ -933,7 +938,7 @@ func (curNode *NodeImpl) GetReadingsCSV() {
 		}
 
 		//increment node Time
-		curNode.NodeTime++
+		//curNode.NodeTime++
 
 		//if curNode.HasCheckedSensor {
 			curNode.IncrementTotalSamples()

@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"encoding/csv"
 	"flag"
+	"io"
 	"math/rand"
 	"strings"
 	//"bufio"
@@ -866,10 +867,11 @@ func CalculateADCSetting(reading float64, x, y, time int, p *Params) {
 	}
 
 	p.MaxRaw = total/counted
+	fmt.Printf("Raw: %v\n", p.MaxRaw)
 	straight_increment := int(math.Ceil(p.DetectionDistance))
-	fmt.Println(straight_increment)
+	//fmt.Println(straight_increment)
 	diag_increment := int(math.Ceil(p.DetectionDistance/math.Sqrt2))
-	fmt.Println(diag_increment)
+	//fmt.Println(diag_increment)
 
 	points := [8][2]int{
 		{straight_increment, 0},			//right
@@ -904,7 +906,7 @@ func CalculateADCSetting(reading float64, x, y, time int, p *Params) {
 	p.ADCWidth = p.MaxRaw/p.MaxADC
 	p.ADCOffset = p.EdgeRaw - p.EdgeADC * p.ADCWidth
 
-	fmt.Println("Raw:", p.EdgeRaw)
+	fmt.Println("Edge Raw:", p.EdgeRaw)
 	fmt.Printf("%v %v\n", p.ADCWidth, p.ADCOffset)
 
 	fmt.Printf("\n")
@@ -912,21 +914,23 @@ func CalculateADCSetting(reading float64, x, y, time int, p *Params) {
 
 
 func CalculateFineADCSetting(reading float64, x, y, time int, p *Params) {
-	fmt.Println("\n", reading, time, x, y)
+	//fmt.Println("\n", reading, time, x, y)
 	total := float32(0.0)
 	counted := float32(0.0)
 	for i := -1; i < 2; i++ {
 		for j := -1; j < 2; j++ {
-			if i != 0 || j != 0 {
+			//if i != 0 || j != 0 {
 				if i+x > 0 && i+x < p.Width {
 					if j+y > 0 && j+y < p.Height {
-						part := InterpolateFloat(float32(p.FineSensorReadings[x][y][time]),  float32(p.FineSensorReadings[i + x][j + y][time]), .2/float32(Dist(Tuple{x, y}, Tuple{x+i, y+j})))
+						//part := InterpolateFloat(float32(p.FineSensorReadings[x][y][time]),  float32(p.FineSensorReadings[i + x][j + y][time]), .2/float32(Dist(Tuple{x, y}, Tuple{x+i, y+j})))
+						part := float32(p.FineSensorReadings[i + x][j + y][time])
 						total += part
+						//fmt.Println(i+x, j+y, part)
 						//fmt.Println(i, j, float32(p.FineSensorReadings[x][y][time]),  float32(p.FineSensorReadings[i + x][j + y][time]), .2/float32(Dist(Tuple{x, y}, Tuple{x+i, y+j})), part)
 						counted += 1
 					}
 				}
-			}
+			//}
 		}
 	}
 
@@ -934,9 +938,9 @@ func CalculateFineADCSetting(reading float64, x, y, time int, p *Params) {
 	p.MaxRaw = total/counted
 	fmt.Printf("Raw: %v\n", p.MaxRaw)
 	straight_increment := int(math.Ceil((p.DetectionDistance/2.0)*float64(p.FineScale)))
-	fmt.Printf("straight: %v\n", straight_increment)
+	//fmt.Printf("straight: %v\n", straight_increment)
 	diag_increment := int(math.Ceil(((p.DetectionDistance/2.0)*float64(p.FineScale))/math.Sqrt2))
-	fmt.Printf("diag: %v\n", diag_increment)
+	//fmt.Printf("diag: %v\n", diag_increment)
 
 
 
@@ -957,28 +961,52 @@ func CalculateFineADCSetting(reading float64, x, y, time int, p *Params) {
 		if point[0]+x > 0 && point[0]+x < p.Width {
 			if point[1]+y > 0 && point[1]+y < p.Height {
 				//if legal then interpolate the correct value based on distance
-				part := InterpolateFloat(float32(p.FineSensorReadings[x][y][time]), float32(p.FineSensorReadings[x+point[0]][y+point[1]][time]), float32(p.DetectionDistance/(Dist(Tuple{x, y}, Tuple{x + point[0], y + point[1]}))))
+				//part := InterpolateFloat(float32(p.FineSensorReadings[x][y][time]), float32(p.FineSensorReadings[x+point[0]][y+point[1]][time]), float32(p.DetectionDistance/(Dist(Tuple{x, y}, Tuple{x + point[0], y + point[1]}))))
+				part := float32(p.FineSensorReadings[x+point[0]][y+point[1]][time])
 				total += part
+				//fmt.Println(x+point[0], y+point[1], p.FineSensorReadings[x+point[0]][y+point[1]][time])
 				//fmt.Println(float32(p.FineSensorReadings[x][y][time]), float32(p.FineSensorReadings[x + point[0]][y + point[1]][time]), float32(p.DetectionDistance/(Dist(Tuple{x, y}, Tuple{x + point[0], y + point[1]}))), part)
 				counted += 1
 			}
 		}
 	}
 
-	fmt.Println(p.MaxRaw)
+	//fmt.Println(p.MaxRaw)
 	//p.EdgeRaw = 36
 	p.EdgeRaw = total/counted
-	fmt.Println(p.EdgeRaw)
+	//fmt.Println(p.EdgeRaw)
 	p.MaxADC = 4095
 	p.EdgeADC = 3
 	p.ADCWidth = p.MaxRaw/p.MaxADC
 	p.ADCOffset = p.EdgeRaw - p.EdgeADC * p.ADCWidth
 
-	fmt.Printf("\n")
+	//fmt.Printf("\n")
 
 
-	fmt.Println("Raw:", p.EdgeRaw)
+	fmt.Println("Edge Raw:", p.EdgeRaw)
 	fmt.Printf("%v %v\n", p.ADCWidth, p.ADCOffset)
+}
+
+//Helper to count lines and learn progress
+func lineCounter(fileName string) (int, error) {
+
+	r, _ := os.Open(fileName)
+	buf := make([]byte, 32*1024)
+	count := 0
+	lineSep := []byte{'\n'}
+
+	for {
+		c, err := r.Read(buf)
+		count += bytes.Count(buf[:c], lineSep)
+
+		switch {
+		case err == io.EOF:
+			return count, nil
+
+		case err != nil:
+			return count, err
+		}
+	}
 }
 
 //readSensorCSV reads the sensor values from a file
@@ -990,12 +1018,20 @@ func readSensorCSV(p *Params) {
 	}
 	defer in.Close()
 	fmt.Printf("Reading Sensor Files\n")
+
+	lines, _ := lineCounter(p.SensorPath)
+
+	//fmt.Println(lines)
 	r := csv.NewReader(in)
+	r.ReuseRecord = true
+
 	r.FieldsPerRecord = -1
-	record, err := r.ReadAll()
+
+	record, err := r.Read()
+	//record, err := r.ReadAll()
 
 	reg, _ := regexp.Compile("([0-9]+)")
-	times := reg.FindAllStringSubmatch(strings.Join(record[0], " "), -1)
+	times := reg.FindAllStringSubmatch(strings.Join(record, " "), -1)
 
 	p.SensorTimes = make([]int, len(times))
 	for i := range times {
@@ -1003,10 +1039,14 @@ func readSensorCSV(p *Params) {
 	}
 	p.MaxTimeStep = len(times)
 
-	numSamples := len(record[2]) - 3
+	numSamples := len(record) - 3
 
-	p.FineScale, _ = strconv.Atoi(record[2][0])
+	//record, err = r.Read();
+	//record, err = r.Read();
 
+	//p.FineScale, _ = strconv.Atoi(record[0])
+
+	fmt.Println(numSamples)
 
 	p.SensorReadings = make([][][]float64, p.Width)
 	for i := range p.SensorReadings {
@@ -1022,13 +1062,21 @@ func readSensorCSV(p *Params) {
 	i := 1
 	fmt.Printf("Sensor CSV Processing\n")
 
-	for i < len(record) {
-		x, _ := strconv.ParseInt(record[i][1], 10, 32);
-		y, _ := strconv.ParseInt(record[i][2], 10, 32);
+	for {
+		record, err = r.Read()
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+		}
+		p.FineScale, _ = strconv.Atoi(record[0])
+		x, _ := strconv.ParseInt(record[1], 10, 32);
+		y, _ := strconv.ParseInt(record[2], 10, 32);
 
 		j := 3
-		for j < len(record[i]) {
-			read1, _ := strconv.ParseFloat(record[i][j], 32);
+		//fmt.Println((len(record)))
+		for j < len(record) {
+			read1, _ := strconv.ParseFloat(record[j], 32);
 			if read1 < 0 {
 				read1 = 0
 			}
@@ -1040,7 +1088,7 @@ func readSensorCSV(p *Params) {
 		i++
 
 		if(i % 1000 == 0) {
-			prog := int(float32(i)/float32(len(record))*100)
+			prog := int(float32(i)/float32(lines)*100)
 			fmt.Printf("\rProgress [%s%s] %d ", strings.Repeat("=", prog), strings.Repeat(".", 100-prog), prog)
 		}
 	}
@@ -1049,6 +1097,8 @@ func readSensorCSV(p *Params) {
 	//fmt.Println(p.BombX, p.BombY)
 	CalculateADCSetting(p.SensorReadings[p.B.X][p.B.Y][10], p.B.X, p.B.Y, 10, p)
 }
+
+
 
 //readSensorCSV reads the sensor values from a file
 func readFineSensorCSV(p *Params) {
@@ -1060,12 +1110,15 @@ func readFineSensorCSV(p *Params) {
 	defer in.Close()
 
 	fmt.Printf("Reading Fine Sensor File\n")
+
+	lines, _ := lineCounter(p.FineSensorPath)
+
 	r := csv.NewReader(in)
 	r.FieldsPerRecord = -1
-	record, err := r.ReadAll()
+	record, err := r.Read()
 
 	reg, _ := regexp.Compile("([0-9]+)")
-	times := reg.FindAllStringSubmatch(strings.Join(record[0], " "), -1)
+	times := reg.FindAllStringSubmatch(strings.Join(record, " "), -1)
 
 	p.SensorTimes = make([]int, len(times))
 	for i := range times {
@@ -1073,13 +1126,14 @@ func readFineSensorCSV(p *Params) {
 	}
 	p.MaxTimeStep = len(times)
 
-	numSamples := len(record[2]) - 3
+	numSamples := len(record) - 3
 
-	fmt.Printf("%v %v %v", len(record), record[2][0], math.Sqrt(float64(len(record)-1)))
 
-	p.FineScale, _ = strconv.Atoi(record[2][0])
-	p.FineWidth = int(math.Sqrt(float64(len(record)-1)))
-	p.FineHeight = int(math.Sqrt(float64(len(record)-1)))
+	record, _ = r.Read()
+
+	p.FineScale, _ = strconv.Atoi(record[0])
+	p.FineWidth = int(math.Sqrt(float64(lines-1)))
+	p.FineHeight = int(math.Sqrt(float64(lines-1)))
 
 
 	p.FineSensorReadings = make([][][]float64, p.FineWidth)
@@ -1093,18 +1147,30 @@ func readFineSensorCSV(p *Params) {
 		}
 	}
 
+	in.Seek(0,0)
+
+	r.Read()
+
 	i := 1
 	fmt.Printf("Fine Sensor CSV Processing\n")
 
-	for i < len(record) {
-		x, _ := strconv.ParseInt(record[i][1], 10, 32);
-		y, _ := strconv.ParseInt(record[i][2], 10, 32);
+
+	for  {
+		record, err = r.Read()
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+		}
+
+		x, _ := strconv.ParseInt(record[1], 10, 32);
+		y, _ := strconv.ParseInt(record[2], 10, 32);
 		//fmt.Printf("%d %d\n", x, y)
 
 		j := 3
 
-		for j < len(record[i]) {
-			read1, _ := strconv.ParseFloat(record[i][j], 32);
+		for j < len(record) {
+			read1, _ := strconv.ParseFloat(record[j], 32);
 			//fmt.Printf("%d %d %v\n", x, y, read1)
 			if read1 < 0 {
 				read1 = 0
@@ -1117,15 +1183,16 @@ func readFineSensorCSV(p *Params) {
 		}
 		i++
 
-		if(i % 1000 == 0) {
-			prog := int(float32(i)/float32(len(record))*100)
+		if(i % 100 == 0) {
+			prog := int(float32(i)/float32(lines)*100)
 			fmt.Printf("\rProgress [%s%s] %d ", strings.Repeat("=", prog), strings.Repeat(".", 100-prog), prog)
 		}
 	}
 
 	//CalculateADCSetting(maxReading, maxLocX, maxLocY, maxTime, p)
-	fmt.Println(p.BombX, p.BombY)
-	CalculateFineADCSetting(p.FineSensorReadings[p.FineWidth/2][p.FineHeight/2][100], p.FineWidth/2, p.FineHeight/2, 10, p)
+	//fmt.Println(p.BombX, p.BombY)
+	fmt.Println()
+	CalculateFineADCSetting(p.FineSensorReadings[p.FineWidth/2][p.FineHeight/2][0], p.FineWidth/2, p.FineHeight/2, 100, p)
 }
 
 //readMovementCSV reads the movement parameters from a file
@@ -1139,10 +1206,11 @@ func readMovementCSV(p *Params) {
 
 	r := csv.NewReader(in)
 	r.FieldsPerRecord = -1
-	record, err := r.ReadAll()
+	//record, err := r.Read()
+	r.ReuseRecord = true
 
 
-	timeSteps := len(record)
+	timeSteps, _ := lineCounter(p.MovementPath)
 
 
 	p.NodeMovements = make([][]Tuple, p.TotalNodes)
@@ -1150,15 +1218,23 @@ func readMovementCSV(p *Params) {
 		p.NodeMovements[i] = make([]Tuple, timeSteps)
 	}
 
+	record, err := r.Read()
+	in.Seek(0, 0)
 
 	time := 0
 	fmt.Printf("Movement CSV Processing %d TimeSteps for %d Nodes  %d\n", len(record), len(record[0])/2, p.TotalNodes)
-	for time < len(record) {
+	for time < timeSteps {
 		iter := 0
 
-		for iter < len(record[time])-1 && iter/2 < p.TotalNodes {
-			x, _ := strconv.ParseInt(record[time][iter], 10, 32);
-			y, _ := strconv.ParseInt(record[time][iter+1], 10, 32);
+		record, err = r.Read()
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+		}
+		for iter < len(record)-1 && iter/2 < p.TotalNodes {
+			x, _ := strconv.ParseInt(record[iter], 10, 32);
+			y, _ := strconv.ParseInt(record[iter+1], 10, 32);
 
 			p.NodeMovements[iter/2][time] = Tuple{int(x), int(y)}
 			iter += 2
@@ -1166,7 +1242,7 @@ func readMovementCSV(p *Params) {
 		time++
 
 		if(time % 10 == 0) {
-			prog := int(float32(time)/float32(len(record))*100)
+			prog := int(float32(time)/float32(timeSteps)*100)
 			fmt.Printf("\rProgress [%s%s] %d ", strings.Repeat("=", prog), strings.Repeat(".", 100-prog), prog)
 		}
 	}
