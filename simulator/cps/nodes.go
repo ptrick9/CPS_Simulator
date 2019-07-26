@@ -914,8 +914,17 @@ func (curNode *NodeImpl) GetReadingsCSV() {
 			curNode.ReadingsBuffer = append(curNode.ReadingsBuffer, newReading)
 
 			} else{
-				curNode.P.Server.Send(curNode, Reading{ADCRead, newX, newY, curNode.P.CurrentTime, curNode.GetID(), curNode.GetCHID()})
-				curNode.DecrementPower4G()
+				newReading := Reading{ADCRead, newX, newY, curNode.P.CurrentTime, curNode.GetID(), curNode.GetCHID()}
+				curNode.ReadingsBuffer = append(curNode.ReadingsBuffer, newReading)
+				if(curNode.P.CurrentTime - curNode.TimeLastSentReadings > curNode.P.CHSensingTime*1000 || len(curNode.ReadingsBuffer)>curNode.P.MaxCHReadingBufferSize){
+					//Print to file
+					oldest,newest := curNode.GetOldestNewestReadings()
+					fmt.Fprintf(curNode.P.ClusterReadings,"%d\t %d\t %d\t Head to Server\t %d\t %d\t %d\n",curNode.P.CurrentTime/1000,curNode.TimeLastSentReadings/1000,curNode.Id,oldest/1000,newest/1000,len(curNode.ReadingsBuffer))
+
+					//Send to Server and clear readings
+					curNode.SendtoServer()
+					curNode.TimeLastSentReadings = curNode.P.CurrentTime
+				}
 			}
 		}
 
@@ -941,7 +950,8 @@ func (curNode * NodeImpl) GetOldestNewestReadings()(oldest int, newest int){
 	return oldest, newest
 }
 
-//Cluster Head sends all readings to the Server
+//Clustering on: Cluster Head sends all readings to the Server
+//Clustering off: all nodes user this method
 func (curNode *NodeImpl) SendtoServer(){
 
 	//Iterates through Readings Buffer sending all readings

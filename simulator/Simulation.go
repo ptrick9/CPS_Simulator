@@ -217,8 +217,8 @@ func main() {
 	p.Events.Push(&cps.Event{nil, cps.SERVER, 999, 0})
 	p.Events.Push(&cps.Event{nil, cps.GRID, 999, 0})
 	p.Events.Push(&cps.Event{nil, cps.TIME, -1, 0})
+	p.Events.Push(&cps.Event{nil, cps.CLUSTERPRINT, 999, 0})
 	if(p.ClusteringOn){
-		p.Events.Push(&cps.Event{nil, cps.CLUSTERPRINT, 999, 0})
 		p.Events.Push(&cps.Event{nil,cps.CLUSTERLESSFORM,25,0})
 	}
 
