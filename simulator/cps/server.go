@@ -47,10 +47,13 @@ func (s *FusionCenter) Init(){
 	s.Readings = make(map[Key][]Reading)
 	s.CheckedIds = make([]int, 0)
 	s.NodeDataList = make([]NodeData, s.P.TotalNodes)
+}
+
+func (s *FusionCenter) MakeNodeData() {
 	for i := range s.P.NodeList {
 		s.NodeDataList[i] = NodeData{i, s.P.NodeList[i].S0,s.P.NodeList[i].S1, s.P.NodeList[i].S2,
 			s.P.NodeList[i].E0, s.P.NodeList[i].E1, s.P.NodeList[i].E2, s.P.NodeList[i].ET1,
-			s.P.NodeList[i].ET2, make([]int, 0)}
+			s.P.NodeList[i].ET2, []int{ 0 }, []int{ 0 }}
 	}
 }
 
@@ -73,7 +76,8 @@ type Key struct {
 type NodeData struct {
 	Id 			int
 	S0, S1, S2, E0, E1, E2, ET1, ET2 float64
-	RecalTimes	[]int
+	RecalTimes		[]int
+	SelfRecalTimes  []int
 }
 
 //MakeGrid initializes a grid of Square objects according to the size of the map
@@ -622,9 +626,29 @@ func (s FusionCenter) PrintStats() {
 
 //PrintStatsFile outputs statistical and detection data to log files
 func (s FusionCenter) PrintStatsFile() {
-	fmt.Fprintln(s.P.ServerFile, "Mean at each Time:\n", s.P.Server.Mean)
-	fmt.Fprintln(s.P.ServerFile, "Standard Deviations at each Time:\n", s.P.Server.StdDev)
-	fmt.Fprintln(s.P.ServerFile, "Variance at each Time:\n", s.P.Server.Variance)
+	var buffer bytes.Buffer
+	buffer.WriteString(fmt.Sprintf("Mean at each Time:%v\n", s.P.Server.Mean))
+	buffer.WriteString(fmt.Sprintf("Standard Deviations at each Time:%v\n", s.P.Server.StdDev))
+	buffer.WriteString(fmt.Sprintf("Variance at each Time:%v\n", s.P.Server.Variance))
+	fmt.Fprintln(s.P.ServerFile, buffer.String())
+	buffer.Reset()
+
+	for i:= range s.NodeDataList {
+		buffer.WriteString(fmt.Sprintf("ID%v,", s.NodeDataList[i].Id))
+		buffer.WriteString(fmt.Sprintf("E0%v,", s.NodeDataList[i].E0))
+		buffer.WriteString(fmt.Sprintf("E1%v,", s.NodeDataList[i].E1))
+		buffer.WriteString(fmt.Sprintf("E2%v,", s.NodeDataList[i].E2))
+		buffer.WriteString(fmt.Sprintf("ET1%v,", s.NodeDataList[i].ET1))
+		buffer.WriteString(fmt.Sprintf("ET2%v,", s.NodeDataList[i].ET2))
+		buffer.WriteString(fmt.Sprintf("S0%v,", s.NodeDataList[i].S0))
+		buffer.WriteString(fmt.Sprintf("S1%v,", s.NodeDataList[i].S1))
+		buffer.WriteString(fmt.Sprintf("S2%v,", s.NodeDataList[i].S2))
+		buffer.WriteString(fmt.Sprintf("RT%v,", s.NodeDataList[i].RecalTimes))
+		buffer.WriteString(fmt.Sprintf("SRT%v", s.NodeDataList[i].SelfRecalTimes))
+		buffer.WriteString(fmt.Sprintln(""))
+	}
+	fmt.Fprintln(s.P.NodeDataFile, buffer.String())
+
 	fmt.Fprintf(s.P.DetectionFile, "Number of detections:%v\n", falsePositives + truePositives)
 	fmt.Fprintf(s.P.DetectionFile, "Number of false positives:%v\n", falsePositives)
 	fmt.Fprintf(s.P.DetectionFile, "Number of true positives:%v\n", truePositives)

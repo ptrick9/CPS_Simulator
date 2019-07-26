@@ -783,6 +783,10 @@ func SetupFiles(p *Params) {
 		log.Fatal("Cannot create file", err)
 	}
 	//defer p.ServerFile.Close()
+	p.NodeDataFile, err = os.Create(p.OutputFileNameCM + "-nodeData.txt")
+	if err != nil {
+		log.Fatal("Cannot create file", err)
+	}
 }
 
 func SetupParameters(p *Params) {

@@ -342,6 +342,7 @@ func (curNode *NodeImpl) Move(p *Params) {
 }
 
 func (curNode *NodeImpl) Recalibrate() {
+	curNode.P.Server.NodeDataList[curNode.Id].SelfRecalTimes = append(curNode.P.Server.NodeDataList[curNode.Id].SelfRecalTimes, curNode.P.CurrentTime / 1000)
 	curNode.Sensitivity = curNode.InitialSensitivity
 	curNode.NodeTime = 0
 	//fmt.Printf("Node %v recalibrated!\curNode", curNode.Id)

@@ -192,6 +192,7 @@ func main() {
 	} else {
 		cps.SetupRandomNodes(p)
 	}
+	p.Server.MakeNodeData()
 
 	//p.Events.Push(&cps.Event{&p.NodeList[0], "sense", 0, 0})
 	p.Events.Push(&cps.Event{nil, cps.POSITION, 999, 0})
