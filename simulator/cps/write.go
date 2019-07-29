@@ -894,7 +894,7 @@ func SetupFiles(p *Params) {
 	//defer p.ServerFile.Close()
 }
 
-func SetupParameters(p *Params) {
+func SetupParameters(p *Params, r *RegionParams) {
 
 	p.XDiv = p.MaxX / p.SquareColCM
 	p.YDiv = p.MaxY / p.SquareRowCM
@@ -926,7 +926,7 @@ func SetupParameters(p *Params) {
 	p.Attractions = make([]*Attraction, p.NumAtt)
 
 	if p.CSVSensor {
-		readSensorCSV(p)
+		readSensorCSV(p, r)
 		readFineSensorCSV(p)
 	} else {
 
@@ -1118,7 +1118,7 @@ func lineCounter(fileName string) (int, error) {
 }
 
 //readSensorCSV reads the sensor values from a file
-func readSensorCSV(p *Params) {
+func readSensorCSV(p *Params, region *RegionParams) {
 
 	in, err := os.Open(p.SensorPath)
 	if err != nil {
@@ -1159,12 +1159,9 @@ func readSensorCSV(p *Params) {
 	p.SensorReadings = make([][][]float64, p.Width)
 	for i := range p.SensorReadings {
 		p.SensorReadings[i] = make([][]float64, p.Height)
-		for j := range p.SensorReadings[i] {
-			p.SensorReadings[i][j] = make([]float64, numSamples)
-			for k := range p.SensorReadings[i][j] {
-				p.SensorReadings[i][j][k] = 0
-			}
-		}
+		/*for j := range p.SensorReadings[i] {
+
+		}*/
 	}
 
 	i := 1
@@ -1181,29 +1178,39 @@ func readSensorCSV(p *Params) {
 		x, _ := strconv.ParseInt(record[1], 10, 32);
 		y, _ := strconv.ParseInt(record[2], 10, 32);
 
-		j := 3
-		//fmt.Println((len(record)))
-		for j < len(record) {
-			read1, _ := strconv.ParseFloat(record[j], 32);
-			if read1 < 0 {
-				read1 = 0
-			}
-			p.SensorReadings[x][y][j-3] = read1
+		if(SoftRegionContaining(Tuple{int(x),int(y)}, region) >= 0) {
 
-			j += 1
+			p.SensorReadings[x][y] = make([]float64, numSamples)
+			for k := range p.SensorReadings[x][y] {
+				p.SensorReadings[x][y][k] = 0
+			}
+
+			j := 3
+			//fmt.Println((len(record)))
+			for j < len(record) {
+				read1, _ := strconv.ParseFloat(record[j], 32);
+				if read1 < 0 {
+					read1 = 0
+				}
+				p.SensorReadings[x][y][j-3] = read1
+
+				j += 1
+
+			}
+
+
 
 		}
 		i++
-
-		if(i % 1000 == 0) {
-			prog := int(float32(i)/float32(lines)*100)
+		if (i%1000 == 0) {
+			prog := int(float32(i) / float32(lines) * 100)
 			fmt.Printf("\rProgress [%s%s] %d ", strings.Repeat("=", prog), strings.Repeat(".", 100-prog), prog)
 		}
 	}
 
 	//CalculateADCSetting(maxReading, maxLocX, maxLocY, maxTime, p)
 	//fmt.Println(p.BombX, p.BombY)
-	CalculateADCSetting(p.SensorReadings[p.B.X][p.B.Y][10], p.B.X, p.B.Y, 10, p)
+	//CalculateADCSetting(p.SensorReadings[p.B.X][p.B.Y][10], p.B.X, p.B.Y, 10, p)
 }
 
 
