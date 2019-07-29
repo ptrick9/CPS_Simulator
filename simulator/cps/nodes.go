@@ -892,7 +892,7 @@ func (curNode *NodeImpl) GetReadingsCSV() {
 					if(curNode.P.CurrentTime - curNode.TimeLastSentReadings > curNode.P.CHSensingTime*1000 || len(curNode.ReadingsBuffer)>curNode.P.MaxCHReadingBufferSize){
 						//Print to file
 						oldest,newest := curNode.GetOldestNewestReadings()
-						fmt.Fprintf(curNode.P.ClusterReadings,"%d\t %d\t %d\t Head to Server\t %d\t %d\t %d\n",curNode.P.CurrentTime/1000,curNode.TimeLastSentReadings/1000,curNode.Id,oldest/1000,newest/1000,len(curNode.ReadingsBuffer))
+						fmt.Fprintf(curNode.P.ClusterReadings,"%d-%d-%d-Server-%d-%d-%d\n",curNode.P.CurrentTime/1000,curNode.TimeLastSentReadings/1000,curNode.Id,oldest/1000,newest/1000,len(curNode.ReadingsBuffer))
 
 						//Send to Server and clear readings
 						curNode.SendtoServer()
@@ -902,7 +902,7 @@ func (curNode *NodeImpl) GetReadingsCSV() {
 					if(curNode.P.CurrentTime - curNode.TimeLastSentReadings > curNode.P.CMSensingTime*1000 || len(curNode.ReadingsBuffer)>curNode.P.MaxCMReadingBufferSize){
 						//Print to file
 						oldest,newest := curNode.GetOldestNewestReadings()
-						fmt.Fprintf(curNode.P.ClusterReadings,"%d\t %d\t %d\t Node to Head\t %d\t %d\t %d\n",curNode.P.CurrentTime/1000,curNode.TimeLastSentReadings/1000,curNode.Id,oldest/1000,newest/1000,len(curNode.ReadingsBuffer))
+						fmt.Fprintf(curNode.P.ClusterReadings,"%d-%d-%d-BT-%d-%d-%d\n",curNode.P.CurrentTime/1000,curNode.TimeLastSentReadings/1000,curNode.Id,oldest/1000,newest/1000,len(curNode.ReadingsBuffer))
 
 						//Send to Server and clear readings
 						curNode.SendtoClusterHead()
@@ -919,7 +919,7 @@ func (curNode *NodeImpl) GetReadingsCSV() {
 				if(curNode.P.CurrentTime - curNode.TimeLastSentReadings > curNode.P.CHSensingTime*1000 || len(curNode.ReadingsBuffer)>curNode.P.MaxCHReadingBufferSize){
 					//Print to file
 					oldest,newest := curNode.GetOldestNewestReadings()
-					fmt.Fprintf(curNode.P.ClusterReadings,"%d\t %d\t %d\t Head to Server\t %d\t %d\t %d\n",curNode.P.CurrentTime/1000,curNode.TimeLastSentReadings/1000,curNode.Id,oldest/1000,newest/1000,len(curNode.ReadingsBuffer))
+					fmt.Fprintf(curNode.P.ClusterReadings,"%d-%d-%d-Server-%d-%d-%d\n",curNode.P.CurrentTime/1000,curNode.TimeLastSentReadings/1000,curNode.Id,oldest/1000,newest/1000,len(curNode.ReadingsBuffer))
 
 					//Send to Server and clear readings
 					curNode.SendtoServer()
@@ -957,10 +957,9 @@ func (curNode *NodeImpl) SendtoServer(){
 	//Iterates through Readings Buffer sending all readings
 	for i:=0; i<len(curNode.ReadingsBuffer); i++{
 		curNode.P.Server.Send(curNode, curNode.ReadingsBuffer[i])
+		//Deduct Power for 4G transmission
+		curNode.DecrementPower4G()
 	}
-
-	//Deduct Power for 4G transmission
-	curNode.DecrementPower4G()
 
 	//clears Clusterhead reading buffer
 	curNode.ReadingsBuffer = []Reading{}

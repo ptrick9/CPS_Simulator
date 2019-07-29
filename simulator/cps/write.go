@@ -828,10 +828,6 @@ func SetupFiles(p *Params) {
 		log.Fatal("Cannot create file", err)
 	}
 
-	p.ClusterReadings, err = os.Create(p.OutputFileNameCM + "-cluster_readings.txt")
-	if err != nil{
-		log.Fatal("Cannot create file", err)
-	}
 
 	p.ClusterMessages, err = os.Create(p.OutputFileNameCM + "-cluster_messages.txt")
 	if err != nil{
@@ -840,11 +836,21 @@ func SetupFiles(p *Params) {
 
 
 	if(p.ClusteringOn){
+		p.ClusterReadings, err = os.Create(p.OutputFileNameCM + "-cluster_readings_CL_ON.txt")
+		if err != nil{
+			log.Fatal("Cannot create file", err)
+		}
+
 		p.AliveValidNodes, err = os.Create(p.OutputFileNameCM + "-nodes_alive_valid_CL_ON.txt")
 		if err != nil{
 			log.Fatal("Cannot create file", err)
 		}
 	} else{
+		p.ClusterReadings, err = os.Create(p.OutputFileNameCM + "-cluster_readings_CL_OFF.txt")
+		if err != nil{
+			log.Fatal("Cannot create file", err)
+		}
+
 		p.AliveValidNodes, err = os.Create(p.OutputFileNameCM + "-nodes_alive_valid_CL_OFF.txt")
 		if err != nil{
 			log.Fatal("Cannot create file", err)
@@ -1248,20 +1254,20 @@ func GetFlags(p *Params) {
 	flag.Float64Var(&p.SamplingLossSensorCM, "sensorSamplingLoss", .001,
 		"battery loss due to sensor sampling")
 
-	flag.Float64Var(&p.SamplingLossGPSCM, "GPSSamplingLoss", .012,
+	flag.Float64Var(&p.SamplingLossGPSCM, "GPSSamplingLoss", (3.44*math.Pow(10,-6)),
 		"battery loss due to GPS sampling")
 
 	flag.Float64Var(&p.SamplingLossSensorCM, "serverSamplingLoss", .01,
 		"battery loss due to server sampling")
 
-	flag.Float64Var(&p.SamplingLossBTCM, "SamplingLossBTCM", .001,
+	flag.Float64Var(&p.SamplingLossBTCM, "SamplingLossBTCM", (9.79*math.Pow(10,-5)),
 		"battery loss due to BlueTooth sampling")
 	flag.Float64Var(&p.SamplingLossWifiCM, "SamplingLossWifiCM", .01,
 		"battery loss due to WiFi sampling")
-	flag.Float64Var(&p.SamplingLoss4GCM, "SamplingLoss4GCM", .1,
+	flag.Float64Var(&p.SamplingLoss4GCM, "SamplingLoss4GCM", (9.79*math.Pow(10,-4)),
 		"battery loss due to 4G sampling")
 
-	flag.Float64Var(&p.SamplingLossAccelCM, "SamplingLossAccelCM", .0000018,
+	flag.Float64Var(&p.SamplingLossAccelCM, "SamplingLossAccelCM", (3.827*math.Pow(10,-10)),
 		"battery loss due to accelerometer sampling")
 
 	flag.IntVar(&p.ThresholdBatteryToHaveCM, "thresholdBatteryToHave", 30,
