@@ -916,7 +916,7 @@ func (curNode *NodeImpl) GetReadingsCSV() {
 			} else{
 				newReading := Reading{ADCRead, newX, newY, curNode.P.CurrentTime, curNode.GetID(), curNode.GetCHID()}
 				curNode.ReadingsBuffer = append(curNode.ReadingsBuffer, newReading)
-				if(curNode.P.CurrentTime - curNode.TimeLastSentReadings > curNode.P.CHSensingTime*1000 || len(curNode.ReadingsBuffer)>curNode.P.MaxCHReadingBufferSize){
+				if(curNode.P.CurrentTime - curNode.TimeLastSentReadings > curNode.P.CMSensingTime*1000 || len(curNode.ReadingsBuffer)>curNode.P.MaxCMReadingBufferSize){
 					//Print to file
 					oldest,newest := curNode.GetOldestNewestReadings()
 					fmt.Fprintf(curNode.P.ClusterReadings,"%d-%d-%d-Server-%d-%d-%d\n",curNode.P.CurrentTime/1000,curNode.TimeLastSentReadings/1000,curNode.Id,oldest/1000,newest/1000,len(curNode.ReadingsBuffer))
@@ -1025,6 +1025,7 @@ func (curNode *NodeImpl) MoveCSV(p *Params) {
 
 
 	if !curNode.Valid {
+		curNode.TimeLastSentReadings = p.CurrentTime
 		curNode.Valid = curNode.TurnValid(p.NodeMovements[id][intTime].X, p.NodeMovements[id][intTime].Y, p)
 		curNode.X = float32(p.NodeMovements[id][intTime].X)
 		curNode.Y = float32(p.NodeMovements[id][intTime].Y)
