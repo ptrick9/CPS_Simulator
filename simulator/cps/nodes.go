@@ -123,7 +123,7 @@ type NodeImpl struct {
 	InitialSensitivity float64
 	Valid 			   bool
 
-	allReadings 	   [1000]float64
+	//allReadings 	   [1000]float64
 	calibrateTimes 	   []int
 	calibrateReading   []float64
 
@@ -131,8 +131,18 @@ type NodeImpl struct {
 
 	TotalPacketsSent    int
 	TotalBytesSent		int
+
+	IsClusterMember		bool
 	IsClusterHead		bool
+
+	NodeBounds			*Bounds //the node's representative bounds object
+	NodeClusterParams	*ClusterMemberParams
 	Recalibrated 		bool
+	CHPenalty			float64
+	ReadingsBuffer		[]Reading
+	TimeLastSentReadings	int
+	TimeLastAccel		int
+	//Online				bool //whether the node is still online (battery is still high enough)
 }
 
 //NodeMovement controls the movement of all the normal nodes
@@ -218,8 +228,6 @@ func (curNode *NodeImpl) TurnValid(x, y int, p *Params) bool {
 	}
 	return false
 }
-
-
 
 func (curNode *NodeImpl) ADCReading(raw float32) int {
 
@@ -410,51 +418,35 @@ func (curNode *NodeImpl) LogBatteryPower(t int){
 	//}
 }
 
-func (curNode *NodeImpl) SendtoServer(packet int){
-	//int packet = num bytes in packet
-	curNode.TotalBytesSent += packet;
-	curNode.TotalPacketsSent += 1;
-
-	//code to send to server goes here
-}
-
-func (curNode *NodeImpl) SendtoClusterHead(packet int){
-	//int packet = num bytes in packet
-	curNode.TotalBytesSent += packet;
-	curNode.TotalPacketsSent += 1;
-
-	//code to send to cluster head goes here
-}
-
 
 //decrement battery due to transmitting/receiving over BlueTooth
-func (curNode *NodeImpl) DecrementPowerBT(packet int){
-	curNode.Battery = curNode.Battery - curNode.BatteryLossBT*curNode.Battery
+func (curNode *NodeImpl) DecrementPowerBT(){
+	curNode.Battery = curNode.Battery - float32(curNode.P.SamplingLossBTCM)
 }
 
 //decrement battery due to transmitting/receiving over WiFi
 func (curNode *NodeImpl) DecrementPowerWifi(packet int){
-	curNode.Battery = curNode.Battery - curNode.BatteryLossWifi
+	curNode.Battery = curNode.Battery - float32(curNode.P.SamplingLossWifiCM)
 }
 
 //decrement battery due to transmitting/receiving over 4G
-func (curNode *NodeImpl) DecrementPower4G(packet int){
-	curNode.Battery = curNode.Battery - curNode.BatteryLoss4G*curNode.Battery
+func (curNode *NodeImpl) DecrementPower4G(){
+	curNode.Battery = curNode.Battery - float32(curNode.P.SamplingLoss4GCM)
 }
 
 //decrement battery due to sampling Accelerometer
 func (curNode *NodeImpl) DecrementPowerAccel(){
-	curNode.Battery = curNode.Battery - curNode.BatteryLossAccelerometer*curNode.Battery
+	curNode.Battery = curNode.Battery - float32(curNode.P.SamplingLossAccelCM)
 }
 
 //decrement battery due to transmitting/receiving GPS
 func (curNode *NodeImpl) DecrementPowerGPS(){
-	curNode.Battery = curNode.Battery - curNode.BatteryLossGPS*curNode.Battery
+	curNode.Battery = curNode.Battery - float32(curNode.P.SamplingLossGPSCM)
 }
 
 //decrement battery due to using GPS
 func (curNode *NodeImpl) DecrementPowerSensor(){
-	curNode.Battery = curNode.Battery - curNode.BatteryLossSensor*curNode.Battery
+	curNode.Battery = curNode.Battery - float32(curNode.P.SamplingLossSensorCM)
 }
 
 
@@ -753,9 +745,12 @@ func (curNode *NodeImpl) GetReadings() {
 			fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("TP T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f SR: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, RawConc, curNode.Sensitivity/curNode.InitialSensitivity))
 		}
 
-
-		curNode.P.Server.Send(curNode, Reading{ADCRead, newX, newY, curNode.P.CurrentTime, curNode.GetID()})
-
+		if(curNode.P.ClusteringOn){
+			newReading := Reading{ADCRead, newX, newY, curNode.P.CurrentTime, curNode.GetID(), curNode.GetCHID()}
+			curNode.ReadingsBuffer = append(curNode.ReadingsBuffer, newReading)
+		} else{
+			curNode.P.Server.Send(curNode, Reading{ADCRead, newX, newY, curNode.P.CurrentTime, curNode.GetID(), curNode.GetCHID()})
+		}
 
 	}
 	curNode.P.Events.Push(&Event{curNode, SENSE, curNode.P.CurrentTime + 500, 0})
@@ -840,6 +835,15 @@ func interpolateReadingFine(x , y float32, time, timeStep int, p *Params) float3
 	//fmt.Printf("%v %v %v %v\n", floatTime, oldTime, nextTime, portionTime)
 
 	return (futureReading - oldReading)*portionTime + oldReading
+}
+
+
+func (curNode * NodeImpl) GetCHID()(int){
+	if(curNode.NodeClusterParams != nil && curNode.NodeClusterParams.CurrentCluster != nil && curNode.NodeClusterParams.CurrentCluster.ClusterHead != nil){
+		return curNode.NodeClusterParams.CurrentCluster.ClusterHead.Id
+	} else{
+		return -1
+	}
 }
 
 func interpolateReading(x , y float32, time, timeStep int, p *Params) float32{
@@ -944,12 +948,7 @@ func (curNode *NodeImpl) GetReadingsCSV() {
 			curNode.IncrementTotalSamples()
 			curNode.UpdateHistory(float32(errorDist))
 		//}
-
-
-
-
-
-
+		
 		//If the reading is more than 2 standard deviations away from the grid average, then recalibrate
 		//gridAverage := curNode.P.Grid[curNode.Row(curNode.P.YDiv)][curNode.Col(curNode.P.XDiv)].Avg
 		//standDev := grid[curNode.Row(yDiv)][curNode.Col(xDiv)].StdDev
@@ -991,15 +990,113 @@ func (curNode *NodeImpl) GetReadingsCSV() {
 		//Only do this if the sensor was pinged this iteration
 
 		if curNode.Valid {
-			curNode.P.Server.Send(curNode, Reading{ADCRead, newX, newY, curNode.P.CurrentTime, curNode.GetID()})
+			if(curNode.P.ClusteringOn){
+				if(curNode.IsClusterHead){
+					if(curNode.P.CurrentTime - curNode.TimeLastSentReadings > curNode.P.CHSensingTime*1000 || len(curNode.ReadingsBuffer)>curNode.P.MaxCHReadingBufferSize){
+						//Print to file
+						oldest,newest := curNode.GetOldestNewestReadings()
+						fmt.Fprintf(curNode.P.ClusterReadings,"%d-%d-%d-Server-%d-%d-%d\n",curNode.P.CurrentTime/1000,curNode.TimeLastSentReadings/1000,curNode.Id,oldest/1000,newest/1000,len(curNode.ReadingsBuffer))
+
+						//Send to Server and clear readings
+						curNode.SendtoServer()
+						curNode.TimeLastSentReadings = curNode.P.CurrentTime
+					}
+				} else if(curNode.IsClusterMember){
+					if(curNode.P.CurrentTime - curNode.TimeLastSentReadings > curNode.P.CMSensingTime*1000 || len(curNode.ReadingsBuffer)>curNode.P.MaxCMReadingBufferSize){
+						//Print to file
+						oldest,newest := curNode.GetOldestNewestReadings()
+						fmt.Fprintf(curNode.P.ClusterReadings,"%d-%d-%d-BT-%d-%d-%d\n",curNode.P.CurrentTime/1000,curNode.TimeLastSentReadings/1000,curNode.Id,oldest/1000,newest/1000,len(curNode.ReadingsBuffer))
+
+						//Send to Server and clear readings
+						curNode.SendtoClusterHead()
+						curNode.TimeLastSentReadings = curNode.P.CurrentTime
+					}
+				}
+
+			newReading := Reading{ADCRead, newX, newY, curNode.P.CurrentTime, curNode.GetID(), curNode.GetCHID()}
+			curNode.ReadingsBuffer = append(curNode.ReadingsBuffer, newReading)
+
+			} else{
+				newReading := Reading{ADCRead, newX, newY, curNode.P.CurrentTime, curNode.GetID(), curNode.GetCHID()}
+				curNode.ReadingsBuffer = append(curNode.ReadingsBuffer, newReading)
+				if(curNode.P.CurrentTime - curNode.TimeLastSentReadings > curNode.P.CHSensingTime*1000 || len(curNode.ReadingsBuffer)>curNode.P.MaxCHReadingBufferSize){
+					//Print to file
+					oldest,newest := curNode.GetOldestNewestReadings()
+					fmt.Fprintf(curNode.P.ClusterReadings,"%d-%d-%d-Server-%d-%d-%d\n",curNode.P.CurrentTime/1000,curNode.TimeLastSentReadings/1000,curNode.Id,oldest/1000,newest/1000,len(curNode.ReadingsBuffer))
+
+					//Send to Server and clear readings
+					curNode.SendtoServer()
+					curNode.TimeLastSentReadings = curNode.P.CurrentTime
+				}
+			}
 		}
 
 	}
 	curNode.P.Events.Push(&Event{curNode, SENSE, curNode.P.CurrentTime + 500, 0})
 }
 
+//Get min and max readings
+func (curNode * NodeImpl) GetOldestNewestReadings()(oldest int, newest int){
+
+	oldest = curNode.ReadingsBuffer[0].Time
+	newest = curNode.ReadingsBuffer[0].Time
+
+	for i:=0; i<len(curNode.ReadingsBuffer); i++{
+		if(curNode.ReadingsBuffer[i].Time < oldest){
+			oldest = curNode.ReadingsBuffer[i].Time
+		}
+		if (curNode.ReadingsBuffer[i].Time > newest){
+			newest = curNode.ReadingsBuffer[i].Time
+		}
+	}
+
+	return oldest, newest
+}
+
+//Clustering on: Cluster Head sends all readings to the Server
+//Clustering off: all nodes user this method
+func (curNode *NodeImpl) SendtoServer(){
+
+	//Iterates through Readings Buffer sending all readings
+	for i:=0; i<len(curNode.ReadingsBuffer); i++{
+		curNode.P.Server.Send(curNode, curNode.ReadingsBuffer[i])
+		//Deduct Power for 4G transmission
+		curNode.DecrementPower4G()
+	}
+
+	//clears Clusterhead reading buffer
+	curNode.ReadingsBuffer = []Reading{}
+
+}
+
+//Node sends to Cluster Head
+func (curNode *NodeImpl) SendtoClusterHead(){
+
+	//Append to clusterhead readings buffer
+	clusterHead := curNode.NodeClusterParams.CurrentCluster.ClusterHead
+	clusterHead.ReadingsBuffer = append(clusterHead.ReadingsBuffer, curNode.ReadingsBuffer...)
+
+	for i:=0; i<len(curNode.ReadingsBuffer); i++{
+		//Deduct power for BT transmission
+		curNode.DecrementPowerBT()
+	}
+
+	//clear node's readings
+	curNode.ReadingsBuffer = []Reading{}
+}
+
 func interpolate (start int, end int, portion float32) float32{
 	return (float32(end-start) * portion + float32(start))
+}
+
+//Acceleration
+func (curNode *NodeImpl) UpdateAcceleration(curTime int, newX float32, newY float32, oldX float32, oldY float32){
+	t_elapsed := float32((curTime - curNode.TimeLastAccel)/1000)
+	ax := (newX/2-oldX/2)/(t_elapsed*t_elapsed)
+	ay := (newY/2-oldY/2)/(t_elapsed*t_elapsed)
+	a_t := float32(math.Sqrt(float64(ax*ax + ay*ay)))
+	curNode.AccelerometerSpeed = append(curNode.AccelerometerSpeed, a_t)
+	curNode.TimeLastAccel = curTime
 }
 
 //HandleMovementCSV does the same as HandleMovement
@@ -1021,6 +1118,12 @@ func (curNode *NodeImpl) MoveCSV(p *Params) {
 		//set the new location in the boolean field to true
 		newX, newY := curNode.GetLoc()
 		p.BoolGrid[int(newX)][int(newY)] = true
+		//Handle movement in the tree (remove and reinsert if neccessary)
+		curNode.NodeBounds.X = float64(newX)
+		curNode.NodeBounds.Y = float64(newY)
+		curNode.P.NodeTree.NodeMovement(curNode.NodeBounds)
+
+		curNode.UpdateAcceleration(p.CurrentTime,newX, newY, oldX, oldY)
 	}
 
 
@@ -1030,6 +1133,16 @@ func (curNode *NodeImpl) MoveCSV(p *Params) {
 		curNode.Y = float32(p.NodeMovements[id][intTime].Y)
 	}
 
+	//fmt.Printf("%v %v %v %v %v %v %v\n", newX, newY, int(newX), int(newY), p.Width, p.Height, curNode.Valid)
+	/*if curNode.InBounds(p) {
+		curNode.Valid = true
+	} else {
+		curNode.Valid = false
+	}*/
+
+	//Add the node into its new Square's p.TotalNodes
+	//If the node hasn't left the square, that Square's p.TotalNodes will
+	//remain the same after these calculations
 }
 
 //HandleMovement adjusts BoolGrid when nodes move around the map
@@ -1045,7 +1158,8 @@ func (curNode *NodeImpl) MoveNormal(p *Params) {
 	newX, newY := curNode.GetLoc()
 	p.BoolGrid[int(newX)][int(newY)] = true
 
-
+	//Handle movement in the tree (remove and reinsert if neccessary)
+	curNode.P.NodeTree.NodeMovement(curNode.NodeBounds)
 
 	//Add the node into its new Square's p.TotalNodes
 	//If the node hasn't left the square, that Square's p.TotalNodes will

@@ -86,6 +86,12 @@ type Params struct {
 	DetectionFile  *os.File
 	BatteryFile    *os.File
 	RunParamFile   *os.File
+	ClusterFile	   *os.File
+	ClusterStatsFile *os.File
+	ClusterDebug	*os.File
+	ClusterReadings *os.File
+	ClusterMessages *os.File
+	AliveValidNodes	*os.File
 
 	SensorPath  string
 	FineSensorPath  string
@@ -199,4 +205,14 @@ type Params struct {
 	FineScale		int
 	Scale 			int
 
+	NodeTree				* Quadtree
+	ClusterNetwork			* AdHocNetwork
+	NodeBTRange				float64
+	ClusterThreshold		int
+	ClusteringOn			bool
+
+	CMSensingTime		int
+	CHSensingTime		int
+	MaxCMReadingBufferSize	int
+	MaxCHReadingBufferSize	int
 }

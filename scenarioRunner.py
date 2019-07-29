@@ -38,7 +38,6 @@ if __name__ == '__main__':
     m = multiprocessing
     q = m.JoinableQueue()
 
-
     switches = ["-logNodes=false -logPosition=true -logGrid=false -logEnergy=false -regionRouting=true -noEnergy=true -csvSensor=true -csvMove=true"]
 
     scenarios = ["-inputFileName=%s -imageFileName=%s -stimFileName=circle_0.txt -outRoutingStatsName=routingStats.txt -iterations=1000 -superNodes=false -doOptimize=false" % (s[0], s[1]) for s in [['Scenario_3.txt', 'marathon_street_map.png']]]
@@ -76,10 +75,15 @@ if __name__ == '__main__':
     SuperNodeSpeed = ["-SuperNodeSpeed=%d" % d for d in [3]]
     SquareRowCM = ["-SquareRowCM=%d" % d for d in [60]]
     SquareColCM = ["-SquareColCM=%d" % d for d in [320]]
-    validationThreshold = ["-validationThreshold=%d" % d for d in [0, 1, 2, 3, 4, 5]]
+    validationThreshold = ["-validationThreshold=%d" % d for d in [1]]
+	clusterThresh = ["-clusterThresh=%d" % d for d in [8]] 
+	nodeBTRange = ["-nodeBTRange=%d" % d for d in [20]]
+	cmSensingTime = ["-cmSensingTime=%d" % d for d in [2]]
+	chSensingTime = ["-chSensingTime=%d" % d for d in [4]]
+	maxCMReadingBufferSize = ["-maxCMReadingBufferSize=%d" % d for d in [10]]
+	maxCHReadingBufferSize = ["-maxCHReadingBufferSize=%d" % d for d in [100]]
 
-
-    runs = (list(itertools.product(*[switches, scenarios, movementPath, sensorPath, detectionThreshold, detectionDistance, sittingStopThreshold, negativeSittingStopThreshold, GridCapacityPercentage, naturalLoss,sensorSamplingLoss,GPSSamplingLoss,serverSamplingLoss,SamplingLossBTCM,SamplingLossWifiCM,SamplingLoss4GCM,SamplingLossAccelCM,thresholdBatteryToHave,thresholdBatteryToUse,movementSamplingSpeed,movementSamplingPeriod,maxBufferCapacity,sensorSamplingPeriod,GPSSamplingPeriod,serverSamplingPeriod,nodeStoredSamples,gridStoredSample,errorMultiplier,numSuperNodes,recalibThresh,StandardDeviationThreshold,SuperNodeSpeed,SquareRowCM,SquareColCM,validationThreshold])))
+    runs = (list(itertools.product(*[switches, scenarios, movementPath, outputFileName, sittingStopThreshold, negativeSittingStopThreshold, GridCapacityPercentage, naturalLoss,sensorSamplingLoss,GPSSamplingLoss,serverSamplingLoss,SamplingLossBTCM,SamplingLossWifiCM,SamplingLoss4GCM,SamplingLossAccelCM,thresholdBatteryToHave,thresholdBatteryToUse,movementSamplingSpeed,movementSamplingPeriod,maxBufferCapacity,sensorSamplingPeriod,GPSSamplingPeriod,serverSamplingPeriod,nodeStoredSamples,gridStoredSample,detectionThreshold,errorMultiplier,numSuperNodes,recalibThresh,StandardDeviationThreshold,detectionDistance,SuperNodeSpeed,SquareRowCM,SquareColCM,validationThreshold,clusterThresh,nodeBTRange,cmSensingTime,chSensingTime,maxCMReadingBufferSize,maxCHReadingBufferSize])))
     
     x = 0
     for r in runs:

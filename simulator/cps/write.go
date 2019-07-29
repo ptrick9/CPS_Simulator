@@ -336,6 +336,9 @@ func HandleMovement(p *Params) {
 		newX, newY := p.NodeList[j].GetLoc()
 		p.BoolGrid[int(newX)][int(newY)] = true
 
+		//sync the QuadTree
+		p.NodeTree.NodeMovement(p.NodeList[j].NodeBounds)
+
 		//writes the node information to the file
 		if p.EnergyPrint {
 			fmt.Fprintln(p.EnergyFile, p.NodeList[j])
@@ -351,7 +354,6 @@ func HandleMovement(p *Params) {
 func HandleMovementCSV(p *Params) {
 	time := p.Iterations_used
 	for j := 0; j < len(p.NodeList); j++ {
-
 		if p.NodeList[j].Valid {
 			oldX, oldY := p.NodeList[j].GetLoc()
 			p.BoolGrid[int(oldX)][int(oldY)] = false //set the old spot false since the node will now move away
@@ -367,6 +369,8 @@ func HandleMovementCSV(p *Params) {
 		//set the new location in the boolean field to true
 		newX, newY := p.NodeList[j].GetLoc()
 
+		//sync the QuadTree
+		p.NodeTree.NodeMovement(p.NodeList[j].NodeBounds)
 		if p.NodeList[j].InBounds(p) {
 			p.NodeList[j].Valid = true
 		} else {
@@ -431,6 +435,8 @@ func SetupCSVNodes(p *Params) {
 		newNode.X = float32(p.NodeMovements[i][0].X)
 		newNode.Y = float32(p.NodeMovements[i][1].Y)
 
+		newNode.BatteryOverTime = map[int]float32{}
+
 		if newNode.InBounds(p) {
 			newNode.Valid = true
 			p.BoolGrid[int(newNode.X)][int(newNode.Y)] = true
@@ -440,8 +446,34 @@ func SetupCSVNodes(p *Params) {
 
 		p.NodeList = append(p.NodeList, newNode)
 		p.CurrentNodes += 1
-		p.Events.Push(&Event{newNode, SENSE, 0, 0})
-		p.Events.Push(&Event{newNode, MOVE, 0, 0})
+		p.Events.Push(&Event{newNode,SENSE,0,0})
+
+		if(p.ClusteringOn){
+			newNode.IsClusterHead = false
+			newNode.IsClusterMember = false
+			newNode.NodeClusterParams = &ClusterMemberParams{}
+			p.Events.Push(&Event{newNode,CLUSTERMSG,10,0})
+			p.Events.Push(&Event{newNode,CLUSTERHEADELECT,15,0})
+			p.Events.Push(&Event{newNode,CLUSTERFORM,20,0})
+			p.ClusterNetwork.ClearClusterParams(newNode)
+			newNode.TimeLastSentReadings = p.CurrentTime
+			newNode.ReadingsBuffer = []Reading{}
+			newNode.CHPenalty = 1.0 //initialized to 1
+		}
+
+		newNode.AccelerometerSpeed = []float32{}
+		newNode.TimeLastAccel = p.CurrentTime
+
+		bNewNode := Bounds{
+			X:	float64(newNode.X),
+			Y:	float64(newNode.Y),
+			Width:	0,
+			Height:	0,
+			CurTree:	p.NodeTree,
+			CurNode: 	newNode,
+		}
+		p.NodeList[len(p.NodeList)-1].NodeBounds = &bNewNode
+		p.NodeTree.Insert(&bNewNode)
 
 	}
 
@@ -452,6 +484,8 @@ func SetupRandomNodes(p *Params) {
 		if p.Iterations_used == p.NodeEntryTimes[i][2] {
 
 			newNode := InitializeNodeParameters(p, i)
+
+			newNode.BatteryOverTime = map[int]float32{}
 
 			xx := rangeInt(1, p.MaxX)
 			yy := rangeInt(1, p.MaxY)
@@ -468,7 +502,38 @@ func SetupRandomNodes(p *Params) {
 
 			p.NodeList = append(p.NodeList, newNode)
 			p.CurrentNodes += 1
+			p.Events.Push(&Event{newNode, SENSE, 0, 0})
 
+			if(p.ClusteringOn){
+				newNode.NodeClusterParams.CurrentCluster.ClusterHead = nil //nil Cluster Head signifies having no cluster head
+				newNode.IsClusterHead = false
+				newNode.IsClusterMember = false
+				newNode.NodeClusterParams = &ClusterMemberParams{}
+				newNode.IsClusterHead = false
+				newNode.IsClusterMember = false
+				newNode.NodeClusterParams = &ClusterMemberParams{}
+				p.Events.Push(&Event{newNode,CLUSTERMSG,10,0})
+				p.Events.Push(&Event{newNode,CLUSTERHEADELECT,15,0})
+				p.Events.Push(&Event{newNode,CLUSTERFORM,20,0})
+				p.ClusterNetwork.ClearClusterParams(newNode)
+				newNode.TimeLastSentReadings = p.CurrentTime
+				newNode.ReadingsBuffer = []Reading{}
+				newNode.CHPenalty = 1.0 //initialized to 1
+			}
+
+			if newNode.Valid{
+				bNewNode := Bounds{
+					X:	float64(newNode.X),
+					Y:	float64(newNode.Y),
+					Width:	0,
+					Height:	0,
+					CurTree:	p.NodeTree,
+					CurNode: 	newNode,
+				}
+				p.NodeList[len(p.NodeList)-1].NodeBounds = &bNewNode
+				p.NodeTree.Insert(&bNewNode)
+			}
+			//newNode.Online = true
 		}
 	}
 }
@@ -727,7 +792,7 @@ func SetupFiles(p *Params) {
 	}
 	//defer p.EnergyFile.Close()
 
-	p.BatteryFile, err = os.Create(p.OutputFileNameCM + "-batteryusage.txt")
+	p.BatteryFile, err = os.Create(p.OutputFileNameCM + "-batteryusage.csv")
 	if err != nil {
 		log.Fatal("Cannot create file", err)
 	}
@@ -759,6 +824,49 @@ func SetupFiles(p *Params) {
 		log.Fatal("Cannot create file", err)
 	}
 
+	p.ClusterDebug, err = os.Create(p.OutputFileNameCM + "-adhoc_debug.txt")
+	if err != nil{
+		log.Fatal("Cannot create file", err)
+	}
+
+
+	p.ClusterMessages, err = os.Create(p.OutputFileNameCM + "-cluster_messages.txt")
+	if err != nil{
+		log.Fatal("Cannot create file", err)
+	}
+
+
+	if(p.ClusteringOn){
+		p.ClusterReadings, err = os.Create(p.OutputFileNameCM + "-cluster_readings_CL_ON.txt")
+		if err != nil{
+			log.Fatal("Cannot create file", err)
+		}
+
+		p.AliveValidNodes, err = os.Create(p.OutputFileNameCM + "-nodes_alive_valid_CL_ON.txt")
+		if err != nil{
+			log.Fatal("Cannot create file", err)
+		}
+	} else{
+		p.ClusterReadings, err = os.Create(p.OutputFileNameCM + "-cluster_readings_CL_OFF.txt")
+		if err != nil{
+			log.Fatal("Cannot create file", err)
+		}
+
+		p.AliveValidNodes, err = os.Create(p.OutputFileNameCM + "-nodes_alive_valid_CL_OFF.txt")
+		if err != nil{
+			log.Fatal("Cannot create file", err)
+		}
+	}
+
+	p.ClusterFile, err = os.Create(p.OutputFileNameCM + "-adhoc.txt")
+	if err != nil{
+		log.Fatal("Cannot create file", err)
+	}
+
+	p.ClusterStatsFile, err = os.Create(p.OutputFileNameCM + "-clusters.txt")
+	if err != nil{
+		log.Fatal("Cannot create file", err)
+	}
 	//defer p.AttractionFile.Close()
 
 	p.ServerFile, err = os.Create(p.OutputFileNameCM + "-server.txt")
@@ -801,8 +909,8 @@ func SetupParameters(p *Params) {
 
 	p.TotalPercentBatteryToUse = float32(p.ThresholdBatteryToUseCM)
 	//p.BatteryCharges = GetLinearBatteryValues(len(p.NodeEntryTimes))
-	p.BatteryCharges = GetNormDistro(p.TotalNodes, 70.0, 15) //battery values come from normal distribution
-																		//mean = 70%, std = 15%
+	p.BatteryCharges = GetNormDistro(p.TotalNodes, 70.0, 8) //battery values come from normal distribution
+																		//mean = 70%, std = 8%
 	p.BatteryLosses = GetLinearBatteryLossConstant(len(p.NodeEntryTimes), float32(p.NaturalLossCM))
 
 	//updated because of the variable renaming to BatteryLosses__ and SamplingLoss__CM
@@ -1350,23 +1458,20 @@ func GetFlags(p *Params) {
 	flag.Float64Var(&p.SamplingLossSensorCM, "sensorSamplingLoss", .001,
 		"battery loss due to sensor sampling")
 
-	flag.Float64Var(&p.SamplingLossGPSCM, "GPSSamplingLoss", .005,
+	flag.Float64Var(&p.SamplingLossGPSCM, "GPSSamplingLoss", (3.44*math.Pow(10,-6)),
 		"battery loss due to GPS sampling")
 
 	flag.Float64Var(&p.SamplingLossSensorCM, "serverSamplingLoss", .01,
 		"battery loss due to server sampling")
 
-	flag.Float64Var(&p.SamplingLossBTCM, "SamplingLossBTCM", .0001,
+	flag.Float64Var(&p.SamplingLossBTCM, "SamplingLossBTCM", (9.79*math.Pow(10,-5)),
 		"battery loss due to BlueTooth sampling")
-
-
-	flag.Float64Var(&p.SamplingLossWifiCM, "SamplingLossWifiCM", .001,
+	flag.Float64Var(&p.SamplingLossWifiCM, "SamplingLossWifiCM", .01,
 		"battery loss due to WiFi sampling")
-
-	flag.Float64Var(&p.SamplingLoss4GCM, "SamplingLoss4GCM", .005,
+	flag.Float64Var(&p.SamplingLoss4GCM, "SamplingLoss4GCM", (9.79*math.Pow(10,-4)),
 		"battery loss due to 4G sampling")
 
-	flag.Float64Var(&p.SamplingLossAccelCM, "SamplingLossAccelCM", .001,
+	flag.Float64Var(&p.SamplingLossAccelCM, "SamplingLossAccelCM", (3.827*math.Pow(10,-10)),
 		"battery loss due to accelerometer sampling")
 
 	flag.IntVar(&p.ThresholdBatteryToHaveCM, "thresholdBatteryToHave", 30,
@@ -1455,6 +1560,14 @@ func GetFlags(p *Params) {
 	//Only works when multiple super nodes are active in the same area
 	flag.BoolVar(&p.DoOptimize, "doOptimize", false, "whether or not to optimize the simulator")
 
+	flag.IntVar(&p.ClusterThreshold, "clusterThresh,",8, "max size of a node cluster")
+	flag.Float64Var(&p.NodeBTRange, "nodeBTRange",20.0,"bluetooth range of each node")
+	flag.BoolVar(&p.ClusteringOn,"clusteringOn",true,"True: nodes will form clusters, False: no clusters will form")
+
+	flag.IntVar(&p.CMSensingTime, "cmSensingTime,",2, "seconds a cluster member will sense/record readings before sending to cluster head")
+	flag.IntVar(&p.CHSensingTime, "chSensingTime,",4, "seconds a cluster head will sense//collect from CM/record readings before sending to server")
+	flag.IntVar(&p.MaxCMReadingBufferSize, "maxCMReadingBufferSize,",10, "max readings buffer size of a cluster member. CM must send to CH when buffer is this size")
+	flag.IntVar(&p.MaxCHReadingBufferSize, "maxCHReadingBufferSize,",100, "max readings buffer size of a cluster head. CH must send to server when buffer is this size")
 
 	//Range: 0-4
 	//	0: begin in center, routed anywhere
@@ -1575,5 +1688,12 @@ func WriteFlags(p * Params){
 	buf.WriteString(fmt.Sprintf("outRoutingStatsName=%v\n", p.OutRoutingStatsNameCM))
 	buf.WriteString(fmt.Sprintf("regionRouting=%v\n", p.RegionRouting))
 	buf.WriteString(fmt.Sprintf("validationThreshold=%v\n", p.ValidationThreshold))
+	buf.WriteString(fmt.Sprintf("clusterThresh=%v\n", p.ClusterThreshold))
+	buf.WriteString(fmt.Sprintf("nodeBTRange=%v\n", p.NodeBTRange))
+	buf.WriteString(fmt.Sprintf("clusteringOn=%v\n",p.ClusteringOn))
+	buf.WriteString(fmt.Sprintf("cmSensingTime=%v\n",p.CMSensingTime))
+	buf.WriteString(fmt.Sprintf("chSensingTime=%v\n",p.CHSensingTime))
+	buf.WriteString(fmt.Sprintf("maxCMReadingBufferSize=%v\n",p.MaxCMReadingBufferSize))
+	buf.WriteString(fmt.Sprintf("maxCHReadingBufferSize=%v\n",p.MaxCHReadingBufferSize))
 	fmt.Fprintf(p.RunParamFile,buf.String())
 }
