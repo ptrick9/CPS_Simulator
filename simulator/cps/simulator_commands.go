@@ -215,4 +215,6 @@ type Params struct {
 	CHSensingTime		int
 	MaxCMReadingBufferSize	int
 	MaxCHReadingBufferSize	int
+
+	ReadingHistorySize	int
 }

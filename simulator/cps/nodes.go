@@ -142,6 +142,8 @@ type NodeImpl struct {
 	ReadingsBuffer		[]Reading
 	TimeLastSentReadings	int
 	TimeLastAccel		int
+	LastReading			float64
+	ReadingPercentChange float64
 	//Online				bool //whether the node is still online (battery is still high enough)
 }
 
@@ -749,6 +751,9 @@ func (curNode *NodeImpl) GetReadings() {
 			newReading := Reading{ADCRead, newX, newY, curNode.P.CurrentTime, curNode.GetID(), curNode.GetCHID()}
 			curNode.ReadingsBuffer = append(curNode.ReadingsBuffer, newReading)
 		} else{
+			curNode.ReadingPercentChange = math.Abs(ADCRead - curNode.LastReading) / curNode.LastReading
+			curNode.LastReading = ADCRead
+
 			curNode.P.Server.Send(curNode, Reading{ADCRead, newX, newY, curNode.P.CurrentTime, curNode.GetID(), curNode.GetCHID()})
 		}
 

@@ -447,7 +447,7 @@ func (s *FusionCenter) Send(n *NodeImpl, rd Reading) {
 	if rd.SensorVal > s.P.DetectionThreshold {
 		s.CheckedIds = make([]int, 0)
 		validations := 0
-		for t:= (s.P.CurrentTime / 1000) - 60; t <= s.P.CurrentTime / 1000; t++ {
+		for t:= (s.P.CurrentTime / 1000) - s.P.ReadingHistorySize; t <= s.P.CurrentTime / 1000; t++ {
 			for x:= int((rd.Xpos - float32(s.P.DetectionDistance)) / float32(s.P.XDiv)); x < int((rd.Xpos + float32(s.P.DetectionDistance) )/ float32(s.P.XDiv)); x++ {
 				for y:= int((rd.YPos - float32(s.P.DetectionDistance)) / float32(s.P.YDiv)); y < int((rd.YPos + float32(s.P.DetectionDistance) )/ float32(s.P.YDiv)); y++ {
 					for r:= range s.Readings[Key{x,y,t}] {

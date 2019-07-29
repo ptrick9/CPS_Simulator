@@ -46,7 +46,7 @@ var (
 	p *cps.Params
 	r *cps.RegionParams
 
-	err error
+	//err error
 
 	// End the command line variables.
 
@@ -98,8 +98,8 @@ func main() {
 	//numStoredSamples = getDashedInput("numStoredSamples")
 	p.MaxX = cps.GetDashedInput("maxX", p)
 	p.MaxY = cps.GetDashedInput("maxY", p)
-	p.BombX = cps.GetDashedInput("bombX", p)
-	p.BombY = cps.GetDashedInput("bombY", p)
+	//p.BombX = cps.GetDashedInput("bombX", p)
+	//p.BombY = cps.GetDashedInput("bombY", p)
 
 	p.B = &cps.Bomb{X: p.BombX, Y: p.BombY}
 
@@ -507,7 +507,7 @@ func main() {
 		}
 	}
 
- */
+
 	PrintNodeBatteryOverTime(p)
 
 	p.PositionFile.Seek(0, 0)
