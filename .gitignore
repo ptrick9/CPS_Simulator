@@ -180,3 +180,11 @@ event
 *.asv
 
 Simulation
+
+statistics/statPackage/__pycache__/
+
+*.pyc
+
+mem-prof/
+
+*.scb

@@ -94,6 +94,7 @@ type Params struct {
 	AliveValidNodes	*os.File
 
 	SensorPath  string
+	FineSensorPath  string
 	MovementPath  string
 
 	SensorTimes []int
@@ -109,6 +110,7 @@ type Params struct {
 	Grid     [][]*Square
 
 	SensorReadings [][][]float64
+	FineSensorReadings [][][]float64
 	NodeMovements  [][]Tuple
 
 	SquareCapacity int
@@ -197,6 +199,11 @@ type Params struct {
 
 	NodePositionMap			map[Tuple]*NodeImpl
 	ValidationThreshold	int
+
+	FineWidth 		int
+	FineHeight		int
+	FineScale		int
+	Scale 			int
 
 	NodeTree				* Quadtree
 	ClusterNetwork			* AdHocNetwork
