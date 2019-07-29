@@ -154,7 +154,7 @@ func main() {
 	p.EstimatedPingsNeeded = 10200
 
 	cps.SetupFiles(p)
-	cps.SetupParameters(p)
+	cps.SetupParameters(p, r)
 
 	//Printing important information to the p.Grid log file
 	//fmt.Fprintln(p.GridFile, "Grid:", p.SquareRowCM, "x", p.SquareColCM)
