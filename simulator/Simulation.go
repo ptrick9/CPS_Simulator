@@ -214,10 +214,10 @@ func main() {
 		var buffer bytes.Buffer
 		for x:= range p.Grid {
 			for y := range p.Grid[x] {
-				//xLoc := x * p.XDiv
-				//yLoc := y * p.YDiv
+				/*xLoc := x * p.XDiv
+				yLoc := y * p.YDiv
 				//X,Y of corner, super node cluster, and navigable
-				//buffer.WriteString(fmt.Sprintf("X:%v Y:%v C:%v N:%v\n", xLoc, yLoc, p.Grid[x][y].SuperNodeCluster, p.Grid[x][y].Navigable))
+				buffer.WriteString(fmt.Sprintf("X:%v Y:%v C:%v N:%v\n", xLoc, yLoc, p.Grid[x][y].SuperNodeCluster, p.Grid[x][y].Navigable))*/
 				buffer.WriteString(fmt.Sprintf("%v,%v,%v,%v,%v\n", x, y, p.Grid[x][y].SuperNodeCluster, p.Grid[x][y].Center.X, p.Grid[x][y].Center.Y))
 			}
 		}
