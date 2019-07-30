@@ -29,7 +29,7 @@ def runner(queue):
         job = queue.get()
         #print(job)
         command = "./simulator/Simulation "+' '.join(job)
-        #print(command)
+        print(command)
         #os.system(command)
         queue.task_done()
 
@@ -41,11 +41,12 @@ if __name__ == '__main__':
 
     switches = ["-logNodes=false -logPosition=true -logGrid=false -logEnergy=false -regionRouting=true -noEnergy=true -csvSensor=true -csvMove=true"]
 
-    scenarios = ["-inputFileName=%s -imageFileName=%s -stimFileName=circle_0.txt -outRoutingStatsName=routingStats.txt -iterations=1000 -superNodes=false -doOptimize=false" % (s[0], s[1]) for s in [['Scenario_3.txt', 'marathon_street_map.png']]]
+    scenarios = ["-inputFileName=%s -imageFileName=%s -stimFileName=circle_0.txt -outRoutingStatsName=routingStats.txt -iterations=5000 -superNodes=false -doOptimize=false" % (s[0], s[1]) for s in [['Scenario_3.txt', 'marathon_street_map.png']]]
 
 
     movementPath = ["-movementPath=%s" % s for s in ["/home/simulator/git-simulator/movement/marathon_street_2000_%d.scb" % i for i in range(1,11)]]
-    sensorPath = ["-sensorPath=%s" %s for s in ["smoothed_marathon.csv"]]
+    sensorPath = ["-sensorPath=%s" %s for s in ["smooth_marathon.csv"]]
+    fineSensorPath = ["-fineSensorPath=%s" %s for s in ["fine_bomb_marathon.csv"]]
     detectionThreshold = ["-detectionThreshold=%d" % d for d in[5]]
     detectionDistance = ["-detectionDistance=%d" % d for d in [6]]
     sittingStopThreshold = ["-sittingStopThreshold=%d" % d for d in [5]]
@@ -79,18 +80,18 @@ if __name__ == '__main__':
     validationThreshold = ["-validationThreshold=%d" % d for d in [0, 1, 2, 3, 4, 5]]
 
 
-    runs = (list(itertools.product(*[switches, scenarios, movementPath, sensorPath, detectionThreshold, detectionDistance, sittingStopThreshold, negativeSittingStopThreshold, GridCapacityPercentage, naturalLoss,sensorSamplingLoss,GPSSamplingLoss,serverSamplingLoss,SamplingLossBTCM,SamplingLossWifiCM,SamplingLoss4GCM,SamplingLossAccelCM,thresholdBatteryToHave,thresholdBatteryToUse,movementSamplingSpeed,movementSamplingPeriod,maxBufferCapacity,sensorSamplingPeriod,GPSSamplingPeriod,serverSamplingPeriod,nodeStoredSamples,gridStoredSample,errorMultiplier,numSuperNodes,recalibThresh,StandardDeviationThreshold,SuperNodeSpeed,SquareRowCM,SquareColCM,validationThreshold])))
+    runs = (list(itertools.product(*[switches, scenarios, movementPath, sensorPath, fineSensorPath, detectionThreshold, detectionDistance, sittingStopThreshold, negativeSittingStopThreshold, GridCapacityPercentage, naturalLoss,sensorSamplingLoss,GPSSamplingLoss,serverSamplingLoss,SamplingLossBTCM,SamplingLossWifiCM,SamplingLoss4GCM,SamplingLossAccelCM,thresholdBatteryToHave,thresholdBatteryToUse,movementSamplingSpeed,movementSamplingPeriod,maxBufferCapacity,sensorSamplingPeriod,GPSSamplingPeriod,serverSamplingPeriod,nodeStoredSamples,gridStoredSample,errorMultiplier,numSuperNodes,recalibThresh,StandardDeviationThreshold,SuperNodeSpeed,SquareRowCM,SquareColCM,validationThreshold])))
     
     x = 0
     for r in runs:
         for i in range(10):
             j = [zz for zz in r]
-            j.append("-OutputFileName=/home/simulator/bigData/Log_%d" % x)
+            j.append("-OutputFileName=/home/simulator/simData/fineGrainedBomb/Log_%d" % x)
             v = j
             q.put(v)
             x+= 1
 
        
-    p = multiprocessing.Pool(10, runner, (q,))
+    p = multiprocessing.Pool(7, runner, (q,))
 
     q.join()
