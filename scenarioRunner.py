@@ -29,7 +29,7 @@ def runner(queue):
         job = queue.get()
         #print(job)
         command = "./simulator/Simulation "+' '.join(job)
-        print(command)
+        #print(command)
         #os.system(command)
         queue.task_done()
 
@@ -44,7 +44,7 @@ if __name__ == '__main__':
     scenarios = ["-inputFileName=%s -imageFileName=%s -stimFileName=circle_0.txt -outRoutingStatsName=routingStats.txt -iterations=1000 -superNodes=false -doOptimize=false" % (s[0], s[1]) for s in [['Scenario_3.txt', 'marathon_street_map.png']]]
 
 
-    movementPath = ["-movementPath=%s" % s for s in ["marathon_street_2000_%d.scb" % i for i in range(1,11)]]
+    movementPath = ["-movementPath=%s" % s for s in ["/home/simulator/git-simulator/movement/marathon_street_2000_%d.scb" % i for i in range(1,11)]]
     sensorPath = ["-sensorPath=%s" %s for s in ["smoothed_marathon.csv"]]
     detectionThreshold = ["-detectionThreshold=%d" % d for d in[5]]
     detectionDistance = ["-detectionDistance=%d" % d for d in [6]]
