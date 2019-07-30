@@ -407,6 +407,26 @@ func (s FusionCenter) UpdateSquareNumNodes() {
 	}
 }
 
+func (s *FusionCenter) CleanupReadings() {
+	if s.P.CurrentTime / 1000 > s.P.ReadingHistorySize{
+		/*for r := range s.Readings {
+			if r.Time < (rd.Time / 1000 - s.P.ReadingHistorySize) {
+				delete(s.Readings, r)
+			}
+		}*/
+		t := (s.P.CurrentTime / 1000) - s.P.ReadingHistorySize - 1
+		for x := 0; x < s.P.Width; x++ {
+			for y:= 0; y < s.P.Height; y++ {
+				_,ok := s.Readings[Key{x,y,t}]
+				if ok {
+					//fmt.Printf("Deleting time %v\n", t)
+					delete(s.Readings, Key{x,y,t})
+				}
+			}
+		}
+	}
+}
+
 //Send is called by a node to deliver a reading to the server.
 // Statistics are calculated each Time data is received
 func (s *FusionCenter) Send(n *NodeImpl, rd Reading) {
@@ -417,6 +437,9 @@ func (s *FusionCenter) Send(n *NodeImpl, rd Reading) {
 	} else {
 		s.Readings[Key{int(rd.Xpos / float32(s.P.XDiv)), int(rd.YPos / float32(s.P.YDiv)), rd.Time / 1000}] = []Reading{rd}
 	}
+
+	//fmt.Println(len(s.Readings))
+
 	s.Times = make(map[int]bool, 0)
 	if s.Times[rd.Time] {
 

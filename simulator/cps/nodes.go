@@ -142,8 +142,13 @@ type NodeImpl struct {
 	ReadingsBuffer		[]Reading
 	TimeLastSentReadings	int
 	TimeLastAccel		int
-	LastReading			float64
+
+	LastReading			 float64
 	ReadingPercentChange float64
+	LastAccel			 float64
+	MovePercentChange	 float64
+	MovementModifier	 float64
+	SensorModifier		 float64
 	//Online				bool //whether the node is still online (battery is still high enough)
 }
 
@@ -349,6 +354,12 @@ func (curNode *NodeImpl) Move(p *Params) {
 			curNode.Sitting = 0
 		}
 	}
+	if curNode.LastAccel == 0 {
+		curNode.ReadingPercentChange = float64(curNode.AccelerometerSpeed[p.CurrentTime/1000]) / 1.5
+	} else {
+		curNode.ReadingPercentChange = curNode.LastReading - float64(curNode.AccelerometerSpeed[p.CurrentTime/1000]) / curNode.LastAccel
+	}
+	curNode.LastAccel = float64(curNode.AccelerometerSpeed[p.CurrentTime/1000])
 }
 
 func (curNode *NodeImpl) Recalibrate() {
@@ -661,6 +672,17 @@ func RawConcentration(dist float32) float32 {
 	}
 }
 
+func (curNode *NodeImpl) NewSampleRate() int{
+	ratio := 47.5
+	rate := ((curNode.SensorModifier + ModifierFcn(curNode.ReadingPercentChange)) * ratio) + ((curNode.MovementModifier + ModifierFcn(curNode.MovePercentChange) )* ratio)
+
+	return int(1000.0 / rate)
+}
+
+func ModifierFcn(val float64) float64{
+	return math.Exp(val) / (math.Exp(val) + 1)
+}
+
 //Takes cares of taking a node's readings and printing detections and stuff
 func (curNode *NodeImpl) GetReadings() {
 
@@ -751,7 +773,11 @@ func (curNode *NodeImpl) GetReadings() {
 			newReading := Reading{ADCRead, newX, newY, curNode.P.CurrentTime, curNode.GetID(), curNode.GetCHID()}
 			curNode.ReadingsBuffer = append(curNode.ReadingsBuffer, newReading)
 		} else{
-			curNode.ReadingPercentChange = math.Abs(ADCRead - curNode.LastReading) / curNode.LastReading
+			if curNode.LastReading == 0 {
+				curNode.ReadingPercentChange = ADCRead / 4095
+			} else {
+				curNode.ReadingPercentChange = curNode.LastReading - ADCRead / curNode.LastReading
+			}
 			curNode.LastReading = ADCRead
 
 			curNode.P.Server.Send(curNode, Reading{ADCRead, newX, newY, curNode.P.CurrentTime, curNode.GetID(), curNode.GetCHID()})
@@ -995,6 +1021,12 @@ func (curNode *NodeImpl) GetReadingsCSV() {
 		//Only do this if the sensor was pinged this iteration
 
 		if curNode.Valid {
+			if curNode.LastReading == 0 {
+				curNode.ReadingPercentChange = ADCRead / 4095
+			} else {
+				curNode.ReadingPercentChange = curNode.LastReading - ADCRead / curNode.LastReading
+			}
+			curNode.LastReading = ADCRead
 			if(curNode.P.ClusteringOn){
 				if(curNode.IsClusterHead){
 					if(curNode.P.CurrentTime - curNode.TimeLastSentReadings > curNode.P.CHSensingTime*1000 || len(curNode.ReadingsBuffer)>curNode.P.MaxCHReadingBufferSize){
@@ -1129,6 +1161,12 @@ func (curNode *NodeImpl) MoveCSV(p *Params) {
 		curNode.P.NodeTree.NodeMovement(curNode.NodeBounds)
 
 		curNode.UpdateAcceleration(p.CurrentTime,newX, newY, oldX, oldY)
+		if curNode.LastAccel == 0 {
+			curNode.ReadingPercentChange = float64(curNode.AccelerometerSpeed[len(curNode.AccelerometerSpeed) - 1]) / 1.5
+		} else {
+			curNode.ReadingPercentChange = curNode.LastReading - float64(curNode.AccelerometerSpeed[len(curNode.AccelerometerSpeed) - 1]) / curNode.LastAccel
+		}
+		curNode.LastAccel = float64(curNode.AccelerometerSpeed[len(curNode.AccelerometerSpeed) - 1])
 	}
 
 

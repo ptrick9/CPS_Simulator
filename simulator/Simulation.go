@@ -220,6 +220,7 @@ func main() {
 	p.Events.Push(&cps.Event{nil, cps.TIME, -1, 0})
 	p.Events.Push(&cps.Event{nil, cps.GARBAGECOLLECT, 999, 0})
 	p.Events.Push(&cps.Event{nil, cps.CLUSTERPRINT, 999, 0})
+	p.Events.Push(&cps.Event{nil, cps.CLEANUPREADINGS, (p.ReadingHistorySize + 1) * 1000, 0})
 	if(p.ClusteringOn){
 		p.Events.Push(&cps.Event{nil,cps.CLUSTERLESSFORM,25,0})
 	}
@@ -342,7 +343,10 @@ func main() {
 				fmt.Printf("\rRunning Simulator iteration %d\\%v", int(p.CurrentTime/1000), p.Iterations_of_event)
 				p.Events.Push(&cps.Event{nil, cps.POSITION, p.CurrentTime + 1000, 0})
 
-			} else if event.Instruction == cps.SERVER {
+			} else if event.Instruction == cps.CLEANUPREADINGS {
+				p.Server.CleanupReadings()
+				p.Events.Push(&cps.Event{nil,cps.CLEANUPREADINGS, p.CurrentTime + 1000, 0})
+			}else if event.Instruction == cps.SERVER {
 				if !p.SuperNodes {
 					fmt.Fprintln(p.RoutingFile, "Amount:", 0)
 				} else {
