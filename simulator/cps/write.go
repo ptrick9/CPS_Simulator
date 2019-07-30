@@ -1103,6 +1103,7 @@ func readSensorCSV(p *Params, region *RegionParams) {
 	//CalculateADCSetting(maxReading, maxLocX, maxLocY, maxTime, p)
 	//fmt.Println(p.BombX, p.BombY)
 	//CalculateADCSetting(p.SensorReadings[p.B.X][p.B.Y][10], p.B.X, p.B.Y, 10, p)
+	fmt.Println("")
 }
 
 
