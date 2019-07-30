@@ -200,7 +200,7 @@ func main() {
 
 
 	p.CurrentTime = 0
-	for len(p.Events) > 0 && p.CurrentTime < 1000*p.Iterations_of_event{
+	for len(p.Events) > 0 && p.CurrentTime < 1000*p.Iterations_of_event && !p.FoundBomb{
 		event := heap.Pop(&p.Events).(*cps.Event)
 		//fmt.Println(event)
 		//fmt.Println(p.CurrentNodes)
