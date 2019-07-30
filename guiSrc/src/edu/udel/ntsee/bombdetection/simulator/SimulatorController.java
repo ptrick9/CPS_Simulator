@@ -21,6 +21,8 @@ import javafx.util.Duration;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.List;
 
 public class SimulatorController implements Drawable {
@@ -60,15 +62,22 @@ public class SimulatorController implements Drawable {
     @FXML private ProgressBar progressBarSimulation;
     @FXML private ToggleButton buttonPlay;
 
+    // Mouse Positions
+    @FXML private Label labelMousePosition;
+    @FXML private Label labelMouseGridPosition;
+
     // Legend
     @FXML private VBox legendContainer;
     @FXML private Separator legendSeparator;
     @FXML private CheckMenuItem checkMenuLegendNode;
     @FXML private CheckMenuItem checkMenuLegendSuperNode;
+    @FXML private CheckMenuItem checkMenuLegendAdHocLeader;
     @FXML private CheckMenuItem checkMenuLegendBattery;
     @FXML private CheckMenuItem checkMenuLegendSensorGrid;
+
     private SolidLegendKey nodeLegend;
     private SolidLegendKey superNodeLegend;
+    private SolidLegendKey adhocLeaderLegend;
     private GradientLegendKey batteryLegend;
     private OpaqueLegendKey sensorGridLegend;
 
@@ -76,7 +85,6 @@ public class SimulatorController implements Drawable {
     private FileChooser fileChooser;
 
     public void initialize() {
-
 
         this.checkMenuGridLines.selectedProperty().addListener(event -> draw());
         this.checkMenuQuadrants.selectedProperty().addListener(event -> draw());
@@ -90,6 +98,7 @@ public class SimulatorController implements Drawable {
         this.canvas = new AdvancedCanvas(this);
         this.canvas.widthProperty().bind(containerCanvas.widthProperty());
         this.canvas.heightProperty().bind(containerCanvas.heightProperty());
+        this.canvas.requestFocus();
         this.containerCanvas.getChildren().add(canvas);
 
         this.timeline = new Timeline(new KeyFrame(Duration.millis(100), event -> {
@@ -103,6 +112,26 @@ public class SimulatorController implements Drawable {
             else { timeline.stop(); }
         });
 
+        this.canvas.mouseProperty().addListener((observable, oldValue, newValue) -> {
+            if (room != null) {
+
+                AdvancedCanvas.Camera camera = canvas.getCamera();
+
+                int x = (int)((newValue.getX() + camera.getOffsetX()) / camera.getBlockSize()) + canvas.getStartColumn();
+                x = Math.max(0, x);
+                x = Math.min(x, room.getWidth() - 1);
+
+                int y = (int)((newValue.getY() + camera.getOffsetY()) / camera.getBlockSize()) + canvas.getStartRow();
+                y = Math.max(0, this.room.getHeight() - y - 1);
+                y = Math.min(y, room.getHeight() - 1);
+
+                this.labelMousePosition.setText(String.format("Simulation Position - (%d, %d)", x, y));
+                if (this.room.getSensorReadings() != null) {
+                    int squares = room.getHeight() / room.getSensorReadings().getValues().length;
+                    this.labelMouseGridPosition.setText(String.format("Sensor Reading Position - (%d, %d)", x/squares, y/squares));
+                }
+            }
+        });
         this.initializeLegend();
 
         this.fileChooser = new FileChooser();
@@ -127,6 +156,10 @@ public class SimulatorController implements Drawable {
         this.superNodeLegend.visibleProperty().bind(checkMenuLegendSuperNode.selectedProperty());
         this.superNodeLegend.managedProperty().bind(checkMenuLegendSuperNode.selectedProperty());
 
+        this.adhocLeaderLegend = new SolidLegendKey("Ad Hoc Leader Node", Color.DARKGREEN);
+        this.adhocLeaderLegend.visibleProperty().bind(checkMenuLegendAdHocLeader.selectedProperty());
+        this.adhocLeaderLegend.managedProperty().bindBidirectional(checkMenuLegendAdHocLeader.selectedProperty());
+
         this.batteryLegend = new GradientLegendKey("Battery", Color.RED, Color.GREEN, 0, 100);
         this.batteryLegend.visibleProperty().bind(checkMenuLegendBattery.selectedProperty());
         this.batteryLegend.managedProperty().bind(checkMenuLegendBattery.selectedProperty());
@@ -135,7 +168,8 @@ public class SimulatorController implements Drawable {
         this.sensorGridLegend.visibleProperty().bind(checkMenuLegendSensorGrid.selectedProperty());
         this.sensorGridLegend.managedProperty().bind(checkMenuLegendSensorGrid.selectedProperty());
 
-        this.legendContainer.getChildren().addAll(nodeLegend, superNodeLegend, batteryLegend, sensorGridLegend);
+        this.legendContainer.getChildren().addAll(nodeLegend, superNodeLegend, adhocLeaderLegend, batteryLegend, sensorGridLegend);
+
     }
     @Override
     public void draw() {
@@ -171,10 +205,6 @@ public class SimulatorController implements Drawable {
             canvas.drawQuadrants();
         }
 
-        if (radioMenuSensorReading.isSelected() && checkMenuItemShowText.isSelected()) {
-            drawSensorNumbers(room.getSensorReadings());
-        }
-
         canvas.outline();
     }
 
@@ -193,10 +223,10 @@ public class SimulatorController implements Drawable {
 
         for(AdHoc adhoc : adhocs) {
             Node leader = room.getNodeByID(adhoc.getLeaderID());
-            int lY = Math.min(room.getHeight() - leader.getY(), room.getHeight() - 1);
+            int lY = room.getHeight() - leader.getY() - 1;
             List<Node> children = room.getNodesByIDs(adhoc.getChildrenIDs());
             for(Node child : children) {
-                int cY = Math.min(room.getHeight() - child.getY(), room.getHeight() - 1);
+                int cY = room.getHeight() - child.getY() - 1;
                 canvas.drawLine(leader.getX(), lY, child.getX(), cY);
             }
         }
@@ -217,7 +247,7 @@ public class SimulatorController implements Drawable {
                 Node node = nodes.get(i);
                 Sample sample = samples.get(i);
                 if (sample.isSensorChecked()) {
-                    int y = Math.min(room.getHeight() - node.getY(), room.getHeight() - 1);
+                    int y = room.getHeight() - node.getY() - 1;
                     canvas.drawCircle(Color.YELLOW,(2.34 / .5) * canvas.getCamera().getBlockSize(),
                             node.getX(), y);
                 }
@@ -225,15 +255,14 @@ public class SimulatorController implements Drawable {
         }
 
         // Bomb
-        int by = Math.min(room.getHeight() - room.getBomb().getY(), room.getHeight() - 1);
-        canvas.drawCircle(Color.RED, canvas.getCamera().getBlockSize(),
-                room.getBomb().getX(), by);
+        int by = room.getHeight() - (int)room.getBomb().getY() - 1;
+        canvas.drawCircle(Color.RED, canvas.getCamera().getBlockSize(), (int)room.getBomb().getX(), by);
 
         // Nodes
         for (int i = 0; i < nodes.size(); i++) {
 
             Node node = nodes.get(i);
-            int y = Math.min(room.getHeight() - node.getY(), room.getHeight() - 1);
+            int y = room.getHeight() - node.getY() - 1;
             Color color = Color.BLUE;
             if(samples != null && radioMenuBatteryLevel.isSelected()) {
                 Sample sample = samples.get(i);
@@ -241,6 +270,11 @@ public class SimulatorController implements Drawable {
             }
 
             canvas.drawBlock(color, true, node.getX(), y);
+        }
+
+        for (AdHoc adHoc : room.getAdHocs()) {
+            Node leader = room.getNodeByID(adHoc.getLeaderID());
+            canvas.drawBlock(Color.DARKGREEN, true, leader.getX(), room.getHeight() - leader.getY() - 1);
         }
 
     }
@@ -251,23 +285,23 @@ public class SimulatorController implements Drawable {
         for(SuperNode superNode : superNodes) {
 
             for(TimedNode node : superNode.getPath()) {
-                int y = Math.min(room.getHeight() - node.getY(), room.getHeight() - 1);
+                int y = room.getHeight() - node.getY() - 1;
                 canvas.drawBlock(Color.WHITE, true, node.getX(), y);
             }
 
             for(TimedNode node : superNode.getUnvisitedPoints()) {
-                int y = Math.min(room.getHeight() - node.getY(), room.getHeight() - 1);
+                int y = room.getHeight() - node.getY() - 1;
                 Color color = Util.gradient(Color.RED, Color.GREEN, (double)node.getTime()/120);
                 canvas.drawBlock(color, true, node.getX(), y);
             }
 
             for(TimedNode node : superNode.getPoints()) {
-                int y = Math.min(room.getHeight() - node.getY(), room.getHeight() - 1);
+                int y = room.getHeight() - node.getY() - 1;
                 Color color = Util.gradient(Color.RED, Color.GREEN, (double)node.getTime()/120);
                 canvas.drawBlock(color, true, node.getX(), y);
             }
 
-            int y = Math.min(room.getHeight() - superNode.getY(), room.getHeight() - 1);
+            int y = room.getHeight() - superNode.getY();
             canvas.drawBlock(Color.PLUM, true, superNode.getX(), y);
         }
     }
@@ -281,8 +315,6 @@ public class SimulatorController implements Drawable {
             return;
         }
 
-        //System.out.println(grid);
-
         canvas.getGraphicsContext2D().save();
         int squares = room.getHeight() / grid.getValues().length;
 
@@ -292,47 +324,22 @@ public class SimulatorController implements Drawable {
         int xEnd = Math.min(canvas.getEndColumn() / squares, room.getWidth() / squares - 1);
         for (int y=yStart; y<=yEnd; y++) {
 
-            int renderY = Math.min(grid.getValues().length - y, grid.getValues().length - 1);
+            int flipY = Math.max(0, grid.getValues().length - y - 1);
             for (int x=xStart; x<=xEnd; x++) {
 
-                double reading = grid.getValues()[y][x];
+                double reading = grid.getValues()[flipY][x];
                 if (reading > 0) {
                     double amount = reading - grid.getMinValue();
                     double max = Math.max(grid.getMaxValue(), 20);
                     canvas.getGraphicsContext2D().setGlobalAlpha(amount / max);
-                    canvas.drawBlock(Color.RED, true, x, renderY-1, squares);
+                    canvas.drawBlock(Color.RED, true, x, y, squares);
                 }
             }
         }
 
         canvas.getGraphicsContext2D().restore();
         sensorGridLegend.setMax(grid.getMaxValue());
-    }
 
-    public void drawSensorNumbers(Grid grid) {
-
-        if (grid == null || grid != null) {
-            //radioMenuSensorReading.setSelected(false);
-            //radioMenuNone.setSelected(true);
-            //Main.showErrorDialog(new LogFormatException("Sensor Reading log is unavailable."));
-            return;
-        }
-
-        canvas.getGraphicsContext2D().save();
-        int squares = room.getHeight() / grid.getValues().length;
-        int yStart = canvas.getStartRow()/squares;
-        int yEnd = (int)Math.ceil((double)canvas.getEndRow() / squares);
-        yEnd = Math.min(yEnd, grid.getValues().length - 1);
-        for(int y=yStart; y<=yEnd; y++) {
-            int xStart = canvas.getStartColumn()/squares;
-            int xEnd = (int)Math.ceil((double)canvas.getEndColumn() / squares);
-            xEnd = Math.min(xEnd, grid.getValues()[y].length - 1);
-            for(int x=xStart; x<=xEnd; x++) {
-                canvas.drawNumber(grid.getValues()[y][x], x, y, squares);
-            }
-        }
-
-        canvas.getGraphicsContext2D().restore();
     }
 
     private void drawNodePathing(Grid grid) {
@@ -436,6 +443,9 @@ public class SimulatorController implements Drawable {
     @FXML
     private void onMenuItemClose() {
 
+        this.labelMousePosition.setText(" Simulation Position - N/A");
+        this.labelMouseGridPosition.setText("Grid Position - N/A");
+        this.sensorGridLegend.setMax(0);
         this.timeline.stop();
         try {
             this.room.close();
@@ -450,18 +460,6 @@ public class SimulatorController implements Drawable {
             this.menuItemClose.setDisable(true);
             this.canvas.clear();
         }
-    }
-
-    @FXML
-    private void onMenuItemZoomIn() {
-        canvas.getCamera().zoomIn();
-        draw();
-    }
-
-    @FXML
-    private void onMenuItemZoomOut() {
-        canvas.getCamera().zoomOut();
-        draw();
     }
 
     @FXML

@@ -114,9 +114,6 @@ public class BuilderController implements Drawable {
         this.canvas.widthProperty().bind(canvasContainer.widthProperty());
         this.canvas.heightProperty().bind(canvasContainer.heightProperty());
         this.canvas.allowPanningProperty().bind(toggleButtonCamera.selectedProperty());
-        this.canvas.mouseProperty().addListener((observable, old, mouse) -> {
-            textMousePosition.setText(String.format("(%d, %d)", mouse.getX(), mouse.getY()));
-        });
         this.canvasContainer.getChildren().add(canvas);
     }
 
@@ -350,8 +347,8 @@ public class BuilderController implements Drawable {
 
     private void onCanvasInteraction() {
 
-        int x = canvas.getMouse().getX();
-        int y = canvas.getMouse().getY();
+        int x = (int)canvas.getMouse().getX();
+        int y = (int)canvas.getMouse().getY();
         if (x < 0 || x >= scenario.getMaxWidth() || y  < 0 || y  >= scenario.getMaxHeight()) return;
 
         Node node = new Node(-1, x, y);
