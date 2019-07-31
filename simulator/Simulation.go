@@ -355,12 +355,6 @@ func main() {
 	}
 
 	if p.ZipFiles {
-		output := p.OutputFileNameCM + ".zip"
-		if err := cps.ZipFiles(output, p.Files); err != nil {
-			panic(err)
-		}
-		fmt.Println("Zipped File:", output)
-
 		p.MoveReadingsFile.Close()
 		p.DriftFile.Close()
 		p.NodeFile.Close()
@@ -372,6 +366,12 @@ func main() {
 		p.DetectionFile.Close()
 		p.BatteryFile.Close()
 		p.RunParamFile.Close()
+
+		output := p.OutputFileNameCM + ".zip"
+		if err := cps.ZipFiles(output, p.Files); err != nil {
+			panic(err)
+		}
+		fmt.Println("Zipped File:", output)
 
 		for _, file := range(p.Files) {
 
