@@ -5,8 +5,9 @@ import os
 import itertools
 import matplotlib.pyplot as plt
 
-basePath = "C:/Users/patrick/Dropbox/Patrick/udel/SUMMER2019/data/bigData/"
+#basePath = "C:/Users/patrick/Dropbox/Patrick/udel/SUMMER2019/data/bigData/"
 #basePath = "C:/Users/patrick/Downloads/bigData/"
+basePath = "C:/Users/patrick/Downloads/fineGrainedBomb/fineGrainedBomb/"
 figurePath = "C:/Users/patrick/Dropbox/Patrick/udel/SUMMER2018/git_simulator/CPS_Simulator/graphs/"
 
 X_VAL = ['detectionThreshold', 'detectionDistance']
@@ -141,8 +142,9 @@ if __name__ == '__main__':
     #'''
     uniqueRuns = set()
     for file in os.listdir(basePath):
-        uniqueRuns.add(file.split('-')[0])
-    uniqueRuns = list(uniqueRuns)[:200]
+        if 'parameters' in file:
+            uniqueRuns.add(file.split('-')[0])
+    uniqueRuns = list(uniqueRuns)#[:200]
 
     shiftingParameters = determineDifferences(basePath, uniqueRuns)
     print(shiftingParameters)
