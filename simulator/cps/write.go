@@ -1515,6 +1515,8 @@ func WriteFlags(p * Params){
 	buf.WriteString(fmt.Sprintf("outRoutingStatsName=%v\n", p.OutRoutingStatsNameCM))
 	buf.WriteString(fmt.Sprintf("regionRouting=%v\n", p.RegionRouting))
 	buf.WriteString(fmt.Sprintf("validationThreshold=%v\n", p.ValidationThreshold))
+	buf.WriteString(fmt.Sprintf("bombX=%v\n", p.B.X))
+	buf.WriteString(fmt.Sprintf("bombY=%v\n", p.B.Y))
 	fmt.Fprintf(p.RunParamFile,buf.String())
 }
 
