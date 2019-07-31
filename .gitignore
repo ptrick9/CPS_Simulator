@@ -192,3 +192,5 @@ mem-prof/
 graphs/
 
 *.csv
+
+g2/

@@ -145,6 +145,7 @@ def buildApproachDistances(basename, maxDistance, granularity):
     #f = open('%s-simulatorOutput.txt' % basename)
     lines = []
     for line in f:
+        line = line.decode("utf-8")
         lines.append(line.rstrip())
 
     bx = int(lines[4].split(" ")[2])
