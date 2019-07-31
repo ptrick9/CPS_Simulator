@@ -892,6 +892,11 @@ func SetupFiles(p *Params) {
 		log.Fatal("Cannot create file", err)
 	}
 	//defer p.ServerFile.Close()
+
+	p.SamplingData, err = os.Create(p.OutputFileNameCM + "-samplingParams.txt")
+	if err != nil {
+		log.Fatal("Cannot create file", err)
+	}
 }
 
 func SetupParameters(p *Params, r *RegionParams) {

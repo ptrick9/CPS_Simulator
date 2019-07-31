@@ -92,6 +92,7 @@ type Params struct {
 	ClusterReadings *os.File
 	ClusterMessages *os.File
 	AliveValidNodes	*os.File
+	SamplingData    *os.File
 
 	SensorPath  string
 	FineSensorPath  string
