@@ -46,6 +46,7 @@ type Params struct {
 	StdDevThresholdCM			   float64 //Detection Threshold based on standard deviations from mean
 	CalibrationThresholdCM		   float64
 	DetectionDistance 			   float64
+	RandomBomb					   bool
 
 
 	StimFileNameCM        string
