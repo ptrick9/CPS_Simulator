@@ -354,10 +354,34 @@ func main() {
 		fmt.Println("\nSimulation Complete")
 	}
 
-	for i := range p.BoolGrid {
-		fmt.Fprintln(p.BoolFile, p.BoolGrid[i])
-	}
+	if p.ZipFiles {
+		output := p.OutputFileNameCM + ".zip"
+		if err := cps.ZipFiles(output, p.Files); err != nil {
+			panic(err)
+		}
+		fmt.Println("Zipped File:", output)
 
+		p.MoveReadingsFile.Close()
+		p.DriftFile.Close()
+		p.NodeFile.Close()
+		p.PositionFile.Close()
+		p.GridFile.Close()
+		p.EnergyFile.Close()
+		p.RoutingFile.Close()
+		p.ServerFile.Close()
+		p.DetectionFile.Close()
+		p.BatteryFile.Close()
+		p.RunParamFile.Close()
+
+		for _, file := range(p.Files) {
+
+			var err = os.Remove(file)
+			if err != nil {
+				fmt.Println(err)
+			}
+		}
+
+	}
 
 	p.Server.PrintStatsFile()
 

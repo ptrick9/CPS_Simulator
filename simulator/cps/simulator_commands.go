@@ -79,14 +79,12 @@ type Params struct {
 	GridFile       *os.File
 	EnergyFile     *os.File
 	RoutingFile    *os.File
-	AttractionFile *os.File
-	BoolFile       *os.File
 	ServerFile	   *os.File
-	NodeTest	   *os.File
-	NodeTest2	   *os.File
 	DetectionFile  *os.File
 	BatteryFile    *os.File
 	RunParamFile   *os.File
+	ZipFiles 		bool
+	Files 			[]string
 
 	SensorPath  string
 	FineSensorPath  string
