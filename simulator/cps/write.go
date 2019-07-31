@@ -2,6 +2,7 @@
 package cps
 
 import (
+	"archive/zip"
 	"bytes"
 	"encoding/csv"
 	"flag"
@@ -661,12 +662,13 @@ func SetupFiles(p *Params) {
 	if err != nil {
 		log.Fatal("cannot create file", err)
 	}
-	defer dummy.Close()
+	dummy.Close()
+	os.Remove("dummyFile.txt")
 	p.PositionFile, err = os.Create(p.OutputFileNameCM + "-simulatorOutput.txt")
 	if err != nil {
 		log.Fatal("Cannot create file", err)
 	}
-	//defer p.PositionFile.Close()
+	p.Files = append(p.Files, p.OutputFileNameCM + "-simulatorOutput.txt")
 
 	//Print parameters to position file
 	fmt.Fprintln(p.PositionFile, "Image:", p.ImageFileNameCM)
@@ -680,7 +682,7 @@ func SetupFiles(p *Params) {
 	if err != nil {
 		log.Fatal("Cannot create file", err)
 	}
-	//defer p.DriftFile.Close()
+	p.Files = append(p.Files, p.OutputFileNameCM + "-drift.txt")
 
 	//Printing parameters to driftFile
 	fmt.Fprintln(p.DriftFile, "Number of Nodes:", p.TotalNodes)
@@ -709,81 +711,58 @@ func SetupFiles(p *Params) {
 	if err != nil {
 		log.Fatal("Cannot create file", err)
 	}
-	//defer p.GridFile.Close()
+	p.Files = append(p.Files, p.OutputFileNameCM + "-grid.txt")
+
 
 	//Write parameters to gridFile
 	fmt.Fprintln(p.GridFile, "Width:", p.SquareColCM)
 	fmt.Fprintln(p.GridFile, "Height:", p.SquareRowCM)
 
-	p.NodeFile, err = os.Create(p.OutputFileNameCM + "-node_reading.txt")
-	if err != nil {
-		log.Fatal("Cannot create file", err)
-	}
-	//defer p.NodeFile.Close()
 
 	p.EnergyFile, err = os.Create(p.OutputFileNameCM + "-node.txt")
 	if err != nil {
 		log.Fatal("Cannot create file", err)
 	}
-	//defer p.EnergyFile.Close()
+	p.Files = append(p.Files, p.OutputFileNameCM + "-node.txt")
 
 	p.BatteryFile, err = os.Create(p.OutputFileNameCM + "-batteryusage.txt")
 	if err != nil {
 		log.Fatal("Cannot create file", err)
 	}
+	p.Files = append(p.Files, p.OutputFileNameCM + "-batteryusage.txt")
 
 	p.RunParamFile, err = os.Create(p.OutputFileNameCM + "-parameters.txt")
 	if err != nil {
 		log.Fatal("Cannot create file", err)
 	}
+	p.Files = append(p.Files, p.OutputFileNameCM + "-parameters.txt")
 
 	p.RoutingFile, err = os.Create(p.OutputFileNameCM + "-path.txt")
 	if err != nil {
 		log.Fatal("Cannot create file", err)
 	}
-	//defer p.RoutingFile.Close()
-
-	p.BoolFile, err = os.Create(p.OutputFileNameCM + "-bool.txt")
-	if err != nil {
-		log.Fatal("Cannot create file", err)
-	}
-	//defer p.BoolFile.Close()
-
-	p.AttractionFile, err = os.Create(p.OutputFileNameCM + "-attraction.txt")
-	if err != nil {
-		log.Fatal("Cannot create file", err)
-	}
+	p.Files = append(p.Files, p.OutputFileNameCM + "-path.txt")
 
 	p.MoveReadingsFile, err = os.Create(p.OutputFileNameCM + "-movementReadings.txt")
 	if err != nil {
 		log.Fatal("Cannot create file", err)
 	}
-
-	//defer p.AttractionFile.Close()
+	p.Files = append(p.Files, p.OutputFileNameCM + "-movementReadings.txt")
 
 	p.ServerFile, err = os.Create(p.OutputFileNameCM + "-server.txt")
 	if err != nil {
 		log.Fatal("Cannot create file", err)
 	}
-	//defer p.ServerFile.Close()
-
-	p.NodeTest, err = os.Create(p.OutputFileNameCM + "-nodeTest.txt")
-	if err != nil {
-		log.Fatal("Cannot create file", err)
-	}
-	//defer p.ServerFile.Close()
-
-	p.NodeTest2, err = os.Create(p.OutputFileNameCM + "-nodeTest2.txt")
-	if err != nil {
-		log.Fatal("Cannot create file", err)
-	}
-	//defer p.ServerFile.Close()
+	p.Files = append(p.Files, p.OutputFileNameCM + "-server.txt")
 
 	p.DetectionFile, err = os.Create(p.OutputFileNameCM + "-detection.txt")
 	if err != nil {
 		log.Fatal("Cannot create file", err)
 	}
-	//defer p.ServerFile.Close()
+	p.Files = append(p.Files, p.OutputFileNameCM + "-detection.txt")
+
+	fmt.Println(p.Files)
+
 }
 
 func SetupParameters(p *Params, r *RegionParams) {
@@ -1500,7 +1479,7 @@ func GetFlags(p *Params) {
 
 	flag.IntVar(&p.ValidationThreshold, "validationThreshold", 1, "Number of detections required to validate a detection")
 	flag.BoolVar(&p.RandomBomb, "randomBomb", false, "Toggles random bomb placement")
-
+	flag.BoolVar(&p.ZipFiles, "zipFiles", false, "Toggles Zipping of output files")
 	flag.Parse()
 	fmt.Println("Natural Loss: ", p.NaturalLossCM)
 	fmt.Println("Sensor Sampling Loss: ", p.SamplingLossSensorCM)
@@ -1584,4 +1563,62 @@ func WriteFlags(p * Params){
 	buf.WriteString(fmt.Sprintf("regionRouting=%v\n", p.RegionRouting))
 	buf.WriteString(fmt.Sprintf("validationThreshold=%v\n", p.ValidationThreshold))
 	fmt.Fprintf(p.RunParamFile,buf.String())
+}
+
+
+
+
+func ZipFiles(filename string, files []string) error {
+
+	newZipFile, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+	defer newZipFile.Close()
+
+	zipWriter := zip.NewWriter(newZipFile)
+	defer zipWriter.Close()
+
+	// Add files to zip
+	for _, file := range files {
+		if err = AddFileToZip(zipWriter, file); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func AddFileToZip(zipWriter *zip.Writer, filename string) error {
+
+	fileToZip, err := os.Open(filename)
+	if err != nil {
+		return err
+	}
+	defer fileToZip.Close()
+
+	// Get the file information
+	info, err := fileToZip.Stat()
+	if err != nil {
+		return err
+	}
+
+	header, err := zip.FileInfoHeader(info)
+	if err != nil {
+		return err
+	}
+
+	// Using FileInfoHeader() above only uses the basename of the file. If we want
+	// to preserve the folder structure we can overwrite this with the full path.
+	header.Name = filename
+
+	// Change to deflate to gain better compression
+	// see http://golang.org/pkg/archive/zip/#pkg-constants
+	header.Method = zip.Deflate
+
+	writer, err := zipWriter.CreateHeader(header)
+	if err != nil {
+		return err
+	}
+	_, err = io.Copy(writer, fileToZip)
+	return err
 }
