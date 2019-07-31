@@ -27,11 +27,13 @@ import os
 def runner(queue):
     while True:
         job = queue.get()
+        print("%d\\%d" % (job[1], job[2]))
         #print(job)
-        command = "./simulator/Simulation "+' '.join(job)
-        print(command)
-        #os.system(command)
+        command = "./simulator/Simulation "+' '.join(job[0])
+        #print(command)
+        os.system(command + " 1>/dev/null")
         queue.task_done()
+
 
 if __name__ == '__main__':
 
@@ -88,7 +90,7 @@ if __name__ == '__main__':
             j = [zz for zz in r]
             j.append("-OutputFileName=/home/simulator/simData/fineGrainedBomb/Log_%d" % x)
             v = j
-            q.put(v)
+            q.put([v, x, len(runs)*10])
             x+= 1
 
        

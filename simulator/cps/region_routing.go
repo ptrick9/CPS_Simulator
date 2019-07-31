@@ -66,7 +66,7 @@ func RegionContaining(p Tuple, r *RegionParams) int {
 
 func SoftRegionContaining(p Tuple, r *RegionParams) int {
 	for i, s := range r.Square_list {
-		if p.X >= s.X1+2 && p.X <= s.X2-2 && p.Y <= s.Y1+2 && p.Y >= s.Y2-2 {
+		if p.X >= s.X1-2 && p.X <= s.X2+2 && p.Y <= s.Y1+2 && p.Y >= s.Y2-2 {
 			return i
 		}
 	}
