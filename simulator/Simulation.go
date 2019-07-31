@@ -136,11 +136,12 @@ func main() {
 	if p.RandomBomb {
 		reg := cps.RandomInt(0, len(r.Square_list))
 		xval := cps.RandomInt(r.Square_list[reg].X1, r.Square_list[reg].X2)
-		yval := cps.RandomInt(r.Square_list[reg].Y1, r.Square_list[reg].Y2)
-		p.BombY = xval
+		yval := cps.RandomInt(r.Square_list[reg].Y2, r.Square_list[reg].Y1)
+		p.BombX = xval
 		p.BombY = yval
 		p.B = &cps.Bomb{X: p.BombX, Y: p.BombY}
 	}
+	fmt.Printf("Bomb location: %v, %v\n", p.BombX, p.BombY)
 
 	//This is where the text file reading ends
 	Vn := make([]float64, 1000)
