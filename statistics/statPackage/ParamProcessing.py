@@ -1,3 +1,6 @@
+from zipfile import *
+import os
+
 def isInt(s):
     try:
         int(s)
@@ -16,11 +19,15 @@ def isBool(s):
     return (s=="true\n" or s=="false\n")
 
 def getParameters(basename):
-    filename = "%s-parameters.txt" % basename
+    zf = ZipFile(basename)
+    temp = os.path.split(basename)[1]
+    n = temp.split(".zip")[0]
+    f = zf.open("%s%s" % (n, "-parameters.txt"))
     params = dict()
 
-    f = open(filename)
+    #f = open(filename)
     for line in f:
+        line = line.decode("utf-8")
         l=line.split('=')
         key = l[0]
         if(isBool(l[1])):

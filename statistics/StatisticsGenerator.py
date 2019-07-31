@@ -4,16 +4,19 @@ from statPackage.ParamProcessing import *
 import os
 import itertools
 import matplotlib.pyplot as plt
+from zipfile import *
 
 #basePath = "C:/Users/patrick/Dropbox/Patrick/udel/SUMMER2019/data/bigData/"
 #basePath = "C:/Users/patrick/Downloads/bigData/"
 basePath = "C:/Users/patrick/Downloads/fineGrainedBomb/fineGrainedBomb/"
+basePath = "C:/Users/patrick/Downloads/testFolder/"
 figurePath = "C:/Users/patrick/Dropbox/Patrick/udel/SUMMER2018/git_simulator/CPS_Simulator/graphs/"
 
 X_VAL = ['detectionThreshold', 'detectionDistance']
 #X_VAL = ['validationThreshold']
 
 IGNORE = ['movementPath']
+ZIP = True
 
 
 def buildDetectionList(basePath, runs):
@@ -142,8 +145,7 @@ if __name__ == '__main__':
     #'''
     uniqueRuns = set()
     for file in os.listdir(basePath):
-        if 'parameters' in file:
-            uniqueRuns.add(file.split('-')[0])
+        uniqueRuns.add(file.split('-')[0])
     uniqueRuns = list(uniqueRuns)#[:200]
 
     shiftingParameters = determineDifferences(basePath, uniqueRuns)

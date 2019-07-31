@@ -1,6 +1,8 @@
 import re
 import numpy as np
 import math
+from zipfile import *
+import os
 
 
 def dist(x1, y1, x2, y2):
@@ -68,11 +70,19 @@ def CountFN(d):
     return sum([1 if x.FN() else 0 for x in d])
 
 def BuildDetections(basename):
-    f = open('%s-detection.txt' % basename)
+
+    zf = ZipFile(basename)
+    temp = os.path.split(basename)[1]
+    n = temp.split(".zip")[0]
+    f = zf.open("%s%s" % (n, "-detection.txt"))
+
+
+    #f = open('%s-detection.txt' % basename)
 
     longBoi = ""
 
     for line in f:
+        line = line.decode("utf-8")
         longBoi += line
 
 
@@ -126,7 +136,13 @@ def BuildDetections(basename):
 
 
 def buildApproachDistances(basename, maxDistance, granularity):
-    f = open('%s-simulatorOutput.txt' % basename)
+
+    zf = ZipFile(basename)
+    temp = os.path.split(basename)[1]
+    n = temp.split(".zip")[0]
+    f = zf.open("%s%s" % (n, "-simulatorOutput.txt"))
+
+    #f = open('%s-simulatorOutput.txt' % basename)
     lines = []
     for line in f:
         lines.append(line.rstrip())

@@ -1241,53 +1241,6 @@ func RangeInt(min, max int) int { //returns a random number between max and min
 	return rand.Intn(max-min) + min
 }
 
-// This prints the board map to the terminal
-//func printBoardMap(){
-//	for i:= 0; i < len(p.BoardMap); i++{
-//		fmt.Println(p.BoardMap[i])
-//	}
-//}
-
-//var fileBoard, errBoard = os.Create("p.BoardMap.txt")
-/*
-// This prints board Map to a txt file.
-func writeBordMapToFile2() {
-	start := Time.Now()
-	defer func() {
-		elapsed := Time.Since(start)
-		fmt.Println("Printing Board Map took", elapsed)
-	}()
-	Check(errBoard)
-	var s = ""
-	s = s + "\nt=" + strconv.Itoa(iterations_used) + "\n\n"
-	for i := 0; i < len(p.BoardMap); i++ {
-		for j := 0; j < len(p.BoardMap[i]); j++ {
-			s = s + strconv.Itoa(p.BoardMap[i][j]) + " "
-		}
-		s = s + "\n"
-	}
-	//s = s + "\nt=" + strconv.Itoa(iterations_used) + "\n\n"
-	n3, err := fileBoard.WriteString(s)
-	Check(err)
-	fmt.Printf("wrote %d bytes\n", n3)
-}
-
-func writeBordMapToFile() {
-	//start := Time.Now()
-	Check(errBoard)
-	w := bufio.NewWriter(fileBoard)
-	w.WriteString("\nt=" + strconv.Itoa(iterations_used) + "\n\n")
-	for i := 0; i < len(p.BoardMap); i++ {
-		for j := 0; j < len(p.BoardMap[i]); j++ {
-			w.WriteString(strconv.Itoa(p.BoardMap[i][j]) + " ")
-		}
-		w.WriteString("\n")
-	}
-	w.Flush()
-	//elapsed := Time.Since(start)
-	//fmt.Println("Printing Board Map took", elapsed)
-}*/
-
 
 func FlipSquares(p *Params, r *RegionParams) {
 	//tmp := 0
