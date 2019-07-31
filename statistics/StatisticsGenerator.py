@@ -10,7 +10,7 @@ from zipfile import *
 #basePath = "C:/Users/patrick/Downloads/bigData/"
 basePath = "C:/Users/patrick/Downloads/fineGrainedBomb/fineGrainedBomb/"
 basePath = "C:/Users/patrick/Downloads/testFolder/"
-figurePath = "C:/Users/patrick/Dropbox/Patrick/udel/SUMMER2018/git_simulator/CPS_Simulator/graphs/"
+figurePath = "C:/Users/patrick/Dropbox/Patrick/udel/SUMMER2018/git_simulator/CPS_Simulator/g2/"
 
 X_VAL = ['detectionThreshold', 'detectionDistance']
 #X_VAL = ['validationThreshold']
