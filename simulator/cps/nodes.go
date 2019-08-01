@@ -354,14 +354,14 @@ func (curNode *NodeImpl) Move(p *Params) {
 			curNode.Sitting = 0
 		}
 	}
-	if curNode.LastAccel == 0 {
+	if curNode.LastAccel == 0.0 {
 		curNode.MovePercentChange = float64(curNode.AccelerometerSpeed[len(curNode.AccelerometerSpeed) - 1]) / 1.5
 	} else {
 		curNode.MovePercentChange = curNode.LastAccel - float64(curNode.AccelerometerSpeed[len(curNode.AccelerometerSpeed) - 1]) / curNode.LastAccel
 	}
 	curNode.LastAccel = float64(curNode.AccelerometerSpeed[len(curNode.AccelerometerSpeed) - 1])
 	fmt.Fprintf(curNode.P.SamplingData, "ID:%v T:%v M:%v,%v\n", curNode.Id, curNode.P.CurrentTime, curNode.AccelerometerSpeed[len(curNode.AccelerometerSpeed) - 1],
-		curNode.ReadingPercentChange)
+		curNode.MovePercentChange)
 }
 
 func (curNode *NodeImpl) Recalibrate() {
@@ -776,7 +776,7 @@ func (curNode *NodeImpl) GetReadings() {
 			newReading := Reading{ADCRead, newX, newY, curNode.P.CurrentTime, curNode.GetID(), curNode.GetCHID()}
 			curNode.ReadingsBuffer = append(curNode.ReadingsBuffer, newReading)
 		} else{
-			if curNode.LastReading == 0 {
+			if curNode.LastReading == 0.0 {
 				curNode.ReadingPercentChange = ADCRead / 4095
 			} else {
 				curNode.ReadingPercentChange = curNode.LastReading - ADCRead / curNode.LastReading
@@ -1024,7 +1024,7 @@ func (curNode *NodeImpl) GetReadingsCSV() {
 		//Only do this if the sensor was pinged this iteration
 
 		if curNode.Valid {
-			if curNode.LastReading == 0 {
+			if curNode.LastReading == 0.0 {
 				curNode.ReadingPercentChange = ADCRead / 4095
 			} else {
 				curNode.ReadingPercentChange = curNode.LastReading - ADCRead / curNode.LastReading
@@ -1165,14 +1165,14 @@ func (curNode *NodeImpl) MoveCSV(p *Params) {
 		curNode.P.NodeTree.NodeMovement(curNode.NodeBounds)
 
 		curNode.UpdateAcceleration(p.CurrentTime,newX, newY, oldX, oldY)
-		if curNode.LastAccel == 0 {
+		if curNode.LastAccel == 0.0 {
 			curNode.MovePercentChange = float64(curNode.AccelerometerSpeed[len(curNode.AccelerometerSpeed) - 1]) / 1.5
 		} else {
 			curNode.MovePercentChange = curNode.LastAccel - float64(curNode.AccelerometerSpeed[len(curNode.AccelerometerSpeed) - 1]) / curNode.LastAccel
 		}
 		curNode.LastAccel = float64(curNode.AccelerometerSpeed[len(curNode.AccelerometerSpeed) - 1])
 		fmt.Fprintf(curNode.P.SamplingData, "ID:%v T:%v M:%v,%v\n", curNode.Id, curNode.P.CurrentTime, curNode.AccelerometerSpeed[len(curNode.AccelerometerSpeed) - 1],
-			curNode.ReadingPercentChange)
+			curNode.MovePercentChange)
 	}
 
 

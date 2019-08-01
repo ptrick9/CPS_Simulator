@@ -425,6 +425,11 @@ func InitializeNodeParameters(p *Params, nodeNum int) *NodeImpl{
 	curNode.InitialSensitivity = s0 + (s1)*math.Exp(-float64(curNode.NodeTime)/p.Tau1) + (s2)*math.Exp(-float64(curNode.NodeTime)/p.Tau2)
 	curNode.Sensitivity = curNode.InitialSensitivity
 
+	curNode.MovementModifier = 0.5
+	curNode.SensorModifier = 0.5
+	curNode.LastAccel = 0
+	curNode.LastReading = 0
+
 	return &curNode
 }
 
