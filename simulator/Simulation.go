@@ -451,7 +451,7 @@ func PrintNodeBatteryOverTimeFast(p * cps.Params)  {
 	}
 	buffer.WriteString("\n")
 
-	for t:=0; t<p.Iterations_of_event; t++{
+	for t:=0; t<p.CurrentTime/1000; t++{
 		buffer.WriteString(fmt.Sprintf("%v,", t))
 		for i := range p.NodeList{
 			n := p.NodeList[i]
