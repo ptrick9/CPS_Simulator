@@ -135,8 +135,8 @@ func main() {
 	//Defaults to false
 	if p.RandomBomb {
 		reg := cps.RandomInt(0, len(r.Square_list))
-		xval := cps.RandomInt(r.Square_list[reg].X1, r.Square_list[reg].X2)
-		yval := cps.RandomInt(r.Square_list[reg].Y2, r.Square_list[reg].Y1)
+		xval := cps.RandomInt(r.Square_list[reg].X1, r.Square_list[reg].X2 + 1)
+		yval := cps.RandomInt(r.Square_list[reg].Y2, r.Square_list[reg].Y1 + 1)
 		p.BombX = xval
 		p.BombY = yval
 		p.B = &cps.Bomb{X: p.BombX, Y: p.BombY}
