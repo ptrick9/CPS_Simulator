@@ -9,13 +9,13 @@ from zipfile import *
 #basePath = "C:/Users/patrick/Dropbox/Patrick/udel/SUMMER2019/data/bigData/"
 #basePath = "C:/Users/patrick/Downloads/bigData/"
 basePath = "C:/Users/patrick/Downloads/fineGrainedBomb/fineGrainedBomb/"
-basePath = "C:/Users/patrick/Downloads/testFolder/"
+basePath = "C:/Users/patrick/Downloads/lowADC/"
 figurePath = "C:/Users/patrick/Dropbox/Patrick/udel/SUMMER2018/git_simulator/CPS_Simulator/g2/"
 
 X_VAL = ['detectionThreshold', 'detectionDistance']
-#X_VAL = ['validationThreshold']
+X_VAL = ['validationThreshold']
 
-IGNORE = ['movementPath']
+IGNORE = ['movementPath', 'bombX', 'bombY']
 ZIP = True
 
 
@@ -62,7 +62,11 @@ def generateData(uniqueRuns):
         run = {}
         p = getParameters("%s%s" % (basePath, file))
         det = getDetections(basePath, file)
-        firstDet = next(x for x in det if x.TPConf()).time
+        firstDet = 5000
+        try:
+            firstDet = next(x for x in det if x.TPConf()).time
+        except:
+            pass
         run['Detection Time'] = firstDet
         run['# True Positive Rejections'] = sum([1 if x.TPRej() and x.time < firstDet else 0 for x in det])
         run['# False Positives'] = sum([1 if x.FP() and x.time < firstDet else 0 for x in det])
