@@ -302,6 +302,9 @@ func main() {
 					}
 					p.Events.Push(&cps.Event{event.Node, cps.CLUSTERFORM, p.CurrentTime + 1000, 0})
 				}
+			} else if event.Instruction == cps.ScheduleSensor {
+				event.Node.ScheduleSensing()
+				p.Events.Push(&cps.Event{event.Node, cps.ScheduleSensor, p.CurrentTime + 50, 0})
 			}
 		} else {
 			if event.Instruction == cps.POSITION {

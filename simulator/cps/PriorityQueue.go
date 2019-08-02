@@ -23,6 +23,7 @@ const (
 	CLUSTERLESSFORM
 	CLUSTERPRINT
 	CLEANUPREADINGS
+	ScheduleSensor
 )
 
 type Event struct {

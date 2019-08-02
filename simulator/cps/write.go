@@ -468,6 +468,7 @@ func SetupCSVNodes(p *Params) {
 
 		newNode.AccelerometerSpeed = []float32{}
 		newNode.TimeLastAccel = p.CurrentTime
+		newNode.LastMoveTime = p.CurrentTime
 
 		bNewNode := Bounds{
 			X:	float64(newNode.X),
@@ -537,6 +538,7 @@ func SetupRandomNodes(p *Params) {
 				}
 				p.NodeList[len(p.NodeList)-1].NodeBounds = &bNewNode
 				p.NodeTree.Insert(&bNewNode)
+				newNode.Battery = 100.0
 			}
 			//newNode.Online = true
 		}

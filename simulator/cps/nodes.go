@@ -142,6 +142,9 @@ type NodeImpl struct {
 	ReadingsBuffer		[]Reading
 	TimeLastSentReadings	int
 	TimeLastAccel		int
+	LastMoveTime		int
+	Velocity			float64
+	SampleRate			int
 
 	LastReading			 float64
 	ReadingPercentChange float64
@@ -149,6 +152,11 @@ type NodeImpl struct {
 	MovePercentChange	 float64
 	MovementModifier	 float64
 	SensorModifier		 float64
+
+	SampleRateSensor	 float64
+	SampleRateMovement   float64
+
+	ScheduledEvent		 *Event
 	//Online				bool //whether the node is still online (battery is still high enough)
 }
 
@@ -674,12 +682,37 @@ func RawConcentration(dist float32) float32 {
 	}
 }
 
-func (curNode *NodeImpl) NewSampleRate() int{
-	ratio := 47.5
-	rate := ((curNode.SensorModifier + ModifierFcn(curNode.ReadingPercentChange)) * ratio) + ((curNode.MovementModifier + ModifierFcn(curNode.MovePercentChange) )* ratio)
+func (curNode *NodeImpl) UpdateSampleRatePart(modifier string, value float64) {
+	//samplesPerMeter := 10.0
+	rate := 0.0
+	if modifier == "sensor" {
+		rate = .05
+		curNode.SampleRateSensor = rate
+	} else if modifier == "movement" {
+		rate = 9.375 * value
+		curNode.SampleRateMovement = rate
+	} else {
+		fmt.Println("Error updating sample rate!")
+	}
 
-	//
-	return int(1000.0 / rate)
+	//ratio := 47.5
+	//rate := ((curNode.SensorModifier + ModifierFcn(curNode.ReadingPercentChange)) * ratio) + ((curNode.MovementModifier + ModifierFcn(curNode.MovePercentChange) )* ratio)
+
+	// return int(1000.0 / rate)
+}
+
+func (curNode *NodeImpl) NewSampleRate() float64{
+	//Implement samplerate due to battery as maximum for other sample rates
+	//if SampleRateBattery < SampleRateSensor: SampleRateSensor = SampleRateBattery
+	return MaxFloat64(curNode.SampleRateSensor, curNode.SampleRateMovement)
+}
+
+func MaxFloat64(val1, val2 float64) float64{
+	if val1 > val2 {
+		return val1
+	} else {
+		return val2
+	}
 }
 
 func ModifierFcn(val float64) float64{
@@ -1021,9 +1054,10 @@ func (curNode *NodeImpl) GetReadingsCSV() {
 		} else {
 			curNode.ReadingPercentChange = ADCRead - curNode.LastReading  / curNode.LastReading
 		}*/
-		curNode.ReadingPercentChange = 0.00122 * (ADCRead - curNode.LastReading)
-		curNode.LastReading = ADCRead
-		fmt.Fprintf(curNode.P.SamplingData, "ID:%v T:%v S:%v,%v\n", curNode.Id, curNode.P.CurrentTime, ADCRead, curNode.ReadingPercentChange)
+		curNode.UpdateSampleRatePart("sensor", ADCRead)
+		//curNode.ReadingPercentChange = 0.00122 * (ADCRead - curNode.LastReading)
+		//curNode.LastReading = ADCRead
+		fmt.Fprintf(curNode.P.SamplingData, "ID:%v T:%v S:%v,%v\n", curNode.Id, curNode.P.CurrentTime, ADCRead, curNode.SampleRateSensor)
 
 
 		//Receives the node's distance and calculates its running average
@@ -1073,7 +1107,8 @@ func (curNode *NodeImpl) GetReadingsCSV() {
 		}
 
 	}
-	curNode.P.Events.Push(&Event{curNode, SENSE, curNode.P.CurrentTime + 500, 0})
+	curNode.ScheduledEvent = &Event{curNode, SENSE, curNode.P.CurrentTime + 500, 0}
+	curNode.P.Events.Push(curNode.ScheduledEvent)
 }
 
 //Get min and max readings
@@ -1140,6 +1175,13 @@ func (curNode *NodeImpl) UpdateAcceleration(curTime int, newX float32, newY floa
 	curNode.TimeLastAccel = curTime
 }
 
+func (curNode *NodeImpl) UpdateVelocity(curTime int, newX float32, newY float32, oldX float32, oldY float32) {
+	timeElapsed := float64(curTime - curNode.LastMoveTime) / 1000.0
+	curNode.LastMoveTime = curTime
+	dist := DistFloat32(Tuple32{oldX, oldY}, Tuple32{newX, newY})
+	curNode.Velocity =  dist / timeElapsed
+}
+
 
 //HandleMovementCSV does the same as HandleMovement
 func (curNode *NodeImpl) MoveCSV(p *Params) {
@@ -1166,16 +1208,12 @@ func (curNode *NodeImpl) MoveCSV(p *Params) {
 		curNode.P.NodeTree.NodeMovement(curNode.NodeBounds)
 
 		curNode.UpdateAcceleration(p.CurrentTime,newX, newY, oldX, oldY)
-		//fmt.Println(curNode.AccelerometerSpeed)
-		/*if curNode.LastAccel == 0.0 {
-			curNode.MovePercentChange = float64(curNode.AccelerometerSpeed[len(curNode.AccelerometerSpeed) - 1]) / 1.5
-		} else {
-			curNode.MovePercentChange = curNode.LastAccel - float64(curNode.AccelerometerSpeed[len(curNode.AccelerometerSpeed) - 1]) / curNode.LastAccel
-		}*/
-		curNode.MovePercentChange = 2.5 * (float64(curNode.AccelerometerSpeed[len(curNode.AccelerometerSpeed) - 1]) - curNode.LastAccel)
-		curNode.LastAccel = float64(curNode.AccelerometerSpeed[len(curNode.AccelerometerSpeed) - 1])
-		fmt.Fprintf(curNode.P.SamplingData, "ID:%v T:%v M:%v,%v\n", curNode.Id, curNode.P.CurrentTime, curNode.AccelerometerSpeed[len(curNode.AccelerometerSpeed) - 1],
-			curNode.MovePercentChange)
+		curNode.UpdateVelocity(p.CurrentTime, newX, newY, oldX, oldY)
+		curNode.UpdateSampleRatePart("movement", curNode.Velocity)
+		//curNode.MovePercentChange = 2.5 * (float64(curNode.AccelerometerSpeed[len(curNode.AccelerometerSpeed) - 1]) - curNode.LastAccel)
+		//curNode.LastAccel = float64(curNode.AccelerometerSpeed[len(curNode.AccelerometerSpeed) - 1])
+		fmt.Fprintf(curNode.P.SamplingData, "ID:%v T:%v M:%v,%v\n", curNode.Id, curNode.P.CurrentTime, curNode.Velocity,
+			curNode.SampleRateMovement)
 	}
 
 
@@ -1221,4 +1259,19 @@ func (curNode *NodeImpl) MoveNormal(p *Params) {
 
 func rangeInt(min, max int) int { //returns a random number between max and min
 	return rand.Intn(max-min) + min
+}
+
+func (curNode *NodeImpl) ScheduleSensing() {
+	if curNode.ScheduledEvent.Time == curNode.P.CurrentTime {
+		//schedule new event
+		curNode.ScheduledEvent = &Event{curNode, SENSE, curNode.P.CurrentTime + int(curNode.NewSampleRate()), 0}
+		curNode.P.Events.Push(curNode.ScheduledEvent)
+	} else if curNode.ScheduledEvent.Time - curNode.P.CurrentTime > 1/curNode.SampleRate{
+		//replace old event with new event
+		instruction := curNode.ScheduledEvent.Instruction
+		curNode.P.Events.update(curNode.ScheduledEvent, instruction, curNode.P.CurrentTime + int(curNode.NewSampleRate()))
+	} else if curNode.ScheduledEvent.Time - curNode.P.CurrentTime < 1/curNode.SampleRate {
+		//do nothing
+	}
+
 }
