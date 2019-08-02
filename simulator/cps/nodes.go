@@ -779,7 +779,7 @@ func (curNode *NodeImpl) GetReadings() {
 			if curNode.LastReading == 0.0 {
 				curNode.ReadingPercentChange = ADCRead / 4095
 			} else {
-				curNode.ReadingPercentChange = curNode.LastReading - ADCRead / curNode.LastReading
+				curNode.ReadingPercentChange = ADCRead - curNode.LastReading / curNode.LastReading
 			}
 			curNode.LastReading = ADCRead
 			fmt.Fprintf(curNode.P.SamplingData, "ID:%v T:%v S:%v,%v\n", curNode.Id, curNode.P.CurrentTime, ADCRead, curNode.ReadingPercentChange)
@@ -1016,7 +1016,14 @@ func (curNode *NodeImpl) GetReadingsCSV() {
 		}
 
 
-
+		/*if curNode.LastReading == 0.0 {
+			curNode.ReadingPercentChange = ADCRead / 4095.0
+		} else {
+			curNode.ReadingPercentChange = ADCRead - curNode.LastReading  / curNode.LastReading
+		}*/
+		curNode.ReadingPercentChange = 0.00122 * (ADCRead - curNode.LastReading)
+		curNode.LastReading = ADCRead
+		fmt.Fprintf(curNode.P.SamplingData, "ID:%v T:%v S:%v,%v\n", curNode.Id, curNode.P.CurrentTime, ADCRead, curNode.ReadingPercentChange)
 
 
 		//Receives the node's distance and calculates its running average
@@ -1024,13 +1031,6 @@ func (curNode *NodeImpl) GetReadingsCSV() {
 		//Only do this if the sensor was pinged this iteration
 
 		if curNode.Valid {
-			if curNode.LastReading == 0.0 {
-				curNode.ReadingPercentChange = ADCRead / 4095
-			} else {
-				curNode.ReadingPercentChange = curNode.LastReading - ADCRead / curNode.LastReading
-			}
-			curNode.LastReading = ADCRead
-			fmt.Fprintf(curNode.P.SamplingData, "ID:%v T:%v S:%v,%v\n", curNode.Id, curNode.P.CurrentTime, ADCRead, curNode.ReadingPercentChange)
 			if(curNode.P.ClusteringOn){
 				if(curNode.IsClusterHead){
 					if(curNode.P.CurrentTime - curNode.TimeLastSentReadings > curNode.P.CHSensingTime*1000 || len(curNode.ReadingsBuffer)>curNode.P.MaxCHReadingBufferSize){
@@ -1132,13 +1132,14 @@ func interpolate (start int, end int, portion float32) float32{
 
 //Acceleration
 func (curNode *NodeImpl) UpdateAcceleration(curTime int, newX float32, newY float32, oldX float32, oldY float32){
-	t_elapsed := float32((curTime - curNode.TimeLastAccel)/1000)
-	ax := (newX/2-oldX/2)/(t_elapsed*t_elapsed)
-	ay := (newY/2-oldY/2)/(t_elapsed*t_elapsed)
+	t_elapsed := (float64(curTime) - float64(curNode.TimeLastAccel))/1000.0
+	ax := float64(newX/2-oldX/2)/(t_elapsed*t_elapsed)
+	ay := float64(newY/2-oldY/2)/(t_elapsed*t_elapsed)
 	a_t := float32(math.Sqrt(float64(ax*ax + ay*ay)))
 	curNode.AccelerometerSpeed = append(curNode.AccelerometerSpeed, a_t)
 	curNode.TimeLastAccel = curTime
 }
+
 
 //HandleMovementCSV does the same as HandleMovement
 func (curNode *NodeImpl) MoveCSV(p *Params) {
@@ -1165,11 +1166,13 @@ func (curNode *NodeImpl) MoveCSV(p *Params) {
 		curNode.P.NodeTree.NodeMovement(curNode.NodeBounds)
 
 		curNode.UpdateAcceleration(p.CurrentTime,newX, newY, oldX, oldY)
-		if curNode.LastAccel == 0.0 {
+		//fmt.Println(curNode.AccelerometerSpeed)
+		/*if curNode.LastAccel == 0.0 {
 			curNode.MovePercentChange = float64(curNode.AccelerometerSpeed[len(curNode.AccelerometerSpeed) - 1]) / 1.5
 		} else {
 			curNode.MovePercentChange = curNode.LastAccel - float64(curNode.AccelerometerSpeed[len(curNode.AccelerometerSpeed) - 1]) / curNode.LastAccel
-		}
+		}*/
+		curNode.MovePercentChange = 2.5 * (float64(curNode.AccelerometerSpeed[len(curNode.AccelerometerSpeed) - 1]) - curNode.LastAccel)
 		curNode.LastAccel = float64(curNode.AccelerometerSpeed[len(curNode.AccelerometerSpeed) - 1])
 		fmt.Fprintf(curNode.P.SamplingData, "ID:%v T:%v M:%v,%v\n", curNode.Id, curNode.P.CurrentTime, curNode.AccelerometerSpeed[len(curNode.AccelerometerSpeed) - 1],
 			curNode.MovePercentChange)
