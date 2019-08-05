@@ -236,7 +236,7 @@ func main() {
 			if event.Instruction == cps.SENSE {
 				if event.Node.Battery > p.ThreshHoldBatteryToHave {
 
-					if (p.CSVMovement) {
+					/*if (p.CSVMovement) {
 						event.Node.MoveCSV(p)
 						if(event.Node.Valid){
 							event.Node.DecrementPowerGPS()
@@ -246,7 +246,7 @@ func main() {
 						if(event.Node.Valid){
 							event.Node.DecrementPowerGPS()
 						}
-					}
+					}*/
 
 					if (p.CSVSensor) {
 						event.Node.GetReadingsCSV()
@@ -265,7 +265,7 @@ func main() {
 					}
 
 					if (event.Node.Valid) {
-						p.ClusterNetwork.ClearClusterParams(event.Node)
+						//p.ClusterNetwork.ClearClusterParams(event.Node)
 						event.Node.DecrementPowerGPS()
 					}
 

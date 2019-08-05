@@ -430,6 +430,12 @@ func InitializeNodeParameters(p *Params, nodeNum int) *NodeImpl{
 	curNode.LastAccel = 0
 	curNode.LastReading = 0
 
+	curNode.SampleRateSensor = 0.05
+	curNode.SampleRateBattery = 0.05
+
+	//curNode.ScheduledEvent = &Event{&curNode,SENSE,0,0}
+	//p.Events.Push(curNode.ScheduledEvent)
+
 	return &curNode
 }
 
@@ -451,7 +457,11 @@ func SetupCSVNodes(p *Params) {
 
 		p.NodeList = append(p.NodeList, newNode)
 		p.CurrentNodes += 1
-		p.Events.Push(&Event{newNode,SENSE,0,0})
+
+		newNode.ScheduledEvent = &Event{newNode,SENSE,0,0}
+		newNode.ScheduledEvent = &Event{newNode,MOVE,0,0}
+		p.Events.Push(newNode.ScheduledEvent)
+		p.Events.Push(&Event{newNode, ScheduleSensor, 0, 0})
 
 		if(p.ClusteringOn){
 			newNode.IsClusterHead = false

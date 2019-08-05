@@ -827,7 +827,7 @@ func (curNode *NodeImpl) GetReadings() {
 		}
 
 	}
-	//curNode.P.Events.Push(&Event{curNode, SENSE, curNode.P.CurrentTime + 500, 0})
+	curNode.P.Events.Push(&Event{curNode, SENSE, curNode.P.CurrentTime + int(1000.0 / curNode.NewSampleRate()), 0})
 
 
 }
@@ -1109,8 +1109,8 @@ func (curNode *NodeImpl) GetReadingsCSV() {
 		}
 
 	}
-	//curNode.ScheduledEvent = &Event{curNode, SENSE, curNode.P.CurrentTime + 500, 0}
-	//curNode.P.Events.Push(curNode.ScheduledEvent)
+	curNode.ScheduledEvent = &Event{curNode, SENSE, curNode.P.CurrentTime + int(1000.0 / curNode.NewSampleRate()), 0}
+	curNode.P.Events.Push(curNode.ScheduledEvent)
 }
 
 //Get min and max readings
@@ -1264,15 +1264,19 @@ func rangeInt(min, max int) int { //returns a random number between max and min
 }
 
 func (curNode *NodeImpl) ScheduleSensing() {
+	/*rate := curNode.NewSampleRate()
+	if rate > 5 {
+		fmt.Println(rate)
+	}*/
 	if curNode.ScheduledEvent.Time == curNode.P.CurrentTime {
 		//schedule new event
-		curNode.ScheduledEvent = &Event{curNode, SENSE, curNode.P.CurrentTime + int(curNode.NewSampleRate()), 0}
+		curNode.ScheduledEvent = &Event{curNode, SENSE, curNode.P.CurrentTime + int(1000.0 / curNode.NewSampleRate()), 0}
 		curNode.P.Events.Push(curNode.ScheduledEvent)
-	} else if curNode.ScheduledEvent.Time - curNode.P.CurrentTime > 1/int(curNode.SampleRate){
+	} else if curNode.ScheduledEvent.Time - curNode.P.CurrentTime > int(1000.0/ curNode.NewSampleRate()) {
 		//replace old event with new event
 		instruction := curNode.ScheduledEvent.Instruction
-		curNode.P.Events.update(curNode.ScheduledEvent, instruction, curNode.P.CurrentTime + int(curNode.NewSampleRate()))
-	} else if curNode.ScheduledEvent.Time - curNode.P.CurrentTime < 1/int(curNode.SampleRate) {
+		curNode.P.Events.update(curNode.ScheduledEvent, instruction, curNode.P.CurrentTime + int(1000.0 / curNode.NewSampleRate()))
+	} else if curNode.ScheduledEvent.Time - curNode.P.CurrentTime < int(1000.0 / curNode.NewSampleRate()) {
 		//do nothing
 	}
 
