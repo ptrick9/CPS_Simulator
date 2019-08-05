@@ -761,6 +761,14 @@ func SetupFiles(p *Params) {
 	}
 	p.Files = append(p.Files, p.OutputFileNameCM + "-detection.txt")
 
+	if p.DriftExplorer {
+		p.DriftExploreFile, err = os.Create(p.OutputFileNameCM + "-driftExplore.txt")
+		if err != nil {
+			log.Fatal("Cannot create file", err)
+		}
+		p.Files = append(p.Files, p.OutputFileNameCM+"-driftExplore.txt")
+	}
+
 	fmt.Println(p.Files)
 
 }
@@ -1199,6 +1207,7 @@ func readMovementCSV(p *Params) {
 
 	timeSteps, _ := lineCounter(p.MovementPath)
 
+	p.NumNodeMovements = timeSteps
 
 	p.NodeMovements = make([][]Tuple, p.TotalNodes)
 	for i := range p.NodeMovements {
@@ -1430,6 +1439,8 @@ func GetFlags(p *Params) {
 
 	flag.BoolVar(&p.RegionRouting, "regionRouting", true, "True if you want to use the new routing algorithm with regions and cutting")
 
+	flag.BoolVar(&p.DriftExplorer, "driftExplorer", false, "True if you want to JUST examine sensor drifting")
+
 	flag.IntVar(&p.ValidationThreshold, "validationThreshold", 1, "Number of detections required to validate a detection")
 	flag.BoolVar(&p.RandomBomb, "randomBomb", false, "Toggles random bomb placement")
 	flag.BoolVar(&p.ZipFiles, "zipFiles", false, "Toggles Zipping of output files")
@@ -1574,4 +1585,34 @@ func AddFileToZip(zipWriter *zip.Writer, filename string) error {
 	}
 	_, err = io.Copy(writer, fileToZip)
 	return err
+}
+
+func DriftHist(p *Params) {
+	meanTotal := 0.0
+	varTotal := 0.0
+	min := 1.0
+	count := 0.0
+	i := 0
+	for i < p.TotalNodes {
+		n := p.NodeList[i]
+		if n.Valid {
+			v := n.Sensitivity / n.InitialSensitivity
+			meanTotal += v
+			varTotal += v * v
+			if v < min {
+				min = v
+			}
+			count += 1
+		}
+		i += 1
+	}
+
+	mean := meanTotal / count
+	meanSquare := mean * mean
+
+	varianceSquare := (varTotal / count) - meanSquare
+	variance := math.Sqrt(varianceSquare)
+
+	fmt.Fprintf(p.DriftExploreFile, "%v %v %v %v %v\n", p.CurrentTime, mean, variance, min, count)
+
 }

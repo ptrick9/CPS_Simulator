@@ -83,6 +83,7 @@ type Params struct {
 	DetectionFile  *os.File
 	BatteryFile    *os.File
 	RunParamFile   *os.File
+	DriftExploreFile *os.File
 	ZipFiles 		bool
 	Files 			[]string
 
@@ -197,5 +198,8 @@ type Params struct {
 	FineHeight		int
 	FineScale		int
 	Scale 			int
+
+	DriftExplorer 	bool
+	NumNodeMovements 	int
 
 }

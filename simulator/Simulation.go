@@ -202,11 +202,14 @@ func main() {
 
 	//p.Events.Push(&cps.Event{&p.NodeList[0], "sense", 0, 0})
 	p.Events.Push(&cps.Event{nil, cps.POSITION, 999, 0})
-	p.Events.Push(&cps.Event{nil, cps.ENERGYPRINT, 999, 0})
+	if p.EnergyPrint {
+		p.Events.Push(&cps.Event{nil, cps.ENERGYPRINT, 999, 0})
+	}
 	p.Events.Push(&cps.Event{nil, cps.SERVER, 999, 0})
 	p.Events.Push(&cps.Event{nil, cps.GRID, 999, 0})
 	p.Events.Push(&cps.Event{nil, cps.TIME, -1, 0})
 	p.Events.Push(&cps.Event{nil, cps.GARBAGECOLLECT, 999, 0})
+	p.Events.Push(&cps.Event{nil, cps.DRIFTLOG, 999, 0})
 
 
 
@@ -219,16 +222,21 @@ func main() {
 		if event.Node != nil {
 			if event.Instruction == cps.SENSE {
 
-				if(p.CSVMovement) {
-					event.Node.MoveCSV(p)
-				} else {
-					event.Node.MoveNormal(p)
+				if p.CurrentTime/1000 < p.NumNodeMovements-5 {
+					if (p.CSVMovement) {
+						event.Node.MoveCSV(p)
+					} else {
+						event.Node.MoveNormal(p)
+					}
 				}
-
-				if(p.CSVSensor) {
-					event.Node.GetReadingsCSV()
+				if (p.DriftExplorer) {
+					event.Node.GetSensor()
 				} else {
-					event.Node.GetReadings()
+					if (p.CSVSensor) {
+						event.Node.GetReadingsCSV()
+					} else {
+						event.Node.GetReadings()
+					}
 				}
 
 			} else if event.Instruction == cps.MOVE {
@@ -237,7 +245,9 @@ func main() {
 				} else {
 					event.Node.MoveNormal(p)
 				}
+				if p.CurrentTime/1000 < p.NumNodeMovements-5 {
 					p.Events.Push(&cps.Event{event.Node, cps.MOVE, p.CurrentTime + 100, 0})
+				}
 			}
 		} else {
 			if event.Instruction == cps.POSITION {
@@ -263,6 +273,7 @@ func main() {
 					fmt.Fprint(p.PositionFile, buffer.String())
 				}
 				fmt.Printf("\rRunning Simulator iteration %d\\%v", int(p.CurrentTime/1000), p.Iterations_of_event)
+				p.Iterations_used += 1
 				p.Events.Push(&cps.Event{nil, cps.POSITION, p.CurrentTime + 1000, 0})
 
 			} else if event.Instruction == cps.SERVER {
@@ -322,6 +333,11 @@ func main() {
 					}
 				}
 				p.Events.Push(&cps.Event{nil, cps.GARBAGECOLLECT, p.CurrentTime + 100000, 0})
+			} else if event.Instruction == cps.DRIFTLOG {
+				if p.DriftExplorer {
+					cps.DriftHist(p)
+					p.Events.Push(&cps.Event{nil, cps.DRIFTLOG, p.CurrentTime + 1000, 0})
+				}
 			}
 		}
 
@@ -366,6 +382,10 @@ func main() {
 		p.DetectionFile.Close()
 		p.BatteryFile.Close()
 		p.RunParamFile.Close()
+
+		if p.DriftExplorer {
+			p.DriftExploreFile.Close()
+		}
 
 		output := p.OutputFileNameCM + ".zip"
 		if err := cps.ZipFiles(output, p.Files); err != nil {
