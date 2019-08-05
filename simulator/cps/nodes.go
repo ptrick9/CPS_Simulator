@@ -683,28 +683,28 @@ func RawConcentration(dist float32) float32 {
 	}
 }
 
+//UpdatSampleRatePart find the sample rate due to one of three factors
+//Called anytime the sense or move events are called
 func (curNode *NodeImpl) UpdateSampleRatePart(modifier string, value float64) {
 	//samplesPerMeter := 10.0
 	rate := 0.0
 	if modifier == "sensor" {
-		rate = 5//0.05
+		rate = 0.05
 		curNode.SampleRateSensor = rate
 	} else if modifier == "movement" {
 		rate = 9.375 * value
 		curNode.SampleRateMovement = rate
 	} else if modifier == "battery" {
-		rate = 0.5 * value
+		rate = 30.0 / (100.0 - float64(curNode.P.ThreshHoldBatteryToHave)) * value
 		curNode.SampleRateBattery = rate
 	}else {
 		fmt.Println("Error updating sample rate!")
 	}
-
-	//ratio := 47.5
-	//rate := ((curNode.SensorModifier + ModifierFcn(curNode.ReadingPercentChange)) * ratio) + ((curNode.MovementModifier + ModifierFcn(curNode.MovePercentChange) )* ratio)
-
-	// return int(1000.0 / rate)
 }
 
+//NewSampleRate updates and returns the sample rate calculated based on the SampleRatePart function
+//The maximum of the sensor-based sample rate and movement-based sample rate is used
+//Limited by the sample rate due to the battery
 func (curNode *NodeImpl) NewSampleRate() float64{
 	//Implement samplerate due to battery as maximum for other sample rates
 	if curNode.SampleRateBattery < curNode.SampleRateSensor {
@@ -725,11 +725,8 @@ func MaxFloat64(val1, val2 float64) float64{
 	}
 }
 
-func ModifierFcn(val float64) float64{
-	return math.Exp(val) / (math.Exp(val) + 1)
-}
-
-//Takes cares of taking a node's readings and printing detections and stuff
+//Takes cares of taking a node's readings and sends results to the server
+//This function runs if there is no sensor reading CSV
 func (curNode *NodeImpl) GetReadings() {
 
 
@@ -1058,17 +1055,11 @@ func (curNode *NodeImpl) GetReadingsCSV() {
 			fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("TP T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, RawConcentration))
 		}
 
-
-		/*if curNode.LastReading == 0.0 {
-			curNode.ReadingPercentChange = ADCRead / 4095.0
-		} else {
-			curNode.ReadingPercentChange = ADCRead - curNode.LastReading  / curNode.LastReading
-		}*/
 		curNode.UpdateSampleRatePart("sensor", ADCRead)
 		curNode.UpdateSampleRatePart("battery", float64(curNode.Battery))
-		//curNode.ReadingPercentChange = 0.00122 * (ADCRead - curNode.LastReading)
-		//curNode.LastReading = ADCRead
-		fmt.Fprintf(curNode.P.SamplingData, "ID:%v T:%v S:%v,%v\n", curNode.Id, curNode.P.CurrentTime, ADCRead, curNode.SampleRateSensor)
+		dist := DistFloat32(Tuple32{curNode.X, curNode.Y}, Tuple32{float32(curNode.P.B.X), float32(curNode.P.B.Y)})
+
+		fmt.Fprintf(curNode.P.SamplingData, "ID:%v T:%v S:%v,%v D:%v\n", curNode.Id, curNode.P.CurrentTime, ADCRead, curNode.SampleRateSensor, dist)
 
 
 		//Receives the node's distance and calculates its running average
@@ -1118,8 +1109,8 @@ func (curNode *NodeImpl) GetReadingsCSV() {
 		}
 
 	}
-	curNode.ScheduledEvent = &Event{curNode, SENSE, curNode.P.CurrentTime + 500, 0}
-	curNode.P.Events.Push(curNode.ScheduledEvent)
+	//curNode.ScheduledEvent = &Event{curNode, SENSE, curNode.P.CurrentTime + 500, 0}
+	//curNode.P.Events.Push(curNode.ScheduledEvent)
 }
 
 //Get min and max readings

@@ -58,6 +58,7 @@ type Reading struct {
 }
 
 //Key for dictionary of sensor readings
+//To be used in s.Readings map
 type Key struct {
 	X 		int
 	Y		int
@@ -101,6 +102,8 @@ func (s FusionCenter) MakeGrid() {
 }
 
 //CheckDetections iterates through the grid and validates detections by nodes
+//Classifies detections as true positives and false negatives
+//If super nodes are ON, sends them to the location of a true positive
 func (s FusionCenter) CheckDetections() {
 	for x := 0; x < s.P.SquareColCM; x++ {
 		for y := 0; y < s.P.SquareRowCM; y++ {
@@ -304,6 +307,7 @@ func (srv FusionCenter) printPoints(s SuperNodeParent) bytes.Buffer {
 }
 
 //MakeSuperNodes initializes the supernodes to the corners of the map
+//If there are more than 4 super nodes, they are placed at 0,0 so RandomizeSuperNodes MUST be called
 func (s FusionCenter) MakeSuperNodes() {
 
 	top_left_corner := Coord{X: 0, Y: 0}
@@ -407,13 +411,9 @@ func (s FusionCenter) UpdateSquareNumNodes() {
 	}
 }
 
+//Checks readings array and clears it of any values older that what is allowed by ReadingHistorySize
 func (s *FusionCenter) CleanupReadings() {
 	if s.P.CurrentTime / 1000 > s.P.ReadingHistorySize{
-		/*for r := range s.Readings {
-			if r.Time < (rd.Time / 1000 - s.P.ReadingHistorySize) {
-				delete(s.Readings, r)
-			}
-		}*/
 		t := (s.P.CurrentTime / 1000) - s.P.ReadingHistorySize - 1
 		for x := 0; x < s.P.Width; x++ {
 			for y:= 0; y < s.P.Height; y++ {
@@ -438,8 +438,7 @@ func (s *FusionCenter) Send(n *NodeImpl, rd Reading) {
 		s.Readings[Key{int(rd.Xpos / float32(s.P.XDiv)), int(rd.YPos / float32(s.P.YDiv)), rd.Time / 1000}] = []Reading{rd}
 	}
 
-	//fmt.Println(len(s.Readings))
-
+	//Clears the Times array and adds the time of the reading to it
 	s.Times = make(map[int]bool, 0)
 	if s.Times[rd.Time] {
 
@@ -447,6 +446,7 @@ func (s *FusionCenter) Send(n *NodeImpl, rd Reading) {
 		s.Times[rd.Time] = true
 	}
 
+	//Adds time buckets only according to the Times array
 	for len(s.TimeBuckets) <= rd.Time {
 		s.TimeBuckets = append(s.TimeBuckets, make([]Reading,0))
 	}
@@ -454,10 +454,12 @@ func (s *FusionCenter) Send(n *NodeImpl, rd Reading) {
 	if len(currBucket) != 0 { //currBucket != nil
 		(s.TimeBuckets)[rd.Time] = append(currBucket, rd)
 	} else {
-		(s.TimeBuckets)[rd.Time] = append((s.TimeBuckets)[rd.Time], rd) //s.TimeBuckets[rd.Time] = []float64{rd.sensorVal}
+		(s.TimeBuckets)[rd.Time] = append((s.TimeBuckets)[rd.Time], rd)
 	}
 
 	s.UpdateSquareAvg(rd)
+
+	//Recalibrate the sensor of it deviates past the threshold
 	tile := s.P.Grid[int(rd.Xpos)/s.P.XDiv][int(rd.YPos)/s.P.YDiv]
 	tile.LastReadingTime = rd.Time
 	tile.SquareValues += math.Pow(float64(rd.SensorVal-float64(tile.Avg)), 2)
@@ -467,6 +469,7 @@ func (s *FusionCenter) Send(n *NodeImpl, rd Reading) {
 		//fmt.Println(s.LastRecal)
 	}
 
+	//Validate a sensor reading by checking for similar readings within a radius
 	if rd.SensorVal > s.P.DetectionThreshold {
 		s.CheckedIds = make([]int, 0)
 		validations := 0
@@ -591,6 +594,8 @@ func (s FusionCenter) GetMedian(arr []float64) float64{
 	return median
 }
 
+//GetLeastDenseSquares searches the entire grid for the least populated squares and adds them to an array
+//Used in Tick function to direct super node wandering
 func (s FusionCenter) GetLeastDenseSquares() Squares{
 	orderedSquares := make(Squares, 0)
 	for x := 0; x < len(s.P.Grid); x++ {
@@ -609,6 +614,7 @@ func (s FusionCenter) GetLeastDenseSquares() Squares{
 	return orderedSquares
 }
 
+//Used for sorting a list of squares
 type Squares []*Square
 
 func (s *Squares) Len() int{
