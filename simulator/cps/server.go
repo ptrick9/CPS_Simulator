@@ -31,7 +31,7 @@ type FusionCenter struct {
 
 //Init initializes the values for the server
 func (s *FusionCenter) Init(){
-	s.TimeBuckets = make([][]Reading, s.P.Iterations_used)
+	s.TimeBuckets = make([][]Reading, s.P.Iterations_used) //1st dimension is time, 2nd contains all readings at that time
 	s.Mean = make([]float64, s.P.Iterations_of_event)
 	s.StdDev = make([]float64, s.P.Iterations_of_event)
 	s.Variance = make([]float64, s.P.Iterations_of_event)
@@ -40,11 +40,11 @@ func (s *FusionCenter) Init(){
 	falsePositives = 0
 	truePositives = 0
 
-	s.LastRecal = make([]int, s.P.TotalNodes) //s.P.TotalNodes
+	s.LastRecal = make([]int, s.P.TotalNodes) //Last recalibration time for each node
 	s.Sch = &Scheduler{s.P, s.R, nil}
 
-	s.Readings = make(map[Key][]Reading)
-	s.CheckedIds = make([]int, 0)
+	s.Readings = make(map[Key][]Reading) //List of all readings within a period of time dictated by ReadingHistorySize
+	s.CheckedIds = make([]int, 0) //List of checked node ids
 }
 
 //Reading packages the data sent by a node
