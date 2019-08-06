@@ -964,7 +964,11 @@ func CalculateFineADCSetting(reading float64, x, y, time int, p *Params) {
 	//fmt.Println(p.EdgeRaw)
 	p.MaxADC = 4095
 	p.EdgeADC = 3
-	p.ADCWidth = (p.MaxRaw)/p.MaxADC
+	if p.DriftExplorer {
+		p.ADCWidth = (p.MaxRaw/200) / p.MaxADC
+	} else {
+		p.ADCWidth = (p.MaxRaw) / p.MaxADC
+	}
 	p.ADCOffset = p.EdgeRaw - p.EdgeADC * p.ADCWidth
 
 	//fmt.Printf("\n")
@@ -1591,6 +1595,7 @@ func DriftHist(p *Params) {
 	meanTotal := 0.0
 	varTotal := 0.0
 	min := 1.0
+	max := 0.0
 	count := 0.0
 	i := 0
 	for i < p.TotalNodes {
@@ -1601,6 +1606,9 @@ func DriftHist(p *Params) {
 			varTotal += v * v
 			if v < min {
 				min = v
+			}
+			if v > max {
+				max = v
 			}
 			count += 1
 		}
@@ -1613,6 +1621,6 @@ func DriftHist(p *Params) {
 	varianceSquare := (varTotal / count) - meanSquare
 	variance := math.Sqrt(varianceSquare)
 
-	fmt.Fprintf(p.DriftExploreFile, "%v %v %v %v %v\n", p.CurrentTime, mean, variance, min, count)
+	fmt.Fprintf(p.DriftExploreFile, "%v %v %v %v %v %v\n", p.CurrentTime, mean, variance, min, max, count)
 
 }

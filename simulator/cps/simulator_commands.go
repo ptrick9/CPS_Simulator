@@ -202,4 +202,5 @@ type Params struct {
 	DriftExplorer 	bool
 	NumNodeMovements 	int
 
+	ReadingHistorySize	int
 }

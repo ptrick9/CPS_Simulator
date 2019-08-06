@@ -210,6 +210,8 @@ func main() {
 	p.Events.Push(&cps.Event{nil, cps.TIME, -1, 0})
 	p.Events.Push(&cps.Event{nil, cps.GARBAGECOLLECT, 999, 0})
 	p.Events.Push(&cps.Event{nil, cps.DRIFTLOG, 999, 0})
+	p.Events.Push(&cps.Event{nil, cps.CLEANUPREADINGS, (p.ReadingHistorySize + 1) * 1000, 0})
+
 
 
 
@@ -338,6 +340,9 @@ func main() {
 					cps.DriftHist(p)
 					p.Events.Push(&cps.Event{nil, cps.DRIFTLOG, p.CurrentTime + 1000, 0})
 				}
+			}  else if event.Instruction == cps.CLEANUPREADINGS {
+				p.Server.CleanupReadings()
+				p.Events.Push(&cps.Event{nil,cps.CLEANUPREADINGS, p.CurrentTime + 500, 0})
 			}
 		}
 

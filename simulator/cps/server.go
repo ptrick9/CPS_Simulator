@@ -406,6 +406,27 @@ func (s FusionCenter) UpdateSquareNumNodes() {
 	}
 }
 
+func (s *FusionCenter) CleanupReadings() {
+	if s.P.CurrentTime / 1000 > s.P.ReadingHistorySize{
+		/*for r := range s.Readings {
+			if r.Time < (rd.Time / 1000 - s.P.ReadingHistorySize) {
+				delete(s.Readings, r)
+			}
+		}*/
+		t := (s.P.CurrentTime / 1000) - s.P.ReadingHistorySize - 1
+		for x := 0; x < s.P.Width; x++ {
+			for y:= 0; y < s.P.Height; y++ {
+				_,ok := s.Readings[Key{x,y,t}]
+				if ok {
+					//fmt.Printf("Deleting time %v\n", t)
+					delete(s.Readings, Key{x,y,t})
+				}
+			}
+		}
+	}
+}
+
+
 //Send is called by a node to deliver a reading to the server.
 // Statistics are calculated each Time data is received
 func (s *FusionCenter) Send(n *NodeImpl, rd Reading) {
@@ -423,7 +444,7 @@ func (s *FusionCenter) Send(n *NodeImpl, rd Reading) {
 		s.Times[rd.Time] = true
 	}
 
-	for len(s.TimeBuckets) <= rd.Time {
+	/*for len(s.TimeBuckets) <= rd.Time {
 		s.TimeBuckets = append(s.TimeBuckets, make([]Reading,0))
 	}
 	currBucket := (s.TimeBuckets)[rd.Time]
@@ -431,13 +452,14 @@ func (s *FusionCenter) Send(n *NodeImpl, rd Reading) {
 		(s.TimeBuckets)[rd.Time] = append(currBucket, rd)
 	} else {
 		(s.TimeBuckets)[rd.Time] = append((s.TimeBuckets)[rd.Time], rd) //s.TimeBuckets[rd.Time] = []float64{rd.sensorVal}
-	}
+	}*/
 
 	s.UpdateSquareAvg(rd)
 	tile := s.P.Grid[int(rd.Xpos)/s.P.XDiv][int(rd.YPos)/s.P.YDiv]
 	tile.LastReadingTime = rd.Time
 	tile.SquareValues += math.Pow(float64(rd.SensorVal-float64(tile.Avg)), 2)
 	if rd.SensorVal > (float64(s.GetSquareAverage(s.P.Grid[int(rd.Xpos)/s.P.XDiv][int(rd.YPos)/s.P.YDiv])) + s.P.CalibrationThresholdCM){ //Check if x over grid avg
+		fmt.Fprintf(n.P.DriftExploreFile, "ID: %v T: %v In: %v CUR: %v NT: %v %v SERVRECAL\n", n.Id, n.P.CurrentTime, n.InitialSensitivity, n.Sensitivity, n.NodeTime, rd.SensorVal)
 		n.Recalibrate()
 		s.LastRecal[n.Id] = s.P.Iterations_used
 		//fmt.Println(s.LastRecal)

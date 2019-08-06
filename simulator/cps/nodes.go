@@ -344,7 +344,7 @@ func (curNode *NodeImpl) Move(p *Params) {
 func (curNode *NodeImpl) Recalibrate() {
 	curNode.Sensitivity = curNode.InitialSensitivity
 	curNode.NodeTime = (curNode.P.CurrentTime/1000)
-	fmt.Fprintf(curNode.P.DriftExploreFile, "ID: %v T: %v In: %v CUR: %v NT: %v RECAL\n", curNode.Id, curNode.P.CurrentTime, curNode.InitialSensitivity, curNode.Sensitivity, curNode.NodeTime)
+	//fmt.Fprintf(curNode.P.DriftExploreFile, "ID: %v T: %v In: %v CUR: %v NT: %v RECAL\n", curNode.Id, curNode.P.CurrentTime, curNode.InitialSensitivity, curNode.Sensitivity, curNode.NodeTime)
 	//fmt.Printf("Node %v recalibrated!\curNode", curNode.Id)
 	curNode.Recalibrated = true
 }
