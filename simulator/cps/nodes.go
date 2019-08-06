@@ -1212,10 +1212,10 @@ func (curNode *NodeImpl) MoveCSV(p *Params) {
 		curNode.UpdateAcceleration(p.CurrentTime,newX, newY, oldX, oldY)
 		curNode.UpdateVelocity(p.CurrentTime, newX, newY, oldX, oldY)
 		curNode.UpdateSampleRatePart("movement", curNode.Velocity)
-		//curNode.MovePercentChange = 2.5 * (float64(curNode.AccelerometerSpeed[len(curNode.AccelerometerSpeed) - 1]) - curNode.LastAccel)
-		//curNode.LastAccel = float64(curNode.AccelerometerSpeed[len(curNode.AccelerometerSpeed) - 1])
-		fmt.Fprintf(curNode.P.SamplingData, "ID:%v T:%v M:%v,%v\n", curNode.Id, curNode.P.CurrentTime, curNode.Velocity,
-			curNode.SampleRateMovement)
+
+		dist := DistFloat32(Tuple32{curNode.X, curNode.Y}, Tuple32{float32(curNode.P.B.X), float32(curNode.P.B.Y)})
+		fmt.Fprintf(curNode.P.SamplingData, "ID:%v T:%v M:%v,%v D:%v\n", curNode.Id, curNode.P.CurrentTime, curNode.Velocity,
+			curNode.SampleRateMovement, dist)
 	}
 
 
