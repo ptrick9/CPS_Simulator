@@ -485,6 +485,10 @@ func (s FusionCenter) MakeSuperNodes() {
 	}
 }
 
+//PlaceSuperNodes finds the optimal location for each super node
+//Grid squares are organized by which super node is closest to them in terms of route distance and the super node
+//is relocated using K-means clustering
+//The size of clusters is adjusted to prevent regions that are too large or too small
 func (s FusionCenter) PlaceSuperNodes() {
 	closestSnodes := make([][]*Square, s.P.NumSuperNodes)
 
@@ -612,6 +616,7 @@ func (s FusionCenter) PlaceSuperNodes() {
 	fmt.Printf("There are %v squares in a cluster\n", num2)
 }
 
+//RandomizeSuperNodes randomizes the location of all super nodes to a legal spot on the map
 func (s FusionCenter) RandomizeSuperNodes() {
 	for i := range s.Sch.SNodeList {
 		x := RandomInt(0, s.P.Width)
@@ -626,6 +631,8 @@ func (s FusionCenter) RandomizeSuperNodes() {
 	}
 }
 
+//BuildCluster takes all the grid squares that belong to a super node and builds a graph
+//the graph is used to find a center where the super node can be placed
 func (s FusionCenter) BuildCluster(id int) {
 	for x := range s.P.Grid {
 		for y := range s.P.Grid[x] {
@@ -662,6 +669,7 @@ func (s FusionCenter) BuildCluster(id int) {
 	}
 }
 
+//FindCenter takes a super node cluster with a build graph and finds the center
 func (s FusionCenter) FindCenter(squares []*Square) ([]*Square, float64, *Square){
 	distances := make([][]float64,len(squares))
 	eccentricity := make([]float64, len(squares))
@@ -1035,6 +1043,8 @@ func (s FusionCenter) PrintStatsFile() {
 
 }
 
+//BuildDistanceMap constructs generates the distances between all grid squares and stores them into a map
+//This avoids the need to recalculate distances
 func (s FusionCenter) BuildDistanceMap() map[Pair]float64{
 	DistanceMap := make(map[Pair]float64, 0)
 	for x:= range s.P.Grid {
@@ -1053,6 +1063,8 @@ func (s FusionCenter) BuildDistanceMap() map[Pair]float64{
 	return DistanceMap
 }
 
+//Struct that contains a pair of Square pointers
+//To be used for DistanceMap
 type Pair struct {
 	Center1	*Square
 	Center2 *Square
