@@ -91,6 +91,7 @@ func Search(prev_region, curr_region, end_region int, curr_path []int, r *Region
 	}
 }
 
+//ValidPath recursively iterates through BorderDict to find a valid path from one region to another
 func ValidPath(reg int, endpoint Coord, first bool, r *RegionParams) bool{
 	if first {
 		r.Checked = make([]int, 0)

@@ -194,6 +194,7 @@ func main() {
 		}
 	}
 
+	//Super node clustering
 	start := time.Now()
 	if p.SuperNodes && !p.SuperNodeClusteringCSVCM{
 		fmt.Println("Starting super node clustering...")
