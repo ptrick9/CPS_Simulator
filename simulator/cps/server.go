@@ -440,10 +440,10 @@ func (s *FusionCenter) Send(n *NodeImpl, rd Reading) {
 
 	//Clears the Times array and adds the time of the reading to it
 	s.Times = make(map[int]bool, 0)
-	if s.Times[rd.Time] {
+	if s.Times[rd.Time / 1000] {
 
 	} else {
-		s.Times[rd.Time] = true
+		s.Times[rd.Time / 1000] = true
 	}
 
 	//Adds time buckets only according to the Times array
@@ -522,23 +522,28 @@ func (s *FusionCenter) CalcStats() ([]float64, []float64, []float64) {
 
 	//Calculate the mean
 	sum := 0.0
-	StdDevFromMean := 0.0
-	for i:= range s.Times {
-		for j := 0; j < len(s.TimeBuckets[i]); j++ {
-			//fmt.Printf("Bucket size: %v\n", len(s.TimeBuckets[i]))
-			sum += (s.TimeBuckets)[i][j].SensorVal
-			//fmt.Printf("Time : %v, Elements #: %v, Value: %v\n", i, j, s.TimeBuckets[i][j])
-		}
-		for len(s.Mean) <= i {
-			s.Mean = append(s.Mean, sum / float64( len(s.TimeBuckets[i]) ))
-		} /*else {
-			s.Mean[i] = sum / float64(len(s.TimeBuckets[i]))
-		}*/
+	//StdDevFromMean := 0.0
+	for time := 0; time < s.P.CurrentTime / 1000; time++ {
+		count := 0
 		sum = 0
+		for t := range s.Readings {
+			if t.Time == time {
+				for r := range s.Readings[t] {
+					sum += s.Readings[t][r].SensorVal
+					count++
+				}
+			}
+		}
+		fmt.Println(sum, count)
+		if count == 0 {
+			count = 1
+		}
+		s.Mean[time] = sum / float64(count)
 	}
+	fmt.Println(s.Mean)
 
 	//Calculate the standard deviation and variance
-	sum = 0.0
+	/*sum = 0.0
 	for i:= range s.Times {
 		for j := 0; j < len((s.TimeBuckets)[i]); j++ {
 			sum += math.Pow((s.TimeBuckets)[i][j].SensorVal - s.Mean[i], 2)
@@ -552,9 +557,7 @@ func (s *FusionCenter) CalcStats() ([]float64, []float64, []float64) {
 
 		for len(s.StdDev) <= i {
 			s.StdDev = append(s.StdDev, math.Sqrt(sum / float64( len((s.TimeBuckets)[i])) ))
-		} /*else {
-			s.StdDev[i] = math.Sqrt(sum / float64( len((s.TimeBuckets)[i])) )
-		}*/
+		}
 
 		//Determine how many std deviations data is away from mean
 		for j:= range s.TimeBuckets[i] {
@@ -574,7 +577,7 @@ func (s *FusionCenter) CalcStats() ([]float64, []float64, []float64) {
 			}
 		}
 		sum = 0
-	}
+	}*/
 	return s.Mean, s.StdDev, s.Variance
 }
 

@@ -120,6 +120,9 @@ func main() {
 	p.NodesPrint = p.NodesPrintCM
 	p.SquareRowCM = p.SquareRowCM
 	p.SquareColCM = p.SquareColCM
+	p.Iterations_used = 0
+	p.Iterations_of_event = p.IterationsCM
+	p.EstimatedPingsNeeded = 10200
 
 	//Initializers
 	cps.MakeBoolGrid(p)
@@ -172,9 +175,6 @@ func main() {
 	rand.Seed(time.Now().UnixNano()) //sets random to work properly by tying to to clock
 	p.ThreshHoldBatteryToHave = 30.0 //This is the threshold battery to have for all phones
 
-	p.Iterations_used = 0
-	p.Iterations_of_event = p.IterationsCM
-	p.EstimatedPingsNeeded = 10200
 
 	cps.SetupFiles(p)
 	cps.SetupParameters(p, r)
@@ -221,6 +221,7 @@ func main() {
 	p.Events.Push(&cps.Event{nil, cps.GARBAGECOLLECT, 999, 0})
 	p.Events.Push(&cps.Event{nil, cps.CLUSTERPRINT, 999, 0})
 	p.Events.Push(&cps.Event{nil, cps.CLEANUPREADINGS, (p.ReadingHistorySize + 1) * 1000, 0})
+	p.Events.Push(&cps.Event{nil, cps.SERVERSTATS, 1000, 0})
 	if(p.ClusteringOn){
 		p.Events.Push(&cps.Event{nil,cps.CLUSTERLESSFORM,25,0})
 	}
@@ -349,6 +350,9 @@ func main() {
 			} else if event.Instruction == cps.CLEANUPREADINGS {
 				p.Server.CleanupReadings()
 				p.Events.Push(&cps.Event{nil,cps.CLEANUPREADINGS, p.CurrentTime + 1000, 0})
+			} else if event.Instruction == cps.SERVERSTATS{
+				p.Server.CalcStats()
+				p.Events.Push(&cps.Event{nil, cps.SERVERSTATS, p.CurrentTime + 1000, 0})
 			}else if event.Instruction == cps.SERVER {
 				if !p.SuperNodes {
 					fmt.Fprintln(p.RoutingFile, "Amount:", 0)

@@ -24,6 +24,7 @@ const (
 	CLUSTERPRINT
 	CLEANUPREADINGS
 	ScheduleSensor
+	SERVERSTATS
 )
 
 type Event struct {
