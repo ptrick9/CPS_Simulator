@@ -1054,13 +1054,14 @@ func (curNode *NodeImpl) GetSensor() {
 			curNode.Recalibrated = false
 		}
 
-		if ADCRead > curNode.P.DetectionThreshold && ADCClean < curNode.P.DetectionThreshold{
+		if ADCRead > curNode.P.DetectionThreshold && ADCClean < curNode.P.DetectionThreshold {
 			fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("FP T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, 0, ADCClean, ADCRead, sError, curNode.Sensitivity, RawConcentration))
 		} else if ADCRead < curNode.P.DetectionThreshold && ADCClean > curNode.P.DetectionThreshold {
 			fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("FN T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, 0, ADCClean, ADCRead, sError, curNode.Sensitivity, RawConcentration))
 		} else if ADCRead > curNode.P.DetectionThreshold && ADCClean > curNode.P.DetectionThreshold {
 			fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("TP T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, 0, ADCClean, ADCRead, sError, curNode.Sensitivity, RawConcentration))
 		}
+
 
 		//Receives the node's distance and calculates its running average
 		//for that square

@@ -458,11 +458,13 @@ func (s *FusionCenter) Send(n *NodeImpl, rd Reading) {
 	tile := s.P.Grid[int(rd.Xpos)/s.P.XDiv][int(rd.YPos)/s.P.YDiv]
 	tile.LastReadingTime = rd.Time
 	tile.SquareValues += math.Pow(float64(rd.SensorVal-float64(tile.Avg)), 2)
-	if rd.SensorVal > (float64(s.GetSquareAverage(s.P.Grid[int(rd.Xpos)/s.P.XDiv][int(rd.YPos)/s.P.YDiv])) + s.P.CalibrationThresholdCM){ //Check if x over grid avg
-		fmt.Fprintf(n.P.DriftExploreFile, "ID: %v T: %v In: %v CUR: %v NT: %v %v SERVRECAL\n", n.Id, n.P.CurrentTime, n.InitialSensitivity, n.Sensitivity, n.NodeTime, rd.SensorVal)
-		n.Recalibrate()
-		s.LastRecal[n.Id] = s.P.Iterations_used
-		//fmt.Println(s.LastRecal)
+	if s.P.ServerRecal {
+		if rd.SensorVal > (float64(s.GetSquareAverage(s.P.Grid[int(rd.Xpos)/s.P.XDiv][int(rd.YPos)/s.P.YDiv])) + s.P.CalibrationThresholdCM) { //Check if x over grid avg
+			fmt.Fprintf(n.P.DriftExploreFile, "ID: %v T: %v In: %v CUR: %v NT: %v %v SERVRECAL\n", n.Id, n.P.CurrentTime, n.InitialSensitivity, n.Sensitivity, n.NodeTime, rd.SensorVal)
+			n.Recalibrate()
+			s.LastRecal[n.Id] = s.P.Iterations_used
+			//fmt.Println(s.LastRecal)
+		}
 	}
 
 	if rd.SensorVal > s.P.DetectionThreshold {
@@ -494,7 +496,9 @@ func (s *FusionCenter) Send(n *NodeImpl, rd Reading) {
 				//fmt.Fprintln(s.P.DetectionFile, fmt.Sprintf("FP Confirmation T: %v ID: %v (%v, %v) D: %v C: %v", rd.Time, rd.Id, rd.Xpos, rd.YPos, FloatDist(Tuple32{rd.Xpos, rd.YPos}, Tuple32{float32(s.P.B.X), float32(s.P.B.Y)}) , rd.SensorVal))
 			} else {
 				//fmt.Fprintln(s.P.DetectionFile, fmt.Sprintf("TP Confirmation T: %v ID: %v (%v, %v) D: %v C: %v", rd.Time, rd.Id, rd.Xpos, rd.YPos, FloatDist(Tuple32{rd.Xpos, rd.YPos}, Tuple32{float32(s.P.B.X), float32(s.P.B.Y)}), rd.SensorVal))
-				s.P.FoundBomb = true
+				if !s.P.DriftExplorer {
+					s.P.FoundBomb = true
+				}
 			}
 
 			fmt.Fprintln(s.P.DetectionFile, fmt.Sprintf("Confirmation T: %v ID: %v %v/%v", rd.Time, rd.Id, validations, s.P.ValidationThreshold))

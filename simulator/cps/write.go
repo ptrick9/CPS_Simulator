@@ -1445,6 +1445,8 @@ func GetFlags(p *Params) {
 
 	flag.BoolVar(&p.DriftExplorer, "driftExplorer", false, "True if you want to JUST examine sensor drifting")
 
+	flag.BoolVar(&p.ServerRecal, "serverRecal", true, "True if you want the server to be able to recalibrate nodes")
+
 	flag.IntVar(&p.ValidationThreshold, "validationThreshold", 1, "Number of detections required to validate a detection")
 	flag.BoolVar(&p.RandomBomb, "randomBomb", false, "Toggles random bomb placement")
 	flag.BoolVar(&p.ZipFiles, "zipFiles", false, "Toggles Zipping of output files")
@@ -1532,6 +1534,7 @@ func WriteFlags(p * Params){
 	buf.WriteString(fmt.Sprintf("validationThreshold=%v\n", p.ValidationThreshold))
 	buf.WriteString(fmt.Sprintf("bombX=%v\n", p.B.X))
 	buf.WriteString(fmt.Sprintf("bombY=%v\n", p.B.Y))
+	buf.WriteString(fmt.Sprintf("serverRecal=%v\n", p.ServerRecal))
 	fmt.Fprintf(p.RunParamFile,buf.String())
 }
 

@@ -203,4 +203,5 @@ type Params struct {
 	NumNodeMovements 	int
 
 	ReadingHistorySize	int
+	ServerRecal 	bool
 }
