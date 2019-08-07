@@ -30,8 +30,8 @@ def runner(queue):
         print("%d\\%d" % (job[1], job[2]))
         #print(job)
         command = "./simulator/Simulation "+' '.join(job[0])
-        #print(command)
-        os.system(command + " 1>/dev/null")
+        print(command)
+        #os.system(command + " 1>/dev/null")
         queue.task_done()
 
 
@@ -41,9 +41,9 @@ if __name__ == '__main__':
     q = m.JoinableQueue()
 
 
-    switches = ["-logNodes=false -logPosition=true -logGrid=false -logEnergy=false -regionRouting=true -noEnergy=true -csvSensor=true -csvMove=true -zipFiles=true"]
+    switches = ["-logNodes=false -logPosition=false -logGrid=false -logEnergy=false -regionRouting=true -noEnergy=true -csvSensor=false -csvMove=true -zipFiles=true -driftExplorer=true"]
 
-    scenarios = ["-inputFileName=%s -imageFileName=%s -stimFileName=circle_0.txt -outRoutingStatsName=routingStats.txt -iterations=5000 -superNodes=false -doOptimize=false" % (s[0], s[1]) for s in [['Scenario_3.txt', 'marathon_street_map.png']]]
+    scenarios = ["-inputFileName=%s -imageFileName=%s -stimFileName=circle_0.txt -outRoutingStatsName=routingStats.txt -iterations=20000 -superNodes=false -doOptimize=false" % (s[0], s[1]) for s in [['Scenario_3.txt', 'marathon_street_map.png']]]
 
 
     movementPath = ["-movementPath=%s" % s for s in ["/home/simulator/git-simulator/movement/marathon_street_2000_%d.scb" % i for i in range(1,5)]]
@@ -72,31 +72,30 @@ if __name__ == '__main__':
     serverSamplingPeriod = ["-serverSamplingPeriod=%d" % d for d in [1000]]
     nodeStoredSamples = ["-nodeStoredSamples=%d" % d for d in [10]]
     gridStoredSample = ["-GridStoredSamples=%d" % d for d in [10]]
-    errorMultiplier = ["-errorMultiplier=%f" % f for f in [1.0]]
+    errorMultiplier = ["-errorMultiplier=%f" % f for f in [1.0 + .2*i for i in range(10)]]
     numSuperNodes = ["-numSuperNodes=%d" %d for d in [4]]
     recalibThresh = ["-RecalibrationThreshold=%d" % d for d in [3]]
     StandardDeviationThreshold = ["-StandardDeviationThreshold=%f" % f for f in [1.7]]
     SuperNodeSpeed = ["-SuperNodeSpeed=%d" % d for d in [3]]
     SquareRowCM = ["-SquareRowCM=%d" % d for d in [60]]
     SquareColCM = ["-SquareColCM=%d" % d for d in [320]]
-    validationThreshold = ["-validationThreshold=%d" % d for d in [0, 2, 4]]
+    validationThreshold = ["-validationThreshold=%d" % d for d in [0, 1, 2, 3, 4]]
 
 
     runs = (list(itertools.product(*[switches, scenarios, movementPath, sensorPath, fineSensorPath, detectionThreshold, detectionDistance, sittingStopThreshold, negativeSittingStopThreshold, GridCapacityPercentage, naturalLoss,sensorSamplingLoss,GPSSamplingLoss,serverSamplingLoss,SamplingLossBTCM,SamplingLossWifiCM,SamplingLoss4GCM,SamplingLossAccelCM,thresholdBatteryToHave,thresholdBatteryToUse,movementSamplingSpeed,movementSamplingPeriod,maxBufferCapacity,sensorSamplingPeriod,GPSSamplingPeriod,serverSamplingPeriod,nodeStoredSamples,gridStoredSample,errorMultiplier,numSuperNodes,recalibThresh,StandardDeviationThreshold,SuperNodeSpeed,SquareRowCM,SquareColCM,validationThreshold])))
     
     x = 0
     for r in runs:
-        for i in range(10):
+        for i in range(5):
             j = [zz for zz in r]
-            j.append("-OutputFileName=/home/simulator/simData/fineGrainedBomb/Log_%d" % x)
+            j.append("-OutputFileName=/home/simulator/simData/driftExplorer/Log_%d" % x)
 
-            if x in [419, 427, 429, 432, 438, 440, 444, 446, 447, 448, 456, 457, 458, 469, 476, 483, 487, 490, 492, 493, 497, 498, 500, 503, 505, 506, 508, 510, 511, 513, 514, 517, 518, 521, 523, 525, 529, 532, 533, 535, 536, 538, 539, 540, 541, 542, 547, 548, 550, 551, 552, 553, 555, 556, 557, 559, 561, 562, 564, 565, 566, 567, 571, 572, 573, 574, 575,576, 577, 578, 579, 580, 581, 582, 583, 584, 585, 586, 587, 588, 591, 592, 596, 599]:
-                print(j)
+            
             v = j
             q.put([v, x, len(runs)*10])
             x+= 1
 
        
-    p = multiprocessing.Pool(7, runner, (q,))
+    p = multiprocessing.Pool(24, runner, (q,))
 
     q.join()
