@@ -48,7 +48,7 @@ if __name__ == '__main__':
 
     movementPath = ["-movementPath=%s" % s for s in ["/home/simulator/git-simulator/movement/marathon_street_2000_%d.scb" % i for i in range(1,5)]]
     sensorPath = ["-sensorPath=%s" %s for s in ["smooth_marathon.csv"]]
-    fineSensorPath = ["-fineSensorPath=%s" %s for s in ["fine_bomb_marathon.csv"]]
+    fineSensorPath = ["-fineSensorPath=%s" %s for s in ["fine_bomb.csv"]]
     detectionThreshold = ["-detectionThreshold=%d" % d for d in[5]]
     detectionDistance = ["-detectionDistance=%d" % d for d in [6]]
     sittingStopThreshold = ["-sittingStopThreshold=%d" % d for d in [5]]
