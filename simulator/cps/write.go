@@ -1535,6 +1535,7 @@ func WriteFlags(p * Params){
 	buf.WriteString(fmt.Sprintf("bombX=%v\n", p.B.X))
 	buf.WriteString(fmt.Sprintf("bombY=%v\n", p.B.Y))
 	buf.WriteString(fmt.Sprintf("serverRecal=%v\n", p.ServerRecal))
+	buf.WriteString(fmt.Sprintf("driftExplorer=%v\n", p.DriftExplorer))
 	fmt.Fprintf(p.RunParamFile,buf.String())
 }
 
