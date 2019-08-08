@@ -139,11 +139,12 @@ type Params struct {
 
 	FileName string
 
-	RegionRouting bool
-	AStarRouting  bool
-	CSVMovement   bool
-	CSVSensor     bool
-	SuperNodes     bool
+	RegionRouting    bool
+	AStarRouting     bool
+	CSVMovement      bool
+	CSVSensor        bool
+	SuperNodes       bool
+	AdaptiveSampling bool
 
 	CurrentNodes               int
 	NumWallNodes               int
@@ -218,4 +219,8 @@ type Params struct {
 	MaxCHReadingBufferSize	int
 
 	ReadingHistorySize	int
+
+	SensorSampleRate float64
+	SamplesPerMeter  float64
+	MaxSampleRate    float64
 }

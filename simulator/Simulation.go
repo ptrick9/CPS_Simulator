@@ -173,7 +173,7 @@ func main() {
 	}
 
 	rand.Seed(time.Now().UnixNano()) //sets random to work properly by tying to to clock
-	p.ThreshHoldBatteryToHave = 30.0 //This is the threshold battery to have for all phones
+	p.ThreshHoldBatteryToHave = 40.0 //This is the threshold battery to have for all phones
 
 
 	cps.SetupFiles(p)
@@ -258,7 +258,7 @@ func main() {
 				}
 
 			} else if event.Instruction == cps.MOVE {
-				if event.Node.Battery > p.ThreshHoldBatteryToHave {
+				//if event.Node.Battery > p.ThreshHoldBatteryToHave {
 					if (p.CSVMovement) {
 						event.Node.MoveCSV(p)
 					} else {
@@ -273,7 +273,7 @@ func main() {
 
 					//if(p.CurrentTime/1000 <= 100){
 					p.Events.Push(&cps.Event{event.Node, cps.MOVE, p.CurrentTime + 100, 0})
-				}
+				//}
 				//}
 
 			}else if event.Instruction == cps.CLUSTERMSG {
@@ -304,8 +304,10 @@ func main() {
 					p.Events.Push(&cps.Event{event.Node, cps.CLUSTERFORM, p.CurrentTime + 1000, 0})
 				}
 			} else if event.Instruction == cps.ScheduleSensor {
-				event.Node.ScheduleSensing()
-				p.Events.Push(&cps.Event{event.Node, cps.ScheduleSensor, p.CurrentTime + 50, 0})
+				if p.AdaptiveSampling {
+					event.Node.ScheduleSensing()
+					p.Events.Push(&cps.Event{event.Node, cps.ScheduleSensor, p.CurrentTime + 50, 0})
+				}
 			}
 		} else {
 			if event.Instruction == cps.POSITION {
@@ -352,7 +354,7 @@ func main() {
 				p.Events.Push(&cps.Event{nil,cps.CLEANUPREADINGS, p.CurrentTime + 1000, 0})
 			} else if event.Instruction == cps.SERVERSTATS{
 				p.Server.CalcStats()
-				p.Events.Push(&cps.Event{nil, cps.SERVERSTATS, p.CurrentTime + 1000, 0})
+				p.Events.Push(&cps.Event{nil, cps.SERVERSTATS, p.CurrentTime + 10000, 0})
 			}else if event.Instruction == cps.SERVER {
 				if !p.SuperNodes {
 					fmt.Fprintln(p.RoutingFile, "Amount:", 0)

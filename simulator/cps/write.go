@@ -430,11 +430,9 @@ func InitializeNodeParameters(p *Params, nodeNum int) *NodeImpl{
 	curNode.LastAccel = 0
 	curNode.LastReading = 0
 
+	curNode.BatteryPercent = 100.0
 	curNode.SampleRateSensor = 0.05
 	curNode.SampleRateBattery = 0.05
-
-	//curNode.ScheduledEvent = &Event{&curNode,SENSE,0,0}
-	//p.Events.Push(curNode.ScheduledEvent)
 
 	return &curNode
 }
@@ -459,7 +457,7 @@ func SetupCSVNodes(p *Params) {
 		p.CurrentNodes += 1
 
 		newNode.ScheduledEvent = &Event{newNode,SENSE,0,0}
-		newNode.ScheduledEvent = &Event{newNode,MOVE,0,0}
+		p.Events.Push(&Event{newNode,MOVE,0,0})
 		p.Events.Push(newNode.ScheduledEvent)
 		p.Events.Push(&Event{newNode, ScheduleSensor, 0, 0})
 
@@ -1555,10 +1553,14 @@ func GetFlags(p *Params) {
 		"Percent the sub-Grid can be filled")
 	flag.IntVar(&p.SuperNodeSpeed, "SuperNodeSpeed", 3, "the speed of the super node")
 	flag.IntVar(&p.ReadingHistorySize, "readingHistorySize", 60, "Number of times stored in Readings")
+	flag.Float64Var(&p.SensorSampleRate, "defaultSensorSampleRate", 0.05, "Default sampling rate due to the sensor")
+	flag.Float64Var(&p.MaxSampleRate, "maxSampleRate", 20.0, "Maximum possible sampling rate")
+	flag.Float64Var(&p.SamplesPerMeter, "samplesPerMeter", 2, "Number of samples taker per meter traveled for a node")
 
 	//Other
 	flag.StringVar(&p.CPUProfile, "cpuprofile", "", "write cpu profile to `file`")
 	flag.StringVar(&p.MemProfile, "memprofile", "", "write memory profile to `file`")
+	flag.BoolVar(&p.AdaptiveSampling, "adaptiveSampling", false, "Toggles adaptive sampling system")
 
 	//fmt.Println(os.Args[1:], "\nhmmm? \n ") //C:\Users\Nick\Desktop\comand line experiments\src
 	//Range 1, 2, or 4

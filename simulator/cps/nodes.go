@@ -158,6 +158,7 @@ type NodeImpl struct {
 	SampleRateBattery    float64
 
 	ScheduledEvent		 *Event
+	BatteryPercent		 float64
 	//Online				bool //whether the node is still online (battery is still high enough)
 }
 
@@ -369,8 +370,8 @@ func (curNode *NodeImpl) Move(p *Params) {
 		curNode.MovePercentChange = curNode.LastAccel - float64(curNode.AccelerometerSpeed[len(curNode.AccelerometerSpeed) - 1]) / curNode.LastAccel
 	}
 	curNode.LastAccel = float64(curNode.AccelerometerSpeed[len(curNode.AccelerometerSpeed) - 1])
-	fmt.Fprintf(curNode.P.SamplingData, "ID:%v T:%v M:%v,%v\n", curNode.Id, curNode.P.CurrentTime, curNode.AccelerometerSpeed[len(curNode.AccelerometerSpeed) - 1],
-		curNode.MovePercentChange)
+	//fmt.Fprintf(curNode.P.SamplingData, "ID:%v T:%v M:%v,%v\n", curNode.Id, curNode.P.CurrentTime, curNode.AccelerometerSpeed[len(curNode.AccelerometerSpeed) - 1],
+	//	curNode.MovePercentChange)
 }
 
 func (curNode *NodeImpl) Recalibrate() {
@@ -689,13 +690,18 @@ func (curNode *NodeImpl) UpdateSampleRatePart(modifier string, value float64) {
 	//samplesPerMeter := 10.0
 	rate := 0.0
 	if modifier == "sensor" {
-		rate = 0.05
+		rate = curNode.P.SensorSampleRate//0.05
 		curNode.SampleRateSensor = rate
 	} else if modifier == "movement" {
-		rate = 9.375 * value
+		//rate = curNode.P.MaxSampleRate / * value
+		rate = curNode.P.SamplesPerMeter * value
 		curNode.SampleRateMovement = rate
 	} else if modifier == "battery" {
-		rate = 30.0 / (100.0 - float64(curNode.P.ThreshHoldBatteryToHave)) * value
+		rate = ( curNode.P.MaxSampleRate / (100.0 - float64(curNode.P.ThreshHoldBatteryToHave)) )* (value - float64(curNode.P.ThreshHoldBatteryToHave))
+		if value <= float64(curNode.P.ThreshHoldBatteryToHave) {
+			rate = 0
+		}
+		//fmt.Println(rate)
 		curNode.SampleRateBattery = rate
 	}else {
 		fmt.Println("Error updating sample rate!")
@@ -822,7 +828,7 @@ func (curNode *NodeImpl) GetReadings() {
 				curNode.ReadingPercentChange = ADCRead - curNode.LastReading / curNode.LastReading
 			}
 			curNode.LastReading = ADCRead
-			fmt.Fprintf(curNode.P.SamplingData, "ID:%v T:%v S:%v,%v\n", curNode.Id, curNode.P.CurrentTime, ADCRead, curNode.ReadingPercentChange)
+			//fmt.Fprintf(curNode.P.SamplingData, "ID:%v T:%v S:%v,%v\n", curNode.Id, curNode.P.CurrentTime, ADCRead, curNode.ReadingPercentChange)
 			curNode.P.Server.Send(curNode, Reading{ADCRead, newX, newY, curNode.P.CurrentTime, curNode.GetID(), curNode.GetCHID()})
 		}
 
@@ -1055,12 +1061,15 @@ func (curNode *NodeImpl) GetReadingsCSV() {
 			fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("TP T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, RawConcentration))
 		}
 
-		curNode.UpdateSampleRatePart("sensor", ADCRead)
-		curNode.UpdateSampleRatePart("battery", float64(curNode.Battery))
-		dist := DistFloat32(Tuple32{curNode.X, curNode.Y}, Tuple32{float32(curNode.P.B.X), float32(curNode.P.B.Y)})
+		if curNode.P.AdaptiveSampling {
+			curNode.BatteryPercent -= 0.01
+			curNode.UpdateSampleRatePart("sensor", ADCRead)
+			curNode.UpdateSampleRatePart("battery", float64(curNode.BatteryPercent))
+			//dist := DistFloat32(Tuple32{curNode.X, curNode.Y}, Tuple32{float32(curNode.P.B.X), float32(curNode.P.B.Y)})
 
-		fmt.Fprintf(curNode.P.SamplingData, "ID:%v T:%v S:%v,%v D:%v\n", curNode.Id, curNode.P.CurrentTime, ADCRead, curNode.SampleRateSensor, dist)
+			//fmt.Fprintf(curNode.P.SamplingData, "ID:%v T:%v S:%v,%v B:%v,%v D:%v\n", curNode.Id, curNode.P.CurrentTime, ADCRead, curNode.SampleRateSensor, curNode.BatteryPercent, curNode.SampleRateBattery, dist)
 
+		}
 
 		//Receives the node's distance and calculates its running average
 		//for that square
@@ -1109,8 +1118,12 @@ func (curNode *NodeImpl) GetReadingsCSV() {
 		}
 
 	}
-	curNode.ScheduledEvent = &Event{curNode, SENSE, curNode.P.CurrentTime + int(1000.0 / curNode.NewSampleRate()), 0}
-	curNode.P.Events.Push(curNode.ScheduledEvent)
+	if curNode.P.AdaptiveSampling {
+		curNode.ScheduledEvent = &Event{curNode, SENSE, curNode.P.CurrentTime + int(1000.0 / curNode.NewSampleRate()), 0}
+		curNode.P.Events.Push(curNode.ScheduledEvent)
+	} else {
+		curNode.P.Events.Push(&Event{curNode, SENSE, curNode.P.CurrentTime + 500, 0})
+	}
 }
 
 //Get min and max readings
@@ -1209,13 +1222,15 @@ func (curNode *NodeImpl) MoveCSV(p *Params) {
 		curNode.NodeBounds.Y = float64(newY)
 		curNode.P.NodeTree.NodeMovement(curNode.NodeBounds)
 
-		curNode.UpdateAcceleration(p.CurrentTime,newX, newY, oldX, oldY)
-		curNode.UpdateVelocity(p.CurrentTime, newX, newY, oldX, oldY)
-		curNode.UpdateSampleRatePart("movement", curNode.Velocity)
+		if curNode.P.AdaptiveSampling {
+			curNode.UpdateAcceleration(p.CurrentTime, newX, newY, oldX, oldY)
+			curNode.UpdateVelocity(p.CurrentTime, newX, newY, oldX, oldY)
+			curNode.UpdateSampleRatePart("movement", curNode.Velocity)
+		}
 
-		dist := DistFloat32(Tuple32{curNode.X, curNode.Y}, Tuple32{float32(curNode.P.B.X), float32(curNode.P.B.Y)})
-		fmt.Fprintf(curNode.P.SamplingData, "ID:%v T:%v M:%v,%v D:%v\n", curNode.Id, curNode.P.CurrentTime, curNode.Velocity,
-			curNode.SampleRateMovement, dist)
+		//dist := DistFloat32(Tuple32{curNode.X, curNode.Y}, Tuple32{float32(curNode.P.B.X), float32(curNode.P.B.Y)})
+		//fmt.Fprintf(curNode.P.SamplingData, "ID:%v T:%v M:%v,%v B:%v,%v D:%v\n", curNode.Id, curNode.P.CurrentTime, curNode.Velocity,
+		//	curNode.SampleRateMovement, curNode.BatteryPercent, curNode.SampleRateBattery, dist)
 	}
 
 
@@ -1268,6 +1283,9 @@ func (curNode *NodeImpl) ScheduleSensing() {
 	if rate > 5 {
 		fmt.Println(rate)
 	}*/
+	if curNode.ScheduledEvent.Instruction == MOVE {
+		fmt.Println("Move event")
+	}
 	if curNode.ScheduledEvent.Time == curNode.P.CurrentTime {
 		//schedule new event
 		curNode.ScheduledEvent = &Event{curNode, SENSE, curNode.P.CurrentTime + int(1000.0 / curNode.NewSampleRate()), 0}

@@ -439,7 +439,7 @@ func (s *FusionCenter) Send(n *NodeImpl, rd Reading) {
 	}
 
 	//Clears the Times array and adds the time of the reading to it
-	s.Times = make(map[int]bool, 0)
+	//s.Times = make(map[int]bool, 0)
 	if s.Times[rd.Time / 1000] {
 
 	} else {
@@ -447,7 +447,7 @@ func (s *FusionCenter) Send(n *NodeImpl, rd Reading) {
 	}
 
 	//Adds time buckets only according to the Times array
-	for len(s.TimeBuckets) <= rd.Time {
+	/*for len(s.TimeBuckets) <= rd.Time {
 		s.TimeBuckets = append(s.TimeBuckets, make([]Reading,0))
 	}
 	currBucket := (s.TimeBuckets)[rd.Time]
@@ -455,7 +455,7 @@ func (s *FusionCenter) Send(n *NodeImpl, rd Reading) {
 		(s.TimeBuckets)[rd.Time] = append(currBucket, rd)
 	} else {
 		(s.TimeBuckets)[rd.Time] = append((s.TimeBuckets)[rd.Time], rd)
-	}
+	}*/
 
 	s.UpdateSquareAvg(rd)
 
@@ -521,26 +521,23 @@ func (s *FusionCenter) CalcStats() ([]float64, []float64, []float64) {
 	s.UpdateSquareNumNodes()
 
 	//Calculate the mean
-	sum := 0.0
 	//StdDevFromMean := 0.0
-	for time := 0; time < s.P.CurrentTime / 1000; time++ {
+	for t := range s.Times {
+		sum := 0.0
 		count := 0
-		sum = 0
-		for t := range s.Readings {
-			if t.Time == time {
-				for r := range s.Readings[t] {
-					sum += s.Readings[t][r].SensorVal
+		for b := range s.Readings {
+			if b.Time == t {
+				for r := range s.Readings[b] {
+					sum += s.Readings[b][r].SensorVal
 					count++
 				}
 			}
 		}
-		fmt.Println(sum, count)
-		if count == 0 {
-			count = 1
-		}
-		s.Mean[time] = sum / float64(count)
+		s.Mean[t] = sum / float64(count)
 	}
-	fmt.Println(s.Mean)
+
+	s.Times = make(map[int]bool, 0)
+	//fmt.Println(s.Mean)
 
 	//Calculate the standard deviation and variance
 	/*sum = 0.0
