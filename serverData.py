@@ -46,7 +46,7 @@ def main():
         varianceNum.append(float(i))
 
     t = np.linspace(0, 70, num = 70)
-    #t2 = np.linspace(0, 1000, num = 1000)
+    t2 = np.linspace(0, 1000, num = 1000)
 
     vals = open("Log-nodeTest.txt", 'r')
     if vals.mode == 'r':
@@ -63,7 +63,7 @@ def main():
         if i % 4 == 3:
             error.append(float(re.sub("[Error: \\n]", "",line[i])))
 
-    t2 = np.linspace(0, len(nodeNums), num = len(nodeNums))
+    #t2 = np.linspace(0, len(nodeNums), num=len(nodeNums))
     window = 8
 
     df = pd.DataFrame(nodeNums)
@@ -93,22 +93,22 @@ def main():
 
     pl.plt.title("Mean")
     pl.plt.xlabel("Time (Iterations)")
-    pl.plt.plot(t2 , meanNum, "r")
+    pl.plt.plot(t2, meanNum, "r")
     pl.plt.show()
     
     pl.plt.title("Variance")
     pl.plt.xlabel("Time (Iterations)")
-    pl.plt.plot(t2 , varianceNum, "g")
+    pl.plt.plot(t2, varianceNum, "g")
     pl.plt.show()
 
     pl.plt.title("Standard Deviation")
     pl.plt.xlabel("Time (Iterations)")
-    pl.plt.plot(t2 , stdDevNum, "b")
+    pl.plt.plot(t2, stdDevNum, "b")
     pl.plt.show()
     
     pl.plt.title("Readings")
     pl.plt.xlabel("Time (Iterations)")
-    pl.plt.plot(t2 , nodeNums, "r", label='Sensor Values')
+    pl.plt.plot(t2, nodeNums, "r", label='Sensor Values')
     #pl.plt.plot(t2 , noise, "b", label='Noise')
     #pl.plt.legend()
     #pl.plt.show()

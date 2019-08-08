@@ -66,7 +66,7 @@ func main() {
 	r = &cps.RegionParams{}
 
 	p.Events = Events
-	p.Server = cps.FusionCenter{p, r, nil, nil, nil, nil, nil, nil, nil, nil, nil}
+	p.Server = cps.FusionCenter{p, r, nil, nil, nil, nil, nil, nil, nil, nil, nil, 0}
 
 	p.Tau1 = 3500
 	p.Tau2 = 9000
@@ -354,7 +354,7 @@ func main() {
 				p.Events.Push(&cps.Event{nil,cps.CLEANUPREADINGS, p.CurrentTime + 1000, 0})
 			} else if event.Instruction == cps.SERVERSTATS{
 				p.Server.CalcStats()
-				p.Events.Push(&cps.Event{nil, cps.SERVERSTATS, p.CurrentTime + 10000, 0})
+				p.Events.Push(&cps.Event{nil, cps.SERVERSTATS, p.CurrentTime + 1000, 0})
 			}else if event.Instruction == cps.SERVER {
 				if !p.SuperNodes {
 					fmt.Fprintln(p.RoutingFile, "Amount:", 0)

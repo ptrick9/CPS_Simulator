@@ -27,6 +27,7 @@ type FusionCenter struct {
 	Sch		*Scheduler
 	Readings		map[Key][]Reading
 	CheckedIds		[]int
+	DataCount       int
 }
 
 //Init initializes the values for the server
@@ -45,6 +46,7 @@ func (s *FusionCenter) Init(){
 
 	s.Readings = make(map[Key][]Reading) //List of all readings within a period of time dictated by ReadingHistorySize
 	s.CheckedIds = make([]int, 0) //List of checked node ids
+	s.DataCount = 0
 }
 
 //Reading packages the data sent by a node
@@ -519,11 +521,11 @@ func (s *FusionCenter) Send(n *NodeImpl, rd Reading) {
 func (s *FusionCenter) CalcStats() ([]float64, []float64, []float64) {
 	//fmt.Printf("Calculating stats for times: %v", s.times)
 	s.UpdateSquareNumNodes()
-
+	sum := 0.0
 	//Calculate the mean
 	//StdDevFromMean := 0.0
 	for t := range s.Times {
-		sum := 0.0
+		sum = 0.0
 		count := 0
 		for b := range s.Readings {
 			if b.Time == t {
@@ -533,9 +535,22 @@ func (s *FusionCenter) CalcStats() ([]float64, []float64, []float64) {
 				}
 			}
 		}
-		s.Mean[t] = sum / float64(count)
+		s.Mean[t] = (s.Mean[t] * float64(s.DataCount) + sum) / float64(s.DataCount + count)
+		s.DataCount += count
 	}
 
+	sum = 0.0
+	for t := range s.Times {
+		for b := range s.Readings {
+			if b.Time == t {
+				for r := range s.Readings[b] {
+					sum += math.Pow(s.Readings[b][r].SensorVal - s.Mean[t], 2)
+				}
+			}
+		}
+		s.Variance[t] = sum / float64(s.DataCount)
+		s.StdDev[t] = math.Sqrt(sum / float64(s.DataCount))
+	}
 	s.Times = make(map[int]bool, 0)
 	//fmt.Println(s.Mean)
 
