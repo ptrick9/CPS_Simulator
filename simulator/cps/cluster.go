@@ -55,7 +55,7 @@ func (curNode * NodeImpl) ComputeClusterScore(penalty float64, numWithinDist int
 
 	//weighted sum, 60% from degree (# of nodes withinin distance), 40% from its battery life
 	// penalty used to increase a nodes chance at staying a clusterhead
-	return ((0.6*degree + 0.4*battery)*curNode.CHPenalty)
+	return ((curNode.P.DegreeWeight*degree + curNode.P.BatteryWeight*battery)*curNode.CHPenalty)
 }
 
 //Generates Hello Message for node to form/maintain clusters. Returns message as a string

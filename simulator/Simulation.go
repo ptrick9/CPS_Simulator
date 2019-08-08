@@ -27,7 +27,6 @@ import (
 	"./cps"
 	"bytes"
 	"container/heap"
-	"math"
 	"runtime"
 
 	//"CPS_Simulator/simulator/cps"
@@ -155,6 +154,17 @@ func main() {
 		TotalMsgs:			0,
 	}
 
+	//Defaults to false
+	if p.RandomBomb {
+		reg := cps.RandomInt(0, len(r.Square_list))
+		xval := cps.RandomInt(r.Square_list[reg].X1, r.Square_list[reg].X2)
+		yval := cps.RandomInt(r.Square_list[reg].Y2, r.Square_list[reg].Y1)
+		p.BombX = xval
+		p.BombY = yval
+		p.B = &cps.Bomb{X: p.BombX, Y: p.BombY}
+	}
+	fmt.Printf("Bomb location: %v, %v\n", p.BombX, p.BombY)
+
 	//This is where the text file reading ends
 	Vn := make([]float64, 1000)
 	for i := 0; i < 1000; i++ {
@@ -225,8 +235,7 @@ func main() {
 	}
 
 	p.CurrentTime = 0
-	for len(p.Events) > 0 && p.CurrentTime < 1000*p.Iterations_of_event{
-		//fmt.Println(p.CurFrentTime,1000*p.Iterations_of_event)
+	for len(p.Events) > 0 && p.CurrentTime < 1000*p.Iterations_of_event && !p.FoundBomb{
 		event := heap.Pop(&p.Events).(*cps.Event)
 		//fmt.Println(event)
 		//fmt.Println(p.CurrentNodes)
@@ -279,7 +288,7 @@ func main() {
 					if (event.Node.Valid) {
 						p.ClusterNetwork.SendHelloMessage(p.NodeBTRange, event.Node)
 					}
-					p.Events.Push(&cps.Event{event.Node, cps.CLUSTERMSG, p.CurrentTime + 1000, 0})
+					p.Events.Push(&cps.Event{event.Node, cps.CLUSTERMSG, p.CurrentTime + 1000*p.BrodPeriod, 0})
 				}
 
 			} else if event.Instruction == cps.CLUSTERHEADELECT {
@@ -288,7 +297,7 @@ func main() {
 						event.Node.SortMessages()
 						p.ClusterNetwork.ElectClusterHead(event.Node)
 					}
-					p.Events.Push(&cps.Event{event.Node, cps.CLUSTERHEADELECT, p.CurrentTime + 1000, 0})
+					p.Events.Push(&cps.Event{event.Node, cps.CLUSTERHEADELECT, p.CurrentTime + 1000*p.BrodPeriod, 0})
 				}
 
 			} else if event.Instruction == cps.CLUSTERFORM {
@@ -299,7 +308,7 @@ func main() {
 							p.ClusterNetwork.FormClusters(event.Node)
 						}
 					}
-					p.Events.Push(&cps.Event{event.Node, cps.CLUSTERFORM, p.CurrentTime + 1000, 0})
+					p.Events.Push(&cps.Event{event.Node, cps.CLUSTERFORM, p.CurrentTime + 1000*p.BrodPeriod, 0})
 				}
 			}
 		} else {
@@ -402,6 +411,7 @@ func main() {
 				p.Events.Push(&cps.Event{nil, cps.GARBAGECOLLECT, p.CurrentTime + 100000, 0})
 			} else if event.Instruction == cps.CLUSTERPRINT {
 				var clusterBuffer bytes.Buffer
+				var clusterBuffer2 bytes.Buffer
 				var clusterStatsBuffer bytes.Buffer
 				var clusterDebugBuffer bytes.Buffer
 
@@ -412,17 +422,22 @@ func main() {
 					}
 				}
 				clusterBuffer.WriteString(fmt.Sprintf("Amount: %v\n", totalHeads))
+				clusterBuffer2.WriteString(fmt.Sprintf("Amount: %v\n", len(p.ClusterNetwork.ClusterHeads)))
 				for i:=0; i<len(p.ClusterNetwork.ClusterHeads); i++{
+					clusterBuffer2.WriteString(fmt.Sprintf("%v: [", p.ClusterNetwork.ClusterHeads[i].Id))
 					if (p.ClusterNetwork.ClusterHeads[i].NodeClusterParams.CurrentCluster.Total>0){
 						clusterBuffer.WriteString(fmt.Sprintf("%v: [", p.ClusterNetwork.ClusterHeads[i].Id))
 						for j:=0; j<len(p.ClusterNetwork.ClusterHeads[i].NodeClusterParams.CurrentCluster.ClusterMembers); j++ {
 							clusterBuffer.WriteString(fmt.Sprintf("%v", p.ClusterNetwork.ClusterHeads[i].NodeClusterParams.CurrentCluster.ClusterMembers[j].Id))
+							clusterBuffer2.WriteString(fmt.Sprintf("%v", p.ClusterNetwork.ClusterHeads[i].NodeClusterParams.CurrentCluster.ClusterMembers[j].Id))
 							if (j+1 != len( p.ClusterNetwork.ClusterHeads[i].NodeClusterParams.CurrentCluster.ClusterMembers)) {
 								clusterBuffer.WriteString(fmt.Sprintf(", "))
+								clusterBuffer2.WriteString(fmt.Sprintf(", "))
 							}
 						}
 						clusterBuffer.WriteString(fmt.Sprintf("]\n"))
 					}
+					clusterBuffer2.WriteString(fmt.Sprintf("]\n"))
 
 					clusterStatsBuffer.WriteString(fmt.Sprintf("%v", p.ClusterNetwork.ClusterHeads[i].NodeClusterParams.CurrentCluster.Total))
 					if(i+1 != len(p.ClusterNetwork.ClusterHeads)){
@@ -431,66 +446,20 @@ func main() {
 				}
 				clusterStatsBuffer.WriteString(fmt.Sprintln(""))
 
-				clusterHeadCount:=0
-				clusterMemberCount:=0
-				clusterDebugBuffer.WriteString(fmt.Sprint( "", ))
-				for i:=0; i<len(p.NodeList); i++ {
-					if(p.NodeList[i].IsClusterHead){
-						clusterHeadCount++
-					} else if(p.NodeList[i].IsClusterMember){
-						clusterMemberCount++
-					}
-				}
-				clusterDebugBuffer.WriteString(fmt.Sprintf("Iteration: %v\tlen(p.ClusterNetwork.ClusterHeads): %v\tClusterHeads: %v\tClusterMembers: %v\n",p.CurrentTime/1000,len(p.ClusterNetwork.ClusterHeads),clusterHeadCount,clusterMemberCount))
-
-				for i:=0; i<len(p.NodeList); i++ {
-					if(p.NodeList[i].IsClusterHead){
-						for j:=0; j<len(p.NodeList[i].NodeClusterParams.CurrentCluster.ClusterMembers); j++{
-							xDist := p.NodeList[i].X - p.NodeList[i].NodeClusterParams.CurrentCluster.ClusterMembers[j].X
-							yDist := p.NodeList[i].Y - p.NodeList[i].NodeClusterParams.CurrentCluster.ClusterMembers[j].Y
-							radDist := math.Sqrt(float64(xDist*xDist)+float64(yDist*yDist))
-							if(!(p.NodeList[i].IsWithinRange(p.NodeList[i].NodeClusterParams.CurrentCluster.ClusterMembers[j],p.NodeBTRange))){
-								clusterDebugBuffer.WriteString(fmt.Sprintf("\tCluster Member Out of Range: Member:{ID=%v, Coord(%v,%v)} Cluster:{CH_ID=%v, Coord(%v,%v),Size=%v} Dist: %.4f\n",
-									p.NodeList[i].NodeClusterParams.CurrentCluster.ClusterMembers[j].Id,p.NodeList[i].NodeClusterParams.CurrentCluster.ClusterMembers[j].X,p.NodeList[i].NodeClusterParams.CurrentCluster.ClusterMembers[j].Y,
-									p.NodeList[i].Id,p.NodeList[i].X,p.NodeList[i].Y,p.NodeList[i].NodeClusterParams.CurrentCluster.Total, radDist))
-							}
-						}
-
-						for j:=0; j<len(p.ClusterNetwork.ClusterHeads); j++{
-							for k:=0; k<len(p.ClusterNetwork.ClusterHeads[j].NodeClusterParams.CurrentCluster.ClusterMembers); k++{
-								if(p.NodeList[i] == p.ClusterNetwork.ClusterHeads[j].NodeClusterParams.CurrentCluster.ClusterMembers[k]){
-									clusterDebugBuffer.WriteString(fmt.Sprintf("\tCluster Head {CH_ID: %v, Size=%v} is cluster member of {CH_ID: %v, Size=%v}\n", p.NodeList[i].Id,p.NodeList[i].NodeClusterParams.CurrentCluster.Total,p.ClusterNetwork.ClusterHeads[j].Id,p.ClusterNetwork.ClusterHeads[j].NodeClusterParams.CurrentCluster.Total))
-								}
-							}
-						}
-					} else if(p.NodeList[i].IsClusterMember){
-						clusterCount := 0
-						for j:=0; j<len(p.ClusterNetwork.ClusterHeads); j++{
-							for k:=0; k<len(p.ClusterNetwork.ClusterHeads[j].NodeClusterParams.CurrentCluster.ClusterMembers); k++{
-								if(p.NodeList[i] == p.ClusterNetwork.ClusterHeads[j].NodeClusterParams.CurrentCluster.ClusterMembers[k]){
-									clusterCount++
-								}
-							}
-						}
-						if(clusterCount>1){
-							clusterDebugBuffer.WriteString(fmt.Sprintf("\tNode ID=%v is cluster member of %v clusters\n", p.NodeList[i].Id,clusterCount))
-						}
-
-					}
-				}
 				fmt.Fprintf(p.ClusterFile, clusterBuffer.String())
+				fmt.Fprintf(p.ClusterFile2, clusterBuffer2.String())
 				fmt.Fprintf(p.ClusterStatsFile, clusterStatsBuffer.String())
 				fmt.Fprintf(p.ClusterDebug, clusterDebugBuffer.String())
 
 				fmt.Fprintf(p.ClusterMessages, "%d,%d\n",p.CurrentTime/1000,p.ClusterNetwork.TotalMsgs)
 
-				p.Events.Push(&cps.Event{nil, cps.CLUSTERPRINT, p.CurrentTime + 1000, 0})
+				p.Events.Push(&cps.Event{nil, cps.CLUSTERPRINT, p.CurrentTime + 1000*p.BrodPeriod, 0})
 				p.ClusterNetwork.ResetClusters()
 			} else if event.Instruction == cps.CLUSTERLESSFORM {
 				p.ClusterNetwork.FinalizeClusters(p)
 
 				//fmt.Println()
-				p.Events.Push(&cps.Event{nil, cps.CLUSTERLESSFORM, p.CurrentTime + 1000, 0})
+				p.Events.Push(&cps.Event{nil, cps.CLUSTERLESSFORM, p.CurrentTime + 1000*p.BrodPeriod, 0})
 			}
 		}
 	}
@@ -521,10 +490,40 @@ func main() {
 		fmt.Println("\nSimulation Complete")
 	}
 
-	for i := range p.BoolGrid {
-		fmt.Fprintln(p.BoolFile, p.BoolGrid[i])
-	}
+	if p.ZipFiles {
+		p.MoveReadingsFile.Close()
+		p.DriftFile.Close()
+		p.NodeFile.Close()
+		p.PositionFile.Close()
+		p.GridFile.Close()
+		p.EnergyFile.Close()
+		p.RoutingFile.Close()
+		p.ServerFile.Close()
+		p.DetectionFile.Close()
+		p.BatteryFile.Close()
+		p.RunParamFile.Close()
+		p.ClusterFile2.Close()
+		p.ClusterFile.Close()
+		p.AliveValidNodes.Close()
+		p.ClusterMessages.Close()
+		p.ClusterReadings.Close()
+		p.ClusterDebug.Close()
 
+		output := p.OutputFileNameCM + ".zip"
+		if err := cps.ZipFiles(output, p.Files); err != nil {
+			panic(err)
+		}
+		fmt.Println("Zipped File:", output)
+
+		for _, file := range(p.Files) {
+
+			var err = os.Remove(file)
+			if err != nil {
+				fmt.Println(err)
+			}
+		}
+
+	}
 
 	p.Server.PrintStatsFile()
 
@@ -596,12 +595,12 @@ func PrintNodeBatteryOverTimeFast(p * cps.Params)  {
 	buffer.WriteString("Time,")
 	for i := range p.NodeList{
 		n := p.NodeList[i]
-		buffer.WriteString(fmt.Sprintf("Node",n.GetID(),","))
+		buffer.WriteString(fmt.Sprintf("Node %v,",n.GetID()))
 	}
 	buffer.WriteString("\n")
 
 	for t:=0; t<p.Iterations_of_event; t++{
-		buffer.WriteString(fmt.Sprintf("%d,", t))
+		buffer.WriteString(fmt.Sprintf("%v,", t))
 		for i := range p.NodeList{
 			n := p.NodeList[i]
 			buffer.WriteString(fmt.Sprintf("%v,", n.BatteryOverTime[t]))

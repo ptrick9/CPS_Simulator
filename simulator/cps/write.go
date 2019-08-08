@@ -2,6 +2,7 @@
 package cps
 
 import (
+	"archive/zip"
 	"bytes"
 	"encoding/csv"
 	"flag"
@@ -726,12 +727,13 @@ func SetupFiles(p *Params) {
 	if err != nil {
 		log.Fatal("cannot create file", err)
 	}
-	defer dummy.Close()
+	dummy.Close()
+	os.Remove("dummyFile.txt")
 	p.PositionFile, err = os.Create(p.OutputFileNameCM + "-simulatorOutput.txt")
 	if err != nil {
 		log.Fatal("Cannot create file", err)
 	}
-	//defer p.PositionFile.Close()
+	p.Files = append(p.Files, p.OutputFileNameCM + "-simulatorOutput.txt")
 
 	//Print parameters to position file
 	fmt.Fprintln(p.PositionFile, "Image:", p.ImageFileNameCM)
@@ -745,7 +747,7 @@ func SetupFiles(p *Params) {
 	if err != nil {
 		log.Fatal("Cannot create file", err)
 	}
-	//defer p.DriftFile.Close()
+	p.Files = append(p.Files, p.OutputFileNameCM + "-drift.txt")
 
 	//Printing parameters to driftFile
 	fmt.Fprintln(p.DriftFile, "Number of Nodes:", p.TotalNodes)
@@ -774,124 +776,127 @@ func SetupFiles(p *Params) {
 	if err != nil {
 		log.Fatal("Cannot create file", err)
 	}
-	//defer p.GridFile.Close()
+	p.Files = append(p.Files, p.OutputFileNameCM + "-grid.txt")
+
 
 	//Write parameters to gridFile
 	fmt.Fprintln(p.GridFile, "Width:", p.SquareColCM)
 	fmt.Fprintln(p.GridFile, "Height:", p.SquareRowCM)
 
-	p.NodeFile, err = os.Create(p.OutputFileNameCM + "-node_reading.txt")
-	if err != nil {
-		log.Fatal("Cannot create file", err)
-	}
-	//defer p.NodeFile.Close()
 
 	p.EnergyFile, err = os.Create(p.OutputFileNameCM + "-node.txt")
 	if err != nil {
 		log.Fatal("Cannot create file", err)
 	}
-	//defer p.EnergyFile.Close()
+	p.Files = append(p.Files, p.OutputFileNameCM + "-node.txt")
 
 	p.BatteryFile, err = os.Create(p.OutputFileNameCM + "-batteryusage.csv")
 	if err != nil {
 		log.Fatal("Cannot create file", err)
 	}
+	p.Files = append(p.Files, p.OutputFileNameCM + "-batteryusage.csv")
 
 	p.RunParamFile, err = os.Create(p.OutputFileNameCM + "-parameters.txt")
 	if err != nil {
 		log.Fatal("Cannot create file", err)
 	}
+	p.Files = append(p.Files, p.OutputFileNameCM + "-parameters.txt")
 
 	p.RoutingFile, err = os.Create(p.OutputFileNameCM + "-path.txt")
 	if err != nil {
 		log.Fatal("Cannot create file", err)
 	}
-	//defer p.RoutingFile.Close()
-
-	p.BoolFile, err = os.Create(p.OutputFileNameCM + "-bool.txt")
-	if err != nil {
-		log.Fatal("Cannot create file", err)
-	}
-	//defer p.BoolFile.Close()
-
-	p.AttractionFile, err = os.Create(p.OutputFileNameCM + "-attraction.txt")
-	if err != nil {
-		log.Fatal("Cannot create file", err)
-	}
+	p.Files = append(p.Files, p.OutputFileNameCM + "-path.txt")
 
 	p.MoveReadingsFile, err = os.Create(p.OutputFileNameCM + "-movementReadings.txt")
 	if err != nil {
 		log.Fatal("Cannot create file", err)
 	}
+	p.Files = append(p.Files, p.OutputFileNameCM + "-movementReadings.txt")
 
 	p.ClusterDebug, err = os.Create(p.OutputFileNameCM + "-adhoc_debug.txt")
 	if err != nil{
 		log.Fatal("Cannot create file", err)
 	}
-
+	p.Files = append(p.Files, p.OutputFileNameCM + "-adhoc_debug.txt")
 
 	p.ClusterMessages, err = os.Create(p.OutputFileNameCM + "-cluster_messages.txt")
 	if err != nil{
 		log.Fatal("Cannot create file", err)
 	}
+	p.Files = append(p.Files, p.OutputFileNameCM + "-cluster_messages.txt")
 
-
-	if(p.ClusteringOn){
-		p.ClusterReadings, err = os.Create(p.OutputFileNameCM + "-cluster_readings_CL_ON.txt")
-		if err != nil{
-			log.Fatal("Cannot create file", err)
-		}
-
-		p.AliveValidNodes, err = os.Create(p.OutputFileNameCM + "-nodes_alive_valid_CL_ON.txt")
-		if err != nil{
-			log.Fatal("Cannot create file", err)
-		}
-	} else{
-		p.ClusterReadings, err = os.Create(p.OutputFileNameCM + "-cluster_readings_CL_OFF.txt")
-		if err != nil{
-			log.Fatal("Cannot create file", err)
-		}
-
-		p.AliveValidNodes, err = os.Create(p.OutputFileNameCM + "-nodes_alive_valid_CL_OFF.txt")
-		if err != nil{
-			log.Fatal("Cannot create file", err)
-		}
+	p.ClusterReadings, err = os.Create(p.OutputFileNameCM + "-cluster_readings.txt")
+	if err != nil{
+		log.Fatal("Cannot create file", err)
 	}
+	p.Files = append(p.Files, p.OutputFileNameCM + "-cluster_readings.txt")
+
+	p.AliveValidNodes, err = os.Create(p.OutputFileNameCM + "-nodes_alive_valid.txt")
+	if err != nil{
+		log.Fatal("Cannot create file", err)
+	}
+	p.Files = append(p.Files, p.OutputFileNameCM + "-nodes_alive_valid.txt")
+
+	//if(p.ClusteringOn){
+	//	p.ClusterReadings, err = os.Create(p.OutputFileNameCM + "-cluster_readings_CL_ON.txt")
+	//	if err != nil{
+	//		log.Fatal("Cannot create file", err)
+	//	}
+	//	p.Files = append(p.Files, p.OutputFileNameCM + "-cluster_readings_CL_ON.txt")
+	//
+	//	p.AliveValidNodes, err = os.Create(p.OutputFileNameCM + "-nodes_alive_valid_CL_ON.txt")
+	//	if err != nil{
+	//		log.Fatal("Cannot create file", err)
+	//	}
+	//	p.Files = append(p.Files, p.OutputFileNameCM + "-nodes_alive_valid_CL_ON.txt")
+	//} else{
+	//	p.ClusterReadings, err = os.Create(p.OutputFileNameCM + "-cluster_readings_CL_OFF.txt")
+	//	if err != nil{
+	//		log.Fatal("Cannot create file", err)
+	//	}
+	//	p.Files = append(p.Files, p.OutputFileNameCM + "-cluster_readings_CL_OFF.txt")
+	//
+	//	p.AliveValidNodes, err = os.Create(p.OutputFileNameCM + "-nodes_alive_valid_CL_OFF.txt")
+	//	if err != nil{
+	//		log.Fatal("Cannot create file", err)
+	//	}
+	//	p.Files = append(p.Files, p.OutputFileNameCM + "-nodes_alive_valid_CL_OFF.txt")
+	//}
 
 	p.ClusterFile, err = os.Create(p.OutputFileNameCM + "-adhoc.txt")
 	if err != nil{
 		log.Fatal("Cannot create file", err)
 	}
+	p.Files = append(p.Files, p.OutputFileNameCM + "-adhoc.txt")
+
+	p.ClusterFile2, err = os.Create(p.OutputFileNameCM + "-adhoc2.txt")
+	if err != nil{
+		log.Fatal("Cannot create file", err)
+	}
+	p.Files = append(p.Files, p.OutputFileNameCM + "-adhoc2.txt")
 
 	p.ClusterStatsFile, err = os.Create(p.OutputFileNameCM + "-clusters.txt")
 	if err != nil{
 		log.Fatal("Cannot create file", err)
 	}
+	p.Files = append(p.Files, p.OutputFileNameCM + "-clusters.txt")
 	//defer p.AttractionFile.Close()
 
 	p.ServerFile, err = os.Create(p.OutputFileNameCM + "-server.txt")
 	if err != nil {
 		log.Fatal("Cannot create file", err)
 	}
-	//defer p.ServerFile.Close()
-
-	p.NodeTest, err = os.Create(p.OutputFileNameCM + "-nodeTest.txt")
-	if err != nil {
-		log.Fatal("Cannot create file", err)
-	}
-	//defer p.ServerFile.Close()
-
-	p.NodeTest2, err = os.Create(p.OutputFileNameCM + "-nodeTest2.txt")
-	if err != nil {
-		log.Fatal("Cannot create file", err)
-	}
-	//defer p.ServerFile.Close()
+	p.Files = append(p.Files, p.OutputFileNameCM + "-server.txt")
 
 	p.DetectionFile, err = os.Create(p.OutputFileNameCM + "-detection.txt")
 	if err != nil {
 		log.Fatal("Cannot create file", err)
 	}
-	//defer p.ServerFile.Close()
+	p.Files = append(p.Files, p.OutputFileNameCM + "-detection.txt")
+
+	fmt.Println(p.Files)
+
 }
 
 func SetupParameters(p *Params, r *RegionParams) {
@@ -1211,6 +1216,7 @@ func readSensorCSV(p *Params, region *RegionParams) {
 	//CalculateADCSetting(maxReading, maxLocX, maxLocY, maxTime, p)
 	//fmt.Println(p.BombX, p.BombY)
 	//CalculateADCSetting(p.SensorReadings[p.B.X][p.B.Y][10], p.B.X, p.B.Y, 10, p)
+	fmt.Println("")
 }
 
 
@@ -1369,53 +1375,6 @@ func RangeInt(min, max int) int { //returns a random number between max and min
 	return rand.Intn(max-min) + min
 }
 
-// This prints the board map to the terminal
-//func printBoardMap(){
-//	for i:= 0; i < len(p.BoardMap); i++{
-//		fmt.Println(p.BoardMap[i])
-//	}
-//}
-
-//var fileBoard, errBoard = os.Create("p.BoardMap.txt")
-/*
-// This prints board Map to a txt file.
-func writeBordMapToFile2() {
-	start := Time.Now()
-	defer func() {
-		elapsed := Time.Since(start)
-		fmt.Println("Printing Board Map took", elapsed)
-	}()
-	Check(errBoard)
-	var s = ""
-	s = s + "\nt=" + strconv.Itoa(iterations_used) + "\n\n"
-	for i := 0; i < len(p.BoardMap); i++ {
-		for j := 0; j < len(p.BoardMap[i]); j++ {
-			s = s + strconv.Itoa(p.BoardMap[i][j]) + " "
-		}
-		s = s + "\n"
-	}
-	//s = s + "\nt=" + strconv.Itoa(iterations_used) + "\n\n"
-	n3, err := fileBoard.WriteString(s)
-	Check(err)
-	fmt.Printf("wrote %d bytes\n", n3)
-}
-
-func writeBordMapToFile() {
-	//start := Time.Now()
-	Check(errBoard)
-	w := bufio.NewWriter(fileBoard)
-	w.WriteString("\nt=" + strconv.Itoa(iterations_used) + "\n\n")
-	for i := 0; i < len(p.BoardMap); i++ {
-		for j := 0; j < len(p.BoardMap[i]); j++ {
-			w.WriteString(strconv.Itoa(p.BoardMap[i][j]) + " ")
-		}
-		w.WriteString("\n")
-	}
-	w.Flush()
-	//elapsed := Time.Since(start)
-	//fmt.Println("Printing Board Map took", elapsed)
-}*/
-
 
 func FlipSquares(p *Params, r *RegionParams) {
 	//tmp := 0
@@ -1473,7 +1432,7 @@ func GetFlags(p *Params) {
 
 	flag.Float64Var(&p.SamplingLossBTCM, "SamplingLossBTCM", (9.79*math.Pow(10,-5)),
 		"battery loss due to BlueTooth sampling")
-	flag.Float64Var(&p.SamplingLossWifiCM, "SamplingLossWifiCM", .01,
+	flag.Float64Var(&p.SamplingLossWifiCM, "SamplingLossWifiCM", (4.89*math.Pow(10,-4)),
 		"battery loss due to WiFi sampling")
 	flag.Float64Var(&p.SamplingLoss4GCM, "SamplingLoss4GCM", (9.79*math.Pow(10,-4)),
 		"battery loss due to 4G sampling")
@@ -1576,6 +1535,10 @@ func GetFlags(p *Params) {
 	flag.IntVar(&p.MaxCMReadingBufferSize, "maxCMReadingBufferSize,",10, "max readings buffer size of a cluster member. CM must send to CH when buffer is this size")
 	flag.IntVar(&p.MaxCHReadingBufferSize, "maxCHReadingBufferSize,",100, "max readings buffer size of a cluster head. CH must send to server when buffer is this size")
 
+	flag.Float64Var(&p.BatteryWeight, "batteryWeight", 0.4, "weight for battery value in node score")
+	flag.Float64Var(&p.DegreeWeight, "degreeWeight", 0.6, "weight for battery value in node score")
+	flag.IntVar(&p.BrodPeriod,"brodPeriod", 1,"seconds between Hello brodcasts")
+
 	//Range: 0-4
 	//	0: begin in center, routed anywhere
 	//	1: begin inside circles located in the corners, only routed inside circle
@@ -1611,8 +1574,8 @@ func GetFlags(p *Params) {
 	flag.BoolVar(&p.RegionRouting, "regionRouting", true, "True if you want to use the new routing algorithm with regions and cutting")
 
 	flag.IntVar(&p.ValidationThreshold, "validationThreshold", 1, "Number of detections required to validate a detection")
-
-
+	flag.BoolVar(&p.RandomBomb, "randomBomb", false, "Toggles random bomb placement")
+	flag.BoolVar(&p.ZipFiles, "zipFiles", false, "Toggles Zipping of output files")
 	flag.Parse()
 	fmt.Println("Natural Loss: ", p.NaturalLossCM)
 	fmt.Println("Sensor Sampling Loss: ", p.SamplingLossSensorCM)
@@ -1620,7 +1583,7 @@ func GetFlags(p *Params) {
 	fmt.Println("Server sampling loss", p.SamplingLossServerCM)
 	fmt.Println("BlueTooth sampling loss", p.SamplingLossBTCM)
 	fmt.Println("WiFi Sampling Loss", p.SamplingLossWifiCM)
-	fmt.Println("4G Sampling Loss", p.SamplingLossWifiCM)
+	fmt.Println("4G Sampling Loss", p.SamplingLoss4GCM)
 	fmt.Println("Accelerometer Sampling Loss", p.SamplingLossAccelCM)
 	fmt.Println("Threshold Battery to use: ", p.ThresholdBatteryToUseCM)
 	fmt.Println("Threshold battery to have: ", p.ThresholdBatteryToHaveCM)
@@ -1702,5 +1665,65 @@ func WriteFlags(p * Params){
 	buf.WriteString(fmt.Sprintf("chSensingTime=%v\n",p.CHSensingTime))
 	buf.WriteString(fmt.Sprintf("maxCMReadingBufferSize=%v\n",p.MaxCMReadingBufferSize))
 	buf.WriteString(fmt.Sprintf("maxCHReadingBufferSize=%v\n",p.MaxCHReadingBufferSize))
+	buf.WriteString(fmt.Sprintf("batteryWeight=%v\n",p.BatteryWeight))
+	buf.WriteString(fmt.Sprintf("degreeWeight=%v\n",p.DegreeWeight))
+	buf.WriteString(fmt.Sprintf("brodPeriod=%v\n",p.BrodPeriod))
+
 	fmt.Fprintf(p.RunParamFile,buf.String())
+}
+
+
+
+
+func ZipFiles(filename string, files []string) error {
+
+	newZipFile, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+	defer newZipFile.Close()
+
+	zipWriter := zip.NewWriter(newZipFile)
+	defer zipWriter.Close()
+
+	// Add files to zip
+	for _, file := range files {
+		if err = AddFileToZip(zipWriter, file); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func AddFileToZip(zipWriter *zip.Writer, filename string) error {
+
+	fileToZip, err := os.Open(filename)
+	if err != nil {
+		return err
+	}
+	defer fileToZip.Close()
+
+	// Get the file information
+	info, err := fileToZip.Stat()
+	if err != nil {
+		return err
+	}
+	header, err := zip.FileInfoHeader(info)
+	if err != nil {
+		return err
+	}
+	// Using FileInfoHeader() above only uses the basename of the file. If we want
+	// to preserve the folder structure we can overwrite this with the full path.
+	//header.Name = //filename
+
+	// Change to deflate to gain better compression
+	// see http://golang.org/pkg/archive/zip/#pkg-constants
+	header.Method = zip.Deflate
+
+	writer, err := zipWriter.CreateHeader(header)
+	if err != nil {
+		return err
+	}
+	_, err = io.Copy(writer, fileToZip)
+	return err
 }

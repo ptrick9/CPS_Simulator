@@ -387,6 +387,7 @@ func main() {
 						totalHeads--
 					}
 				}
+
 				fmt.Fprintln(p.ClusterFile, "Amount:", totalHeads)
 				for i:=0; i<len(p.ClusterNetwork.ClusterHeads); i++{
 					if (p.ClusterNetwork.ClusterHeads[i].NodeClusterParams.CurrentCluster.Total>0){

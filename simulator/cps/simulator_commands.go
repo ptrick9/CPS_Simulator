@@ -46,6 +46,7 @@ type Params struct {
 	StdDevThresholdCM			   float64 //Detection Threshold based on standard deviations from mean
 	CalibrationThresholdCM		   float64
 	DetectionDistance 			   float64
+	RandomBomb					   bool
 
 
 	StimFileNameCM        string
@@ -78,20 +79,19 @@ type Params struct {
 	GridFile       *os.File
 	EnergyFile     *os.File
 	RoutingFile    *os.File
-	AttractionFile *os.File
-	BoolFile       *os.File
 	ServerFile	   *os.File
-	NodeTest	   *os.File
-	NodeTest2	   *os.File
 	DetectionFile  *os.File
 	BatteryFile    *os.File
 	RunParamFile   *os.File
 	ClusterFile	   *os.File
+	ClusterFile2   *os.File
 	ClusterStatsFile *os.File
 	ClusterDebug	*os.File
 	ClusterReadings *os.File
 	ClusterMessages *os.File
 	AliveValidNodes	*os.File
+	ZipFiles 		bool
+	Files 			[]string
 
 	SensorPath  string
 	FineSensorPath  string
@@ -215,4 +215,7 @@ type Params struct {
 	CHSensingTime		int
 	MaxCMReadingBufferSize	int
 	MaxCHReadingBufferSize	int
+	BatteryWeight			float64
+	DegreeWeight			float64
+	BrodPeriod				int
 }
