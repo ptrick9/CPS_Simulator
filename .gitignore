@@ -194,3 +194,5 @@ graphs/
 *.csv
 
 g2/
+
+statistics/driftExplorePar\.pickle

@@ -81,11 +81,14 @@ def BuildDetections(basename):
 
     longBoi = ""
 
+    lines = []
     for line in f:
         line = line.decode("utf-8")
-        longBoi += line
-
-
+        #longBoi += line
+        lines.append(line)
+    print()
+    print(len(lines))
+    longBoi = ' '.join(lines)
     detections = []
     initialDetections = {}
 

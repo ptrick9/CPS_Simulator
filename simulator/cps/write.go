@@ -430,7 +430,7 @@ func SetupCSVNodes(p *Params) {
 		newNode := InitializeNodeParameters(p, i)
 
 		newNode.X = float32(p.NodeMovements[i][0].X)
-		newNode.Y = float32(p.NodeMovements[i][1].Y)
+		newNode.Y = float32(p.NodeMovements[i][0].Y)
 
 		if newNode.InBounds(p) {
 			newNode.Valid = true
