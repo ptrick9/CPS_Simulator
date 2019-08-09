@@ -535,6 +535,9 @@ func (s *FusionCenter) CalcStats() ([]float64, []float64, []float64) {
 				}
 			}
 		}
+		if t < 0 {
+			fmt.Println(t)
+		}
 		s.Mean[t] = (s.Mean[t] * float64(s.DataCount) + sum) / float64(s.DataCount + count)
 		s.DataCount += count
 	}

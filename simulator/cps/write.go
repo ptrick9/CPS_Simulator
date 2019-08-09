@@ -430,7 +430,7 @@ func InitializeNodeParameters(p *Params, nodeNum int) *NodeImpl{
 	curNode.LastAccel = 0
 	curNode.LastReading = 0
 
-	curNode.BatteryPercent = 100.0
+	curNode.BatteryPercent = 75.0
 	curNode.SampleRateSensor = 0.05
 	curNode.SampleRateBattery = 0.05
 
@@ -909,6 +909,11 @@ func SetupFiles(p *Params) {
 	//defer p.ServerFile.Close()
 
 	p.SamplingData, err = os.Create(p.OutputFileNameCM + "-samplingParams.txt")
+	if err != nil {
+		log.Fatal("Cannot create file", err)
+	}
+
+	p.SampleRates, err = os.Create(p.OutputFileNameCM + "-samplingRates.txt")
 	if err != nil {
 		log.Fatal("Cannot create file", err)
 	}

@@ -699,7 +699,7 @@ func (curNode *NodeImpl) UpdateSampleRatePart(modifier string, value float64) {
 	} else if modifier == "battery" {
 		rate = ( curNode.P.MaxSampleRate / (100.0 - float64(curNode.P.ThreshHoldBatteryToHave)) )* (value - float64(curNode.P.ThreshHoldBatteryToHave))
 		if value <= float64(curNode.P.ThreshHoldBatteryToHave) {
-			rate = 0
+			rate = 0.01
 		}
 		//fmt.Println(rate)
 		curNode.SampleRateBattery = rate
@@ -719,7 +719,13 @@ func (curNode *NodeImpl) NewSampleRate() float64{
 	if curNode.SampleRateBattery < curNode.SampleRateMovement {
 		curNode.SampleRateMovement = curNode.SampleRateBattery
 	}
+	if curNode.SampleRate != MaxFloat64(curNode.SampleRateSensor, curNode.SampleRateMovement) {
+		fmt.Fprintf(curNode.P.SampleRates,"T: %v, R: %v, S: %v, M: %v, B: %v\n", curNode.P.CurrentTime, curNode.SampleRate, curNode.SampleRateSensor, curNode.SampleRateMovement,  curNode.SampleRateBattery)
+	}
 	curNode.SampleRate = MaxFloat64(curNode.SampleRateSensor, curNode.SampleRateMovement)
+	if curNode.SampleRate > 20 || curNode.SampleRate < 0 {
+		fmt.Printf("\nError! Sample Rate: %v, Sensor: %v, Battery: %v, Movement: %v\n", curNode.SampleRate, curNode.SampleRateSensor, curNode.SampleRateBattery, curNode.SampleRateMovement)
+	}
 	return MaxFloat64(curNode.SampleRateSensor, curNode.SampleRateMovement)
 }
 
@@ -1065,9 +1071,9 @@ func (curNode *NodeImpl) GetReadingsCSV() {
 			curNode.BatteryPercent -= 0.01
 			curNode.UpdateSampleRatePart("sensor", ADCRead)
 			curNode.UpdateSampleRatePart("battery", float64(curNode.BatteryPercent))
-			//dist := DistFloat32(Tuple32{curNode.X, curNode.Y}, Tuple32{float32(curNode.P.B.X), float32(curNode.P.B.Y)})
+			dist := DistFloat32(Tuple32{curNode.X, curNode.Y}, Tuple32{float32(curNode.P.B.X), float32(curNode.P.B.Y)})
 
-			//fmt.Fprintf(curNode.P.SamplingData, "ID:%v T:%v S:%v,%v B:%v,%v D:%v\n", curNode.Id, curNode.P.CurrentTime, ADCRead, curNode.SampleRateSensor, curNode.BatteryPercent, curNode.SampleRateBattery, dist)
+			fmt.Fprintf(curNode.P.SamplingData, "ID:%v T:%v S:%v,%v B:%v,%v D:%v\n", curNode.Id, curNode.P.CurrentTime, ADCRead, curNode.SampleRateSensor, curNode.BatteryPercent, curNode.SampleRateBattery, dist)
 
 		}
 
@@ -1228,9 +1234,9 @@ func (curNode *NodeImpl) MoveCSV(p *Params) {
 			curNode.UpdateSampleRatePart("movement", curNode.Velocity)
 		}
 
-		//dist := DistFloat32(Tuple32{curNode.X, curNode.Y}, Tuple32{float32(curNode.P.B.X), float32(curNode.P.B.Y)})
-		//fmt.Fprintf(curNode.P.SamplingData, "ID:%v T:%v M:%v,%v B:%v,%v D:%v\n", curNode.Id, curNode.P.CurrentTime, curNode.Velocity,
-		//	curNode.SampleRateMovement, curNode.BatteryPercent, curNode.SampleRateBattery, dist)
+		dist := DistFloat32(Tuple32{curNode.X, curNode.Y}, Tuple32{float32(curNode.P.B.X), float32(curNode.P.B.Y)})
+		fmt.Fprintf(curNode.P.SamplingData, "ID:%v T:%v M:%v,%v B:%v,%v D:%v\n", curNode.Id, curNode.P.CurrentTime, curNode.Velocity,
+			curNode.SampleRateMovement, curNode.BatteryPercent, curNode.SampleRateBattery, dist)
 	}
 
 
