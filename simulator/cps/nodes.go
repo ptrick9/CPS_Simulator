@@ -159,6 +159,8 @@ type NodeImpl struct {
 
 	ScheduledEvent		 *Event
 	BatteryPercent		 float64
+
+	LastNSampleRates	 []float64
 	//Online				bool //whether the node is still online (battery is still high enough)
 }
 
@@ -712,21 +714,28 @@ func (curNode *NodeImpl) UpdateSampleRatePart(modifier string, value float64) {
 //The maximum of the sensor-based sample rate and movement-based sample rate is used
 //Limited by the sample rate due to the battery
 func (curNode *NodeImpl) NewSampleRate() float64{
-	//Implement samplerate due to battery as maximum for other sample rates
+	newRate := 0.0
 	if curNode.SampleRateBattery < curNode.SampleRateSensor {
 		curNode.SampleRateSensor = curNode.SampleRateBattery
 	}
 	if curNode.SampleRateBattery < curNode.SampleRateMovement {
 		curNode.SampleRateMovement = curNode.SampleRateBattery
 	}
-	if curNode.SampleRate != MaxFloat64(curNode.SampleRateSensor, curNode.SampleRateMovement) {
-		fmt.Fprintf(curNode.P.SampleRates,"T: %v, R: %v, S: %v, M: %v, B: %v\n", curNode.P.CurrentTime, curNode.SampleRate, curNode.SampleRateSensor, curNode.SampleRateMovement,  curNode.SampleRateBattery)
+	newRate = MaxFloat64(curNode.SampleRateSensor, curNode.SampleRateMovement)
+	if curNode.SampleRate != newRate {
+		fmt.Fprintf(curNode.P.SampleRates,"ID: %v, T: %v, R: %.2f, S: %.2f, M: %.2f, V: %.2f, B: %.2f\n", curNode.Id,
+			curNode.P.CurrentTime, curNode.SampleRate, curNode.SampleRateSensor, curNode.SampleRateMovement,
+			curNode.Velocity, curNode.SampleRateBattery)
 	}
-	curNode.SampleRate = MaxFloat64(curNode.SampleRateSensor, curNode.SampleRateMovement)
+	curNode.SampleRate = newRate
 	if curNode.SampleRate > 20 || curNode.SampleRate < 0 {
 		fmt.Printf("\nError! Sample Rate: %v, Sensor: %v, Battery: %v, Movement: %v\n", curNode.SampleRate, curNode.SampleRateSensor, curNode.SampleRateBattery, curNode.SampleRateMovement)
 	}
-	return MaxFloat64(curNode.SampleRateSensor, curNode.SampleRateMovement)
+	curNode.LastNSampleRates = append(curNode.LastNSampleRates, newRate)
+	if len(curNode.LastNSampleRates) > curNode.P.NumStoredSampleRates {
+		curNode.LastNSampleRates = curNode.LastNSampleRates[1:]
+	}
+	return newRate
 }
 
 func MaxFloat64(val1, val2 float64) float64{

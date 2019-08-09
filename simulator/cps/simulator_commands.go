@@ -221,7 +221,8 @@ type Params struct {
 
 	ReadingHistorySize	int
 
-	SensorSampleRate float64
-	SamplesPerMeter  float64
-	MaxSampleRate    float64
+	SensorSampleRate     float64
+	SamplesPerMeter      float64
+	MaxSampleRate        float64
+	NumStoredSampleRates int
 }

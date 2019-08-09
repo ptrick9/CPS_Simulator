@@ -434,6 +434,8 @@ func InitializeNodeParameters(p *Params, nodeNum int) *NodeImpl{
 	curNode.SampleRateSensor = 0.05
 	curNode.SampleRateBattery = 0.05
 
+	curNode.LastNSampleRates = make([]float64, 0)
+
 	return &curNode
 }
 
@@ -1566,6 +1568,7 @@ func GetFlags(p *Params) {
 	flag.StringVar(&p.CPUProfile, "cpuprofile", "", "write cpu profile to `file`")
 	flag.StringVar(&p.MemProfile, "memprofile", "", "write memory profile to `file`")
 	flag.BoolVar(&p.AdaptiveSampling, "adaptiveSampling", false, "Toggles adaptive sampling system")
+	flag.IntVar(&p.NumStoredSampleRates, "storedSampleRates", 5, "Number of sample rates that a node can store")
 
 	//fmt.Println(os.Args[1:], "\nhmmm? \n ") //C:\Users\Nick\Desktop\comand line experiments\src
 	//Range 1, 2, or 4
