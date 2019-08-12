@@ -336,7 +336,7 @@ func main() {
 				}
 				p.Events.Push(&cps.Event{nil, cps.GARBAGECOLLECT, p.CurrentTime + 100000, 0})
 			} else if event.Instruction == cps.DRIFTLOG {
-				if p.DriftExplorer {
+				if p.DriftExplorer || !p.DriftExplorer {
 					cps.DriftHist(p)
 					p.Events.Push(&cps.Event{nil, cps.DRIFTLOG, p.CurrentTime + 1000, 0})
 				}

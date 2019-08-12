@@ -761,7 +761,7 @@ func SetupFiles(p *Params) {
 	}
 	p.Files = append(p.Files, p.OutputFileNameCM + "-detection.txt")
 
-	if p.DriftExplorer {
+	if p.DriftExplorer || !p.DriftExplorer {
 		p.DriftExploreFile, err = os.Create(p.OutputFileNameCM + "-driftExplore.txt")
 		if err != nil {
 			log.Fatal("Cannot create file", err)
