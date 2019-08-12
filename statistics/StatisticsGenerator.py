@@ -1,5 +1,8 @@
+import pickle
+
 from statPackage.DetectionStats import *
 from statPackage.ParamProcessing import *
+from statPackage.process_clusters import *
 
 import os
 import itertools
@@ -9,11 +12,11 @@ from zipfile import *
 #basePath = "C:/Users/patrick/Dropbox/Patrick/udel/SUMMER2019/data/bigData/"
 #basePath = "C:/Users/patrick/Downloads/bigData/"
 basePath = "C:/Users/patrick/Downloads/fineGrainedBomb/fineGrainedBomb/"
-basePath = "C:/Users/patrick/Downloads/lowADC/"
-figurePath = "C:/Users/patrick/Dropbox/Patrick/udel/SUMMER2018/git_simulator/CPS_Simulator/g2/"
+basePath = "C:/Users/patrick/Downloads/clustersDetail/"
+figurePath = "C:/Users/patrick/Dropbox/Patrick/udel/SUMMER2018/git_simulator/CPS_Simulator/g3/"
 
 X_VAL = ['detectionThreshold', 'detectionDistance']
-X_VAL = ['validationThreshold']
+X_VAL = ['brodPeriod']
 
 IGNORE = ['movementPath', 'bombX', 'bombY']
 ZIP = True
@@ -61,7 +64,41 @@ def generateData(uniqueRuns):
     for i,file in enumerate(uniqueRuns):
         run = {}
         p = getParameters("%s%s" % (basePath, file))
-        det = getDetections(basePath, file)
+        #det = getDetections(basePath, file)
+        det = getAliveValidPercentPerIter("%s%s" % (basePath, file))
+        batteryStats = getBatteryStats("%s%s" % (basePath, file))
+
+        run['Min Battery'] = batteryStats[0]
+        run['Lower Q Battery'] = batteryStats[1]
+        run['Median Battery'] = batteryStats[2]
+        run['Upper Q Battery'] = batteryStats[3]
+        run['Max Battery'] = batteryStats[4]
+
+        '''
+        clusterHeads = clusterHeadsPerIter("%s%s" % (basePath, file))
+
+        run['# Cluster Heads'] = clusterHeads
+        '''
+        clusterMessage = clusterMessagesPerIter("%s%s" % (basePath, file))
+
+        run['# Hello Messages'] = clusterMessage
+
+        '''
+        diff = getSameDiffClusterCount("%s%s" % (basePath, file))
+
+        run['Unchanged Clusters'] = diff[0]
+        run['Changed Clusters'] = diff[1]
+        '''
+        readings = get4GandBTReadingCounts("%s%s" % (basePath, file))
+
+        run['Total 4G Transmissions'] = readings[0]
+        run['Total BT Transmissions'] = readings[1]
+
+        alive = getAliveValidPercentPerIter("%s%s" % (basePath, file))
+
+        run['% Valid Nodes'] = alive
+
+        '''
         firstDet = 5000
         try:
             firstDet = next(x for x in det if x.TPConf()).time
@@ -74,7 +111,7 @@ def generateData(uniqueRuns):
         run['# False Negatives'] = sum([1 if x.FN() and x.time < firstDet else 0 for x in det])
         run['# Total False Negatives'] = sum([1 if x.FN() else 0 for x in det])
         run['# Total False Positives'] = sum([1 if x.FP() else 0 for x in det])
-
+        '''
         run['config'] = {}
         for k in p.keys():
             run['config'][k] = p[k]
@@ -88,8 +125,10 @@ def generateData(uniqueRuns):
 
 
         print("\r%d\%d" % (i, len(uniqueRuns)), end='')
-    print('')
-    print(data)
+    #print('')
+    #print(data)
+
+
     return data
 
 
@@ -141,6 +180,10 @@ def generateGraphs(order, xx):
         descriptor = {}
         descriptor['~'] = order[0]
         graphs.append([descriptor, xx])
+
+
+
+
     return graphs
 
 
@@ -150,7 +193,7 @@ if __name__ == '__main__':
     uniqueRuns = set()
     for file in os.listdir(basePath):
         uniqueRuns.add(file.split('-')[0])
-    uniqueRuns = list(uniqueRuns)#[:200]
+    uniqueRuns = list(uniqueRuns)#[:30]
 
     shiftingParameters = determineDifferences(basePath, uniqueRuns)
     print(shiftingParameters)
@@ -166,7 +209,18 @@ if __name__ == '__main__':
     print(xx)
 
     data = generateData(uniqueRuns)
+
+
+
     graphs = generateGraphs(order, xx)
+
+    FullData = {'shift' : shiftingParameters, 'order' : order, 'data' : data, 'graphs': graphs}
+
+
+    f = open('cluster_data_detail.pickle', 'wb')
+    pickle.dump(FullData, f)
+
+    print(graphs)
     #'''
     #print(data)
     #print(graphs)

@@ -25,13 +25,16 @@ def getParameters(basename):
     f = zf.open("%s%s" % (n, "-parameters.txt"))
     params = dict()
 
-    #f = open(filename)
+    val = ''
     for line in f:
         line = line.decode("utf-8")
-        l=line.split('=')
+        l=line.rstrip().split('=')
         key = l[0]
         if(isBool(l[1])):
-            val = bool(l[1])
+            if l[1] == 'true':
+                val = True
+            else:
+                val = False
         else:
             if(isInt(l[1])):
                 val = int(l[1])
