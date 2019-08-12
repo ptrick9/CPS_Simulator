@@ -967,7 +967,7 @@ func CalculateFineADCSetting(reading float64, x, y, time int, p *Params) {
 	if p.DriftExplorer {
 		p.ADCWidth = (p.MaxRaw/200) / p.MaxADC
 	} else {
-		p.ADCWidth = (p.MaxRaw) / p.MaxADC
+		p.ADCWidth = (p.MaxRaw/200) / p.MaxADC
 	}
 	p.ADCOffset = p.EdgeRaw - p.EdgeADC * p.ADCWidth
 
