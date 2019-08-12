@@ -30,8 +30,8 @@ def runner(queue):
         print("%d\\%d" % (job[1], job[2]))
         #print(job)
         command = "./simulator/Simulation "+' '.join(job[0])
-        print(command)
-        #os.system(command + " 1>/dev/null")
+        #print(command)
+        os.system(command + " 1>/dev/null")
         queue.task_done()
 
 
@@ -46,7 +46,7 @@ if __name__ == '__main__':
     scenarios = ["-inputFileName=%s -imageFileName=%s -stimFileName=circle_0.txt -outRoutingStatsName=routingStats.txt -iterations=20000 -superNodes=false -doOptimize=false" % (s[0], s[1]) for s in [['Scenario_3.txt', 'marathon_street_map.png']]]
 
 
-    movementPath = ["-movementPath=%s" % s for s in ["/home/simulator/git-simulator/movement/marathon_street_2000_%d.scb" % i for i in range(1,5)]]
+    movementPath = ["-movementPath=%s" % s for s in ["/home/simulator/git-simulator/movement/marathon_street_2000_%d.scb" % i for i in range(1,3)]]
     sensorPath = ["-sensorPath=%s" %s for s in ["smooth_marathon.csv"]]
     fineSensorPath = ["-fineSensorPath=%s" %s for s in ["fine_bomb.csv"]]
     detectionThreshold = ["-detectionThreshold=%d" % d for d in[5]]
@@ -72,7 +72,7 @@ if __name__ == '__main__':
     serverSamplingPeriod = ["-serverSamplingPeriod=%d" % d for d in [1000]]
     nodeStoredSamples = ["-nodeStoredSamples=%d" % d for d in [10]]
     gridStoredSample = ["-GridStoredSamples=%d" % d for d in [10]]
-    errorMultiplier = ["-errorMultiplier=%f" % f for f in [1.0 + .2*i for i in range(10)]]
+    errorMultiplier = ["-errorMultiplier=%f" % f for f in [1.0 + .2*i for i in range(5)]]
     numSuperNodes = ["-numSuperNodes=%d" %d for d in [4]]
     recalibThresh = ["-RecalibrationThreshold=%d" % d for d in [3]]
     StandardDeviationThreshold = ["-StandardDeviationThreshold=%f" % f for f in [1.7]]
@@ -91,16 +91,16 @@ if __name__ == '__main__':
                                      movementSamplingPeriod,maxBufferCapacity,sensorSamplingPeriod,GPSSamplingPeriod,serverSamplingPeriod,
                                      nodeStoredSamples,gridStoredSample,errorMultiplier,numSuperNodes,recalibThresh,StandardDeviationThreshold,
                                      SuperNodeSpeed,SquareRowCM,SquareColCM,validationThreshold,serverRecal, driftExplore])))
-    
+    factor = 5
     x = 0
     for r in runs:
-        for i in range(5):
+        for i in range(factor):
             j = [zz for zz in r]
             j.append("-OutputFileName=/home/simulator/simData/driftExplorer/Log_%d" % x)
 
             
             v = j
-            q.put([v, x, len(runs)*10])
+            q.put([v, x, len(runs)*factor])
             x+= 1
 
        
