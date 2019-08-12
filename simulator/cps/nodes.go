@@ -1109,7 +1109,8 @@ func (curNode *NodeImpl) MoveCSV(p *Params) {
 			if p.DriftExplorer {
 				curNode.NodeTime = RandomInt(-7000, 0)
 			} else {
-				curNode.NodeTime = 0
+				//curNode.NodeTime = 0
+				curNode.NodeTime = RandomInt(-7000, 0)
 			}
 		}
 	}
