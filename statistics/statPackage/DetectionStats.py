@@ -10,7 +10,7 @@ def dist(x1, y1, x2, y2):
 
 
 class Detection:
-    def __init__(self, ident=-1, time=-1, status='', conf='', need=-1, typ='', dist=-1, cleanADC=-1, errorADC=-1, senseError=-1, senseClean=-1, rawConc=-1):
+    def __init__(self, ident=-1, time=-1, status='', conf='', need=-1, typ='', dist=-1, cleanADC=-1, errorADC=-1, senseError=-1, senseClean=-1, rawConc=-1, cause=''):
         self.ident = ident
         self.time = time
         self.status = status
@@ -23,6 +23,7 @@ class Detection:
         self.senseError = senseError
         self.senseClean = senseClean
         self.rawConc = rawConc
+        self.cause = cause
 
     def __lt__(self, other):
         return self.time < other.time
@@ -47,6 +48,12 @@ class Detection:
 
     def FP(self):
         return self.typ == 'FP'
+
+    def Drift(self):
+        return self.cause == ' Drift '
+
+    def Wind(self):
+        return self.cause == ' Wind '
     #def FNConf(self):
     #    return self.typ == 'FN' and self.status == 'Confirmation'
 
@@ -93,8 +100,8 @@ def BuildDetections(basename):
     initialDetections = {}
 
     regexConf = r"(?P<status>Rejection|Confirmation) T: (?P<time>\d+) ID: (?P<ident>\d+) (?P<conf>\d+)\/(?P<need>\d+)"
-    regexDetail = r"(?P<type>[T,F][P,N]) T: (?P<time>\d+) ID: (?P<ident>\d+) .* D: (?P<distance>\d*\.?\d+) C: (?P<clean>\d+)" \
-                  " E: (?P<error>\d+) SE: (?P<errorSense>\d+.\d+) S: (?P<cleanSense>\d+.\d+) R: (?P<raw>\d+.\d+)"
+    regexDetail = r"(?P<type>[T,F][P,N])(?P<cause> Wind | | Drift )T: (?P<time>\d+) ID: (?P<ident>\d+) .* D: (?P<distance>\d*\.?\d+) " \
+                  r"C: (?P<clean>\d+) E: (?P<error>\d+) SE: (?P<errorSense>\d+.\d+) S: (?P<cleanSense>\d+.\d+) R: (?P<raw>\d+.\d+)"
 
     detailedMatches = re.finditer(regexDetail, longBoi, re.MULTILINE)
 

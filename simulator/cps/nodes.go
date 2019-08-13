@@ -668,101 +668,7 @@ func RawConcentration(dist float32) float32 {
 	}
 }
 
-//Takes cares of taking a node's readings and printing detections and stuff
-func (curNode *NodeImpl) GetReadings() {
 
-
-	if curNode.Valid { //Check if node should actually take readings or if it hasn't shown up yet
-		newX, newY := curNode.GetLoc()
-
-		//RawConc := RawConcentration(curNode.Distance(*curNode.P.B)/2) //this is the node's reported Value without error
-
-		RawConc := 0.0
-
-		if curNode.Distance(*curNode.P.B)/2 < float32((curNode.P.FineWidth/2)/curNode.P.FineScale) {
-			//fmt.Printf("\n %v %v %v %v", curNode.P.B.X, curNode.P.B.Y, curNode.Distance(*curNode.P.B)/2, float32((curNode.P.FineWidth/2)/curNode.P.FineScale))
-			RawConc = float64(interpolateReadingFine(newX, newY, curNode.P.CurrentTime, curNode.P.TimeStep, curNode.P))
-			if RawConc == -1.0 {
-				//fmt.Printf("\n %v %v %v %v", curNode.P.B.X, curNode.P.B.Y, curNode.Distance(*curNode.P.B)/2, float32((curNode.P.FineWidth/2)/curNode.P.FineScale))
-				RawConc = 0.0
-			}
-
-		}
-
-		//need to get the correct Time reading Value from system
-		//need to verify where we read from
-
-		//Calculate error, sensitivity, and noise, as per the matlab code
-		S0, S1, S2, E0, E1, E2, ET1, ET2 := curNode.GetParams()
-		sError := (S0 + E0) + (S1+E1)*math.Exp(-float64(((curNode.P.CurrentTime/1000)-curNode.NodeTime))/(curNode.P.Tau1+ET1)) + (S2+E2)*math.Exp(-float64(((curNode.P.CurrentTime/1000)-curNode.NodeTime))/(curNode.P.Tau2+ET2))
-		curNode.Sensitivity = S0 + (S1)*math.Exp(-float64(((curNode.P.CurrentTime/1000)-curNode.NodeTime))/curNode.P.Tau1) + (S2)*math.Exp(-float64(((curNode.P.CurrentTime/1000)-curNode.NodeTime))/curNode.P.Tau2)
-		sNoise := rand.NormFloat64()*0.5*curNode.P.ErrorModifierCM + float64(RawConc)*sError
-
-		errorDist := sNoise / curNode.Sensitivity //this is the node's actual reading with error
-		clean := float64(RawConc) / curNode.Sensitivity
-
-		/*if(curNode.P.CurrentTime/1000 == 855 && curNode.Id == 1291) {
-			fmt.Printf("%v\n", RawConc)
-		}*/
-
-
-		ADCRead := float64(curNode.ADCReading(float32(errorDist)))
-		ADCClean := float64(curNode.ADCReading(float32(clean)))
-
-		d := curNode.Distance(*curNode.P.B)/2
-		if d < 10 {
-			fmt.Fprintln(curNode.P.MoveReadingsFile, "Time:", curNode.P.CurrentTime/1000, "ID:", curNode.Id, "X:", newX, "Y:",  newY, "Dist:", d, "ADCClean:", ADCClean, "ADCError:", ADCRead, "CleanSense:", clean, "Error:", errorDist, "Raw:", RawConc)
-		}
-
-
-		//increment node Time
-		//curNode.NodeTime++
-
-		curNode.IncrementTotalSamples()
-		curNode.UpdateHistory(float32(errorDist))
-
-		//If the reading is more than 2 standard deviations away from the grid average, then recalibrate
-		//gridAverage := curNode.P.Grid[curNode.Row(curNode.P.YDiv)][curNode.Col(curNode.P.XDiv)].Avg
-		//standDev := grid[curNode.Row(yDiv)][curNode.Col(xDiv)].StdDev
-
-		//New condition added: also recalibrate when the node's sensitivity is <= 1/2 of its original sensitvity
-		//New condition added: Check to make sure the sensor was pinged this iteration
-		if ((curNode.Sensitivity <= (curNode.InitialSensitivity / 2)) && curNode.P.Iterations_used != 0) {
-			curNode.Recalibrate()
-			curNode.Recalibrated = true
-			curNode.IncrementNumResets()
-		}
-
-		//printing statements to log files, only if the sensor was pinged this iteration
-		//if curNode.HasCheckedSensor && nodesPrint{
-		if curNode.P.NodesPrint {
-			if curNode.Recalibrated {
-				fmt.Fprintln(curNode.P.NodeFile, "ID:", curNode.GetID(), "Average:", curNode.GetAvg(), "Reading:", RawConc, "Error Reading:", errorDist, "Recalibrated")
-			} else {
-				fmt.Fprintln(curNode.P.NodeFile, "ID:", curNode.GetID(), "Average:", curNode.GetAvg(), "Reading:", RawConc, "Error Reading:", errorDist)
-			}
-			//fmt.Fprintln(nodeFile, "battery:", int(curNode.Battery),)
-			curNode.Recalibrated = false
-		}
-
-
-		if (ADCRead > curNode.P.DetectionThreshold && ADCClean < curNode.P.DetectionThreshold) || (ADCRead > curNode.P.DetectionThreshold && d > float32(curNode.P.DetectionDistance/2.0)){
-			fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("FP T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f SR: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, RawConc, curNode.Sensitivity/curNode.InitialSensitivity))
-		} else if ADCRead < curNode.P.DetectionThreshold && ADCClean > curNode.P.DetectionThreshold && d < float32(curNode.P.DetectionDistance/2.0) {
-			fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("FN T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f SR: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, RawConc, curNode.Sensitivity/curNode.InitialSensitivity))
-		} else if ADCRead > curNode.P.DetectionThreshold && ADCClean > curNode.P.DetectionThreshold {
-			fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("TP T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f SR: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, RawConc, curNode.Sensitivity/curNode.InitialSensitivity))
-		}
-
-
-		curNode.P.Server.Send(curNode, Reading{ADCRead, newX, newY, curNode.P.CurrentTime, curNode.GetID()})
-
-
-	}
-	curNode.P.Events.Push(&Event{curNode, SENSE, curNode.P.CurrentTime + 500, 0})
-
-
-}
 
 func transformX(x int, p *Params) int {
 	return int(float32(p.FineWidth/2) -  ((float32(p.B.X - x)/2.0)*float32(p.FineScale)))
@@ -900,6 +806,34 @@ func interpolateReading(x , y float32, time, timeStep int, p *Params) float32{
 }
 
 //Takes cares of taking a node's readings and printing detections and stuff
+func (curNode *NodeImpl) GetReadings() {
+
+
+	if curNode.Valid { //Check if node should actually take readings or if it hasn't shown up yet
+		newX, newY := curNode.GetLoc()
+
+		//RawConc := RawConcentration(curNode.Distance(*curNode.P.B)/2) //this is the node's reported Value without error
+
+		RawConc := 0.0
+
+		if curNode.Distance(*curNode.P.B)/2 < float32((curNode.P.FineWidth/2)/curNode.P.FineScale) {
+			//fmt.Printf("\n %v %v %v %v", curNode.P.B.X, curNode.P.B.Y, curNode.Distance(*curNode.P.B)/2, float32((curNode.P.FineWidth/2)/curNode.P.FineScale))
+			RawConc = float64(interpolateReadingFine(newX, newY, curNode.P.CurrentTime, curNode.P.TimeStep, curNode.P))
+			if RawConc == -1.0 {
+				//fmt.Printf("\n %v %v %v %v", curNode.P.B.X, curNode.P.B.Y, curNode.Distance(*curNode.P.B)/2, float32((curNode.P.FineWidth/2)/curNode.P.FineScale))
+				RawConc = 0.0
+			}
+
+		}
+		curNode.report(RawConc)
+
+	}
+	curNode.P.Events.Push(&Event{curNode, SENSE, curNode.P.CurrentTime + 500, 0})
+
+}
+
+
+//Takes cares of taking a node's readings and printing detections and stuff
 func (curNode *NodeImpl) GetReadingsCSV() {
 
 	if curNode.Valid { //check if node has shown up yet
@@ -917,79 +851,7 @@ func (curNode *NodeImpl) GetReadingsCSV() {
 
 		}
 
-		//need to get the correct Time reading Value from system
-		//need to verify where we read from
-
-		//Calculate error, sensitivity, and noise, as per the matlab code
-		S0, S1, S2, E0, E1, E2, ET1, ET2 := curNode.GetParams()
-		sError := (S0 + E0) + (S1+E1)*math.Exp(-float64(((curNode.P.CurrentTime/1000)-curNode.NodeTime))/(curNode.P.Tau1+ET1)) + (S2+E2)*math.Exp(-float64(((curNode.P.CurrentTime/1000)-curNode.NodeTime))/(curNode.P.Tau2+ET2))
-		curNode.Sensitivity = S0 + (S1)*math.Exp(-float64(((curNode.P.CurrentTime/1000)-curNode.NodeTime))/curNode.P.Tau1) + (S2)*math.Exp(-float64(((curNode.P.CurrentTime/1000)-curNode.NodeTime))/curNode.P.Tau2)
-		sNoise := rand.NormFloat64()*0.5*curNode.P.ErrorModifierCM + float64(RawConcentration)*sError
-
-		errorDist := sNoise / curNode.Sensitivity //this is the node's actual reading with error
-		clean := float64(RawConcentration) / curNode.Sensitivity
-
-
-		ADCRead := float64(curNode.ADCReading(float32(errorDist)))
-		ADCClean := float64(curNode.ADCReading(float32(clean)))
-
-		d := curNode.Distance(*curNode.P.B)/2
-		if d < 10 {
-			fmt.Fprintln(curNode.P.MoveReadingsFile, "Time:", curNode.P.CurrentTime/1000, "ID:", curNode.Id, "X:", newX, "Y:",  newY, "Dist:", d, "ADCClean:", ADCClean, "ADCError:", ADCRead, "CleanSense:", clean, "Error:", errorDist, "Raw:", RawConcentration)
-		}
-
-		//increment node Time
-		//curNode.NodeTime++
-
-		//if curNode.HasCheckedSensor {
-			curNode.IncrementTotalSamples()
-			curNode.UpdateHistory(float32(errorDist))
-		//}
-
-		//If the reading is more than 2 standard deviations away from the grid average, then recalibrate
-		//gridAverage := curNode.P.Grid[curNode.Row(curNode.P.YDiv)][curNode.Col(curNode.P.XDiv)].Avg
-		//standDev := grid[curNode.Row(yDiv)][curNode.Col(xDiv)].StdDev
-
-		//New condition added: also recalibrate when the node's sensitivity is <= 1/10 of its original sensitvity
-		//New condition added: Check to make sure the sensor was pinged this iteration
-		if ((curNode.Sensitivity <= (curNode.InitialSensitivity / 2))  && curNode.P.Iterations_used != 0) {
-			fmt.Fprintf(curNode.P.DriftExploreFile, "ID: %v T: %v In: %v CUR: %v NT: %v RECAL\n", curNode.Id, curNode.P.CurrentTime, curNode.InitialSensitivity, curNode.Sensitivity, curNode.NodeTime)
-			curNode.Recalibrate()
-			curNode.Recalibrated = true
-			curNode.IncrementNumResets()
-		}
-
-		//printing statements to log files, only if the sensor was pinged this iteration
-		//if curNode.HasCheckedSensor && nodesPrint{
-		if curNode.P.NodesPrint {
-			if curNode.Recalibrated {
-				fmt.Fprintln(curNode.P.NodeFile, "ID:", curNode.GetID(), "Average:", curNode.GetAvg(), "Reading:", RawConcentration, "Error Reading:", errorDist, "Recalibrated")
-			} else {
-				fmt.Fprintln(curNode.P.NodeFile, "ID:", curNode.GetID(), "Average:", curNode.GetAvg(), "Reading:", RawConcentration, "Error Reading:", errorDist)
-			}
-			//fmt.Fprintln(nodeFile, "battery:", int(curNode.Battery),)
-			curNode.Recalibrated = false
-		}
-
-		if ADCRead > curNode.P.DetectionThreshold && ADCClean < curNode.P.DetectionThreshold && float64(d*2) > curNode.P.DetectionDistance{
-			fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("FP Drift T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, RawConcentration))
-		} else if ADCRead < curNode.P.DetectionThreshold && ADCClean > curNode.P.DetectionThreshold && float64(d*2) < curNode.P.DetectionDistance {
-			fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("FN Drift T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, RawConcentration))
-		} else if ADCRead < curNode.P.DetectionThreshold && ADCClean < curNode.P.DetectionThreshold && float64(d*2) < curNode.P.DetectionDistance {
-			fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("FN Wind T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, RawConcentration))
-		} else if ADCRead > curNode.P.DetectionThreshold && ADCClean > curNode.P.DetectionThreshold && float64(d*2) < curNode.P.DetectionDistance {
-			fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("TP T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, RawConcentration))
-		} else if ADCRead > curNode.P.DetectionThreshold && ADCClean > curNode.P.DetectionThreshold && float64(d*2) > curNode.P.DetectionDistance {
-			fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("FP Wind T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, RawConcentration))
-		}
-
-		//Receives the node's distance and calculates its running average
-		//for that square
-		//Only do this if the sensor was pinged this iteration
-
-		if curNode.Valid {
-			curNode.P.Server.Send(curNode, Reading{ADCRead, newX, newY, curNode.P.CurrentTime, curNode.GetID()})
-		}
+		curNode.report(RawConcentration)
 
 	}
 	curNode.P.Events.Push(&Event{curNode, SENSE, curNode.P.CurrentTime + 500, 0})
@@ -999,85 +861,91 @@ func (curNode *NodeImpl) GetSensor() {
 
 	if curNode.Valid { //check if node has shown up yet
 
-		newX, newY := curNode.GetLoc()
 
 		RawConcentration := 0.0
 		//need to get the correct Time reading Value from system
 		//need to verify where we read from
 
-		//Calculate error, sensitivity, and noise, as per the matlab code
-		S0, S1, S2, E0, E1, E2, ET1, ET2 := curNode.GetParams()
-		sError := (S0 + E0) + (S1+E1)*math.Exp(-float64(((curNode.P.CurrentTime/1000)-curNode.NodeTime))/(curNode.P.Tau1+ET1)) + (S2+E2)*math.Exp(-float64(((curNode.P.CurrentTime/1000)-curNode.NodeTime))/(curNode.P.Tau2+ET2))
-		curNode.Sensitivity = S0 + (S1)*math.Exp(-float64(((curNode.P.CurrentTime/1000)-curNode.NodeTime))/curNode.P.Tau1) + (S2)*math.Exp(-float64(((curNode.P.CurrentTime/1000)-curNode.NodeTime))/curNode.P.Tau2)
-		sNoise := rand.NormFloat64()*0.5*curNode.P.ErrorModifierCM + float64(RawConcentration)*sError
-
-		errorDist := sNoise / curNode.Sensitivity //this is the node's actual reading with error
-		clean := float64(RawConcentration) / curNode.Sensitivity
-
-
-		ADCRead := float64(curNode.ADCReading(float32(errorDist)))
-		ADCClean := float64(curNode.ADCReading(float32(clean)))
-
-
-		//fmt.Fprintf(curNode.P.DriftExploreFile, "ID: %v T: %v NT: %v C/I: %v E: %v N: %v\n", curNode.Id, curNode.P.CurrentTime, curNode.NodeTime, curNode.Sensitivity/curNode.InitialSensitivity, sError, sNoise)
-
-		/*d := curNode.Distance(*curNode.P.B)/2
-		if d < 10 {
-			fmt.Fprintln(curNode.P.MoveReadingsFile, "Time:", curNode.P.CurrentTime/1000, "ID:", curNode.Id, "X:", newX, "Y:",  newY, "Dist:", d, "ADCClean:", ADCClean, "ADCError:", ADCRead, "CleanSense:", clean, "Error:", errorDist, "Raw:", RawConcentration)
-		}*/
-
-		//increment node Time
-		//curNode.NodeTime++
-
-		//if curNode.HasCheckedSensor {
-		curNode.IncrementTotalSamples()
-		curNode.UpdateHistory(float32(errorDist))
-		//}
-
-		//If the reading is more than 2 standard deviations away from the grid average, then recalibrate
-		//gridAverage := curNode.P.Grid[curNode.Row(curNode.P.YDiv)][curNode.Col(curNode.P.XDiv)].Avg
-		//standDev := grid[curNode.Row(yDiv)][curNode.Col(xDiv)].StdDev
-
-		//New condition added: also recalibrate when the node's sensitivity is <= 1/10 of its original sensitvity
-		//New condition added: Check to make sure the sensor was pinged this iteration
-		if ((curNode.Sensitivity <= (curNode.InitialSensitivity / 2))  && curNode.P.Iterations_used != 0) {
-			fmt.Fprintf(curNode.P.DriftExploreFile, "ID: %v T: %v In: %v CUR: %v NT: %v RECAL\n", curNode.Id, curNode.P.CurrentTime, curNode.InitialSensitivity, curNode.Sensitivity, curNode.NodeTime)
-			curNode.Recalibrate()
-			curNode.Recalibrated = true
-			curNode.IncrementNumResets()
-		}
-
-		//printing statements to log files, only if the sensor was pinged this iteration
-		//if curNode.HasCheckedSensor && nodesPrint{
-		if curNode.P.NodesPrint {
-			if curNode.Recalibrated {
-				fmt.Fprintln(curNode.P.NodeFile, "ID:", curNode.GetID(), "Average:", curNode.GetAvg(), "Reading:", RawConcentration, "Error Reading:", errorDist, "Recalibrated")
-			} else {
-				fmt.Fprintln(curNode.P.NodeFile, "ID:", curNode.GetID(), "Average:", curNode.GetAvg(), "Reading:", RawConcentration, "Error Reading:", errorDist)
-			}
-			//fmt.Fprintln(nodeFile, "battery:", int(curNode.Battery),)
-			curNode.Recalibrated = false
-		}
-
-		if ADCRead > curNode.P.DetectionThreshold && ADCClean < curNode.P.DetectionThreshold {
-			fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("FP T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, 0, ADCClean, ADCRead, sError, curNode.Sensitivity, RawConcentration))
-		} else if ADCRead < curNode.P.DetectionThreshold && ADCClean > curNode.P.DetectionThreshold {
-			fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("FN T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, 0, ADCClean, ADCRead, sError, curNode.Sensitivity, RawConcentration))
-		} else if ADCRead > curNode.P.DetectionThreshold && ADCClean > curNode.P.DetectionThreshold {
-			fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("TP T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, 0, ADCClean, ADCRead, sError, curNode.Sensitivity, RawConcentration))
-		}
-
-
-		//Receives the node's distance and calculates its running average
-		//for that square
-		//Only do this if the sensor was pinged this iteration
-
-		if curNode.Valid {
-			curNode.P.Server.Send(curNode, Reading{ADCRead, newX, newY, curNode.P.CurrentTime, curNode.GetID()})
-		}
+		curNode.report(RawConcentration)
 
 	}
 	curNode.P.Events.Push(&Event{curNode, SENSE, curNode.P.CurrentTime + 500, 0})
+}
+
+func (curNode *NodeImpl) report(rawConc float64) {
+
+
+	newX, newY := curNode.GetLoc()
+
+	S0, S1, S2, E0, E1, E2, ET1, ET2 := curNode.GetParams()
+	sError := (S0 + E0) + (S1+E1)*math.Exp(-float64(((curNode.P.CurrentTime/1000)-curNode.NodeTime))/(curNode.P.Tau1+ET1)) + (S2+E2)*math.Exp(-float64(((curNode.P.CurrentTime/1000)-curNode.NodeTime))/(curNode.P.Tau2+ET2))
+	curNode.Sensitivity = S0 + (S1)*math.Exp(-float64(((curNode.P.CurrentTime/1000)-curNode.NodeTime))/curNode.P.Tau1) + (S2)*math.Exp(-float64(((curNode.P.CurrentTime/1000)-curNode.NodeTime))/curNode.P.Tau2)
+	sNoise := rand.NormFloat64()*0.5*curNode.P.ErrorModifierCM + float64(rawConc)*sError
+
+	errorDist := sNoise / curNode.Sensitivity //this is the node's actual reading with error
+	clean := float64(rawConc) / curNode.Sensitivity
+
+
+	ADCRead := float64(curNode.ADCReading(float32(errorDist)))
+	ADCClean := float64(curNode.ADCReading(float32(clean)))
+
+	d := curNode.Distance(*curNode.P.B)/2
+	if d < 10 {
+		fmt.Fprintln(curNode.P.MoveReadingsFile, "Time:", curNode.P.CurrentTime/1000, "ID:", curNode.Id, "X:", newX, "Y:",  newY, "Dist:", d, "ADCClean:", ADCClean, "ADCError:", ADCRead, "CleanSense:", clean, "Error:", errorDist, "Raw:", rawConc)
+	}
+
+	//increment node Time
+	//curNode.NodeTime++
+
+	//if curNode.HasCheckedSensor {
+	curNode.IncrementTotalSamples()
+	curNode.UpdateHistory(float32(errorDist))
+	//}
+
+	//If the reading is more than 2 standard deviations away from the grid average, then recalibrate
+	//gridAverage := curNode.P.Grid[curNode.Row(curNode.P.YDiv)][curNode.Col(curNode.P.XDiv)].Avg
+	//standDev := grid[curNode.Row(yDiv)][curNode.Col(xDiv)].StdDev
+
+	//New condition added: also recalibrate when the node's sensitivity is <= 1/10 of its original sensitvity
+	//New condition added: Check to make sure the sensor was pinged this iteration
+	if ((curNode.Sensitivity <= (curNode.InitialSensitivity / 2))  && curNode.P.Iterations_used != 0) {
+		fmt.Fprintf(curNode.P.DriftExploreFile, "ID: %v T: %v In: %v CUR: %v NT: %v RECAL\n", curNode.Id, curNode.P.CurrentTime, curNode.InitialSensitivity, curNode.Sensitivity, curNode.NodeTime)
+		curNode.Recalibrate()
+		curNode.Recalibrated = true
+		curNode.IncrementNumResets()
+	}
+
+	//printing statements to log files, only if the sensor was pinged this iteration
+	//if curNode.HasCheckedSensor && nodesPrint{
+	if curNode.P.NodesPrint {
+		if curNode.Recalibrated {
+			fmt.Fprintln(curNode.P.NodeFile, "ID:", curNode.GetID(), "Average:", curNode.GetAvg(), "Reading:", rawConc, "Error Reading:", errorDist, "Recalibrated")
+		} else {
+			fmt.Fprintln(curNode.P.NodeFile, "ID:", curNode.GetID(), "Average:", curNode.GetAvg(), "Reading:", rawConc, "Error Reading:", errorDist)
+		}
+		//fmt.Fprintln(nodeFile, "battery:", int(curNode.Battery),)
+		curNode.Recalibrated = false
+	}
+
+	if ADCRead > curNode.P.DetectionThreshold && ADCClean < curNode.P.DetectionThreshold && float64(d*2) > curNode.P.DetectionDistance{
+		fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("FP Drift T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, rawConc))
+	} else if ADCRead < curNode.P.DetectionThreshold && ADCClean > curNode.P.DetectionThreshold && float64(d*2) < curNode.P.DetectionDistance {
+		fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("FN Drift T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, rawConc))
+	} else if ADCRead < curNode.P.DetectionThreshold && ADCClean < curNode.P.DetectionThreshold && float64(d*2) < curNode.P.DetectionDistance {
+		fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("FN Wind T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, rawConc))
+	} else if ADCRead > curNode.P.DetectionThreshold && ADCClean > curNode.P.DetectionThreshold && float64(d*2) < curNode.P.DetectionDistance {
+		fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("TP T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, rawConc))
+	} else if ADCRead > curNode.P.DetectionThreshold && ADCClean > curNode.P.DetectionThreshold && float64(d*2) > curNode.P.DetectionDistance {
+		fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("FP Wind T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, rawConc))
+	}
+
+	//Receives the node's distance and calculates its running average
+	//for that square
+	//Only do this if the sensor was pinged this iteration
+
+	if curNode.Valid {
+		curNode.P.Server.Send(curNode, Reading{ADCRead, newX, newY, curNode.P.CurrentTime, curNode.GetID()})
+	}
 }
 
 func interpolate (start int, end int, portion float32) float32{

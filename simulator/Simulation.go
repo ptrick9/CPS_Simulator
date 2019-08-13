@@ -133,6 +133,12 @@ func main() {
 	cps.FlipSquares(p, r)
 
 	//Defaults to false
+
+	if p.CommBomb {
+		p.BombX = p.BombXCM
+		p.BombY = p.BombYCM
+	}
+
 	if p.RandomBomb {
 		reg := cps.RandomInt(0, len(r.Square_list))
 		xval := cps.RandomInt(r.Square_list[reg].X1, r.Square_list[reg].X2 + 1)

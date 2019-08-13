@@ -12,7 +12,7 @@ from zipfile import *
 #basePath = "C:/Users/patrick/Dropbox/Patrick/udel/SUMMER2019/data/bigData/"
 #basePath = "C:/Users/patrick/Downloads/bigData/"
 basePath = "C:/Users/patrick/Downloads/fineGrainedBomb/fineGrainedBomb/"
-basePath = "C:/Users/patrick/Downloads/driftExplorer/"
+basePath = "C:/Users/patrick/Downloads/driftExplorerBomb/"
 figurePath = "C:/Users/patrick/Dropbox/Patrick/udel/SUMMER2018/git_simulator/CPS_Simulator/DriftExplore/"
 
 X_VAL = ['detectionThreshold', 'detectionDistance']
@@ -92,6 +92,8 @@ def generateData(rq, wq):
         run['# False Positives'] = sum([1 if x.FP() and x.time < firstDet else 0 for x in det])
         run['# False Positive Confirmations'] = sum([1 if x.FPConf() and x.time < firstDet else 0 for x in det])
         run['# False Positive Rejections'] = sum([1 if x.FPRej() and x.time < firstDet else 0 for x in det])
+        run['# False Positive Wind'] = sum([1 if x.FP() and x.time < firstDet and x.Wind() else 0 for x in det])
+        run['# False Positive Drift'] = sum([1 if x.FP() and x.time < firstDet and x.Drift() else 0 for x in det])
         run['# False Negatives'] = sum([1 if x.FN() and x.time < firstDet else 0 for x in det])
         run['# Total False Negatives'] = sum([1 if x.FN() else 0 for x in det])
         run['# Total False Positives'] = sum([1 if x.FP() else 0 for x in det])
@@ -131,7 +133,7 @@ def dataStorage(wq):
         data = {}
         job = wq.get()
         try:
-            with open('driftExplorePar.pickle', 'rb') as handle:
+            with open('driftExploreBomb.pickle', 'rb') as handle:
                 data = pickle.load(handle)# protocol=pickle.HIGHEST_PROTOCOL)
                 handle.close()
         except:
@@ -147,7 +149,7 @@ def dataStorage(wq):
             data[k] = [run]
             #allData[k] = [det]
         wq.task_done()
-        with open('driftExplorePar.pickle', 'wb') as handle:
+        with open('driftExploreBomb.pickle', 'wb') as handle:
             pickle.dump(data, handle)# protocol=pickle.HIGHEST_PROTOCOL)
             handle.close()
 

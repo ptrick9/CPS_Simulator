@@ -116,6 +116,9 @@ type Params struct {
 	MaxY  int
 	BombX int
 	BombY int
+	BombXCM int
+	BombYCM int
+	CommBomb bool
 
 	ThreshHoldBatteryToHave  float32
 	TotalPercentBatteryToUse float32
