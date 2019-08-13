@@ -1275,6 +1275,11 @@ func GetFlags(p *Params) {
 	flag.StringVar(&p.MemProfile, "memprofile", "", "write memory profile to `file`")
 
 	//fmt.Println(os.Args[1:], "\nhmmm? \n ") //C:\Users\Nick\Desktop\comand line experiments\src
+
+	flag.IntVar(&p.BombXCM, "bombX", 0, "X location of bomb")
+	flag.IntVar(&p.BombYCM, "bombY", 0, "Y location of bomb")
+	flag.BoolVar(&p.CommBomb, "commandBomb", false, "Whether to use command line for bomb coords")
+
 	flag.IntVar(&p.NegativeSittingStopThresholdCM, "negativeSittingStopThreshold", -10,
 		"Negative number sitting is set to when board map is reset")
 
