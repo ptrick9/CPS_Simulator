@@ -137,6 +137,7 @@ func main() {
 	if p.CommBomb {
 		p.BombX = p.BombXCM
 		p.BombY = p.BombYCM
+		p.B = &cps.Bomb{X: p.BombX, Y: p.BombY}
 	}
 
 	if p.RandomBomb {
