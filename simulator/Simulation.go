@@ -24,11 +24,10 @@
 package main
 
 import (
-	"CPS_Simulator/simulator/cps"
-	//"./cps"
+	//"CPS_Simulator/simulator/cps"
+	"./cps"
 	"bytes"
 	"container/heap"
-	"runtime"
 
 	//"CPS_Simulator/simulator/cps"
 	"fmt"
@@ -357,7 +356,7 @@ func main() {
 				}
 			}  else if event.Instruction == cps.CLEANUPREADINGS {
 				p.Server.CleanupReadings()
-				p.Events.Push(&cps.Event{nil,cps.CLEANUPREADINGS, p.CurrentTime + 500, 0})
+				p.Events.Push(&cps.Event{nil,cps.CLEANUPREADINGS, p.CurrentTime + 1000, 0})
 			}
 		}
 
@@ -485,7 +484,7 @@ func PrintNodeBatteryOverTime(p * cps.Params)  {
 func PrintNodeBatteryOverTimeFast(p * cps.Params)  {
 	var buffer bytes.Buffer
 	buffer.WriteString("Time,")
-	/*for i := range p.NodeList{
+	for i := range p.NodeList{
 		n := p.NodeList[i]
 		buffer.WriteString(fmt.Sprintf("Node %v,",n.GetID()))
 	}

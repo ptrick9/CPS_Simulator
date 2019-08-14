@@ -970,9 +970,9 @@ func CalculateFineADCSetting(reading float64, x, y, time int, p *Params) {
 	p.MaxADC = 4095
 	p.EdgeADC = 3
 	if p.DriftExplorer {
-		p.ADCWidth = (p.MaxRaw/200) / p.MaxADC
+		p.ADCWidth = (p.MaxRaw) / p.MaxADC
 	} else {
-		p.ADCWidth = (p.MaxRaw/200) / p.MaxADC
+		p.ADCWidth = (p.MaxRaw) / p.MaxADC
 	}
 	p.ADCOffset = p.EdgeRaw - p.EdgeADC * p.ADCWidth
 
@@ -1039,7 +1039,8 @@ func ReadWindRegion(p *Params) {
 			}
 		}
 	}
-	fmt.Println(len(p.WindRegion))
+
+	//fmt.Println(len(p.WindRegion))
 	//fmt.Println(p.WindRegion[1])
 }
 
@@ -1492,10 +1493,12 @@ func GetFlags(p *Params) {
 	flag.BoolVar(&p.RegionRouting, "regionRouting", true, "True if you want to use the new routing algorithm with regions and cutting")
 
 	flag.StringVar(&p.WindRegionPath, "windRegionPath", "hull_testing.txt", "File containing regions formed by wind")
+
 	flag.BoolVar(&p.DriftExplorer, "driftExplorer", false, "True if you want to JUST examine sensor drifting")
 
 	flag.BoolVar(&p.ServerRecal, "serverRecal", true, "True if you want the server to be able to recalibrate nodes")
 
+	flag.IntVar(&p.ReadingHistorySize, "detectionWindow", 60, "Window in which detections are kept")
 	flag.IntVar(&p.ValidationThreshold, "validationThreshold", 1, "Number of detections required to validate a detection")
 	flag.BoolVar(&p.RandomBomb, "randomBomb", false, "Toggles random bomb placement")
 	flag.BoolVar(&p.ZipFiles, "zipFiles", false, "Toggles Zipping of output files")
@@ -1585,6 +1588,7 @@ func WriteFlags(p * Params){
 	buf.WriteString(fmt.Sprintf("bombY=%v\n", p.B.Y))
 	buf.WriteString(fmt.Sprintf("serverRecal=%v\n", p.ServerRecal))
 	buf.WriteString(fmt.Sprintf("driftExplorer=%v\n", p.DriftExplorer))
+	buf.WriteString(fmt.Sprintf("detectionWindow=%v\n", p.ReadingHistorySize))
 	fmt.Fprintf(p.RunParamFile,buf.String())
 }
 
