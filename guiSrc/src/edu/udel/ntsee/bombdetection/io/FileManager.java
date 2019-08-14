@@ -2,6 +2,7 @@ package edu.udel.ntsee.bombdetection.io;
 
 import edu.udel.ntsee.bombdetection.data.Grid;
 import edu.udel.ntsee.bombdetection.data.Room;
+import edu.udel.ntsee.bombdetection.exceptions.LogFormatException;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -16,6 +17,7 @@ public class FileManager {
 
     private static final Pattern TIME_REGEX = Pattern.compile("^t=(\\d+)$");
 
+    private String base;
     private Room room;
     private PositionFile positions;
     private SamplesFile samples;
@@ -27,7 +29,6 @@ public class FileManager {
     public FileManager(Room room, File file) {
 
         this.room = room;
-        String base;
 
         try {
             base = file.getPath().substring(0, file.getPath().lastIndexOf("-"));
@@ -43,27 +44,9 @@ public class FileManager {
         }
 
         try {
-            this.samples = new SamplesFile(base + "-node.txt");
-        } catch (IOException e) {
-            this.samples = null;
-        }
-
-        try {
             this.routes = new RoutesFile(base + "-path.txt");
         } catch (IOException e) {
             this.routes = null;
-        }
-
-        try {
-            this.adhocs = new AdHocFile(base + "-adhoc.txt");
-        } catch (IOException e) {
-            this.adhocs = null;
-        }
-
-        try {
-            this.sensorReadings = new GridFile(base + "-grid.txt");
-        } catch (IOException e) {
-            this.sensorReadings = null;
         }
 
         try {
@@ -71,6 +54,50 @@ public class FileManager {
             this.loadNodePaths(base + "-pathgrid.txt");
         } catch (IOException e) {
             this.nodePath = null;
+        }
+    }
+
+    public void loadSamplesFile() {
+
+        if (samples != null) {
+            return;
+        }
+
+        try {
+            this.samples = new SamplesFile(base + "-node.txt");
+            room.updateData();
+        } catch (IOException | LogFormatException e) {
+            this.samples = null;
+        }
+
+
+    }
+
+    public void loadAdHocFile() {
+
+        if (adhocs != null) {
+            return;
+        }
+
+        try {
+            this.adhocs = new AdHocFile(base + "-adhoc.txt");
+            room.updateData();
+        } catch (IOException | LogFormatException e) {
+            this.adhocs = null;
+        }
+    }
+
+    public void loadGridFile() {
+
+        if (sensorReadings == null) {
+            return;
+        }
+
+        try {
+            this.sensorReadings = new GridFile(base + "-grid.txt");
+            room.updateData();
+        } catch (IOException | LogFormatException e) {
+            this.sensorReadings = null;
         }
     }
 
