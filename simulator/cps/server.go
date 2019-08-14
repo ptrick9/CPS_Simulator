@@ -430,16 +430,18 @@ func (s *FusionCenter) CleanupReadings() {
 				delete(s.Readings, r)
 			}
 		}*/
-		t := (s.P.CurrentTime / 1000) - s.P.ReadingHistorySize - 1
-		for x := 0; x < s.P.Width; x++ {
-			for y:= 0; y < s.P.Height; y++ {
-				_,ok := s.Readings[Key{x,y,t}]
-				if ok {
-					//fmt.Printf("Deleting time %v\n", t)
-					delete(s.Readings, Key{x,y,t})
+		t := (s.P.CurrentTime / 1000) - s.P.ReadingHistorySize - 4
+		//for t := (s.P.CurrentTime / 1000) - s.P.ReadingHistorySize - 4; t < (s.P.CurrentTime / 1000) - s.P.ReadingHistorySize - 1; t++ {
+			for x := 0; x < s.P.Width; x++ {
+				for y := 0; y < s.P.Height; y++ {
+					_, ok := s.Readings[Key{x, y, t}]
+					if ok {
+						//fmt.Printf("Deleting time %v\n", t)
+						delete(s.Readings, Key{x, y, t})
+					}
 				}
 			}
-		}
+		//}
 	}
 }
 
@@ -756,26 +758,27 @@ func (s *FusionCenter) CheckFalsePosWind(n *NodeImpl) int {
 	sumX := 0
 	sumY := 0
 
-	if len(s.P.WindRegion[s.P.CurrentTime/10000]) == 0{
+	if len(s.P.WindRegion[s.P.TimeStep]) == 0{
 		return -1
 	}
-	for i:= 0; i < len(s.P.WindRegion[s.P.CurrentTime/10000]); i++ {
-		sumX += s.P.WindRegion[s.P.CurrentTime/10000][i].X
-		sumY += s.P.WindRegion[s.P.CurrentTime/10000][i].Y
+	for i:= 0; i < len(s.P.WindRegion[s.P.TimeStep]); i++ {
+		sumX += transformX(s.P.WindRegion[s.P.TimeStep][i].X, s.P)  //get transformed X
+		sumY += transformY(s.P.WindRegion[s.P.TimeStep][i].Y, s.P)  //get transformed Y
 	}
 
-	center := Coord{X: sumX/len(s.P.WindRegion[s.P.CurrentTime/10000]), Y: sumY/len(s.P.WindRegion[s.P.CurrentTime/10000])}
-	tmp := s.P.WindRegion[s.P.CurrentTime/10000][0]
-	for i:= 1; i < len(s.P.WindRegion[s.P.CurrentTime/10000]); i++ {
-		//fmt.Printf("Checking if [ %v, %v ] intersects with [ %v, %v ]\n", tmp, s.P.WindRegion[s.P.CurrentTime/10000][i], center, n.GetLocCoord())
-		if Intersects(tmp, s.P.WindRegion[s.P.CurrentTime/10000][i], center, n.GetLocCoord()) {
+	//calculate the center
+	center := Coord{X: sumX/len(s.P.WindRegion[s.P.TimeStep]), Y: sumY/len(s.P.WindRegion[s.P.TimeStep])}
+	tmp := s.P.WindRegion[s.P.TimeStep][0]
+	for i:= 1; i < len(s.P.WindRegion[s.P.TimeStep]); i++ {
+		//fmt.Printf("Checking if [ %v, %v ] intersects with [ %v, %v ]\n", tmp, s.P.WindRegion[s.P.TimeStep][i], center, n.GetLocCoord())
+		if Intersects(transformCoord(tmp, s.P), transformCoord(s.P.WindRegion[s.P.TimeStep][i], s.P), transformCoord(center, s.P), transformCoord(n.GetLocCoord(), s.P)) {
 			//fmt.Println("True!")
 			return 1
 		}
-		tmp = s.P.WindRegion[s.P.CurrentTime/10000][i]
+		tmp = s.P.WindRegion[s.P.TimeStep][i]
 	}
-	//fmt.Printf("Checking if [ %v, %v ] intersects with [ %v, %v ]\n", tmp, s.P.WindRegion[s.P.CurrentTime/10000][0], center, n.GetLocCoord())
-	if Intersects(tmp, s.P.WindRegion[s.P.CurrentTime/10000][0], center, n.GetLocCoord()) {
+	//fmt.Printf("Checking if [ %v, %v ] intersects with [ %v, %v ]\n", tmp, s.P.WindRegion[s.P.TimeStep][0], center, n.GetLocCoord())
+	if Intersects(transformCoord(tmp, s.P), transformCoord(s.P.WindRegion[s.P.TimeStep][0], s.P), transformCoord(center, s.P), transformCoord(n.GetLocCoord(), s.P)) {
 		//fmt.Println("True!")
 		return 1
 	}

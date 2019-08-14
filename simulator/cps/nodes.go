@@ -571,6 +571,10 @@ func (curNode *NodeImpl) GetLocCoord() Coord {
 	return Coord{X: int(curNode.X), Y: int(curNode.Y)}
 }
 
+func (curNode *NodeImpl) GetTransformedLocCoord(p *Params) Coord {
+	return Coord{X: transformX(int(curNode.X), p), Y: transformX(int(curNode.Y), p)}
+}
+
 //setter function for S0
 func (curNode *NodeImpl) SetS0(s0 float64) {
 	curNode.S0 = s0
@@ -673,7 +677,9 @@ func RawConcentration(dist float32) float32 {
 	}
 }
 
-
+func transformCoord(c Coord, p *Params) Coord {
+	return Coord{X: transformX(c.X, p), Y: transformY(c.Y, p)}
+}
 
 func transformX(x int, p *Params) int {
 	return int(float32(p.FineWidth/2) -  ((float32(p.B.X - x)/2.0)*float32(p.FineScale)))
@@ -885,7 +891,7 @@ func (curNode *NodeImpl) report(rawConc float64) {
 	S0, S1, S2, E0, E1, E2, ET1, ET2 := curNode.GetParams()
 	sError := (S0 + E0) + (S1+E1)*math.Exp(-float64(((curNode.P.CurrentTime/1000)-curNode.NodeTime))/(curNode.P.Tau1+ET1)) + (S2+E2)*math.Exp(-float64(((curNode.P.CurrentTime/1000)-curNode.NodeTime))/(curNode.P.Tau2+ET2))
 	curNode.Sensitivity = S0 + (S1)*math.Exp(-float64(((curNode.P.CurrentTime/1000)-curNode.NodeTime))/curNode.P.Tau1) + (S2)*math.Exp(-float64(((curNode.P.CurrentTime/1000)-curNode.NodeTime))/curNode.P.Tau2)
-	sNoise := rand.NormFloat64()*0.5*curNode.P.ErrorModifierCM + float64(rawConc)*sError
+	sNoise := rand.NormFloat64()*100*curNode.P.ErrorModifierCM + float64(rawConc)*sError
 
 	errorDist := sNoise / curNode.Sensitivity //this is the node's actual reading with error
 	clean := float64(rawConc) / curNode.Sensitivity
@@ -893,6 +899,8 @@ func (curNode *NodeImpl) report(rawConc float64) {
 
 	ADCRead := float64(curNode.ADCReading(float32(errorDist)))
 	ADCClean := float64(curNode.ADCReading(float32(clean)))
+
+
 
 	d := curNode.Distance(*curNode.P.B)/2
 	if d < 10 {
@@ -932,6 +940,46 @@ func (curNode *NodeImpl) report(rawConc float64) {
 		curNode.Recalibrated = false
 	}
 
+
+	inWind := curNode.P.Server.CheckFalsePosWind(curNode)  //true if in sensor area
+	inRange := float64(d*2) < curNode.P.DetectionDistance      //true = out
+	highConcentration := ADCClean > curNode.P.DetectionThreshold
+	highSensor := ADCRead > curNode.P.DetectionThreshold
+
+
+	if inRange && highConcentration && highSensor {
+		fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("TP T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, rawConc))
+	} else if inRange && highConcentration && !highSensor {
+		fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("FN Drift T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, rawConc))
+	} else if inRange && !highConcentration && highSensor {
+		fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("FP Drift T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, rawConc))
+	} else if inRange && !highConcentration && !highSensor {
+		if inWind == 1 && !curNode.P.CSVSensor {
+			//outside bomb range and the bomb is random , this isn't a real FN
+		} else if inWind == 1 && curNode.P.CSVSensor{
+			//we are not  in the wind area, and the bomb isn't random, this is a FN due to wind
+			fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("FN Wind T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, rawConc))
+		} else if inWind == 0 && !curNode.P.CSVSensor {
+			//we are in the wind zone and the bomb is random, we are
+			//therefore inside the detection range but this can't happen as we would ahve a high concentration
+		} else {
+			//we are in the wind zone and the bomb is random, so it isn't possible to get here....
+			fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("FN Wind T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, rawConc))
+		}
+	} else if !inRange && highConcentration && highSensor {
+		if inWind == 0 {
+			//we are in a wind zone, therefore this FP is caused by wind...not possible to have in a random
+			fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("FP Wind T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, rawConc))
+		}
+	} else if !inRange && highConcentration && !highSensor {
+		fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("FN Drift T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, rawConc))
+	} else if !inRange && !highConcentration && highSensor {
+		fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("FP Drift T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, rawConc))
+	} else if !inRange && !highConcentration && !highSensor {
+		//true negative
+	}
+
+	/*
 	if ADCRead > curNode.P.DetectionThreshold && ADCClean < curNode.P.DetectionThreshold && float64(d*2) > curNode.P.DetectionDistance{
 		fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("FP Drift T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, rawConc))
 	} else if ADCRead < curNode.P.DetectionThreshold && ADCClean > curNode.P.DetectionThreshold && float64(d*2) < curNode.P.DetectionDistance {
@@ -942,7 +990,7 @@ func (curNode *NodeImpl) report(rawConc float64) {
 		fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("TP T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, rawConc))
 	} else if ADCRead > curNode.P.DetectionThreshold && ADCClean > curNode.P.DetectionThreshold && float64(d*2) > curNode.P.DetectionDistance {
 		fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("FP Wind T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, rawConc))
-	}
+	}*/
 
 	//Receives the node's distance and calculates its running average
 	//for that square
