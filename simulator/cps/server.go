@@ -27,6 +27,7 @@ type FusionCenter struct {
 	Sch		*Scheduler
 	Readings		map[Key][]Reading
 	CheckedIds		[]int
+	NodeDataList	[]NodeData
 }
 
 //Init initializes the values for the server
@@ -45,10 +46,19 @@ func (s *FusionCenter) Init(){
 
 	s.Readings = make(map[Key][]Reading)
 	s.CheckedIds = make([]int, 0)
+	s.NodeDataList = make([]NodeData, s.P.TotalNodes)
+}
+
+func (s *FusionCenter) MakeNodeData() {
+	for i := range s.P.NodeList {
+		s.NodeDataList[i] = NodeData{i, s.P.NodeList[i].S0,s.P.NodeList[i].S1, s.P.NodeList[i].S2,
+			s.P.NodeList[i].E0, s.P.NodeList[i].E1, s.P.NodeList[i].E2, s.P.NodeList[i].ET1,
+			s.P.NodeList[i].ET2, []int{ 0 }, []int{ 0 }}
+	}
 }
 
 //Reading packages the data sent by a node
-type   Reading struct {
+type Reading struct {
 	SensorVal float64
 	Xpos      float32
 	YPos      float32
@@ -61,6 +71,13 @@ type Key struct {
 	X 		int
 	Y		int
 	Time 	int
+}
+
+type NodeData struct {
+	Id 			int
+	S0, S1, S2, E0, E1, E2, ET1, ET2 float64
+	RecalTimes		[]int
+	SelfRecalTimes  []int
 }
 
 //MakeGrid initializes a grid of Square objects according to the size of the map
@@ -636,12 +653,131 @@ func (s FusionCenter) PrintStats() {
 
 //PrintStatsFile outputs statistical and detection data to log files
 func (s FusionCenter) PrintStatsFile() {
-	fmt.Fprintln(s.P.ServerFile, "Mean at each Time:\n", s.P.Server.Mean)
-	fmt.Fprintln(s.P.ServerFile, "Standard Deviations at each Time:\n", s.P.Server.StdDev)
-	fmt.Fprintln(s.P.ServerFile, "Variance at each Time:\n", s.P.Server.Variance)
+	var buffer bytes.Buffer
+	buffer.WriteString(fmt.Sprintf("Mean at each Time:%v\n", s.P.Server.Mean))
+	buffer.WriteString(fmt.Sprintf("Standard Deviations at each Time:%v\n", s.P.Server.StdDev))
+	buffer.WriteString(fmt.Sprintf("Variance at each Time:%v\n", s.P.Server.Variance))
+	fmt.Fprintln(s.P.ServerFile, buffer.String())
+	buffer.Reset()
+
+	for i:= range s.NodeDataList {
+		buffer.WriteString(fmt.Sprintf("ID%v,", s.NodeDataList[i].Id))
+		buffer.WriteString(fmt.Sprintf("E0%v,", s.NodeDataList[i].E0))
+		buffer.WriteString(fmt.Sprintf("E1%v,", s.NodeDataList[i].E1))
+		buffer.WriteString(fmt.Sprintf("E2%v,", s.NodeDataList[i].E2))
+		buffer.WriteString(fmt.Sprintf("ET1%v,", s.NodeDataList[i].ET1))
+		buffer.WriteString(fmt.Sprintf("ET2%v,", s.NodeDataList[i].ET2))
+		buffer.WriteString(fmt.Sprintf("S0%v,", s.NodeDataList[i].S0))
+		buffer.WriteString(fmt.Sprintf("S1%v,", s.NodeDataList[i].S1))
+		buffer.WriteString(fmt.Sprintf("S2%v,", s.NodeDataList[i].S2))
+		buffer.WriteString(fmt.Sprintf("RT%v,", s.NodeDataList[i].RecalTimes))
+		buffer.WriteString(fmt.Sprintf("SRT%v", s.NodeDataList[i].SelfRecalTimes))
+		buffer.WriteString(fmt.Sprintln(""))
+	}
+	fmt.Fprintln(s.P.NodeDataFile, buffer.String())
+
 	fmt.Fprintf(s.P.DetectionFile, "Number of detections:%v\n", falsePositives + truePositives)
 	fmt.Fprintf(s.P.DetectionFile, "Number of false positives:%v\n", falsePositives)
 	fmt.Fprintf(s.P.DetectionFile, "Number of true positives:%v\n", truePositives)
 	fmt.Fprintf(s.P.DetectionFile, "Last Recalibration times:%v\n", s.LastRecal)
 
+}
+
+//Intersects returns true if line segment 'p1q1' and 'p2q2' intersect.
+func Intersects(p1, q1, p2, q2 Coord) bool {
+	//Orientations
+	o1 := orientation(p1, q1, p2)
+	o2 := orientation(p1, q1, q2)
+	o3 := orientation(p2, q2, p1)
+	o4 := orientation(p2, q2, q1)
+
+	if o1 != o2 && o3 != o4 {
+		return true
+	}
+	if o1 == 0 && onSegment(p1, p2, q1) {
+		return true
+	}
+
+	// p1, q1 and q2 are colinear and q2 lies on segment p1q1
+	if o2 == 0 && onSegment(p1, q2, q1) {
+		return true
+	}
+
+	// p2, q2 and p1 are colinear and p1 lies on segment p2q2
+	if o3 == 0 && onSegment(p2, p1, q2) {
+		return true
+	}
+
+	// p2, q2 and q1 are colinear and q1 lies on segment p2q2
+	if o4 == 0 && onSegment(p2, q1, q2) {
+		return true
+	}
+
+	return false
+}
+
+func orientation(p, q, r Coord) int {
+	val := (q.Y - p.Y) * (r.X - q.X) - (q.X - p.X) * (r.Y - q.Y)
+	//colinear
+	if val == 0 {
+		return 0
+	} else if val > 0 { //clockwise
+		return 1
+	} else { //counterclockwise
+		return 2
+	}
+}
+
+func onSegment(p, q, r Coord) bool {
+	if q.X <= max(p.X, r.X) && q.X >= min(p.X, r.X) && q.Y <= max(p.Y, r.Y) && q.Y >= min(p.Y, r.Y){
+		return true
+	}
+
+	return false
+}
+
+func min(num1, num2 int) int{
+	if num1 < num2 {
+		return num1
+	} else {
+		return  num2
+	}
+}
+
+func max(num1, num2 int) int{
+	if num1 > num2 {
+		return num1
+	} else {
+		return  num2
+	}
+}
+
+func (s *FusionCenter) CheckFalsePosWind(n *NodeImpl) int {
+	sumX := 0
+	sumY := 0
+
+	if len(s.P.WindRegion[s.P.CurrentTime/10000]) == 0{
+		return -1
+	}
+	for i:= 0; i < len(s.P.WindRegion[s.P.CurrentTime/10000]); i++ {
+		sumX += s.P.WindRegion[s.P.CurrentTime/10000][i].X
+		sumY += s.P.WindRegion[s.P.CurrentTime/10000][i].Y
+	}
+
+	center := Coord{X: sumX/len(s.P.WindRegion[s.P.CurrentTime/10000]), Y: sumY/len(s.P.WindRegion[s.P.CurrentTime/10000])}
+	tmp := s.P.WindRegion[s.P.CurrentTime/10000][0]
+	for i:= 1; i < len(s.P.WindRegion[s.P.CurrentTime/10000]); i++ {
+		//fmt.Printf("Checking if [ %v, %v ] intersects with [ %v, %v ]\n", tmp, s.P.WindRegion[s.P.CurrentTime/10000][i], center, n.GetLocCoord())
+		if Intersects(tmp, s.P.WindRegion[s.P.CurrentTime/10000][i], center, n.GetLocCoord()) {
+			//fmt.Println("True!")
+			return 1
+		}
+		tmp = s.P.WindRegion[s.P.CurrentTime/10000][i]
+	}
+	//fmt.Printf("Checking if [ %v, %v ] intersects with [ %v, %v ]\n", tmp, s.P.WindRegion[s.P.CurrentTime/10000][0], center, n.GetLocCoord())
+	if Intersects(tmp, s.P.WindRegion[s.P.CurrentTime/10000][0], center, n.GetLocCoord()) {
+		//fmt.Println("True!")
+		return 1
+	}
+	return 0
 }

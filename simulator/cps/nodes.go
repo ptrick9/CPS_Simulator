@@ -342,6 +342,7 @@ func (curNode *NodeImpl) Move(p *Params) {
 }
 
 func (curNode *NodeImpl) Recalibrate() {
+	curNode.P.Server.NodeDataList[curNode.Id].SelfRecalTimes = append(curNode.P.Server.NodeDataList[curNode.Id].SelfRecalTimes, curNode.P.CurrentTime / 1000)
 	curNode.Sensitivity = curNode.InitialSensitivity
 	curNode.NodeTime = (curNode.P.CurrentTime/1000)
 	//fmt.Fprintf(curNode.P.DriftExploreFile, "ID: %v T: %v In: %v CUR: %v NT: %v RECAL\n", curNode.Id, curNode.P.CurrentTime, curNode.InitialSensitivity, curNode.Sensitivity, curNode.NodeTime)
@@ -564,6 +565,10 @@ func (curNode *NodeImpl) GetID() int {
 //getter function for x and y locations
 func (curNode *NodeImpl) GetLoc() (float32, float32) {
 	return curNode.X, curNode.Y
+}
+
+func (curNode *NodeImpl) GetLocCoord() Coord {
+	return Coord{X: int(curNode.X), Y: int(curNode.Y)}
 }
 
 //setter function for S0

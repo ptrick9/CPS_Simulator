@@ -24,7 +24,8 @@
 package main
 
 import (
-	"./cps"
+	"CPS_Simulator/simulator/cps"
+	//"./cps"
 	"bytes"
 	"container/heap"
 	"runtime"
@@ -34,6 +35,7 @@ import (
 	"log"
 	"math/rand"
 	"os"
+	"runtime"
 	"runtime/pprof"
 	"time"
 
@@ -65,7 +67,7 @@ func main() {
 	r = &cps.RegionParams{}
 
 	p.Events = Events
-	p.Server = cps.FusionCenter{p, r, nil, nil, nil, nil, nil, nil, nil, nil, nil}
+	p.Server = cps.FusionCenter{p, r, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil}
 
 	p.Tau1 = 3500
 	p.Tau2 = 9000
@@ -76,6 +78,11 @@ func main() {
 	//getFlags()
 	fmt.Fprintf(p.RunParamFile,"Starting file\n")
 	cps.GetFlags(p)
+
+	fmt.Println("Getting Wind regions...")
+	cps.ReadWindRegion(p)
+	fmt.Println("Done!")
+
 	if p.CPUProfile != "" {
 		f, err := os.Create(p.CPUProfile)
 		if err != nil {
@@ -206,6 +213,7 @@ func main() {
 	} else {
 		cps.SetupRandomNodes(p)
 	}
+	p.Server.MakeNodeData()
 
 	//p.Events.Push(&cps.Event{&p.NodeList[0], "sense", 0, 0})
 	p.Events.Push(&cps.Event{nil, cps.POSITION, 999, 0})
@@ -477,7 +485,7 @@ func PrintNodeBatteryOverTime(p * cps.Params)  {
 func PrintNodeBatteryOverTimeFast(p * cps.Params)  {
 	var buffer bytes.Buffer
 	buffer.WriteString("Time,")
-	for i := range p.NodeList{
+	/*for i := range p.NodeList{
 		n := p.NodeList[i]
 		buffer.WriteString(fmt.Sprintf("Node %v,",n.GetID()))
 	}

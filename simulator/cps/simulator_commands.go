@@ -86,10 +86,12 @@ type Params struct {
 	DriftExploreFile *os.File
 	ZipFiles 		bool
 	Files 			[]string
+	NodeDataFile   *os.File
 
 	SensorPath  string
 	FineSensorPath  string
 	MovementPath  string
+	WindRegionPath string
 
 	SensorTimes []int
 	TimeStep    int
@@ -196,6 +198,7 @@ type Params struct {
 
 	NodePositionMap			map[Tuple]*NodeImpl
 	ValidationThreshold	int
+	WindRegion [][]Coord
 
 	FineWidth 		int
 	FineHeight		int

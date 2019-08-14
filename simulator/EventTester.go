@@ -1,6 +1,11 @@
 package main
 
-import(
+import (
+	//"CPS_Simulator/simulator/cps"
+	//"container/heap"
+)
+
+/*import(
 	"./cps"
 	"container/heap"
 	"fmt"
@@ -29,3 +34,4 @@ func main() {
 	}
 
 }
+*/
