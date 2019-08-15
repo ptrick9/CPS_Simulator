@@ -12,8 +12,8 @@ from zipfile import *
 #basePath = "C:/Users/patrick/Dropbox/Patrick/udel/SUMMER2019/data/bigData/"
 #basePath = "C:/Users/patrick/Downloads/bigData/"
 basePath = "C:/Users/patrick/Downloads/fineGrainedBomb/fineGrainedBomb/"
-basePath = "C:/Users/patrick/Downloads/driftExplorerBomb/"
-figurePath = "C:/Users/patrick/Dropbox/Patrick/udel/SUMMER2018/git_simulator/CPS_Simulator/DriftExplore/"
+basePath = "C:/Users/patrick/Downloads/driftExploreCommBombHull/"
+figurePath = "C:/Users/patrick/Dropbox/Patrick/udel/SUMMER2018/git_simulator/CPS_Simulator/driftExploreCommBomb/"
 
 X_VAL = ['detectionThreshold', 'detectionDistance']
 X_VAL = ['validationThreshold', 'errorMultiplier', 'serverRecal']
@@ -95,6 +95,7 @@ def generateData(rq, wq):
         run['# False Positive Wind'] = sum([1 if x.FP() and x.time < firstDet and x.Wind() else 0 for x in det])
         run['# False Positive Drift'] = sum([1 if x.FP() and x.time < firstDet and x.Drift() else 0 for x in det])
         run['# False Negatives'] = sum([1 if x.FN() and x.time < firstDet else 0 for x in det])
+        run['# False Negatives Drift'] = sum([1 if x.FN() and x.Drift() and x.time < firstDet else 0 for x in det])
         run['# Total False Negatives'] = sum([1 if x.FN() else 0 for x in det])
         run['# Total False Positives'] = sum([1 if x.FP() else 0 for x in det])
 
@@ -126,15 +127,17 @@ def generateData(rq, wq):
         '''
         rq.task_done()
 
-def dataStorage(wq):
-    #data = {}
-    allData = {}
+def dataStorage(wq, order, variation, total):
+
+    i = 0
+    failed = 0
     while True:
         data = {}
         job = wq.get()
         try:
-            with open('driftExploreBomb.pickle', 'rb') as handle:
+            with open('driftExploreCommBombHull.pickle', 'rb') as handle:
                 data = pickle.load(handle)# protocol=pickle.HIGHEST_PROTOCOL)
+                data = data['data']
                 handle.close()
         except:
             pass
@@ -148,10 +151,24 @@ def dataStorage(wq):
         else:
             data[k] = [run]
             #allData[k] = [det]
+
+        dat = {'data': data, 'order': order, 'var': variation}
+        fail = True
+        while not fail:
+            try:
+                f = open('driftExploreCommBombHull.pickle', 'wb')
+                pickle.dump(dat, f)
+                f.close()
+                fail = False
+            except:
+                #failed += 1
+                pass
+            i += 1
+        print("Total %d/%d Failed %d/%d" % (i, total, failed, i))
+        #with open('driftExploreBomb.pickle', 'wb') as handle:
+        #    pickle.dump(data, handle)# protocol=pickle.HIGHEST_PROTOCOL)
+        #    handle.close()
         wq.task_done()
-        with open('driftExploreBomb.pickle', 'wb') as handle:
-            pickle.dump(data, handle)# protocol=pickle.HIGHEST_PROTOCOL)
-            handle.close()
 
     return data
 
@@ -237,7 +254,7 @@ if __name__ == '__main__':
         rq.put([run, order])
 
     p = multiprocessing.Pool(6, generateData, (rq,wq,))
-    p = multiprocessing.Pool(1, dataStorage, (wq,))
+    p = multiprocessing.Pool(1, dataStorage, (wq,order, shiftingParameters, len(uniqueRuns),))
 
     rq.join()
 
@@ -247,7 +264,7 @@ if __name__ == '__main__':
 
     #with open('driftExplorePar.pickle', 'wb') as handle:
     #    pickle.dump(data, handle)# protocol=pickle.HIGHEST_PROTOCOL)
-        #handle.close()
+    #    handle.close()
         #pickle.dump({data, handle)
 
     #data = generateData(uniqueRuns)

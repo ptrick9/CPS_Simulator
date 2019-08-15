@@ -432,8 +432,8 @@ func (s *FusionCenter) CleanupReadings() {
 		}*/
 		t := (s.P.CurrentTime / 1000) - s.P.ReadingHistorySize - 4
 		//for t := (s.P.CurrentTime / 1000) - s.P.ReadingHistorySize - 4; t < (s.P.CurrentTime / 1000) - s.P.ReadingHistorySize - 1; t++ {
-			for x := 0; x < s.P.Width; x++ {
-				for y := 0; y < s.P.Height; y++ {
+			for x := 0; x < s.P.Width/s.P.XDiv; x++ {
+				for y := 0; y < s.P.Height/s.P.YDiv; y++ {
 					_, ok := s.Readings[Key{x, y, t}]
 					if ok {
 						//fmt.Printf("Deleting time %v\n", t)
