@@ -401,6 +401,7 @@ func main() {
 		p.DetectionFile.Close()
 		p.BatteryFile.Close()
 		p.RunParamFile.Close()
+		p.NodeDataFile.Close()
 
 		if p.DriftExplorer {
 			p.DriftExploreFile.Close()

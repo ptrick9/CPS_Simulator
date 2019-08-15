@@ -774,6 +774,7 @@ func SetupFiles(p *Params) {
 	if err != nil {
 		log.Fatal("Cannot create file", err)
 	}
+	p.Files = append(p.Files, p.OutputFileNameCM+"-nodeData.txt")
 	fmt.Println(p.Files)
 
 }
