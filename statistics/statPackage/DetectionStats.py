@@ -93,8 +93,7 @@ def BuildDetections(basename):
         line = line.decode("utf-8")
         #longBoi += line
         lines.append(line)
-    print()
-    print(len(lines))
+
     longBoi = ' '.join(lines)
     detections = []
     initialDetections = {}
@@ -116,7 +115,8 @@ def BuildDetections(basename):
             senseError = float(match.group('errorSense'))
             senseClean = float(match.group('cleanSense'))
             rawConc = float(match.group('raw'))
-            detections.append(Detection(ident, time, '', -1, -1, typ, dist, cleanADC, errorADC, senseError, senseClean, rawConc))
+            cause = match.group('cause')
+            detections.append(Detection(ident, time, '', -1, -1, typ, dist, cleanADC, errorADC, senseError, senseClean, rawConc, cause))
         initialDetections[(match.group('ident'), match.group('time'))] = match
 
 

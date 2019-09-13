@@ -196,3 +196,5 @@ graphs/
 g2/
 
 statistics/driftExplorePar\.pickle
+
+*.pickle
