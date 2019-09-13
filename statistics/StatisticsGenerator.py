@@ -11,8 +11,9 @@ from zipfile import *
 
 #basePath = "C:/Users/patrick/Dropbox/Patrick/udel/SUMMER2019/data/bigData/"
 #basePath = "C:/Users/patrick/Downloads/bigData/"
-basePath = "C:/Users/patrick/Downloads/fineGrainedBomb/fineGrainedBomb/"
-basePath = "C:/Users/patrick/Downloads/driftExploreCommBombHull/"
+#basePath = "C:/Users/patrick/Downloads/fineGrainedBomb/fineGrainedBomb/"
+#basePath = "C:/Users/patrick/Downloads/driftExploreHullBombMove/"
+basePath = "C:/Users/patrick/Downloads/driftExplorer/"
 figurePath = "C:/Users/patrick/Dropbox/Patrick/udel/SUMMER2018/git_simulator/CPS_Simulator/driftExploreCommBomb/"
 
 X_VAL = ['detectionThreshold', 'detectionDistance']
@@ -135,7 +136,7 @@ def dataStorage(wq, order, variation, total):
         data = {}
         job = wq.get()
         try:
-            with open('driftExploreCommBombHull.pickle', 'rb') as handle:
+            with open('driftExploreNoBomb.pickle', 'rb') as handle:
                 data = pickle.load(handle)# protocol=pickle.HIGHEST_PROTOCOL)
                 data = data['data']
                 handle.close()
@@ -154,16 +155,15 @@ def dataStorage(wq, order, variation, total):
 
         dat = {'data': data, 'order': order, 'var': variation}
         fail = True
-        while not fail:
-            try:
-                f = open('driftExploreCommBombHull.pickle', 'wb')
-                pickle.dump(dat, f)
-                f.close()
-                fail = False
-            except:
-                #failed += 1
-                pass
-            i += 1
+        try:
+            f = open('driftExploreNoBomb.pickle', 'wb')
+            pickle.dump(dat, f)
+            f.close()
+            fail = False
+        except:
+            failed += 1
+            pass
+        i += 1
         print("Total %d/%d Failed %d/%d" % (i, total, failed, i))
         #with open('driftExploreBomb.pickle', 'wb') as handle:
         #    pickle.dump(data, handle)# protocol=pickle.HIGHEST_PROTOCOL)
@@ -230,7 +230,7 @@ if __name__ == '__main__':
     uniqueRuns = set()
     for file in os.listdir(basePath):
         uniqueRuns.add(file.split('-')[0])
-    uniqueRuns = list(uniqueRuns)#[:5]
+    uniqueRuns = list(uniqueRuns)#[:100]
 
     shiftingParameters = determineDifferences(basePath, uniqueRuns)
     print(shiftingParameters)
@@ -253,7 +253,7 @@ if __name__ == '__main__':
     for run in uniqueRuns:
         rq.put([run, order])
 
-    p = multiprocessing.Pool(6, generateData, (rq,wq,))
+    p = multiprocessing.Pool(3, generateData, (rq,wq,))
     p = multiprocessing.Pool(1, dataStorage, (wq,order, shiftingParameters, len(uniqueRuns),))
 
     rq.join()

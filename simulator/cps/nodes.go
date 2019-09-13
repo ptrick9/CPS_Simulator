@@ -213,7 +213,9 @@ func (curNode *NodeImpl) InBounds(p *Params) bool {
 func (curNode *NodeImpl) TurnValid(x, y int, p *Params) bool {
 	if x < curNode.P.Width && x >= 0 {
 		if y < curNode.P.Height && y >= 0 {
+			//fmt.Printf("%v valid", curNode.Id)
 			return true
+
 		}
 	}
 	return false
@@ -1023,6 +1025,7 @@ func (curNode *NodeImpl) MoveCSV(p *Params) {
 
 		//set the new location in the boolean field to true
 		newX, newY := curNode.GetLoc()
+		//fmt.Println(oldX, oldY,newX, newY, curNode.Id, p.CurrentTime,p.NodeMovements[id][intTime].X, p.NodeMovements[id][intTime+1].X)
 		p.BoolGrid[int(newX)][int(newY)] = true
 	}
 

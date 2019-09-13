@@ -434,6 +434,7 @@ func SetupCSVNodes(p *Params) {
 
 		if newNode.InBounds(p) {
 			newNode.Valid = true
+			fmt.Printf("Valid NODE %v %v %v\n", newNode.Id, newNode.X, newNode.Y)
 			p.BoolGrid[int(newNode.X)][int(newNode.Y)] = true
 		} else {
 			newNode.Valid = false
@@ -1241,7 +1242,7 @@ func readFineSensorCSV(p *Params) {
 
 //readMovementCSV reads the movement parameters from a file
 func readMovementCSV(p *Params) {
-
+	fmt.Println(p.MovementPath)
 	in, err := os.Open(p.MovementPath)
 	if err != nil {
 		println("error opening file")
@@ -1264,10 +1265,19 @@ func readMovementCSV(p *Params) {
 	}
 
 	record, err := r.Read()
-	in.Seek(0, 0)
+	t, err := in.Seek(0, 0)
+	if err != nil {
+		fmt.Printf("Error %v", err)
+	}
+	fmt.Println(t)
+
+	r = csv.NewReader(in)
+	r.FieldsPerRecord = -1
+	//record, err := r.Read()
+	r.ReuseRecord = true
 
 	time := 0
-	fmt.Printf("Movement CSV Processing %d TimeSteps for %d Nodes  %d\n", len(record), len(record[0])/2, p.TotalNodes)
+	fmt.Printf("Movement CSV Processing %d TimeSteps for %d Nodes  %d\n", timeSteps, len(record), p.TotalNodes)
 	for time < timeSteps {
 		iter := 0
 
@@ -1275,13 +1285,17 @@ func readMovementCSV(p *Params) {
 		if err != nil {
 			if err == io.EOF {
 				break
+			} else{
+				break
 			}
 		}
 		for iter < len(record)-1 && iter/2 < p.TotalNodes {
+
 			x, _ := strconv.ParseInt(record[iter], 10, 32);
 			y, _ := strconv.ParseInt(record[iter+1], 10, 32);
 
 			p.NodeMovements[iter/2][time] = Tuple{int(x), int(y)}
+
 			iter += 2
 		}
 		time++

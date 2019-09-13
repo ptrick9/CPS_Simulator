@@ -8,6 +8,8 @@ import os
 def dist(x1, y1, x2, y2):
     return math.sqrt((x2-x1)**2 + (y2-y1)**2)
 
+Nodes = {}
+
 
 class Detection:
     def __init__(self, ident=-1, time=-1, status='', conf='', need=-1, typ='', dist=-1, cleanADC=-1, errorADC=-1, senseError=-1, senseClean=-1, rawConc=-1, cause=''):
@@ -24,6 +26,19 @@ class Detection:
         self.senseClean = senseClean
         self.rawConc = rawConc
         self.cause = cause
+
+        if self.status == 'Rejection' and self.typ == 'TP':
+            if self.ident in Nodes:
+                if self.time - Nodes[self.ident] > 60:
+                    Nodes[self.ident] = self.time
+                    self.typ = 'FN'
+                    print("changed")
+                else:
+                    pass
+            else:
+                Nodes[self.ident] = self.time
+                self.typ = 'FN'
+                print("changed")
 
     def __lt__(self, other):
         return self.time < other.time
