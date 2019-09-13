@@ -1192,9 +1192,9 @@ func readFineSensorCSV(p *Params) {
 		}
 	}
 
-	in.Seek(0,0)
+	//in.Seek(0,0)
 
-	r.Read()
+	//r.Read()
 
 	i := 1
 	fmt.Printf("Fine Sensor CSV Processing\n")
@@ -1265,30 +1265,23 @@ func readMovementCSV(p *Params) {
 	}
 
 	record, err := r.Read()
-	t, err := in.Seek(0, 0)
+	/*t, err := in.Seek(0, 0)
 	if err != nil {
 		fmt.Printf("Error %v", err)
 	}
-	fmt.Println(t)
+	fmt.Println(t)*/
 
-	r = csv.NewReader(in)
+	/*r = csv.NewReader(in)
 	r.FieldsPerRecord = -1
 	//record, err := r.Read()
-	r.ReuseRecord = true
+	r.ReuseRecord = true*/
 
 	time := 0
 	fmt.Printf("Movement CSV Processing %d TimeSteps for %d Nodes  %d\n", timeSteps, len(record), p.TotalNodes)
 	for time < timeSteps {
 		iter := 0
 
-		record, err = r.Read()
-		if err != nil {
-			if err == io.EOF {
-				break
-			} else{
-				break
-			}
-		}
+
 		for iter < len(record)-1 && iter/2 < p.TotalNodes {
 
 			x, _ := strconv.ParseInt(record[iter], 10, 32);
@@ -1304,7 +1297,17 @@ func readMovementCSV(p *Params) {
 			prog := int(float32(time)/float32(timeSteps)*100)
 			fmt.Printf("\rProgress [%s%s] %d ", strings.Repeat("=", prog), strings.Repeat(".", 100-prog), prog)
 		}
+
+		record, err = r.Read()
+		if err != nil {
+			if err == io.EOF {
+				break
+			} else{
+				break
+			}
+		}
 	}
+
 	fmt.Printf("\n")
 }
 
