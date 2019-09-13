@@ -46,7 +46,7 @@ if __name__ == '__main__':
     scenarios = ["-inputFileName=%s -imageFileName=%s -stimFileName=circle_0.txt -outRoutingStatsName=routingStats.txt -iterations=10000 -superNodes=false -doOptimize=false" % (s[0], s[1]) for s in [['Scenario_3.txt', 'marathon_street_map.png']]]
 
 
-    movementPath = ["-movementPath=%s" % s for s in ["/home/simulator/git-simulator/movement/marathon_street_2000_%d.scb" % i for i in range(1,5)]]
+    movementPath = ["-movementPath=%s" % s for s in ["/home/simulator/git-simulator/movement/marathon_street_2000_%d.scb" % i for i in range(1,10)]]
     sensorPath = ["-sensorPath=%s" %s for s in ["smooth_marathon.csv"]]
     fineSensorPath = ["-fineSensorPath=%s" %s for s in ["fine_bomb.csv"]]
     detectionThreshold = ["-detectionThreshold=%d" % d for d in[5]]
@@ -72,7 +72,7 @@ if __name__ == '__main__':
     serverSamplingPeriod = ["-serverSamplingPeriod=%d" % d for d in [1000]]
     nodeStoredSamples = ["-nodeStoredSamples=%d" % d for d in [10]]
     gridStoredSample = ["-GridStoredSamples=%d" % d for d in [10]]
-    errorMultiplier = ["-errorMultiplier=%f" % f for f in [0 + .2*i for i in range(10)]]
+    errorMultiplier = ["-errorMultiplier=%f" % f for f in [.6 + .2*i for i in range(3)]]
     numSuperNodes = ["-numSuperNodes=%d" %d for d in [4]]
     recalibThresh = ["-RecalibrationThreshold=%d" % d for d in [3]]
     StandardDeviationThreshold = ["-StandardDeviationThreshold=%f" % f for f in [1.7]]
@@ -84,8 +84,8 @@ if __name__ == '__main__':
     driftExplore = ["-driftExplorer=%s" % s for s in ['false']]
     #randomBomb = ["-randomBomb=%s -sensorPath=%s -fineSensorPath=%s -csvSensor=%s" % (s[0], s[1], s[2], s[3]) for s in [('true', '', 'fine_bomb.csv', 'false'), ('false', 'smooth_marathon.csv', 'fine_bomb_marathon.csv', 'true')]]
     helper = ["-fineSensorPath=%s -csvSensor=%s" % (s[0], s[1]) for s in [("fine_bomb.csv", 'false')]]
-    commBomb = ["-commandBomb=%s -bombX=%d -bombY=%d" % (s[0], s[1], s[2]) for s in [('true',423 ,68 ), ('true',260 ,146 ), ('true',651 ,139 ), ('true',825 ,71 ), ('true',1013 ,133 ), ('true',1300 ,110 ),('true',1520 ,140 ), ('true',1125 ,258 ), ('true',727 ,214 ), ('true',343 ,260 ), ('true',43 ,219 ),
-                                                                                ('true',193 ,262 ),('true',550 ,260 ),('true',915 ,213 ),('true',1300 ,149 ),('true',748 ,127 ),('true',540 ,48 ),('true',588 ,145 ),('true',726 ,266 ),('true',47 ,212 )]]
+    commBomb = ["-commandBomb=%s -bombX=%d -bombY=%d" % (s[0], s[1], s[2]) for s in [('true',625 ,145), ('true',315 ,223 ), ('true',106, 219), ('true',236, 132 ), ('true',1136, 130), ('true',1136, 227),
+                                                                                    ('true', 841, 120), ('true', 554, 223), ('true', 338, 246), ('true', 490, 130)]]
 
     #sensorPath, fineSensorPath
     runs = (list(itertools.product(*[switches, scenarios, movementPath, detectionThreshold,
@@ -95,12 +95,12 @@ if __name__ == '__main__':
                                      movementSamplingPeriod,maxBufferCapacity,sensorSamplingPeriod,GPSSamplingPeriod,serverSamplingPeriod,
                                      nodeStoredSamples,gridStoredSample,errorMultiplier,numSuperNodes,recalibThresh,StandardDeviationThreshold,
                                      SuperNodeSpeed,SquareRowCM,SquareColCM,validationThreshold,serverRecal, driftExplore, commBomb, helper])))
-    factor = 1
+    factor = 3
     x = 0
     for r in runs:
         for i in range(factor):
             j = [zz for zz in r]
-            j.append("-OutputFileName=/home/simulator/simData/driftExploreHullBomb2/Log_%d" % x)
+            j.append("-OutputFileName=/home/simulator/simData/driftExploreHullBombMove/Log_%d" % x)
 
             
             v = j

@@ -99,7 +99,7 @@ func main() {
 
 	//p.SquareRowCM = getDashedInput("p.SquareRowCM")
 	//p.SquareColCM = getDashedInput("p.SquareColCM")
-	p.TotalNodes = cps.GetDashedInput("numNodes", p)
+	//p.TotalNodes = cps.GetDashedInput("numNodes", p)    //Now a command line argument
 	//numStoredSamples = getDashedInput("numStoredSamples")
 	p.MaxX = cps.GetDashedInput("maxX", p)
 	p.MaxY = cps.GetDashedInput("maxY", p)

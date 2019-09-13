@@ -1501,6 +1501,8 @@ func GetFlags(p *Params) {
 
 	flag.IntVar(&p.ReadingHistorySize, "detectionWindow", 60, "Window in which detections are kept")
 	flag.IntVar(&p.ValidationThreshold, "validationThreshold", 1, "Number of detections required to validate a detection")
+	flag.IntVar(&p.TotalNodes, "totalNodes", -1, "Number of Nodes")
+
 	flag.BoolVar(&p.RandomBomb, "randomBomb", false, "Toggles random bomb placement")
 	flag.BoolVar(&p.ZipFiles, "zipFiles", false, "Toggles Zipping of output files")
 	flag.Parse()
@@ -1590,6 +1592,7 @@ func WriteFlags(p * Params){
 	buf.WriteString(fmt.Sprintf("serverRecal=%v\n", p.ServerRecal))
 	buf.WriteString(fmt.Sprintf("driftExplorer=%v\n", p.DriftExplorer))
 	buf.WriteString(fmt.Sprintf("detectionWindow=%v\n", p.ReadingHistorySize))
+	buf.WriteString(fmt.Sprintf("totalNodes=%v\n", p.TotalNodes))
 	fmt.Fprintf(p.RunParamFile,buf.String())
 }
 
