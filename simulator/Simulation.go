@@ -225,6 +225,8 @@ func main() {
 	p.Events.Push(&cps.Event{nil, cps.GARBAGECOLLECT, 999, 0})
 	p.Events.Push(&cps.Event{nil, cps.DRIFTLOG, 999, 0})
 	p.Events.Push(&cps.Event{nil, cps.CLEANUPREADINGS, (p.ReadingHistorySize + 1) * 1000, 0})
+	//p.Events.Push(&cps.Event{nil, cps.VALIDNODES, 999, 0})
+
 
 
 
@@ -357,6 +359,15 @@ func main() {
 			}  else if event.Instruction == cps.CLEANUPREADINGS {
 				p.Server.CleanupReadings()
 				p.Events.Push(&cps.Event{nil,cps.CLEANUPREADINGS, p.CurrentTime + 1000, 0})
+			}  else if event.Instruction == cps.VALIDNODES {
+				val := 0
+				for _,n := range(p.NodeList) {
+					if n.Valid {
+						val += 1
+					}
+				}
+				fmt.Printf("Valid: %v\n", val)
+				p.Events.Push(&cps.Event{nil, cps.VALIDNODES, p.CurrentTime + 1000*100, 0})
 			}
 		}
 

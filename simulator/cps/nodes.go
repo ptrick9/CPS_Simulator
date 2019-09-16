@@ -1026,7 +1026,15 @@ func (curNode *NodeImpl) MoveCSV(p *Params) {
 		//set the new location in the boolean field to true
 		newX, newY := curNode.GetLoc()
 		//fmt.Println(oldX, oldY,newX, newY, curNode.Id, p.CurrentTime,p.NodeMovements[id][intTime].X, p.NodeMovements[id][intTime+1].X)
-		p.BoolGrid[int(newX)][int(newY)] = true
+
+		if (!curNode.InBounds(p)) {
+			//fmt.Println(oldX, oldY,newX, newY, curNode.Id, p.CurrentTime,p.NodeMovements[id][intTime].X, p.NodeMovements[id][intTime+1].X)
+			curNode.Valid = false
+
+		} else {
+
+			p.BoolGrid[int(newX)][int(newY)] = true
+		}
 	}
 
 
