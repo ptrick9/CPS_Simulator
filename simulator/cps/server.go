@@ -28,6 +28,7 @@ type FusionCenter struct {
 	Readings		map[Key][]Reading
 	CheckedIds		[]int
 	NodeDataList	[]NodeData
+	Validators 		map[int]int //stores validators...id -> time  latest time for id is stored
 }
 
 //Init initializes the values for the server
@@ -47,6 +48,7 @@ func (s *FusionCenter) Init(){
 	s.Readings = make(map[Key][]Reading)
 	s.CheckedIds = make([]int, 0)
 	s.NodeDataList = make([]NodeData, s.P.TotalNodes)
+	s.Validators = make(map[int]int)
 }
 
 func (s *FusionCenter) MakeNodeData() {
@@ -442,25 +444,37 @@ func (s *FusionCenter) CleanupReadings() {
 				}
 			}
 		//}
+
+		for nodeId, time := range s.Validators{
+			if (s.P.CurrentTime/1000) - time > s.P.ReadingHistorySize {
+				//this id is too old and must be deleted. We must also make a not that THIS is a false negative
+				delete(s.Validators, nodeId)
+				fmt.Fprintf(s.P.DetectionFile, "FN Window T: %v CT: %v ID: %v\n", time, (s.P.CurrentTime)/1000, nodeId)
+			}
+		}
 	}
 }
 
 
 //Send is called by a node to deliver a reading to the server.
 // Statistics are calculated each Time data is received
-func (s *FusionCenter) Send(n *NodeImpl, rd Reading) {
+func (s *FusionCenter) Send(n *NodeImpl, rd Reading, tp bool) {
 	//fmt.Printf("Sending to server:\nTime: %v, ID: %v, X: %v, Y: %v, Sensor Value: %v\n", rd.Time, rd.Id, rd.Xpos, rd.YPos, rd.SensorVal)
-	_, ok := s.Readings[Key{int(rd.Xpos / float32(s.P.XDiv)), int(rd.YPos / float32(s.P.YDiv)), rd.Time/1000}]
-	if ok {
-		s.Readings[Key{int(rd.Xpos / float32(s.P.XDiv)), int(rd.YPos / float32(s.P.YDiv)), rd.Time / 1000}] = append(s.Readings[Key{int(rd.Xpos / float32(s.P.XDiv)), int(rd.YPos / float32(s.P.YDiv)), rd.Time / 1000}], rd)
-	} else {
-		s.Readings[Key{int(rd.Xpos / float32(s.P.XDiv)), int(rd.YPos / float32(s.P.YDiv)), rd.Time / 1000}] = []Reading{rd}
-	}
-	s.Times = make(map[int]bool, 0)
-	if s.Times[rd.Time] {
 
-	} else {
-		s.Times[rd.Time] = true
+	if rd.SensorVal > s.P.DetectionThreshold {
+
+		_, ok := s.Readings[Key{int(rd.Xpos / float32(s.P.XDiv)), int(rd.YPos / float32(s.P.YDiv)), rd.Time / 1000}]
+		if ok {
+			s.Readings[Key{int(rd.Xpos / float32(s.P.XDiv)), int(rd.YPos / float32(s.P.YDiv)), rd.Time / 1000}] = append(s.Readings[Key{int(rd.Xpos / float32(s.P.XDiv)), int(rd.YPos / float32(s.P.YDiv)), rd.Time / 1000}], rd)
+		} else {
+			s.Readings[Key{int(rd.Xpos / float32(s.P.XDiv)), int(rd.YPos / float32(s.P.YDiv)), rd.Time / 1000}] = []Reading{rd}
+		}
+		s.Times = make(map[int]bool, 0)
+		if s.Times[rd.Time] {
+
+		} else {
+			s.Times[rd.Time] = true
+		}
 	}
 
 	/*for len(s.TimeBuckets) <= rd.Time {
@@ -489,7 +503,7 @@ func (s *FusionCenter) Send(n *NodeImpl, rd Reading) {
 	if rd.SensorVal > s.P.DetectionThreshold {
 		s.CheckedIds = make([]int, 0)
 		validations := 0
-		for t:= (s.P.CurrentTime / 1000) - 60; t <= s.P.CurrentTime / 1000; t++ {
+		for t:= (s.P.CurrentTime / 1000) - s.P.ReadingHistorySize; t <= s.P.CurrentTime / 1000; t++ {
 			for x:= int((rd.Xpos - float32(s.P.DetectionDistance)) / float32(s.P.XDiv)); x < int((rd.Xpos + float32(s.P.DetectionDistance) )/ float32(s.P.XDiv)); x++ {
 				for y:= int((rd.YPos - float32(s.P.DetectionDistance)) / float32(s.P.YDiv)); y < int((rd.YPos + float32(s.P.DetectionDistance) )/ float32(s.P.YDiv)); y++ {
 					for r:= range s.Readings[Key{x,y,t}] {
@@ -497,7 +511,10 @@ func (s *FusionCenter) Send(n *NodeImpl, rd Reading) {
 						if FloatDist(Tuple32{currRead.Xpos, currRead.YPos}, Tuple32{rd.Xpos, rd.YPos}) < s.P.DetectionDistance {
 							if currRead.Id != rd.Id && !Is_in(currRead.Id, s.CheckedIds) && currRead.SensorVal > s.P.DetectionThreshold {
 								s.CheckedIds = append(s.CheckedIds, currRead.Id)
+								s.Validators[rd.Id] = t
 								validations++
+							} else if currRead.SensorVal > s.P.DetectionThreshold && tp{
+								s.Validators[rd.Id] = t
 							}
 						}
 					}
@@ -520,7 +537,8 @@ func (s *FusionCenter) Send(n *NodeImpl, rd Reading) {
 				}
 			}
 
-			fmt.Fprintln(s.P.DetectionFile, fmt.Sprintf("Confirmation T: %v ID: %v %v/%v", rd.Time, rd.Id, validations, s.P.ValidationThreshold))
+			fmt.Fprintln(s.P.DetectionFile, fmt.Sprintf("Confirmation T: %v ID: %v %v/%v %v", rd.Time, rd.Id, validations, s.P.ValidationThreshold, s.CheckedIds))
+
 
 
 		} else {

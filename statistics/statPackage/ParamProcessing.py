@@ -22,6 +22,10 @@ def getParameters(basename):
     zf = ZipFile(basename)
     temp = os.path.split(basename)[1]
     n = temp.split(".zip")[0]
+
+    if 'low' in n:
+        n = n[:-3]
+
     f = zf.open("%s%s" % (n, "-parameters.txt"))
     params = dict()
 

@@ -685,22 +685,45 @@ func transformCoord(c Coord, p *Params) Coord {
 
 func transformX(x int, p *Params) int {
 	return int(float32(p.FineWidth/2) -  ((float32(p.B.X - x)/2.0)*float32(p.FineScale)))
+	//return float32(p.FineWidth/2) -  ((float32(p.B.X - x)/2.0)*float32(p.FineScale))
+
 }
 
 func transformY(y int, p *Params) int {
 	return int(float32(p.FineHeight/2) -  ((float32(p.B.Y - y)/2.0)*float32(p.FineScale)))
+	//return float32(p.FineHeight/2) -  ((float32(p.B.Y - y)/2.0)*float32(p.FineScale))
+}
+
+
+func transformXF(x int, p *Params) float32 {
+	//return int(float32(p.FineWidth/2) -  ((float32(p.B.X - x)/2.0)*float32(p.FineScale)))
+	return float32(p.FineWidth/2) -  ((float32(p.B.X - x)/2.0)*float32(p.FineScale))
+
+}
+
+func transformYF(y int, p *Params) float32 {
+	//return int(float32(p.FineHeight/2) -  ((float32(p.B.Y - y)/2.0)*float32(p.FineScale)))
+	return float32(p.FineHeight/2) -  ((float32(p.B.Y - y)/2.0)*float32(p.FineScale))
 }
 
 
 func interpolateReadingFine(x , y float32, time, timeStep int, p *Params) float32{
 
-	oldX := transformX(int(x), p)
-	oldY := transformY(int(y), p)
-	nextX := transformX(int(math.Ceil(float64(x))), p)
-	nextY := transformY(int(math.Ceil(float64(y))), p)
+	transX := transformXF(int(x), p)
+	transY := transformYF(int(y), p)
 
+	oldX := int(transX)
+	oldY := int(transY)
+	nextX := int(math.Ceil(float64(transX)))
+	nextY := int(math.Ceil(float64(transY)))
 
-	//fmt.Printf("\n%v %v %v %v %v %v\n", x, y ,oldX, oldY, nextX, nextY)
+	/*if x == 1299 && y == 149 {
+		fmt.Printf("\n%v %v %v %v %v %v %v %v\n", x, y, transX, transY ,oldX, oldY, nextX, nextY)
+	}
+	if x == 1301 && y == 149 {
+		fmt.Printf("\n%v %v %v %v %v %v %v %v\n", x, y, transX, transY ,oldX, oldY, nextX, nextY)
+	}*/
+	//
 	//calculate reading at last 'even' position
 
 	if oldX >= p.FineWidth || oldX < 0 {
@@ -728,8 +751,12 @@ func interpolateReadingFine(x , y float32, time, timeStep int, p *Params) float3
 	}
 
 	//fmt.Printf("%v %v %v %v\n", oldReadingA, oldReadingB, futureReadingA, futureReadingB)
+	/*if x == 1300 && y == 149 {
+		fmt.Printf("%v %v %v %v\n", oldReadingA, oldReadingB, futureReadingA, futureReadingB)
+	}*/
+
 	totalDistance := float32(math.Sqrt(math.Pow(math.Abs(float64(nextX - oldX)), 2) + math.Pow(math.Abs(float64(nextY - oldY)), 2)))
-	partialDist := float32((math.Sqrt(math.Pow(math.Abs(float64(float32(nextX) - x)), 2) + math.Pow(math.Abs(float64(float32(nextY) - y)), 2))))
+	partialDist := float32((math.Sqrt(math.Pow(math.Abs(float64(float32(nextX) - transX)), 2) + math.Pow(math.Abs(float64(float32(nextY) - transY)), 2))))
 
 
 	//determine distance we have covered between the two positions
@@ -739,10 +766,12 @@ func interpolateReadingFine(x , y float32, time, timeStep int, p *Params) float3
 	}
 
 	//fmt.Printf("%v %v %v\n", totalDistance, partialDist, portionDist)
+	/*if x == 1300 && y == 149 {
+		fmt.Printf("%v %v %v\n", totalDistance, partialDist, portionDist)
+	}*/
 
-
-	oldReading := (float32(oldReadingA - oldReadingB) * portionDist + float32(oldReadingA))  //t = 0 original and next position average
-	futureReading := (float32(futureReadingA - futureReadingB) * portionDist + float32(futureReadingA)) //t = 1 original and next position average
+	oldReading := (float32(math.Abs(float64(oldReadingA - oldReadingB))) * portionDist + float32(oldReadingA))  //t = 0 original and next position average
+	futureReading := (float32(math.Abs(float64(futureReadingA - futureReadingB))) * portionDist + float32(futureReadingA)) //t = 1 original and next position average
 	//fmt.Printf("%v %v\n", oldReading, futureReading)
 
 	floatTime := float32(time)/1000
@@ -757,10 +786,16 @@ func interpolateReadingFine(x , y float32, time, timeStep int, p *Params) float3
 	if(oldTime == nextTime) {
 		portionTime = 1.0
 	}
+
+	/*if (x == 1299 && y == 149) || (x == 1301 && y == 149) {
+		//fmt.Printf("%v %v %v %v %v")
+		fmt.Printf("%v %v %v %v %v\n", floatTime, oldTime, nextTime, portionTime, float32(math.Abs(float64(futureReading - oldReading)))*portionTime + oldReading)
+	}*/
 	//fmt.Printf("%v %v %v %v\n", floatTime, oldTime, nextTime, portionTime)
 
-	return (futureReading - oldReading)*portionTime + oldReading
+	return float32(math.Abs(float64(futureReading - oldReading)))*portionTime + oldReading
 }
+
 
 func interpolateReading(x , y float32, time, timeStep int, p *Params) float32{
 	oldX := int(x)
@@ -797,8 +832,10 @@ func interpolateReading(x , y float32, time, timeStep int, p *Params) float32{
 	//fmt.Printf("%v %v %v\n", totalDistance, partialDist, portionDist)
 
 
-	oldReading := (float32(oldReadingA - oldReadingB) * portionDist + float32(oldReadingA))  //t = 0 original and next position average
-	futureReading := (float32(futureReadingA - futureReadingB) * portionDist + float32(futureReadingA)) //t = 1 original and next position average
+	oldReading := (float32(math.Abs(float64(oldReadingA - oldReadingB))) * portionDist + float32(oldReadingA))  //t = 0 original and next position average
+	futureReading := (float32(math.Abs(float64(futureReadingA - futureReadingB))) * portionDist + float32(futureReadingA)) //t = 1 original and next position average
+
+
 	//fmt.Printf("%v %v\n", oldReading, futureReading)
 
 	floatTime := float32(time)/1000
@@ -815,7 +852,8 @@ func interpolateReading(x , y float32, time, timeStep int, p *Params) float32{
 	}
 	//fmt.Printf("%v %v %v %v\n", floatTime, oldTime, nextTime, portionTime)
 
-	return (futureReading - oldReading)*portionTime + oldReading
+	//return (futureReading - oldReading)*portionTime + oldReading
+	return float32(math.Abs(float64(futureReading - oldReading)))*portionTime + oldReading
 }
 
 //Takes cares of taking a node's readings and printing detections and stuff
@@ -860,7 +898,10 @@ func (curNode *NodeImpl) GetReadingsCSV() {
 			RawConcentration = float64(interpolateReadingFine(newX, newY, curNode.P.CurrentTime, curNode.P.TimeStep, curNode.P))
 			if RawConcentration == -1.0 {
 				RawConcentration = float64(interpolateReading(newX, newY, curNode.P.CurrentTime, curNode.P.TimeStep, curNode.P))
+				//RawConcentration = 0.0
 			}
+
+		} else {
 
 		}
 
@@ -905,9 +946,9 @@ func (curNode *NodeImpl) report(rawConc float64) {
 
 
 	d := curNode.Distance(*curNode.P.B)/2
-	if d < 10 {
+	/*if d < 10 {
 		fmt.Fprintln(curNode.P.MoveReadingsFile, "Time:", curNode.P.CurrentTime/1000, "ID:", curNode.Id, "X:", newX, "Y:",  newY, "Dist:", d, "ADCClean:", ADCClean, "ADCError:", ADCRead, "CleanSense:", clean, "Error:", errorDist, "Raw:", rawConc)
-	}
+	}*/
 
 	//increment node Time
 	//curNode.NodeTime++
@@ -948,9 +989,11 @@ func (curNode *NodeImpl) report(rawConc float64) {
 	highConcentration := ADCClean > curNode.P.DetectionThreshold
 	highSensor := ADCRead > curNode.P.DetectionThreshold
 
+	tp := false
 
 	if inRange && highConcentration && highSensor {
 		fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("TP T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, rawConc))
+		tp = true
 	} else if inRange && highConcentration && !highSensor {
 		fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("FN Drift T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, rawConc))
 	} else if inRange && !highConcentration && highSensor {
@@ -999,7 +1042,7 @@ func (curNode *NodeImpl) report(rawConc float64) {
 	//Only do this if the sensor was pinged this iteration
 
 	if curNode.Valid {
-		curNode.P.Server.Send(curNode, Reading{ADCRead, newX, newY, curNode.P.CurrentTime, curNode.GetID()})
+		curNode.P.Server.Send(curNode, Reading{ADCRead, newX, newY, curNode.P.CurrentTime, curNode.GetID()}, tp)
 	}
 }
 

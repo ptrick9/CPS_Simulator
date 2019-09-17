@@ -66,7 +66,7 @@ func main() {
 	r = &cps.RegionParams{}
 
 	p.Events = Events
-	p.Server = cps.FusionCenter{p, r, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil}
+	p.Server = cps.FusionCenter{p, r, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil}
 
 	p.Tau1 = 3500
 	p.Tau2 = 9000
@@ -225,7 +225,7 @@ func main() {
 	p.Events.Push(&cps.Event{nil, cps.GARBAGECOLLECT, 999, 0})
 	p.Events.Push(&cps.Event{nil, cps.DRIFTLOG, 999, 0})
 	p.Events.Push(&cps.Event{nil, cps.CLEANUPREADINGS, (p.ReadingHistorySize + 1) * 1000, 0})
-	//p.Events.Push(&cps.Event{nil, cps.VALIDNODES, 999, 0})
+	p.Events.Push(&cps.Event{nil, cps.VALIDNODES, 999, 0})
 
 
 

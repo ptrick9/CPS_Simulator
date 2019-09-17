@@ -932,9 +932,9 @@ func CalculateFineADCSetting(reading float64, x, y, time int, p *Params) {
 	p.MaxRaw = total/counted
 	fmt.Printf("Raw: %v\n", p.MaxRaw)
 	straight_increment := int(math.Ceil((p.DetectionDistance/2.0)*float64(p.FineScale)))
-	//fmt.Printf("straight: %v\n", straight_increment)
+	fmt.Printf("straight: %v\n", straight_increment)
 	diag_increment := int(math.Ceil(((p.DetectionDistance/2.0)*float64(p.FineScale))/math.Sqrt2))
-	//fmt.Printf("diag: %v\n", diag_increment)
+	fmt.Printf("diag: %v\n", diag_increment)
 
 
 
@@ -965,7 +965,6 @@ func CalculateFineADCSetting(reading float64, x, y, time int, p *Params) {
 		}
 	}
 
-	//fmt.Println(p.MaxRaw)
 	//p.EdgeRaw = 36
 	p.EdgeRaw = total/counted
 	//fmt.Println(p.EdgeRaw)
