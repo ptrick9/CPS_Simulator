@@ -997,8 +997,8 @@ func (curNode *NodeImpl) MoveCSV(p *Params) {
 		oldX, oldY := curNode.GetLoc()
 		p.BoolGrid[int(oldX)][int(oldY)] = false //set the old spot false since the node will now move away
 
-		curNode.X = interpolate(p.NodeMovements[id][intTime].X, p.NodeMovements[id][intTime+1].X, portion)
-		curNode.Y = interpolate(p.NodeMovements[id][intTime].Y, p.NodeMovements[id][intTime+1].Y, portion)
+		curNode.X = interpolate(p.NodeMovements[id][intTime-p.MovementOffset].X, p.NodeMovements[id][intTime-p.MovementOffset+1].X, portion)
+		curNode.Y = interpolate(p.NodeMovements[id][intTime-p.MovementOffset].Y, p.NodeMovements[id][intTime-p.MovementOffset+1].Y, portion)
 
 		//set the new location in the boolean field to true
 		newX, newY := curNode.GetLoc()
@@ -1016,9 +1016,9 @@ func (curNode *NodeImpl) MoveCSV(p *Params) {
 
 
 	if !curNode.Valid {
-		curNode.Valid = curNode.TurnValid(p.NodeMovements[id][intTime].X, p.NodeMovements[id][intTime].Y, p)
-		curNode.X = float32(p.NodeMovements[id][intTime].X)
-		curNode.Y = float32(p.NodeMovements[id][intTime].Y)
+		curNode.Valid = curNode.TurnValid(p.NodeMovements[id][intTime-p.MovementOffset].X, p.NodeMovements[id][intTime-p.MovementOffset].Y, p)
+		curNode.X = float32(p.NodeMovements[id][intTime-p.MovementOffset].X)
+		curNode.Y = float32(p.NodeMovements[id][intTime-p.MovementOffset].Y)
 		if(curNode.Valid) {
 			if p.DriftExplorer {
 				curNode.NodeTime = RandomInt(-7000, 0)

@@ -225,7 +225,9 @@ func main() {
 	p.Events.Push(&cps.Event{nil, cps.GARBAGECOLLECT, 999, 0})
 	p.Events.Push(&cps.Event{nil, cps.DRIFTLOG, 999, 0})
 	p.Events.Push(&cps.Event{nil, cps.CLEANUPREADINGS, (p.ReadingHistorySize + 1) * 1000, 0})
-	p.Events.Push(&cps.Event{nil, cps.VALIDNODES, 999, 0})
+	//p.Events.Push(&cps.Event{nil, cps.VALIDNODES, 999, 0})
+	p.Events.Push(&cps.Event{nil, cps.LOADMOVE, (p.MovementSize-2)*1000, 0})
+
 
 
 
@@ -368,6 +370,9 @@ func main() {
 				}
 				fmt.Printf("Valid: %v\n", val)
 				p.Events.Push(&cps.Event{nil, cps.VALIDNODES, p.CurrentTime + 1000*100, 0})
+			}	else if event.Instruction == cps.LOADMOVE {
+				cps.PartialReadMovementCSV(p)
+				p.Events.Push(&cps.Event{nil, cps.LOADMOVE, (p.MovementOffset + p.MovementSize-2)*1000, 0})
 			}
 		}
 

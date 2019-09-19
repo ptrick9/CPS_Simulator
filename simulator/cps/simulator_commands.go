@@ -207,6 +207,8 @@ type Params struct {
 
 	DriftExplorer 	bool
 	NumNodeMovements 	int
+	MovementOffset 		int
+	MovementSize 		int
 
 	ReadingHistorySize	int
 	ServerRecal 	bool
