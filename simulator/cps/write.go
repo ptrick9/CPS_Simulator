@@ -831,7 +831,8 @@ func SetupParameters(p *Params, r *RegionParams) {
 	}
 
 	if p.CSVMovement {
-		readMovementCSV(p)
+		//readMovementCSV(p)
+		readInitialMovementsCSV(p)
 	}
 
 
@@ -1241,8 +1242,74 @@ func readFineSensorCSV(p *Params) {
 	CalculateFineADCSetting(p.FineSensorReadings[p.FineWidth/2][p.FineHeight/2][0], p.FineWidth/2, p.FineHeight/2, 400, p)
 }
 
+func PartialReadMovementCSV(p *Params) {
+	fmt.Println(p.MovementPath)
+	in, err := os.Open(p.MovementPath)
+	if err != nil {
+		println("error opening file")
+	}
+	defer in.Close()
+
+	r := csv.NewReader(in)
+	r.FieldsPerRecord = -1
+	//record, err := r.Read()
+	r.ReuseRecord = true
+
+	timeSteps, _ := lineCounter(p.MovementPath)
+
+
+	p.MovementOffset = p.MovementSize + p.MovementOffset - 2 //go back one
+
+	record, err := r.Read()
+	i := 0
+	for i < p.MovementOffset {  //-1 for initial read
+		record, err = r.Read()
+		i += 1
+	}
+
+
+
+
+	time := p.MovementOffset
+	fmt.Printf("offset: %v\n", time)
+	fmt.Printf("Movement CSV Processing %d TimeSteps for %d Nodes  %d\n", timeSteps, len(record), p.TotalNodes)
+	for time < timeSteps && time < (p.MovementOffset + p.MovementSize) {
+		iter := 0
+
+		//fmt.Printf("%v\n", time)
+		for iter < len(record)-1 && iter/2 < p.TotalNodes {
+
+			x, _ := strconv.ParseInt(record[iter], 10, 32);
+			y, _ := strconv.ParseInt(record[iter+1], 10, 32);
+
+			p.NodeMovements[iter/2][time-p.MovementOffset] = Tuple{int(x), int(y)}
+
+			iter += 2
+		}
+		time++
+
+		if(time % 10 == 0) {
+			prog := int(float32(time)/float32(timeSteps)*100)
+			fmt.Printf("\rProgress [%s%s] %d ", strings.Repeat("=", prog), strings.Repeat(".", 100-prog), prog)
+		}
+
+		record, err = r.Read()
+		if err != nil {
+			if err == io.EOF {
+				break
+			} else{
+				break
+			}
+		}
+	}
+
+	fmt.Printf("\n")
+}
+
+
+
 //readMovementCSV reads the movement parameters from a file
-func readMovementCSV(p *Params) {
+func readInitialMovementsCSV(p *Params) {
 	fmt.Println(p.MovementPath)
 	in, err := os.Open(p.MovementPath)
 	if err != nil {
@@ -1262,27 +1329,18 @@ func readMovementCSV(p *Params) {
 
 	p.NodeMovements = make([][]Tuple, p.TotalNodes)
 	for i := range p.NodeMovements {
-		p.NodeMovements[i] = make([]Tuple, timeSteps)
+		p.NodeMovements[i] = make([]Tuple, p.MovementSize)
 	}
 
 	record, err := r.Read()
-	/*t, err := in.Seek(0, 0)
-	if err != nil {
-		fmt.Printf("Error %v", err)
-	}
-	fmt.Println(t)*/
 
-	/*r = csv.NewReader(in)
-	r.FieldsPerRecord = -1
-	//record, err := r.Read()
-	r.ReuseRecord = true*/
-
+	p.MovementOffset = 0
 	time := 0
 	fmt.Printf("Movement CSV Processing %d TimeSteps for %d Nodes  %d\n", timeSteps, len(record), p.TotalNodes)
-	for time < timeSteps {
+	for time < timeSteps && time < (p.MovementOffset + p.MovementSize) {
 		iter := 0
 
-
+		//fmt.Printf("in %v\n", time)
 		for iter < len(record)-1 && iter/2 < p.TotalNodes {
 
 			x, _ := strconv.ParseInt(record[iter], 10, 32);
@@ -1520,6 +1578,7 @@ func GetFlags(p *Params) {
 	flag.IntVar(&p.ReadingHistorySize, "detectionWindow", 60, "Window in which detections are kept")
 	flag.IntVar(&p.ValidationThreshold, "validationThreshold", 1, "Number of detections required to validate a detection")
 	flag.IntVar(&p.TotalNodes, "totalNodes", -1, "Number of Nodes")
+	flag.IntVar(&p.MovementSize, "moveSize", 1000, "Number of movement records to read each load")
 
 	flag.BoolVar(&p.RandomBomb, "randomBomb", false, "Toggles random bomb placement")
 	flag.BoolVar(&p.ZipFiles, "zipFiles", false, "Toggles Zipping of output files")
