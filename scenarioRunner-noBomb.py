@@ -42,20 +42,18 @@ if __name__ == '__main__':
 
 
     #switches = ["-logNodes=false -logPosition=false -logGrid=false -logEnergy=false -regionRouting=true -noEnergy=true -csvSensor=false -csvMove=true -zipFiles=true"]
-    switches = ["-logNodes=false -logPosition=false -logGrid=false -logEnergy=false -regionRouting=true -noEnergy=true -csvMove=true -zipFiles=true -windRegionPath=fine_bomb_hull.txt"]
+    switches = ["-logNodes=false -logPosition=false -logGrid=false -logEnergy=false -regionRouting=true -noEnergy=true -csvMove=true -zipFiles=true -windRegionPath=hull_fine_bomb_9x9.txt"]
     scenarios = ["-inputFileName=%s -imageFileName=%s -stimFileName=circle_0.txt -outRoutingStatsName=routingStats.txt -iterations=10000 -superNodes=false -doOptimize=false" % (s[0], s[1]) for s in [['Scenario_3.txt', 'marathon_street_map.png']]]
 
     paths = []
-    for pop in [200, 500, 1000, 2000, 5000, 10000]:
+    for pop in [[200, 10000], [500, 4000], [1000, 2000], [2000, 1000], [5000, 400], [10000, 200]:
         for it in [1, 2, 3, 4]:
-            paths.append((pop, it))
+            paths.append((pop[0], it, pop[1]))
 
     #movementPath = ["-movementPath=%s" % s for s in ["/home/simulator/git-simulator/movement/marathon_street_2000_%d.scb" % i for i in range(1,10)]]
-    movementPath = ["-movementPath=/home/simulator/git-simulator/movement/marathon2_%d_%d.scb -totalNodes=%d" % (s[0], s[1], s[0]) for s in paths]
+    movementPath = ["-movementPath=/home/simulator/git-simulator/movement/marathon2_%d_%d.scb -totalNodes=%d -moveSize=%d" % (s[0], s[1], s[0], s[2]) for s in paths]
 
     sensorPath = ["-sensorPath=%s" %s for s in ["smooth_marathon.csv"]]
-    fineSensorPath = ["-fineSensorPath=%s" %s for s in ["fine_bomb.csv"]]
-    detectionThreshold = ["-detectionThreshold=%d" % d for d in[5]]
     detectionDistance = ["-detectionDistance=%d" % d for d in [6]]
     sittingStopThreshold = ["-sittingStopThreshold=%d" % d for d in [5]]
     negativeSittingStopThreshold = ["-negativeSittingStopThreshold=%d" % d for d in [-10]]
@@ -78,7 +76,7 @@ if __name__ == '__main__':
     serverSamplingPeriod = ["-serverSamplingPeriod=%d" % d for d in [1000]]
     nodeStoredSamples = ["-nodeStoredSamples=%d" % d for d in [10]]
     gridStoredSample = ["-GridStoredSamples=%d" % d for d in [10]]
-    errorMultiplier = ["-errorMultiplier=%f" % f for f in [.6 + .2*i for i in range(3)]]
+    errorMultiplier = ["-errorMultiplier=%f" % f for f in [.1 + .05*i for i in range(5)]]
     numSuperNodes = ["-numSuperNodes=%d" %d for d in [4]]
     recalibThresh = ["-RecalibrationThreshold=%d" % d for d in [3]]
     StandardDeviationThreshold = ["-StandardDeviationThreshold=%f" % f for f in [1.7]]
@@ -89,8 +87,9 @@ if __name__ == '__main__':
     serverRecal = ["-serverRecal=%s" % s for s in ['true', 'false']]
     driftExplore = ["-driftExplorer=%s" % s for s in ['true']]
     #randomBomb = ["-randomBomb=%s -sensorPath=%s -fineSensorPath=%s -csvSensor=%s" % (s[0], s[1], s[2], s[3]) for s in [('true', '', 'fine_bomb.csv', 'false'), ('false', 'smooth_marathon.csv', 'fine_bomb_marathon.csv', 'true')]]
-    helper = ["-fineSensorPath=%s -csvSensor=%s" % (s[0], s[1]) for s in [("fine_bomb.csv", 'false')]]
+    helper = ["-fineSensorPath=%s -csvSensor=%s" % (s[0], s[1]) for s in [("fine_bomb9x9.csv", 'false')]]
     commBomb = ["-commandBomb=%s" % s for s in ['false']]
+    detectionWindow = ["-detectionWindow=%d" % d for d in [200, 500, 1000, 2000]]
 
     #sensorPath, fineSensorPath
     runs = (list(itertools.product(*[switches, scenarios, movementPath, detectionThreshold,
@@ -113,6 +112,6 @@ if __name__ == '__main__':
             x+= 1
 
        
-    p = multiprocessing.Pool(20, runner, (q,))
+    p = multiprocessing.Pool(8, runner, (q,))
 
     q.join()
