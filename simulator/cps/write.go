@@ -1179,6 +1179,8 @@ func readFineSensorCSV(p *Params) {
 	p.FineWidth = int(math.Sqrt(float64(lines-1)))
 	p.FineHeight = int(math.Sqrt(float64(lines-1)))
 
+	fmt.Printf("%v %v\n", p.FineWidth, p.FineHeight)
+
 
 	p.FineSensorReadings = make([][][]float64, p.FineWidth)
 	for i := range p.FineSensorReadings {
@@ -1236,7 +1238,7 @@ func readFineSensorCSV(p *Params) {
 	//CalculateADCSetting(maxReading, maxLocX, maxLocY, maxTime, p)
 	//fmt.Println(p.BombX, p.BombY)
 	fmt.Println()
-	CalculateFineADCSetting(p.FineSensorReadings[p.FineWidth/2][p.FineHeight/2][0], p.FineWidth/2, p.FineHeight/2, 100, p)
+	CalculateFineADCSetting(p.FineSensorReadings[p.FineWidth/2][p.FineHeight/2][0], p.FineWidth/2, p.FineHeight/2, 400, p)
 }
 
 //readMovementCSV reads the movement parameters from a file
