@@ -434,7 +434,7 @@ func SetupCSVNodes(p *Params) {
 
 		if newNode.InBounds(p) {
 			newNode.Valid = true
-			fmt.Printf("Valid NODE %v %v %v\n", newNode.Id, newNode.X, newNode.Y)
+			//fmt.Printf("Valid NODE %v %v %v\n", newNode.Id, newNode.X, newNode.Y)
 			p.BoolGrid[int(newNode.X)][int(newNode.Y)] = true
 		} else {
 			newNode.Valid = false
