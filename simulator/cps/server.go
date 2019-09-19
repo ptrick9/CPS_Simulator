@@ -511,7 +511,9 @@ func (s *FusionCenter) Send(n *NodeImpl, rd Reading, tp bool) {
 						if FloatDist(Tuple32{currRead.Xpos, currRead.YPos}, Tuple32{rd.Xpos, rd.YPos}) < s.P.DetectionDistance {
 							if currRead.Id != rd.Id && !Is_in(currRead.Id, s.CheckedIds) && currRead.SensorVal > s.P.DetectionThreshold {
 								s.CheckedIds = append(s.CheckedIds, currRead.Id)
-								s.Validators[rd.Id] = t
+								if tp {
+									s.Validators[rd.Id] = t
+								}
 								validations++
 							} else if currRead.SensorVal > s.P.DetectionThreshold && tp{
 								s.Validators[rd.Id] = t
