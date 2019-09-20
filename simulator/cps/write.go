@@ -907,40 +907,14 @@ func CalculateADCSetting(reading float64, x, y, time int, p *Params) {
 	fmt.Printf("\n")
 }
 
+func CalculateFineADCSetting(reading float64, x, y float32, time int, p *Params) {
+	straight_increment := float32(.2)  //this is actually .1m away from the bomb by nature of the computation that occurs in the interpolation
+	diag_increment := float32(math.Sqrt(math.Pow(float64(straight_increment), 2.0)*2.0))
 
-func CalculateFineADCSetting(reading float64, x, y, time int, p *Params) {
-	//fmt.Println("\n", reading, time, x, y)
+
 	total := float32(0.0)
-	counted := float32(0.0)
-	for i := -1; i < 2; i++ {
-		for j := -1; j < 2; j++ {
-			if i != 0 || j != 0 {
-				if i+x > 0 && i+x < p.Width {
-					if j+y > 0 && j+y < p.Height {
-						//part := InterpolateFloat(float32(p.FineSensorReadings[x][y][time]),  float32(p.FineSensorReadings[i + x][j + y][time]), .2/float32(Dist(Tuple{x, y}, Tuple{x+i, y+j})))
-						part := float32(p.FineSensorReadings[i + x][j + y][time])
-						total += part
-						//fmt.Println(i+x, j+y, part)
-						//fmt.Println(i, j, float32(p.FineSensorReadings[x][y][time]),  float32(p.FineSensorReadings[i + x][j + y][time]), .2/float32(Dist(Tuple{x, y}, Tuple{x+i, y+j})), part)
-						counted += 1
-					}
-				}
-			}
-		}
-	}
 
-
-	p.MaxRaw = total/counted
-	fmt.Printf("Raw: %v\n", p.MaxRaw)
-	straight_increment := int(math.Ceil((p.DetectionDistance/2.0)*float64(p.FineScale)))
-	fmt.Printf("straight: %v\n", straight_increment)
-	diag_increment := int(math.Ceil(((p.DetectionDistance/2.0)*float64(p.FineScale))/math.Sqrt2))
-	fmt.Printf("diag: %v\n", diag_increment)
-
-
-
-
-	points := [8][2]int{
+	closePoints := [8][2]float32{
 		{straight_increment, 0},			//right
 		{diag_increment, diag_increment}, 	//upper right
 		{0, straight_increment},			//up
@@ -950,24 +924,39 @@ func CalculateFineADCSetting(reading float64, x, y, time int, p *Params) {
 		{0, -straight_increment},			//down
 		{diag_increment, -diag_increment}}	//lower right
 
-	total = 0
-	counted = 0
-	for _, point := range (points) {
-		if point[0]+x > 0 && point[0]+x < p.Width {
-			if point[1]+y > 0 && point[1]+y < p.Height {
-				//if legal then interpolate the correct value based on distance
-				//part := InterpolateFloat(float32(p.FineSensorReadings[x][y][time]), float32(p.FineSensorReadings[x+point[0]][y+point[1]][time]), float32(p.DetectionDistance/(Dist(Tuple{x, y}, Tuple{x + point[0], y + point[1]}))))
-				part := float32(p.FineSensorReadings[x+point[0]][y+point[1]][time])
-				total += part
-				//fmt.Println(x+point[0], y+point[1], p.FineSensorReadings[x+point[0]][y+point[1]][time])
-				//fmt.Println(float32(p.FineSensorReadings[x][y][time]), float32(p.FineSensorReadings[x + point[0]][y + point[1]][time]), float32(p.DetectionDistance/(Dist(Tuple{x, y}, Tuple{x + point[0], y + point[1]}))), part)
-				counted += 1
-			}
-		}
+	for i := 0; i < 8; i++ {
+		//fmt.Printf("%v %v\n", x+closePoints[i][0], y+closePoints[i][1])
+		total += float32(interpolateReading(x + closePoints[i][0], y + closePoints[i][1], time*1000, time, true, p))
 	}
 
-	//p.EdgeRaw = 36
-	p.EdgeRaw = total/counted
+	p.MaxRaw = total/8.0
+
+
+	straight_increment = float32((p.DetectionDistance))
+	//fmt.Printf("straight: %v\n", straight_increment)
+	diag_increment = float32(straight_increment/math.Sqrt2)
+	//fmt.Printf("diag: %v\n", diag_increment)
+
+
+
+
+	points := [8][2]float32{
+		{straight_increment, 0},			//right
+		{diag_increment, diag_increment}, 	//upper right
+		{0, straight_increment},			//up
+		{-diag_increment, diag_increment}, 	//upper left
+		{-straight_increment, 0},			//left
+		{-diag_increment, -diag_increment}, //lower left
+		{0, -straight_increment},			//down
+		{diag_increment, -diag_increment}}	//lower right
+
+	total = 0.0
+	for i := 0; i < 8; i++ {
+		total += float32(interpolateReading(x + points[i][0], y + points[i][1], time*1000, time, true, p))
+	}
+
+
+	p.EdgeRaw = total/8.0
 	//fmt.Println(p.EdgeRaw)
 	p.MaxADC = 4095
 	p.EdgeADC = 3
@@ -980,10 +969,14 @@ func CalculateFineADCSetting(reading float64, x, y, time int, p *Params) {
 
 	//fmt.Printf("\n")
 
-
+	fmt.Println("Max Raw:", p.MaxRaw)
 	fmt.Println("Edge Raw:", p.EdgeRaw)
 	fmt.Printf("%v %v\n", p.ADCWidth, p.ADCOffset)
+
 }
+
+
+
 
 //Helper to count lines and learn progress
 func lineCounter(fileName string) (int, error) {
@@ -1239,7 +1232,8 @@ func readFineSensorCSV(p *Params) {
 	//CalculateADCSetting(maxReading, maxLocX, maxLocY, maxTime, p)
 	//fmt.Println(p.BombX, p.BombY)
 	fmt.Println()
-	CalculateFineADCSetting(p.FineSensorReadings[p.FineWidth/2][p.FineHeight/2][0], p.FineWidth/2, p.FineHeight/2, 400, p)
+	//CalculateFineADCSetting(p.FineSensorReadings[p.FineWidth/2][p.FineHeight/2][0], p.FineWidth/2, p.FineHeight/2, 400, p)
+	CalculateFineADCSetting(p.FineSensorReadings[p.FineWidth/2][p.FineHeight/2][0], float32(p.B.X), float32(p.B.Y), 320, p)
 }
 
 func PartialReadMovementCSV(p *Params) {

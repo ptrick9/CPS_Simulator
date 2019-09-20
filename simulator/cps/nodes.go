@@ -801,6 +801,7 @@ func (curNode *NodeImpl) GetReadings() {
 
 		RawConc := 0.0
 
+
 		if curNode.Distance(*curNode.P.B)/2 < float32((curNode.P.FineWidth/2)/curNode.P.FineScale) {
 			RawConc = float64(trueInterpolate(newX, newY, curNode.P.CurrentTime, curNode.P.TimeStep, true, curNode.P))
 
