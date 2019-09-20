@@ -198,3 +198,5 @@ g2/
 statistics/driftExplorePar\.pickle
 
 *.pickle
+
+test
