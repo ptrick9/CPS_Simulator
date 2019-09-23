@@ -13,7 +13,7 @@ from zipfile import *
 #basePath = "C:/Users/patrick/Downloads/bigData/"
 #basePath = "C:/Users/patrick/Downloads/fineGrainedBomb/fineGrainedBomb/"
 #basePath = "C:/Users/patrick/Downloads/driftExploreHullBombMove/"
-basePath = "C:/Users/patrick/Downloads/driftExplorerNoBomb-2k/"
+basePath = "C:/Users/patrick/Downloads/driftExplorerNoBomb/"
 #basePath = "C:/Users/patrick/Downloads/driftTest/"
 figurePath = "C:/Users/patrick/Dropbox/Patrick/udel/SUMMER2018/git_simulator/CPS_Simulator/driftExploreCommBomb/"
 
@@ -137,7 +137,7 @@ def dataStorage(wq, order, variation, total):
         data = {}
         job = wq.get()
         try:
-            with open('driftExploreNoBombNew-2k.pickle', 'rb') as handle:
+            with open('driftExploreNoBomb23.pickle', 'rb') as handle:
                 data = pickle.load(handle)# protocol=pickle.HIGHEST_PROTOCOL)
                 data = data['data']
                 handle.close()
@@ -157,7 +157,7 @@ def dataStorage(wq, order, variation, total):
         dat = {'data': data, 'order': order, 'var': variation}
         fail = True
         try:
-            f = open('driftExploreNoBombNew-2k.pickle', 'wb')
+            f = open('driftExploreNoBomb23.pickle', 'wb')
             pickle.dump(dat, f)
             f.close()
             fail = False

@@ -69,6 +69,9 @@ class Detection:
 
     def Wind(self):
         return self.cause == ' Wind '
+
+    def Window(self):
+        return self.cause == 'Window'
     #def FNConf(self):
     #    return self.typ == 'FN' and self.status == 'Confirmation'
 
@@ -117,9 +120,21 @@ def BuildDetections(basename):
     detections = []
     initialDetections = {}
 
+    #def __init__(self, ident=-1, time=-1, status='', conf='', need=-1, typ='', dist=-1, cleanADC=-1, errorADC=-1, senseError=-1, senseClean=-1, rawConc=-1, cause=''):
+
+
     regexConf = r"(?P<status>Rejection|Confirmation) T: (?P<time>\d+) ID: (?P<ident>\d+) (?P<conf>\d+)\/(?P<need>\d+)"
     regexDetail = r"(?P<type>[T,F][P,N])(?P<cause> Wind | | Drift )T: (?P<time>\d+) ID: (?P<ident>\d+) .* D: (?P<distance>\d*\.?\d+) " \
                   r"C: (?P<clean>\d+) E: (?P<error>\d+) SE: (?P<errorSense>\d+.\d+) S: (?P<cleanSense>\d+.\d+) R: (?P<raw>\d+.\d+)"
+
+    regexFN = r"(?P<type>FN) (?P<cause>Window) T: (?P<enterTime>\d+) CT: (?P<currentTime>\d+) ID: (?P<ident>\d+)"
+
+    FNMatches = re.finditer(regexFN, longBoi, re.MULTILINE)
+
+    for matchNum, match in enumerate(FNMatches, start=1):
+        ident = int(match.group('ident'))
+        ct = int(match.group('currentTime'))
+        detections.append(Detection(ident, ct, '', -1, -1, 'FN', -1, -1, -1, -1, -1, -1, 'Window'))
 
     detailedMatches = re.finditer(regexDetail, longBoi, re.MULTILINE)
 
