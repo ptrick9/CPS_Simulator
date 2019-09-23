@@ -125,6 +125,7 @@ func main() {
 	p.NodesPrint = p.NodesPrintCM
 	p.SquareRowCM = p.SquareRowCM
 	p.SquareColCM = p.SquareColCM
+	p.MinDistance = 1000
 
 	//Initializers
 	cps.MakeBoolGrid(p)
@@ -418,6 +419,7 @@ func main() {
 		p.BatteryFile.Close()
 		p.RunParamFile.Close()
 		p.NodeDataFile.Close()
+		p.DistanceFile.Close()
 
 		if p.DriftExplorer {
 			p.DriftExploreFile.Close()

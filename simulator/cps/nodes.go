@@ -1011,6 +1011,12 @@ func (curNode *NodeImpl) MoveCSV(p *Params) {
 
 		} else {
 
+			d := curNode.Distance(*curNode.P.B)/2
+			if int(d) < p.MinDistance {
+				p.MinDistance = int(d)
+				fmt.Fprintf(p.DistanceFile, "ID: %v T: %v D: %v\n", curNode.Id, intTime, int(d))
+			}
+
 			p.BoolGrid[int(newX)][int(newY)] = true
 		}
 	}

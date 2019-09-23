@@ -84,6 +84,7 @@ type Params struct {
 	BatteryFile    *os.File
 	RunParamFile   *os.File
 	DriftExploreFile *os.File
+	DistanceFile 	*os.File
 	ZipFiles 		bool
 	Files 			[]string
 	NodeDataFile   *os.File
@@ -212,4 +213,5 @@ type Params struct {
 
 	ReadingHistorySize	int
 	ServerRecal 	bool
+	MinDistance 	int
 }

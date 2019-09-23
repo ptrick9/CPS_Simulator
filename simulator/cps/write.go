@@ -776,6 +776,14 @@ func SetupFiles(p *Params) {
 		log.Fatal("Cannot create file", err)
 	}
 	p.Files = append(p.Files, p.OutputFileNameCM+"-nodeData.txt")
+
+	p.DistanceFile, err = os.Create(p.OutputFileNameCM + "-distance.txt")
+	if err != nil {
+		log.Fatal("Cannot create file", err)
+	}
+	p.Files = append(p.Files, p.OutputFileNameCM+"-distance.txt")
+
+
 	fmt.Println(p.Files)
 
 }
