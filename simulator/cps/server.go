@@ -524,31 +524,20 @@ func (s *FusionCenter) Send(n *NodeImpl, rd Reading, tp bool) {
 			}
 		}
 		if validations >= s.P.ValidationThreshold {
-
-			//fmt.Println("Valid!")
 			s.P.CenterCoord = Coord{X: int(rd.Xpos), Y: int(rd.YPos)}
 			if s.P.SuperNodes {
 				s.Sch.AddRoutePoint(s.P.CenterCoord)
 			}
 			if FloatDist(Tuple32{rd.Xpos, rd.YPos}, Tuple32{float32(s.P.B.X), float32(s.P.B.Y)}) > s.P.DetectionDistance {
-				//fmt.Fprintln(s.P.DetectionFile, fmt.Sprintf("FP Confirmation T: %v ID: %v (%v, %v) D: %v C: %v", rd.Time, rd.Id, rd.Xpos, rd.YPos, FloatDist(Tuple32{rd.Xpos, rd.YPos}, Tuple32{float32(s.P.B.X), float32(s.P.B.Y)}) , rd.SensorVal))
 			} else {
-				//fmt.Fprintln(s.P.DetectionFile, fmt.Sprintf("TP Confirmation T: %v ID: %v (%v, %v) D: %v C: %v", rd.Time, rd.Id, rd.Xpos, rd.YPos, FloatDist(Tuple32{rd.Xpos, rd.YPos}, Tuple32{float32(s.P.B.X), float32(s.P.B.Y)}), rd.SensorVal))
-				if !s.P.DriftExplorer {
+				if !s.P.DriftExplorer && tp{
 					s.P.FoundBomb = true
 				}
 			}
 
 			fmt.Fprintln(s.P.DetectionFile, fmt.Sprintf("Confirmation T: %v ID: %v %v/%v %v", rd.Time, rd.Id, validations, s.P.ValidationThreshold, s.CheckedIds))
 
-
-
 		} else {
-			/*if FloatDist(Tuple32{rd.Xpos, rd.YPos}, Tuple32{float32(s.P.B.X), float32(s.P.B.Y)}) > s.P.DetectionDistance {
-				fmt.Fprintln(s.P.DetectionFile, fmt.Sprintf("FP Rejection T: %v ID: %v (%v, %v) D: %v C: %v", rd.Time, rd.Id, rd.Xpos, rd.YPos, FloatDist(Tuple32{rd.Xpos, rd.YPos}, Tuple32{float32(s.P.B.X), float32(s.P.B.Y)}) , rd.SensorVal))
-			} else {
-				fmt.Fprintln(s.P.DetectionFile, fmt.Sprintf("TP Rejection T: %v ID: %v (%v, %v) D: %v C: %v", rd.Time, rd.Id, rd.Xpos, rd.YPos, FloatDist(Tuple32{rd.Xpos, rd.YPos}, Tuple32{float32(s.P.B.X), float32(s.P.B.Y)}), rd.SensorVal))
-			}*/
 			fmt.Fprintln(s.P.DetectionFile, fmt.Sprintf("Rejection T: %v ID: %v %v/%v", rd.Time, rd.Id, validations, s.P.ValidationThreshold))
 
 		}

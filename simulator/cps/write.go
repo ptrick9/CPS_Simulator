@@ -1241,7 +1241,7 @@ func readFineSensorCSV(p *Params) {
 	//fmt.Println(p.BombX, p.BombY)
 	fmt.Println()
 	//CalculateFineADCSetting(p.FineSensorReadings[p.FineWidth/2][p.FineHeight/2][0], p.FineWidth/2, p.FineHeight/2, 400, p)
-	CalculateFineADCSetting(p.FineSensorReadings[p.FineWidth/2][p.FineHeight/2][0], float32(p.B.X), float32(p.B.Y), 320, p)
+	CalculateFineADCSetting(p.FineSensorReadings[p.FineWidth/2][p.FineHeight/2][0], float32(p.B.X), float32(p.B.Y), 120, p)
 }
 
 func PartialReadMovementCSV(p *Params) {
