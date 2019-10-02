@@ -13,7 +13,7 @@ run_here/testing-drift\.txt
 
 run_here/testing-energy\.txt
 
-run_here/testing-grid\.txt
+run_here/testing-grid\.txtA
 
 run_here/testing-nodes\.txt
 
@@ -174,3 +174,29 @@ guiSrc/output/production/guiSrc/edu/udel/ntsee/bombdetection/data/
 *.class
 
 *.zip
+
+event
+
+*.asv
+
+Simulation
+
+statistics/statPackage/__pycache__/
+
+*.pyc
+
+mem-prof/
+
+*.scb
+
+graphs/
+
+*.csv
+
+g2/
+
+statistics/driftExplorePar\.pickle
+
+*.pickle
+
+test
