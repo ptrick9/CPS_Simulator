@@ -14,7 +14,7 @@ import (
 func TestInit(t *testing.T) {
 	p := cps.Params{}
 	r := cps.RegionParams{}
-	p.Server = cps.FusionCenter{&p, &r, nil, nil, nil, nil, nil, nil, nil}
+	p.Server = cps.FusionCenter{&p, &r, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil}
 	srv := p.Server
 	srv.Init()
 
@@ -44,7 +44,7 @@ func TestGetSquareAverage(t *testing.T) {
 
 	squ := cps.Square{0, 0, 0.0, 0, make([]float32, p.NumGridSamples),
 		p.NumGridSamples, 0.0, 0, 0, false,
-		0.0, 0.0, false, travelList, map[cps.Tuple]*cps.NodeImpl{},sync.Mutex{},0}
+		0.0, 0.0, false, travelList, map[cps.Tuple]*cps.NodeImpl{},sync.Mutex{},0, true, false}
 
 	testAvg := srv.GetSquareAverage(&squ)
 	if testAvg != 0.0 {
@@ -58,7 +58,7 @@ func TestUpdateSquareAvg(t *testing.T) {
 	p.YDiv = 1
 	p.XDiv = 1
 	p.NumGridSamples = 1
-	p.Server = cps.FusionCenter{&p, &r, nil, nil, nil, nil, nil, nil, nil}
+	p.Server = cps.FusionCenter{&p, &r, nil, nil, nil, nil, nil, nil, nil, nil, nil,nil}
 	srv := p.Server
 	rd := cps.Reading{10,0,0,0,0}
 	travelList := make([]bool, 0)
@@ -66,7 +66,7 @@ func TestUpdateSquareAvg(t *testing.T) {
 
 	squ := cps.Square{0, 0, 0.0, 1, make([]float32, p.NumGridSamples),
 		p.NumGridSamples, 0.0, 0, 0, false,
-		0.0, 0.0, false, travelList, map[cps.Tuple]*cps.NodeImpl{},sync.Mutex{},0}
+		0.0, 0.0, false, travelList, map[cps.Tuple]*cps.NodeImpl{},sync.Mutex{},0, true, false}
 
 	p.Grid = append(p.Grid, []*cps.Square{ &squ })
 
@@ -83,9 +83,9 @@ func TestUpdateSquareAvg(t *testing.T) {
 func TestUpdateSquareNumNodes(t *testing.T) {
 	p := cps.Params{}
 	r := cps.RegionParams{}
-	p.Server = cps.FusionCenter{&p, &r, nil, nil, nil, nil, nil, nil,nil}
+	p.Server = cps.FusionCenter{&p, &r, nil, nil, nil, nil, nil, nil,nil,nil,nil,nil}
 	srv := p.Server
-	p.NodeList = make([]cps.NodeImpl, 2)
+	p.NodeList = make([]*cps.NodeImpl, 2)
 	p.TotalNodes = 2
 	p.YDiv = 2
 	p.XDiv = 2
@@ -103,19 +103,19 @@ func TestUpdateSquareNumNodes(t *testing.T) {
 	//Create 4 squares
 	test_squares[0] = &cps.Square{0, 0, 0.0, 0, make([]float32, p.NumGridSamples),
 		p.NumGridSamples, 0.0, 0, 0, false,
-		0.0, 0.0, false, travelList, map[cps.Tuple]*cps.NodeImpl{},sync.Mutex{},0}
+		0.0, 0.0, false, travelList, map[cps.Tuple]*cps.NodeImpl{},sync.Mutex{},0, true, false}
 
 	test_squares[1] = &cps.Square{1, 0, 0.0, 0, make([]float32, p.NumGridSamples),
 		p.NumGridSamples, 0.0, 0, 0, false,
-		0.0, 0.0, false, travelList, map[cps.Tuple]*cps.NodeImpl{},sync.Mutex{},0}
+		0.0, 0.0, false, travelList, map[cps.Tuple]*cps.NodeImpl{},sync.Mutex{},0, true, false}
 
 	test_squares[2] = &cps.Square{0, 1, 0.0, 0, make([]float32, p.NumGridSamples),
 		p.NumGridSamples, 0.0, 0, 0, false,
-		0.0, 0.0, false, travelList, map[cps.Tuple]*cps.NodeImpl{},sync.Mutex{},0}
+		0.0, 0.0, false, travelList, map[cps.Tuple]*cps.NodeImpl{},sync.Mutex{},0,true, false}
 
 	test_squares[3] = &cps.Square{1, 1, 0.0, 0, make([]float32, p.NumGridSamples),
 		p.NumGridSamples, 0.0, 0, 0, false,
-		0.0, 0.0, false, travelList, map[cps.Tuple]*cps.NodeImpl{},sync.Mutex{},0}
+		0.0, 0.0, false, travelList, map[cps.Tuple]*cps.NodeImpl{},sync.Mutex{},0, true, false}
 
 	p.Grid = append(p.Grid, test_squares[0:2])
 	p.Grid = append(p.Grid, test_squares[2:])
@@ -141,7 +141,7 @@ func TestUpdateSquareNumNodes(t *testing.T) {
 func TestSend(t *testing.T) {
 	p := cps.Params{}
 	r := cps.RegionParams{}
-	p.Server = cps.FusionCenter{&p, &r, nil, nil, nil, nil, nil, nil,nil}
+	p.Server = cps.FusionCenter{&p, &r, nil, nil, nil, nil, nil, nil,nil, nil, nil,nil}
 	srv := p.Server
 	//rd := cps.Reading{0,0,0,0,0}
 	p.XDiv = 1
@@ -154,7 +154,7 @@ func TestSend(t *testing.T) {
 
 	squ := cps.Square{0, 0, 0.0, 1, make([]float32, p.NumGridSamples),
 		p.NumGridSamples, 0.0, 0, 0, false,
-		0.0, 0.0, false, travelList, map[cps.Tuple]*cps.NodeImpl{},sync.Mutex{},0}
+		0.0, 0.0, false, travelList, map[cps.Tuple]*cps.NodeImpl{},sync.Mutex{},0, true, false}
 	node := &cps.NodeImpl{X: 0, Y: 0, Id: len(p.NodeList), SampleHistory: []float32{}, Concentration: 0,
 		Cascade: 0, Battery: 0, BatteryLossScalar: 0}
 
@@ -177,7 +177,7 @@ func TestCalcStats(t *testing.T) {
 	//getFlagsForTest(&p)
 	//cps.SetupParameters(&p)
 
-	p.Server = cps.FusionCenter{&p, &r, nil, nil, nil, nil, nil, nil, nil}
+	p.Server = cps.FusionCenter{&p, &r, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil}
 	srv := p.Server
 	srv.Init()
 	srv.Times = make(map[int]bool)
@@ -235,7 +235,7 @@ func makeNodesForTest(p *cps.Params) {
 				yy = cps.RangeInt(1, p.MaxY)
 			}
 
-			p.NodeList = append(p.NodeList, cps.NodeImpl{X: xx, Y: yy, Id: len(p.NodeList), SampleHistory: initHistory, Concentration: 0,
+			p.NodeList = append(p.NodeList, &cps.NodeImpl{X: float32(xx), Y: float32(yy), Id: len(p.NodeList), SampleHistory: initHistory, Concentration: 0,
 				Cascade: i, Battery: p.BatteryCharges[i], BatteryLossScalar: p.BatteryLosses[i]})
 
 			p.NodeList[len(p.NodeList)-1].SetConcentration(((1000) / (math.Pow((float64(p.NodeList[len(p.NodeList)-1].GeoDist(*p.B))/0.2)*0.25, 1.5))))
@@ -272,7 +272,7 @@ func TestMakeGrid(t *testing.T) {
 	r := cps.RegionParams{}
 	p.SquareColCM = 5
 	p.SquareRowCM = 5
-	p.Server = cps.FusionCenter{&p,&r, nil,nil,nil,nil,nil,nil, nil}
+	p.Server = cps.FusionCenter{&p,&r,nil,nil,nil,nil,nil, nil, nil, nil, nil, nil}
 	srv := p.Server
 
 	srv.MakeGrid()
@@ -291,7 +291,7 @@ func TestMakeGrid(t *testing.T) {
 func TestMakeSuperNodes(t *testing.T) {
 	p := cps.Params{}
 	r := cps.RegionParams{}
-	p.Server = cps.FusionCenter{&p,&r, nil,nil,nil,nil,nil,nil, nil}
+	p.Server = cps.FusionCenter{&p,&r,nil,nil,nil,nil,nil, nil, nil, nil, nil, nil}
 	srv := p.Server
 	srv.Init()
 
@@ -310,7 +310,7 @@ func TestMakeSuperNodes(t *testing.T) {
 func TestCheckDetections(t *testing.T) {
 	p := cps.Params{}
 	r := cps.RegionParams{}
-	p.Server = cps.FusionCenter{&p,&r,nil,nil,nil,nil,nil, nil, nil}
+	p.Server = cps.FusionCenter{&p,&r,nil,nil,nil,nil,nil, nil, nil, nil, nil, nil}
 	srv := p.Server
 	srv.Init()
 	p.YDiv = 1
@@ -321,7 +321,7 @@ func TestCheckDetections(t *testing.T) {
 	p.B = &cps.Bomb{1,1}
 
 	//sch := srv.Sch//sch := &cps.Scheduler{}
-	p.NodeList = append(p.NodeList, cps.NodeImpl{X: 1, Y: 1, Id: len(p.NodeList), SampleHistory: []float32{}, Concentration: 0,
+	p.NodeList = append(p.NodeList, &cps.NodeImpl{X: 1, Y: 1, Id: len(p.NodeList), SampleHistory: []float32{}, Concentration: 0,
 		Cascade: 0, Battery: 0, BatteryLossScalar: 0})
 	srv.Sch.SNodeList = append(srv.Sch.SNodeList, &cps.Sn_zero{&p,&r,&cps.Supern{&p,&r, &cps.NodeImpl{X: 0, Y: 0, Id: 0}, 1,
 		1, p.SuperNodeRadius, p.SuperNodeRadius, 0, make([]cps.Coord, 1), make([]cps.Coord, 0),
@@ -351,6 +351,76 @@ func TestGetMedian(t *testing.T) {
 	median = srv.GetMedian(arr)
 	if median != 3 {
 		t.Errorf("Incorrect median, got %v, wanted %v", median, 3.0)
+	}
+}
+
+func TestIntersects(t *testing.T) {
+	p1 := cps.Coord{X: 0, Y: 5}
+	q1 := cps.Coord{X: 10, Y: 5}
+	p2 := cps.Coord{X: 5, Y: 0}
+	q2 := cps.Coord{X: 5, Y: 10}
+	if !cps.Intersects(p1,q1,p2,q2) {
+		t.Errorf("Incorrect calculation, lines should intersect")
+	}
+
+	p1 = cps.Coord{X: 0, Y: 5}
+	q1 = cps.Coord{X: 10, Y: 5}
+	p2 = cps.Coord{X: 0, Y: 5}
+	q2 = cps.Coord{X: 10, Y: 5}
+	if !cps.Intersects(p1,q1,p2,q2) {
+		t.Errorf("Incorrect calculation, lines should intersect")
+	}
+
+	p1 = cps.Coord{X: 1, Y: 5}
+	q1 = cps.Coord{X: 10, Y: 5}
+	p2 = cps.Coord{X: 0, Y: 5}
+	q2 = cps.Coord{X: 15, Y: 5}
+	if !cps.Intersects(p1,q1,p2,q2) {
+		t.Errorf("Incorrect calculation, lines should intersect\n")
+	}
+}
+
+func TestCheckFalsePosWind(t *testing.T) {
+	p := cps.Params{}
+	r := cps.RegionParams{}
+	p.CurrentTime = 10000
+	p.Server = cps.FusionCenter{&p,&r,nil,nil,nil,nil,nil, nil, nil, nil, nil, nil}
+	srv := p.Server
+	srv.Init()
+	node := &cps.NodeImpl{X: 6, Y: 6}
+
+	fmt.Println("Testing Square")
+	p.WindRegion = [][]cps.Coord{ {},{cps.Coord{X: 0, Y: 0}, cps.Coord{X: 0, Y: 10}, cps.Coord{X: 10, Y: 10}, cps.Coord{X: 10, Y: 0}} }
+	out := srv.CheckFalsePosWind(node)
+	if out != 0 {
+		t.Errorf("Missed false positive, wanted %v, got %v\n", 0, out)
+	}
+
+	node.X = 100
+	node.Y = 5
+
+	out = srv.CheckFalsePosWind(node)
+	if out != 1 {
+		t.Errorf("Not false positive, wanted %v, got %v\n", 1, out)
+	}
+
+	node.X = 5
+	node.Y = 5
+
+	fmt.Println("Testing Hexagon")
+	p.WindRegion = [][]cps.Coord{ {},{cps.Coord{X: 8, Y: 1}, cps.Coord{X: 2, Y: 1}, cps.Coord{X: 0, Y: 5}, cps.Coord{X: 3, Y: 9},
+		cps.Coord{X: 7, Y: 9}, cps.Coord{X: 10, Y: 5}} }
+	out = srv.CheckFalsePosWind(node)
+	if out != 0 {
+		t.Errorf("Missed false positive, wanted %v, got %v\n", 0, out)
+	}
+
+	node.X = 10
+	node.Y = 6
+
+	out = srv.CheckFalsePosWind(node)
+	if out != 1 {
+		t.Errorf("Not false positive, wanted %v, got %v\n", 1, out)
 	}
 }
 

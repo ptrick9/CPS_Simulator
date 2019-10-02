@@ -148,11 +148,11 @@ func (a *Coord) GetWalkable(b Coord, closedList []Coord, p Coord, pp *Params) []
 //setScore takes a Coord and the destination and
 //	calculates the new score for this Coord
 func (a *Coord) SetScore(b Coord, p *Params) {
-	//The G value is the amount of squares travelled since the
-	//	starting point, therefore its just the parent's G value + 1
+	//The G Value is the amount of squares travelled since the
+	//	starting point, therefore its just the parent's G Value + 1
 	a.G = a.Parent.G + 1
 
-	//The H value is the actual distance between the current AStar
+	//The H Value is the actual distance between the current AStar
 	//	coordinate and the destination AStar coordinate
 	h := math.Sqrt(math.Pow(float64(a.X-b.X), 2.0) + math.Pow(float64(a.Y-b.Y), 2.0))
 	a.H = int(h)

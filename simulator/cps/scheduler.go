@@ -1,6 +1,7 @@
 package cps
 
 import (
+	"fmt"
 	"math"
 )
 
@@ -14,7 +15,7 @@ type Scheduler struct {
 	//SNodeList []Supern
 }
 
-//This function is called every time a super node reaches a point of interest along
+//This function is called every Time a super node reaches a point of interest along
 //	its routePath
 //The scheduler removes all the nodes' points of interest and redistributes them again
 //	attempting to make the routing process more efficient
@@ -99,7 +100,7 @@ func (s *Scheduler) AddRoutePoint0(c Coord) {
 	}
 	//fmt.Printf("\nClosest Node: %v\n", closestNode)
 	//Tells that super node to add that point
-	//fmt.Printf("\nAdded route point %v\n", c)
+	fmt.Printf("\nAdded route point %v\n", c)
 	s.SNodeList[closestNode].AddRoutePoint(c)
 }
 
@@ -140,7 +141,7 @@ func (s *Scheduler) AddRoutePoint1(c Coord) {
 				Pow(float64(s.SNodeList[n].GetRoutePoints()[0].Y-c.Y), 2.0))
 		}
 
-		//Saves the smallest dist value to return
+		//Saves the smallest dist Value to return
 		if nodeDist < dist {
 			dist = nodeDist
 			closestNode = n
@@ -234,7 +235,7 @@ func ClosestDist(c Coord, list []Coord) float64 {
 			Pow(float64(p.X-c.X), 2.0) + math.
 			Pow(float64(p.Y-c.Y), 2.0))
 
-		//Saves the value of that smallest distance to return
+		//Saves the Value of that smallest distance to return
 		if newDist < dist {
 			dist = newDist
 		}
@@ -255,7 +256,7 @@ func (scheduler *Scheduler) MakeSuperNodes() {
 			//This super node starts at the middle of the p.Grid
 			nodeCenter, x_val, y_val := MakeCenter1(i, scheduler.P)
 
-			scheduler.SNodeList[i] = &Sn_zero{scheduler.P, scheduler.R,&Supern{scheduler.P, scheduler.R,&NodeImpl{X: x_val, Y: y_val, Id: i}, 1,
+			scheduler.SNodeList[i] = &Sn_zero{scheduler.P, scheduler.R,&Supern{scheduler.P, scheduler.R,&NodeImpl{X: float32(x_val), Y: float32(y_val), Id: i}, 1,
 				1, scheduler.P.SuperNodeRadius, scheduler.P.SuperNodeRadius, 0, snode_points, snode_path,
 				nodeCenter, 0, 0, 0, 0, 0, all_points}}
 		} else if (scheduler.P.SuperNodeType == 6) || (scheduler.P.SuperNodeType == 7) {
@@ -268,7 +269,7 @@ func (scheduler *Scheduler) MakeSuperNodes() {
 			//The useRegionList is just initialized to an empty list
 			ur_list := make([]Region, 0)
 
-			scheduler.SNodeList[i] = &Sn_two{&Supern{scheduler.P,scheduler.R,&NodeImpl{Id: i, X: x_val, Y: y_val}, 1,
+			scheduler.SNodeList[i] = &Sn_two{&Supern{scheduler.P,scheduler.R,&NodeImpl{Id: i, X: float32(x_val), Y: float32(y_val)}, 1,
 				1, scheduler.P.SuperNodeRadius, scheduler.P.SuperNodeRadius, 0, snode_points,
 				snode_path, nodeCenter, 0, 0, 0, 0,
 				1, all_points}, r_list, ur_list}
@@ -289,7 +290,7 @@ func (scheduler *Scheduler) MakeSuperNodes() {
 			} else if scheduler.P.SuperNodeType == 4 {
 				nodeCenter, x_val, y_val, xRad, yRad = MakeCenter1_largeCorners(i, scheduler.P)
 			}
-			scheduler.SNodeList[i] = &Sn_one{&Supern{scheduler.P,scheduler.R, &NodeImpl{X: x_val, Y: y_val, Id: i}, 1,
+			scheduler.SNodeList[i] = &Sn_one{&Supern{scheduler.P,scheduler.R, &NodeImpl{X: float32(x_val), Y: float32(y_val), Id: i}, 1,
 				1, xRad, yRad, 0, snode_points, snode_path,
 				nodeCenter, 0, 0,
 				0, 0, 1, all_points}}

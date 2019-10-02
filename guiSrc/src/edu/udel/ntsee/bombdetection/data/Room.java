@@ -5,6 +5,7 @@ import edu.udel.ntsee.bombdetection.exceptions.LogFormatException;
 import edu.udel.ntsee.bombdetection.io.FileManager;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
+import javafx.geometry.Point2D;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -13,6 +14,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -24,25 +26,27 @@ public class Room {
     private int height;
     private int runs;
 
-    private Node bomb;
-    private List<Wall> walls;
+    private Point2D bomb;
     private List<Node> positions;
     private List<Sample> samples;
-    private List<SuperNode> superNodes;
     private List<AdHoc> adhocs;
+    private List<SuperNode> superNodes;
+    private List<Wall> walls;
     private Grid sensorReadings;
     private Road road;
+
+
+    private Room() {}
 
     public static Room fromFile(File file) throws IOException {
 
         BufferedReader reader = new BufferedReader(new FileReader(file));
         Room room = new Room();
-        room.index = new SimpleIntegerProperty(0);
+        room.index = new SimpleIntegerProperty(0);;
 
         String imagePath = Util.parseString(reader.readLine());
         BufferedImage image = ImageIO.read(new File(file.getParent() + "/" + imagePath));
         room.walls = Util.createWallsFromImage(image);
-
 
         room.width = Util.parseAmount(reader.readLine());
         room.height = Util.parseAmount(reader.readLine());
@@ -50,12 +54,13 @@ public class Room {
 
         int bx = Util.parseAmount(reader.readLine());
         int by = Util.parseAmount(reader.readLine());
-        room.bomb = new Node(-1, bx, by);
+        room.bomb = new Point2D(bx, by);
         room.fileManager = new FileManager(room, file);
 
         File f = new File(file.getParent() + "\\roadLog.txt");
         if (f.exists()) room.road = Road.fromFile(f);
         reader.close();
+
         return room;
     }
 
@@ -89,19 +94,25 @@ public class Room {
         return runs;
     }
 
+
+    public List<Node> getPositions() {
+        return positions;
+    }
+
+    public List<Sample> getSamples() {
+        return samples;
+    }
+
     public List<Wall> getWalls() {
 
         return walls;
     }
-    public List<Node> getPositions() {
-
-        return positions;
-    }
 
     public Node getNodeByID(int id) {
 
-        for (Node node : positions) {
-            if (node.getID() == id) {
+        for (Node node : this.positions) {
+
+            if (id == node.getID()) {
                 return node;
             }
         }
@@ -120,11 +131,6 @@ public class Room {
         }
 
         return nodes;
-    }
-
-    public List<Sample> getSamples() {
-
-        return samples;
     }
 
     public List<SuperNode> getSuperNodes() {
@@ -153,12 +159,12 @@ public class Room {
         return grid;
     }
 
-    public void updateData() throws IOException, LogFormatException {
+    public void updateData()  throws IOException, LogFormatException {
 
         this.positions = fileManager.getPositions() != null ? fileManager.getPositions().getData(getIndex()) : null;
         this.samples = fileManager.getSamples() != null ? fileManager.getSamples().getData(getIndex()) : null;
-        this.superNodes = fileManager.getRoutes() != null ? fileManager.getRoutes().getData(getIndex()) : null;
         this.adhocs = fileManager.getAdHocs() != null ? fileManager.getAdHocs().getData(getIndex()) : null;
+        this.superNodes = fileManager.getRoutes() != null ? fileManager.getRoutes().getData(getIndex()) : null;
         this.sensorReadings = fileManager.getSensorReadings() != null ? fileManager.getSensorReadings().getGrid(getIndex()) : null;
     }
 
@@ -187,11 +193,12 @@ public class Room {
 
     }
 
-    public Node getBomb() {
+    public Point2D getBomb() {
         return bomb;
     }
 
     public Road getRoad() {
         return road;
     }
+
 }

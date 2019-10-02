@@ -31,7 +31,7 @@ type Region struct {
 //It adds Points to the super nodes routePoints and routePath lists
 //	and moves it along those paths
 func (n *Sn_two) Tick() {
-	//Increments the time of all the Points in the allPoints list
+	//Increments the Time of all the Points in the allPoints list
 	n.IncAllPoints()
 
 	//If there is a path for the super node to follow it should follow its path
@@ -41,7 +41,7 @@ func (n *Sn_two) Tick() {
 	if len(n.RoutePath) > 0 {
 		n.PathMove()
 	} else {
-		if (n.X == n.Center.X) && (n.Y == n.Center.Y) {
+		if (int(n.X) == n.Center.X) && (int(n.Y) == n.Center.Y) {
 			n.UpdatePath()
 		} else {
 			n.CentMove()
@@ -66,7 +66,7 @@ func (n *Sn_two) UpdatePath() {
 		n.UsedRegionList = make([]Region, 0)
 	}
 
-	//This is the index of the region with the most Points in it
+	//This is the Index of the region with the most Points in it
 	//This region is then used to plot a path for the super node
 	high_ind := n.OldestPointRegion()
 
@@ -91,7 +91,7 @@ func (n *Sn_two) UpdatePath() {
 
 		//Finds the number of Points in the lower and upper halves of the region
 		//This allows the super node to visit Points on the way out and back towards the
-		//	Center, saving time on the return trip
+		//	Center, saving Time on the return trip
 		lower_list, upper_list = n.Calc_triangle_tot(n.RegionList[high_ind])
 
 		start_list := make([]Coord, 0)
@@ -149,7 +149,7 @@ func (n *Sn_two) UpdatePath() {
 					w++
 				}
 			}
-			//The index to add things into the routePoints list is incremented each iteration
+			//The Index to add things into the routePoints list is incremented each iteration
 			start++
 		}
 
@@ -187,7 +187,7 @@ func (n *Sn_two) UpdatePath() {
 			//	to the routePath list
 			n.RoutePath = append(n.RoutePath, AStar(n.RoutePoints[start], n.RoutePoints[start+1], n.P)...)
 
-			//The index to add things into the routePoints list is incremented each iteration
+			//The Index to add things into the routePoints list is incremented each iteration
 			start++
 
 			//The selected node is removed from the dist_list allowing the super node to
@@ -235,7 +235,7 @@ func (n *Sn_two) UpdatePath() {
 						w++
 					}
 				}
-				//The index to add things into the routePoints list is incremented each iteration
+				//The Index to add things into the routePoints list is incremented each iteration
 				start++
 			}
 		}
@@ -253,7 +253,7 @@ func (n *Sn_two) UpdatePath() {
 	}
 }
 
-//This function returns the index of the Region with the most Points of interest
+//This function returns the Index of the Region with the most Points of interest
 //	inside of it
 func (n *Sn_two) MostPointsRegion() int {
 	high_Points := 0
@@ -267,7 +267,7 @@ func (n *Sn_two) MostPointsRegion() int {
 	return high_ind
 }
 
-//This function returns the index of the Region with the oldest point of interest
+//This function returns the Index of the Region with the oldest point of interest
 //	inside of it
 func (n *Sn_two) OldestPointRegion() int {
 	point_age := -1
@@ -281,7 +281,7 @@ func (n *Sn_two) OldestPointRegion() int {
 	return high_ind
 }
 
-//The function returns the arr with the element at index n removed
+//The function returns the arr with the element at Index n removed
 func Remove_region(arr []Region, n int) []Region {
 	return arr[:n+copy(arr[n:], arr[n+1:])]
 }
@@ -381,7 +381,7 @@ func (n *Sn_two) AddToRegion(r int) {
 	c := 0
 	for c < len(n.AllPoints) {
 		//If the Coord is within the Region it is appended to that Region's Points list
-		//The Coord's time is updated and then it is removed from the allPoints list
+		//The Coord's Time is updated and then it is removed from the allPoints list
 		if n.AllPoints[c].IsWithinRegion(n.RegionList[r]) {
 			n.RegionList[r].Points = append(n.RegionList[r].Points, n.AllPoints[c])
 			n.RegionList[r].Points[len(n.RegionList[r].Points)-1].Time = n.AllPoints[c].Time
@@ -392,7 +392,7 @@ func (n *Sn_two) AddToRegion(r int) {
 	}
 }
 
-//This function removed the Coord element at the specified index n
+//This function removed the Coord element at the specified Index n
 func Remove_coord_index(arr []Coord, n int) []Coord {
 	return arr[:n+copy(arr[n:], arr[n+1:])]
 }

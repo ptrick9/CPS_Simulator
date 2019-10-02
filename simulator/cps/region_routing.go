@@ -9,6 +9,10 @@ type Tuple struct {
 	X, Y int
 }
 
+type Tuple32 struct {
+	X, Y float32
+}
+
 type RegionParams struct {
 	Point_list []Tuple
 
@@ -54,6 +58,15 @@ func RemoveRoutingSquare(sq RoutingSquare, r *RegionParams) {
 func RegionContaining(p Tuple, r *RegionParams) int {
 	for i, s := range r.Square_list {
 		if p.X >= s.X1 && p.X <= s.X2 && p.Y <= s.Y1 && p.Y >= s.Y2 {
+			return i
+		}
+	}
+	return -1
+}
+
+func SoftRegionContaining(p Tuple, r *RegionParams) int {
+	for i, s := range r.Square_list {
+		if p.X >= s.X1-2 && p.X <= s.X2+2 && p.Y <= s.Y1+2 && p.Y >= s.Y2-2 {
 			return i
 		}
 	}
@@ -260,7 +273,7 @@ func GenerateRouting(p *Params, r *RegionParams) {
 		for !collide {
 			y_test.Y += 1
 
-			for x_val := top_left.X; x_val < temp.X; x_val++ {
+			for x_val := top_left.X; x_val <= temp.X; x_val++ {
 				if !r.Point_dict[Tuple{x_val, y_test.Y}] {
 					collide = true
 				}

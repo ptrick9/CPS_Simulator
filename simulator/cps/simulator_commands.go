@@ -5,8 +5,11 @@ import (
 )
 
 type Params struct {
+	Events 						   PriorityQueue
+	CurrentTime					   int
+
 	NegativeSittingStopThresholdCM int     // This is a negative number for the sitting to be set to when map is reset
-	SittingStopThresholdCM         int     // This is the threshold for the longest time a node can sit before no longer moving
+	SittingStopThresholdCM         int     // This is the threshold for the longest Time a node can sit before no longer moving
 	GridCapacityPercentageCM       float64 // This is the percent of a subgrid that can be filled with nodes, between 0.0 and 1.0
 	ErrorModifierCM                float64 // Multiplier for error model
 	OutputFileNameCM               string  // This is the prefix of the output text file
@@ -33,7 +36,7 @@ type Params struct {
 	ServerSamplingPeriodCM         int     // This can be any int n: 1 <= n < GPSSamplingPeriodCM <= 100
 	NumStoredSamplesCM             int     // This can be any int n: 5 <= n <= 25
 	GridStoredSamplesCM            int     // This can be any int n: 5 <= n <= 25
-	DetectionThresholdCM           float64 //This is whatever value 1-1000 we determine should constitute a "detection" of a bomb
+	DetectionThresholdCM           float64 //This is whatever Value 1-1000 we determine should constitute a "detection" of a bomb
 	PositionPrintCM                bool    //This is either true or false for whether to print positions to log file
 	EnergyPrintCM                  bool    //This is either true or false for whether to print energy info to log file
 	NodesPrintCM                   bool    //This is either true or false for whether to print node readings/averages to log file
@@ -42,6 +45,8 @@ type Params struct {
 	SquareColCM                    int     //This is an int 1 through maxY representing how many columns of squares there are
 	StdDevThresholdCM			   float64 //Detection Threshold based on standard deviations from mean
 	CalibrationThresholdCM		   float64
+	DetectionDistance 			   float64
+	RandomBomb					   bool
 
 
 	StimFileNameCM        string
@@ -74,19 +79,24 @@ type Params struct {
 	GridFile       *os.File
 	EnergyFile     *os.File
 	RoutingFile    *os.File
-	AttractionFile *os.File
-	BoolFile       *os.File
 	ServerFile	   *os.File
-	NodeTest	   *os.File
-	NodeTest2	   *os.File
 	DetectionFile  *os.File
 	BatteryFile    *os.File
+	RunParamFile   *os.File
+	DriftExploreFile *os.File
+	DistanceFile 	*os.File
+	ZipFiles 		bool
+	Files 			[]string
+	NodeDataFile   *os.File
 
 	SensorPath  string
+	FineSensorPath  string
 	MovementPath  string
+	WindRegionPath string
 
 	SensorTimes []int
-	CurrTime    int
+	TimeStep    int
+	MaxTimeStep int
 
 	FoundBomb bool
 	Err       error
@@ -97,6 +107,7 @@ type Params struct {
 	Grid     [][]*Square
 
 	SensorReadings [][][]float64
+	FineSensorReadings [][][]float64
 	NodeMovements  [][]Tuple
 
 	SquareCapacity int
@@ -108,6 +119,9 @@ type Params struct {
 	MaxY  int
 	BombX int
 	BombY int
+	BombXCM int
+	BombYCM int
+	CommBomb bool
 
 	ThreshHoldBatteryToHave  float32
 	TotalPercentBatteryToUse float32
@@ -121,7 +135,6 @@ type Params struct {
 	Tau1 float64
 	Tau2 float64
 
-	Recalibrate bool
 
 	FileName string
 
@@ -129,6 +142,7 @@ type Params struct {
 	AStarRouting  bool
 	CSVMovement   bool
 	CSVSensor     bool
+	SuperNodes     bool
 
 	CurrentNodes               int
 	NumWallNodes               int
@@ -152,7 +166,7 @@ type Params struct {
 	NumGridSamples   int
 
 	WallNodeList []WallNodes
-	NodeList     []NodeImpl
+	NodeList     []*NodeImpl
 
 	BatteryCharges []float32
 	BatteryLosses  []float32
@@ -175,7 +189,29 @@ type Params struct {
 	Height 			int
 	Server 			FusionCenter //Server object
 
+	MaxRaw 			float32
+	EdgeRaw 		float32
+	MaxADC 			float32
+	EdgeADC 		float32
+	ADCWidth 		float32
+	ADCOffset		float32
+
 
 	NodePositionMap			map[Tuple]*NodeImpl
+	ValidationThreshold	int
+	WindRegion [][]Coord
 
+	FineWidth 		int
+	FineHeight		int
+	FineScale		int
+	Scale 			int
+
+	DriftExplorer 	bool
+	NumNodeMovements 	int
+	MovementOffset 		int
+	MovementSize 		int
+
+	ReadingHistorySize	int
+	ServerRecal 	bool
+	MinDistance 	int
 }

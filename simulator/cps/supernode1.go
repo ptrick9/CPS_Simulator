@@ -44,7 +44,7 @@ func (n *Sn_one) UpdatePath() {
 	if n.NumDestinations == 0 {
 
 		//Creates a list of distances between points in the RoutePoints list
-		//The list contains Path types which contain the start and end index
+		//The list contains Path types which contain the start and end Index
 		//	of the path in RoutePoints and the distance between them
 		dist_list := make([]Path, 0)
 
@@ -67,7 +67,7 @@ func (n *Sn_one) UpdatePath() {
 
 		//Loops through the list of Paths between points of interest
 		//Finds the shortest distance between where the super node's current starting
-		//Saves the destination index to be the startinf point for the next iteration
+		//Saves the destination Index to be the startinf point for the next iteration
 		for len(dist_list) > 0 {
 			start := end
 			lowdist := float64(n.P.MaxX * n.P.MaxY) //1000.0

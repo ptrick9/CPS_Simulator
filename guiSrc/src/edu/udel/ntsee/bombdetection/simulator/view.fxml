@@ -55,16 +55,6 @@
                      </items>
                   </Menu>
                   <SeparatorMenuItem mnemonicParsing="false" />
-                  <MenuItem fx:id="menuItemZoomIn" mnemonicParsing="false" onAction="#onMenuItemZoomIn" text="Zoom In">
-                     <accelerator>
-                        <KeyCodeCombination alt="UP" code="PAGE_UP" control="DOWN" meta="UP" shift="UP" shortcut="UP" />
-                     </accelerator>
-                  </MenuItem>
-                  <MenuItem fx:id="menuItemZoomOut" mnemonicParsing="false" onAction="#onMenuItemZoomOut" text="Zoom Out">
-                     <accelerator>
-                        <KeyCodeCombination alt="UP" code="PAGE_DOWN" control="DOWN" meta="UP" shift="UP" shortcut="UP" />
-                     </accelerator>
-                  </MenuItem>
                   <MenuItem fx:id="menuItemZoomFit" mnemonicParsing="false" onAction="#onMenuItemZoomFit" text="Fit to Screen" />
                   <SeparatorMenuItem mnemonicParsing="false" />
                   <MenuItem fx:id="menuItemFullscreen" mnemonicParsing="false" onAction="#onMenuItemFullscreen" text="Fullscreen">
@@ -74,11 +64,12 @@
                   </MenuItem>
                </items>
             </Menu>
-            <Menu mnemonicParsing="false" text="Legend">
+            <Menu mnemonicParsing="false" text="Sidebar">
                <items>
                   <CheckMenuItem fx:id="checkMenuLegendEnabled" mnemonicParsing="false" selected="true" text="Enabled" />
                   <CheckMenuItem fx:id="checkMenuLegendNode" mnemonicParsing="false" selected="true" text="Node" />
                   <CheckMenuItem fx:id="checkMenuLegendSuperNode" mnemonicParsing="false" selected="true" text="Super Node" />
+                  <CheckMenuItem fx:id="checkMenuLegendAdHocLeader" mnemonicParsing="false" selected="true" text="Ad Hoc Leader Node" />
                   <CheckMenuItem fx:id="checkMenuLegendBattery" mnemonicParsing="false" selected="true" text="Battery" />
                   <CheckMenuItem fx:id="checkMenuLegendSensorGrid" mnemonicParsing="false" selected="true" text="Sensor Grid" />
                </items>
@@ -144,6 +135,9 @@
                   <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                </padding>
                <children>
+                  <Label text="Mouse" underline="true" />
+                  <Label fx:id="labelMousePosition" text="Simulation Position - N/A" />
+                  <Label fx:id="labelMouseGridPosition" text="Sensor Reading Position - N/A" textAlignment="JUSTIFY" />
                   <Label text="Legend" underline="true" />
                </children>
             </VBox>

@@ -237,3 +237,9 @@ func Dist(p1, p2 Tuple) float64 {
 	y_dist := math.Abs(float64(p2.Y - p1.Y))
 	return math.Sqrt(float64(math.Pow(x_dist, 2) + math.Pow(y_dist, 2)))
 }
+
+func FloatDist(p1, p2 Tuple32) float64 {
+	x_dist := math.Abs(float64(p2.X - p1.X))
+	y_dist := math.Abs(float64(p2.Y - p1.Y))
+	return math.Sqrt(float64(math.Pow(x_dist, 2) + math.Pow(y_dist, 2)))
+}

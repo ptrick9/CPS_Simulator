@@ -25,6 +25,10 @@ type FusionCenter struct {
 	Times 			map[int]bool
 	LastRecal		[]int
 	Sch		*Scheduler
+	Readings		map[Key][]Reading
+	CheckedIds		[]int
+	NodeDataList	[]NodeData
+	Validators 		map[int]int //stores validators...id -> time  latest time for id is stored
 }
 
 //Init initializes the values for the server
@@ -40,15 +44,42 @@ func (s *FusionCenter) Init(){
 
 	s.LastRecal = make([]int, s.P.TotalNodes) //s.P.TotalNodes
 	s.Sch = &Scheduler{s.P, s.R, nil}
+
+	s.Readings = make(map[Key][]Reading)
+	s.CheckedIds = make([]int, 0)
+	s.NodeDataList = make([]NodeData, s.P.TotalNodes)
+	s.Validators = make(map[int]int)
+}
+
+func (s *FusionCenter) MakeNodeData() {
+	for i := range s.P.NodeList {
+		s.NodeDataList[i] = NodeData{i, s.P.NodeList[i].S0,s.P.NodeList[i].S1, s.P.NodeList[i].S2,
+			s.P.NodeList[i].E0, s.P.NodeList[i].E1, s.P.NodeList[i].E2, s.P.NodeList[i].ET1,
+			s.P.NodeList[i].ET2, []int{ 0 }, []int{ 0 }}
+	}
 }
 
 //Reading packages the data sent by a node
 type Reading struct {
 	SensorVal float64
-	Xpos      int
-	YPos      int
+	Xpos      float32
+	YPos      float32
 	Time      int //Time represented by iteration number
 	Id        int //Node Id number
+}
+
+//Key for dictionary of sensor readings
+type Key struct {
+	X 		int
+	Y		int
+	Time 	int
+}
+
+type NodeData struct {
+	Id 			int
+	S0, S1, S2, E0, E1, E2, ET1, ET2 float64
+	RecalTimes		[]int
+	SelfRecalTimes  []int
 }
 
 //MakeGrid initializes a grid of Square objects according to the size of the map
@@ -112,7 +143,9 @@ func (s FusionCenter) CheckDetections() {
 				xLoc := (x * s.P.XDiv) + int(s.P.XDiv/2)
 				yLoc := (y * s.P.YDiv) + int(s.P.YDiv/2)
 				s.P.CenterCoord = Coord{X: xLoc, Y: yLoc}
-				s.Sch.AddRoutePoint(s.P.CenterCoord)
+				if s.P.SuperNodes {
+					s.Sch.AddRoutePoint(s.P.CenterCoord)
+				}
 				s.P.Grid[x][y].HasDetected = true
 			}
 
@@ -123,7 +156,9 @@ func (s FusionCenter) CheckDetections() {
 				xLoc := (x * s.P.XDiv) + int(s.P.XDiv/2)
 				yLoc := (y * s.P.YDiv) + int(s.P.YDiv/2)
 				s.P.CenterCoord = Coord{X: xLoc, Y: yLoc}
-				s.Sch.AddRoutePoint(s.P.CenterCoord)
+				if s.P.SuperNodes {
+					s.Sch.AddRoutePoint(s.P.CenterCoord)
+				}
 				s.P.Grid[x][y].HasDetected = true
 			}
 
@@ -226,11 +261,11 @@ func (s* FusionCenter) NodesInRadius(curNode * NodeImpl, radius int)(map[Tuple]*
 				continue
 			}
 
-			var testX = curNode.X + col					//test X value
-			var testY = curNode.Y + row					//test Y value
+			var testX = int(curNode.X) + col					//test X Value
+			var testY = int(curNode.Y) + row					//test Y Value
 			var testTup = Tuple{testX, testY}	//create Tuple from test X and Y values
-			if(testX < gridMaxX && testX >= 0){			//if the testX value is on the grid, continue
-				if(testY < gridMaxY && testY >= 0){		//if the testY value is on the grid, continue
+			if(testX < gridMaxX && testX >= 0){			//if the testX Value is on the grid, continue
+				if(testY < gridMaxY && testY >= 0){		//if the testY Value is on the grid, continue
 					if(s.P.NodePositionMap[testTup] != nil){	//if the test position has a Node, continue
 						nodesInRadius[testTup] = s.P.NodePositionMap[testTup]	//add the node to the nodesInRadius map
 					}
@@ -241,21 +276,23 @@ func (s* FusionCenter) NodesInRadius(curNode * NodeImpl, radius int)(map[Tuple]*
 	return nodesInRadius
 }
 
+
+//--XY ERROR?--
 //returns all of the nodes dist squares away from the current node
 func (s* FusionCenter) NodesWithinDistance(curNode * NodeImpl, dist int)(map[Tuple]*NodeImpl){
 	var gridMaxX = s.P.MaxX;
 	var gridMaxY = s.P.MaxY;
-	var nodesWithinDist = s.P.Grid[curNode.Y][curNode.X].NodesInSquare //initialize to nodes in current square
+	var nodesWithinDist = s.P.Grid[int(curNode.Y)][int(curNode.X)].NodesInSquare //initialize to nodes in current square
 	var negDist = -1*dist;
 
 	for row := negDist; row<=dist; row++ {
 		for col := negDist; col <= dist; col++ {
 
-			var testX = s.P.Grid[curNode.Y][curNode.X].X + col		//X value of test Square
-			var testY = s.P.Grid[curNode.Y][curNode.X].Y + row		//Y value of test Square
+			var testX = s.P.Grid[int(curNode.Y)][int(curNode.X)].X + col		//X Value of test Square
+			var testY = s.P.Grid[int(curNode.Y)][int(curNode.X)].Y + row		//Y Value of test Square
 
-			if(testX < gridMaxX && testX >= 0){			//if the testX value is on the grid, continue
-				if(testY < gridMaxY && testY >= 0){		//if the testY value is on the grid, continue
+			if(testX < gridMaxX && testX >= 0){			//if the testX Value is on the grid, continue
+				if(testY < gridMaxY && testY >= 0){		//if the testY Value is on the grid, continue
 					var testSquare =  s.P.Grid[testY][testX] 			//create Square from test X and Y values
 					if(testSquare != nil){					//if the test Square is not null, continue
 						for ind,val := range testSquare.NodesInSquare{	//iterate through nodes in square map adding each to the
@@ -348,7 +385,7 @@ func (s FusionCenter) MakeSuperNodes() {
 		x_val, y_val := starting_locs[i].X, starting_locs[i].Y
 		nodeCenter := Coord{X: x_val, Y: y_val}
 
-		s.Sch.SNodeList[i] = &Sn_zero{s.P, s.R,&Supern{s.P,s.R,&NodeImpl{X: x_val, Y: y_val, Id: i}, 1,
+		s.Sch.SNodeList[i] = &Sn_zero{s.P, s.R,&Supern{s.P,s.R,&NodeImpl{X: float32(x_val), Y: float32(y_val), Id: i}, 1,
 			1, s.P.SuperNodeRadius, s.P.SuperNodeRadius, 0, snode_points, snode_path,
 			nodeCenter, 0, 0, 0, 0, 0, all_points}}
 
@@ -364,7 +401,7 @@ func (s FusionCenter) GetSquareAverage(tile *Square) float32 {
 
 //UpdateSquareAvg takes a node reading and updates the parameters in the Square the node took the reading in
 func (s FusionCenter) UpdateSquareAvg(rd Reading) {
-	tile := s.P.Grid[rd.Xpos/s.P.XDiv][rd.YPos/s.P.YDiv]
+	tile := s.P.Grid[int(rd.Xpos)/s.P.XDiv][int(rd.YPos)/s.P.YDiv]
 	tile.TakeMeasurement(float32(rd.SensorVal))
 }
 
@@ -381,25 +418,66 @@ func (s FusionCenter) UpdateSquareNumNodes() {
 
 	//Count number of nodes in each square
 	for i:=0; i < len(s.P.NodeList); i++ {
-		node = s.P.NodeList[i]
+		node = *s.P.NodeList[i]
 		if node.Valid {
-			s.P.Grid[node.X/s.P.XDiv][node.Y/s.P.YDiv].ActualNumNodes += 1
+			s.P.Grid[int(node.X)/s.P.XDiv][int(node.Y)/s.P.YDiv].ActualNumNodes += 1
 		}
 	}
 }
 
-//Send is called by a node to deliver a reading to the server.
-// Statistics are calculated each time data is received
-func (s *FusionCenter) Send(n *NodeImpl, rd Reading) {
-	//fmt.Printf("Sending to server:\nTime: %v, ID: %v, X: %v, Y: %v, Sensor Value: %v\n", rd.Time, rd.Id, rd.Xpos, rd.YPos, rd.SensorVal)
-	s.Times = make(map[int]bool, 0)
-	if s.Times[rd.Time] {
+func (s *FusionCenter) CleanupReadings() {
+	if s.P.CurrentTime / 1000 > s.P.ReadingHistorySize{
+		/*for r := range s.Readings {
+			if r.Time < (rd.Time / 1000 - s.P.ReadingHistorySize) {
+				delete(s.Readings, r)
+			}
+		}*/
+		t := (s.P.CurrentTime / 1000) - s.P.ReadingHistorySize - 4
+		//for t := (s.P.CurrentTime / 1000) - s.P.ReadingHistorySize - 4; t < (s.P.CurrentTime / 1000) - s.P.ReadingHistorySize - 1; t++ {
+			for x := 0; x < s.P.Width/s.P.XDiv; x++ {
+				for y := 0; y < s.P.Height/s.P.YDiv; y++ {
+					_, ok := s.Readings[Key{x, y, t}]
+					if ok {
+						//fmt.Printf("Deleting time %v\n", t)
+						delete(s.Readings, Key{x, y, t})
+					}
+				}
+			}
+		//}
 
-	} else {
-		s.Times[rd.Time] = true
+		for nodeId, time := range s.Validators{
+			if (s.P.CurrentTime/1000) - time > s.P.ReadingHistorySize {
+				//this id is too old and must be deleted. We must also make a not that THIS is a false negative
+				delete(s.Validators, nodeId)
+				fmt.Fprintf(s.P.DetectionFile, "FN Window T: %v CT: %v ID: %v\n", time, (s.P.CurrentTime)/1000, nodeId)
+			}
+		}
+	}
+}
+
+
+//Send is called by a node to deliver a reading to the server.
+// Statistics are calculated each Time data is received
+func (s *FusionCenter) Send(n *NodeImpl, rd Reading, tp bool) {
+	//fmt.Printf("Sending to server:\nTime: %v, ID: %v, X: %v, Y: %v, Sensor Value: %v\n", rd.Time, rd.Id, rd.Xpos, rd.YPos, rd.SensorVal)
+
+	if rd.SensorVal > s.P.DetectionThreshold {
+
+		_, ok := s.Readings[Key{int(rd.Xpos / float32(s.P.XDiv)), int(rd.YPos / float32(s.P.YDiv)), rd.Time / 1000}]
+		if ok {
+			s.Readings[Key{int(rd.Xpos / float32(s.P.XDiv)), int(rd.YPos / float32(s.P.YDiv)), rd.Time / 1000}] = append(s.Readings[Key{int(rd.Xpos / float32(s.P.XDiv)), int(rd.YPos / float32(s.P.YDiv)), rd.Time / 1000}], rd)
+		} else {
+			s.Readings[Key{int(rd.Xpos / float32(s.P.XDiv)), int(rd.YPos / float32(s.P.YDiv)), rd.Time / 1000}] = []Reading{rd}
+		}
+		s.Times = make(map[int]bool, 0)
+		if s.Times[rd.Time] {
+
+		} else {
+			s.Times[rd.Time] = true
+		}
 	}
 
-	for len(s.TimeBuckets) <= rd.Time {
+	/*for len(s.TimeBuckets) <= rd.Time {
 		s.TimeBuckets = append(s.TimeBuckets, make([]Reading,0))
 	}
 	currBucket := (s.TimeBuckets)[rd.Time]
@@ -407,20 +485,66 @@ func (s *FusionCenter) Send(n *NodeImpl, rd Reading) {
 		(s.TimeBuckets)[rd.Time] = append(currBucket, rd)
 	} else {
 		(s.TimeBuckets)[rd.Time] = append((s.TimeBuckets)[rd.Time], rd) //s.TimeBuckets[rd.Time] = []float64{rd.sensorVal}
-	}
+	}*/
 
 	s.UpdateSquareAvg(rd)
-	tile := s.P.Grid[rd.Xpos/s.P.XDiv][rd.YPos/s.P.YDiv]
+	tile := s.P.Grid[int(rd.Xpos)/s.P.XDiv][int(rd.YPos)/s.P.YDiv]
 	tile.LastReadingTime = rd.Time
 	tile.SquareValues += math.Pow(float64(rd.SensorVal-float64(tile.Avg)), 2)
-	if rd.SensorVal > (float64(s.GetSquareAverage(s.P.Grid[rd.Xpos/s.P.XDiv][rd.YPos/s.P.YDiv])) + s.P.CalibrationThresholdCM){ //Check if x over grid avg
-		n.Recalibrate()
-		s.LastRecal[n.Id] = s.P.Iterations_used
-		//fmt.Println(s.LastRecal)
+	if s.P.ServerRecal {
+		if rd.SensorVal > (float64(s.GetSquareAverage(s.P.Grid[int(rd.Xpos)/s.P.XDiv][int(rd.YPos)/s.P.YDiv])) + s.P.CalibrationThresholdCM) { //Check if x over grid avg
+			fmt.Fprintf(n.P.DriftExploreFile, "ID: %v T: %v In: %v CUR: %v NT: %v %v SERVRECAL\n", n.Id, n.P.CurrentTime, n.InitialSensitivity, n.Sensitivity, n.NodeTime, rd.SensorVal)
+			n.Recalibrate()
+			s.LastRecal[n.Id] = s.P.Iterations_used
+			//fmt.Println(s.LastRecal)
+		}
+	}
+
+	if rd.SensorVal > s.P.DetectionThreshold {
+		s.CheckedIds = make([]int, 0)
+		validations := 0
+		for t:= (s.P.CurrentTime / 1000) - s.P.ReadingHistorySize; t <= s.P.CurrentTime / 1000; t++ {
+			for x:= int((rd.Xpos - float32(s.P.DetectionDistance)) / float32(s.P.XDiv)); x < int((rd.Xpos + float32(s.P.DetectionDistance) )/ float32(s.P.XDiv)); x++ {
+				for y:= int((rd.YPos - float32(s.P.DetectionDistance)) / float32(s.P.YDiv)); y < int((rd.YPos + float32(s.P.DetectionDistance) )/ float32(s.P.YDiv)); y++ {
+					for r:= range s.Readings[Key{x,y,t}] {
+						currRead := s.Readings[Key{x,y,t}][r]
+						if FloatDist(Tuple32{currRead.Xpos, currRead.YPos}, Tuple32{rd.Xpos, rd.YPos}) < s.P.DetectionDistance {
+							if currRead.Id != rd.Id && !Is_in(currRead.Id, s.CheckedIds) && currRead.SensorVal > s.P.DetectionThreshold {
+								s.CheckedIds = append(s.CheckedIds, currRead.Id)
+								if tp {
+									s.Validators[rd.Id] = t
+								}
+								validations++
+							} else if currRead.SensorVal > s.P.DetectionThreshold && tp{
+								s.Validators[rd.Id] = t
+							}
+						}
+					}
+				}
+			}
+		}
+		if validations >= s.P.ValidationThreshold {
+			s.P.CenterCoord = Coord{X: int(rd.Xpos), Y: int(rd.YPos)}
+			if s.P.SuperNodes {
+				s.Sch.AddRoutePoint(s.P.CenterCoord)
+			}
+			if FloatDist(Tuple32{rd.Xpos, rd.YPos}, Tuple32{float32(s.P.B.X), float32(s.P.B.Y)}) > s.P.DetectionDistance {
+			} else {
+				if !s.P.DriftExplorer && tp{
+					s.P.FoundBomb = true
+				}
+			}
+
+			fmt.Fprintln(s.P.DetectionFile, fmt.Sprintf("Confirmation T: %v ID: %v %v/%v %v", rd.Time, rd.Id, validations, s.P.ValidationThreshold, s.CheckedIds))
+
+		} else {
+			fmt.Fprintln(s.P.DetectionFile, fmt.Sprintf("Rejection T: %v ID: %v %v/%v", rd.Time, rd.Id, validations, s.P.ValidationThreshold))
+
+		}
 	}
 }
 
-//CalcStats calculates the mean, standard deviation and variance of the entire area at one time
+//CalcStats calculates the mean, standard deviation and variance of the entire area at one Time
 func (s *FusionCenter) CalcStats() ([]float64, []float64, []float64) {
 	//fmt.Printf("Calculating stats for times: %v", s.times)
 	s.UpdateSquareNumNodes()
@@ -489,7 +613,7 @@ func (s FusionCenter) GetMedian(arr []float64) float64{
 	size := 0.0
 	median := 0.0
 	size = float64(len(arr))
-	//index := 0
+	//Index := 0
 	//Check if even
 	if int(size) % 2 == 0 {
 		median = (arr[int(size / 2.0)] + arr[int(size / 2.0 - 1)] ) / 2
@@ -540,12 +664,132 @@ func (s FusionCenter) PrintStats() {
 
 //PrintStatsFile outputs statistical and detection data to log files
 func (s FusionCenter) PrintStatsFile() {
-	fmt.Fprintln(s.P.ServerFile, "Mean at each time:\n", s.P.Server.Mean)
-	fmt.Fprintln(s.P.ServerFile, "Standard Deviations at each time:\n", s.P.Server.StdDev)
-	fmt.Fprintln(s.P.ServerFile, "Variance at each time:\n", s.P.Server.Variance)
+	var buffer bytes.Buffer
+	buffer.WriteString(fmt.Sprintf("Mean at each Time:%v\n", s.P.Server.Mean))
+	buffer.WriteString(fmt.Sprintf("Standard Deviations at each Time:%v\n", s.P.Server.StdDev))
+	buffer.WriteString(fmt.Sprintf("Variance at each Time:%v\n", s.P.Server.Variance))
+	fmt.Fprintln(s.P.ServerFile, buffer.String())
+	buffer.Reset()
+
+	for i:= range s.NodeDataList {
+		buffer.WriteString(fmt.Sprintf("ID%v,", s.NodeDataList[i].Id))
+		buffer.WriteString(fmt.Sprintf("E0%v,", s.NodeDataList[i].E0))
+		buffer.WriteString(fmt.Sprintf("E1%v,", s.NodeDataList[i].E1))
+		buffer.WriteString(fmt.Sprintf("E2%v,", s.NodeDataList[i].E2))
+		buffer.WriteString(fmt.Sprintf("ET1%v,", s.NodeDataList[i].ET1))
+		buffer.WriteString(fmt.Sprintf("ET2%v,", s.NodeDataList[i].ET2))
+		buffer.WriteString(fmt.Sprintf("S0%v,", s.NodeDataList[i].S0))
+		buffer.WriteString(fmt.Sprintf("S1%v,", s.NodeDataList[i].S1))
+		buffer.WriteString(fmt.Sprintf("S2%v,", s.NodeDataList[i].S2))
+		buffer.WriteString(fmt.Sprintf("RT%v,", s.NodeDataList[i].RecalTimes))
+		buffer.WriteString(fmt.Sprintf("SRT%v", s.NodeDataList[i].SelfRecalTimes))
+		buffer.WriteString(fmt.Sprintln(""))
+	}
+	fmt.Fprintln(s.P.NodeDataFile, buffer.String())
+
 	fmt.Fprintf(s.P.DetectionFile, "Number of detections:%v\n", falsePositives + truePositives)
 	fmt.Fprintf(s.P.DetectionFile, "Number of false positives:%v\n", falsePositives)
 	fmt.Fprintf(s.P.DetectionFile, "Number of true positives:%v\n", truePositives)
 	fmt.Fprintf(s.P.DetectionFile, "Last Recalibration times:%v\n", s.LastRecal)
 
+}
+
+//Intersects returns true if line segment 'p1q1' and 'p2q2' intersect.
+func Intersects(p1, q1, p2, q2 Coord) bool {
+	//Orientations
+	o1 := orientation(p1, q1, p2)
+	o2 := orientation(p1, q1, q2)
+	o3 := orientation(p2, q2, p1)
+	o4 := orientation(p2, q2, q1)
+
+	if o1 != o2 && o3 != o4 {
+		return true
+	}
+	if o1 == 0 && onSegment(p1, p2, q1) {
+		return true
+	}
+
+	// p1, q1 and q2 are colinear and q2 lies on segment p1q1
+	if o2 == 0 && onSegment(p1, q2, q1) {
+		return true
+	}
+
+	// p2, q2 and p1 are colinear and p1 lies on segment p2q2
+	if o3 == 0 && onSegment(p2, p1, q2) {
+		return true
+	}
+
+	// p2, q2 and q1 are colinear and q1 lies on segment p2q2
+	if o4 == 0 && onSegment(p2, q1, q2) {
+		return true
+	}
+
+	return false
+}
+
+func orientation(p, q, r Coord) int {
+	val := (q.Y - p.Y) * (r.X - q.X) - (q.X - p.X) * (r.Y - q.Y)
+	//colinear
+	if val == 0 {
+		return 0
+	} else if val > 0 { //clockwise
+		return 1
+	} else { //counterclockwise
+		return 2
+	}
+}
+
+func onSegment(p, q, r Coord) bool {
+	if q.X <= max(p.X, r.X) && q.X >= min(p.X, r.X) && q.Y <= max(p.Y, r.Y) && q.Y >= min(p.Y, r.Y){
+		return true
+	}
+
+	return false
+}
+
+func min(num1, num2 int) int{
+	if num1 < num2 {
+		return num1
+	} else {
+		return  num2
+	}
+}
+
+func max(num1, num2 int) int{
+	if num1 > num2 {
+		return num1
+	} else {
+		return  num2
+	}
+}
+
+func (s *FusionCenter) CheckFalsePosWind(n *NodeImpl) int {
+	sumX := 0
+	sumY := 0
+
+	if len(s.P.WindRegion[s.P.TimeStep]) == 0{
+		return -1
+	}
+	for i:= 0; i < len(s.P.WindRegion[s.P.TimeStep]); i++ {
+		sumX += transformX(s.P.WindRegion[s.P.TimeStep][i].X, s.P)  //get transformed X
+		sumY += transformY(s.P.WindRegion[s.P.TimeStep][i].Y, s.P)  //get transformed Y
+	}
+
+	//calculate the center
+	center := Coord{X: sumX/len(s.P.WindRegion[s.P.TimeStep]), Y: sumY/len(s.P.WindRegion[s.P.TimeStep])}
+	tmp := s.P.WindRegion[s.P.TimeStep][0]
+	for i:= 1; i < len(s.P.WindRegion[s.P.TimeStep]); i++ {
+		//fmt.Printf("Checking if [ %v, %v ] intersects with [ %v, %v ]\n", tmp, s.P.WindRegion[s.P.TimeStep][i], center, n.GetLocCoord())
+		if Intersects(transformCoord(tmp, s.P), transformCoord(s.P.WindRegion[s.P.TimeStep][i], s.P), transformCoord(center, s.P), transformCoord(n.GetLocCoord(), s.P)) {
+			//fmt.Println("True!")
+			return 1
+		}
+		tmp = s.P.WindRegion[s.P.TimeStep][i]
+	}
+	//fmt.Printf("Checking if [ %v, %v ] intersects with [ %v, %v ]\n", tmp, s.P.WindRegion[s.P.TimeStep][0], center, n.GetLocCoord())
+	if Intersects(transformCoord(tmp, s.P), transformCoord(s.P.WindRegion[s.P.TimeStep][0], s.P), transformCoord(center, s.P), transformCoord(n.GetLocCoord(), s.P)) {
+		//fmt.Println("True!")
+		return 1
+	}
+	return 0
 }
