@@ -968,6 +968,7 @@ func CalculateFineADCSetting(reading float64, x, y float32, time int, p *Params)
 	//fmt.Println(p.EdgeRaw)
 	p.MaxADC = 4095
 	p.EdgeADC = 3
+	p.MaxRaw = 12285 //////CHANGE
 	if p.DriftExplorer {
 		p.ADCWidth = (p.MaxRaw) / p.MaxADC
 	} else {

@@ -14,6 +14,7 @@ from zipfile import *
 #basePath = "C:/Users/patrick/Downloads/fineGrainedBomb/fineGrainedBomb/"
 #basePath = "C:/Users/patrick/Downloads/driftExploreHullBombMove/"
 basePath = "C:/Users/patrick/Downloads/driftExplorerNoBomb/"
+basePath = "C:/Users/patrick/Downloads/driftExplorerNoBomb1200/"
 #basePath = "C:/Users/patrick/Downloads/driftTest/"
 figurePath = "C:/Users/patrick/Dropbox/Patrick/udel/SUMMER2018/git_simulator/CPS_Simulator/driftExploreCommBomb/"
 
@@ -137,7 +138,7 @@ def dataStorage(wq, order, variation, total):
         data = {}
         job = wq.get()
         try:
-            with open('driftExploreNoBomb23.pickle', 'rb') as handle:
+            with open('driftExploreNoBomb1200.pickle', 'rb') as handle:
                 data = pickle.load(handle)# protocol=pickle.HIGHEST_PROTOCOL)
                 data = data['data']
                 handle.close()
@@ -157,7 +158,7 @@ def dataStorage(wq, order, variation, total):
         dat = {'data': data, 'order': order, 'var': variation}
         fail = True
         try:
-            f = open('driftExploreNoBomb23.pickle', 'wb')
+            f = open('driftExploreNoBomb1200.pickle', 'wb')
             pickle.dump(dat, f)
             f.close()
             fail = False
@@ -254,7 +255,7 @@ if __name__ == '__main__':
     for run in uniqueRuns:
         rq.put([run, order])
 
-    p = multiprocessing.Pool(3, generateData, (rq,wq,))
+    p = multiprocessing.Pool(2, generateData, (rq,wq,))
     p = multiprocessing.Pool(1, dataStorage, (wq,order, shiftingParameters, len(uniqueRuns),))
 
     rq.join()

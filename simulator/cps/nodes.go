@@ -869,9 +869,9 @@ func (curNode *NodeImpl) report(rawConc float64) {
 	S0, S1, S2, E0, E1, E2, ET1, ET2 := curNode.GetParams()
 	sError := (S0 + E0) + (S1+E1)*math.Exp(-float64(((curNode.P.CurrentTime/1000)-curNode.NodeTime))/(curNode.P.Tau1+ET1)) + (S2+E2)*math.Exp(-float64(((curNode.P.CurrentTime/1000)-curNode.NodeTime))/(curNode.P.Tau2+ET2))
 	curNode.Sensitivity = S0 + (S1)*math.Exp(-float64(((curNode.P.CurrentTime/1000)-curNode.NodeTime))/curNode.P.Tau1) + (S2)*math.Exp(-float64(((curNode.P.CurrentTime/1000)-curNode.NodeTime))/curNode.P.Tau2)
-	sNoise := rand.NormFloat64()*float64(curNode.P.ADCWidth)*curNode.P.ErrorModifierCM + float64(rawConc)*sError
+	//sNoise := rand.NormFloat64()*float64(curNode.P.ADCWidth)*curNode.P.ErrorModifierCM + float64(rawConc)*sError
 	//sNoise := rand.NormFloat64()*100*curNode.P.ErrorModifierCM + float64(rawConc)*sError
-
+	sNoise := rand.NormFloat64()*math.Sqrt(3.0) + float64(rawConc)*sError
 	errorDist := sNoise / curNode.Sensitivity //this is the node's actual reading with error
 	clean := float64(rawConc) / curNode.Sensitivity
 

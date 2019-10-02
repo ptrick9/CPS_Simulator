@@ -1,23 +1,122 @@
 /*
+-logNodes=false
+-logPosition=true
+-logGrid=false
+-logEnergy=false
+-regionRouting=true
+-noEnergy=true
+-csvMove=true
+-zipFiles=true
+-windRegionPath=hull_fine_bomb_9x9.txt
 -inputFileName=Scenario_3.txt
 -imageFileName=marathon_street_map.png
--logPosition=true
--logGrid=true
--logEnergy=true
--logNodes=false
--noEnergy=true
--sensorPath=C:/Users/patrick/Dropbox/Patrick/udel/SUMMER2019/GitSimulator/smoothed_marathon.csv
+-stimFileName=circle_0.txt
+-outRoutingStatsName=routingStats.txt
+-iterations=11000
+-superNodes=false
+-doOptimize=false
+-movementPath=C:/Users/patrick/Downloads/marathon_movement/marathon2_2000_3.scb
+-totalNodes=2000
+-detectionThreshold=5
+-detectionDistance=6
+-sittingStopThreshold=5
+-negativeSittingStopThreshold=-10
+-GridCapacityPercentage=0.900000
+-naturalLoss=0.005000
+-sensorSamplingLoss=0.001000
+-GPSSamplingLoss=0.005000
+-serverSamplingLoss=0.010000
+-SamplingLossBTCM=0.000100
+-SamplingLossWifiCM=0.001000
+-SamplingLoss4GCM=0.005000
+-SamplingLossAccelCM=0.001000
+-thresholdBatteryToHave=30
+-thresholdBatteryToUse=10
+-movementSamplingSpeed=20
+-movementSamplingPeriod=20
+-maxBufferCapacity=25
+-sensorSamplingPeriod=1000
+-GPSSamplingPeriod=1000
+-serverSamplingPeriod=1000
+-nodeStoredSamples=10
+-GridStoredSamples=10
+-errorMultiplier=0.60000
+-numSuperNodes=4
+-RecalibrationThreshold=3
+-StandardDeviationThreshold=1.700000
+-SuperNodeSpeed=3
 -SquareRowCM=60
 -SquareColCM=320
--csvMove=true
--movementPath=marathon_2k.txt
--iterations=1000
--csvSensor=true
--detectionThreshold=5
--superNodes=false
--detectionDistance=6
--cpuprofile=event
+-validationThreshold=2
+-serverRecal=true
+-driftExplorer=true
+-commandBomb=false
+-fineSensorPath=C:/Users/patrick/Dropbox/Patrick/udel/SUMMER2019/GitSimulator/fine_bomb9x9.csv
+-csvSensor=false
+-OutputFileName=C:/Users/patrick/Downloads/testFolder/
+-detectionWindow=59
+-moveSize=4000
 */
+
+/*
+-logNodes=false
+-logPosition=true
+-logGrid=false
+-logEnergy=false
+-regionRouting=true
+-noEnergy=true
+-csvMove=true
+-zipFiles=true
+-windRegionPath=hull_fine_bomb_9x9.txt
+-inputFileName=Scenario_4.txt
+-imageFileName=C:/Users/patrick/Downloads/fireflyEdits/Firefly.png
+-stimFileName=circle_0.txt
+-outRoutingStatsName=routingStats.txt
+-iterations=11000
+-superNodes=false
+-doOptimize=false
+-movementPath=C:/Users/patrick/Downloads/fireflyEdits/firefly.scb
+-totalNodes=1000
+-detectionThreshold=5
+-detectionDistance=6
+-sittingStopThreshold=5
+-negativeSittingStopThreshold=-10
+-GridCapacityPercentage=0.900000
+-naturalLoss=0.005000
+-sensorSamplingLoss=0.001000
+-GPSSamplingLoss=0.005000
+-serverSamplingLoss=0.010000
+-SamplingLossBTCM=0.000100
+-SamplingLossWifiCM=0.001000
+-SamplingLoss4GCM=0.005000
+-SamplingLossAccelCM=0.001000
+-thresholdBatteryToHave=30
+-thresholdBatteryToUse=10
+-movementSamplingSpeed=20
+-movementSamplingPeriod=20
+-maxBufferCapacity=25
+-sensorSamplingPeriod=1000
+-GPSSamplingPeriod=1000
+-serverSamplingPeriod=1000
+-nodeStoredSamples=10
+-GridStoredSamples=10
+-errorMultiplier=0.60000
+-numSuperNodes=4
+-RecalibrationThreshold=3
+-StandardDeviationThreshold=1.700000
+-SuperNodeSpeed=3
+-SquareRowCM=372
+-SquareColCM=288
+-validationThreshold=2
+-serverRecal=true
+-driftExplorer=true
+-commandBomb=false
+-fineSensorPath=C:/Users/patrick/Dropbox/Patrick/udel/SUMMER2019/GitSimulator/fine_bomb9x9.csv
+-csvSensor=false
+-OutputFileName=C:/Users/patrick/Downloads/testFolder/
+-detectionWindow=59
+-moveSize=4000
+ */
 
 
 
@@ -135,9 +234,9 @@ func main() {
 		p.Server.MakeSuperNodes()
 	}
 
-	cps.GenerateRouting(p, r)
+	//cps.GenerateRouting(p, r)
 
-	cps.FlipSquares(p, r)
+	//cps.FlipSquares(p, r)
 
 	//Defaults to false
 
