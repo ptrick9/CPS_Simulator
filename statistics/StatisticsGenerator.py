@@ -14,7 +14,7 @@ from zipfile import *
 #basePath = "C:/Users/patrick/Downloads/fineGrainedBomb/fineGrainedBomb/"
 #basePath = "C:/Users/patrick/Downloads/driftExploreHullBombMove/"
 basePath = "C:/Users/patrick/Downloads/driftExplorerNoBomb/"
-basePath = "C:/Users/patrick/Downloads/driftExplorerNoBomb1200/"
+basePath = "C:/Users/patrick/Downloads/driftExplorerBombADC/"
 #basePath = "C:/Users/patrick/Downloads/driftTest/"
 figurePath = "C:/Users/patrick/Dropbox/Patrick/udel/SUMMER2018/git_simulator/CPS_Simulator/driftExploreCommBomb/"
 
@@ -25,6 +25,9 @@ IGNORE = ['movementPath', 'bombX', 'bombY']
 ZIP = True
 
 data = {}
+
+
+pickleName = "driftExplorerBombADCtest"
 
 
 def buildDetectionList(basePath, runs):
@@ -39,6 +42,8 @@ def buildDetectionList(basePath, runs):
 def getDetections(basePath, run):
     return BuildDetections("%s%s" % (basePath, run))
 
+def getDistance(basePath, run):
+    return buildBetterDistance("%s%s" % (basePath, run))
 
 def determineDifferences(basePath, runs):
     params = {}
@@ -85,7 +90,7 @@ def generateData(rq, wq):
         print(job)
         p = getParameters("%s%s" % (basePath, file))
         det = getDetections(basePath, file)
-        firstDet = 20000
+        firstDet = -1
         try:
             firstDet = next(x for x in det if x.TPConf()).time
         except:
@@ -101,6 +106,11 @@ def generateData(rq, wq):
         run['# False Negatives Drift'] = sum([1 if x.FN() and x.Drift() and x.time < firstDet else 0 for x in det])
         run['# Total False Negatives'] = sum([1 if x.FN() else 0 for x in det])
         run['# Total False Positives'] = sum([1 if x.FP() else 0 for x in det])
+
+        dists = getDistance(basePath, file)
+
+        run['Distances'] = dists
+
 
         run['config'] = {}
         for k in p.keys():
@@ -138,7 +148,7 @@ def dataStorage(wq, order, variation, total):
         data = {}
         job = wq.get()
         try:
-            with open('driftExploreNoBomb1200.pickle', 'rb') as handle:
+            with open('%s.pickle' % (pickleName), 'rb') as handle:
                 data = pickle.load(handle)# protocol=pickle.HIGHEST_PROTOCOL)
                 data = data['data']
                 handle.close()
@@ -158,7 +168,7 @@ def dataStorage(wq, order, variation, total):
         dat = {'data': data, 'order': order, 'var': variation}
         fail = True
         try:
-            f = open('driftExploreNoBomb1200.pickle', 'wb')
+            f = open('%s.pickle' % (pickleName), 'wb')
             pickle.dump(dat, f)
             f.close()
             fail = False
@@ -255,7 +265,7 @@ if __name__ == '__main__':
     for run in uniqueRuns:
         rq.put([run, order])
 
-    p = multiprocessing.Pool(2, generateData, (rq,wq,))
+    p = multiprocessing.Pool(1, generateData, (rq,wq,))
     p = multiprocessing.Pool(1, dataStorage, (wq,order, shiftingParameters, len(uniqueRuns),))
 
     rq.join()

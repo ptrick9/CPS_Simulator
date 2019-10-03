@@ -27,6 +27,7 @@ class Detection:
         self.rawConc = rawConc
         self.cause = cause
 
+        '''
         if self.status == 'Rejection' and self.typ == 'TP':
             if self.ident in Nodes:
                 if self.time - Nodes[self.ident] > 60:
@@ -39,6 +40,7 @@ class Detection:
                 Nodes[self.ident] = self.time
                 self.typ = 'FN'
                 print("changed")
+        '''
 
     def __lt__(self, other):
         return self.time < other.time
@@ -177,6 +179,39 @@ def BuildDetections(basename):
 
     detections = sorted(detections)
     return detections
+
+
+def buildBetterDistance(basename):
+    zf = ZipFile(basename)
+    temp = os.path.split(basename)[1]
+    n = temp.split(".zip")[0]
+    f = zf.open("%s%s" % (n, "-distance.txt"))
+
+    #f = open('%s-simulatorOutput.txt' % basename)
+    lines = []
+    longBoi = ""
+    for line in f:
+        line = line.decode("utf-8")
+        lines.append(line.rstrip())
+
+    longBoi = ' '.join(lines)
+    regexTime = r"ID:[ ]*(?P<ident>\d+)[ ]*T:[ ]*(?P<time>\d+)[ ]*D:[ ]*(?P<dist>\d+)"
+
+    approachTime = {}
+
+    distMatches = re.finditer(regexTime, longBoi, re.MULTILINE)
+
+    for matchNum, match in enumerate(distMatches, start=1):
+        d = int(match.group('dist'))
+        t = int(match.group('time'))
+
+        if d in approachTime:
+            if t < approachTime[d]:
+                approachTime[d] = t
+        else:
+            approachTime[d] = t
+
+    return approachTime
 
 
 def buildApproachDistances(basename, maxDistance, granularity):
