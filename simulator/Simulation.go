@@ -490,8 +490,9 @@ func main() {
 		}
 	}
 
-
-	PrintNodeBatteryOverTimeFast(p)
+	if p.EnergyPrintCM {
+		PrintNodeBatteryOverTimeFast(p)
+	}
 
 	p.PositionFile.Seek(0, 0)
 	fmt.Fprintln(p.PositionFile, "Image:", p.ImageFileNameCM)
