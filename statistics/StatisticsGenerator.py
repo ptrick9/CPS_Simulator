@@ -14,7 +14,7 @@ from zipfile import *
 #basePath = "C:/Users/patrick/Downloads/fineGrainedBomb/fineGrainedBomb/"
 #basePath = "C:/Users/patrick/Downloads/driftExploreHullBombMove/"
 basePath = "C:/Users/patrick/Downloads/driftExplorerNoBomb/"
-basePath = "C:/Users/patrick/Downloads/driftExplorerBombADC/"
+basePath = "C:/Users/patrick/Downloads/driftExplorerNoBombADC/"
 #basePath = "C:/Users/patrick/Downloads/driftTest/"
 figurePath = "C:/Users/patrick/Dropbox/Patrick/udel/SUMMER2018/git_simulator/CPS_Simulator/driftExploreCommBomb/"
 
@@ -27,7 +27,7 @@ ZIP = True
 data = {}
 
 
-pickleName = "driftExplorerBombADCtest"
+pickleName = "driftExplorerNoBombADCtest"
 
 
 def buildDetectionList(basePath, runs):
@@ -265,7 +265,7 @@ if __name__ == '__main__':
     for run in uniqueRuns:
         rq.put([run, order])
 
-    p = multiprocessing.Pool(1, generateData, (rq,wq,))
+    p = multiprocessing.Pool(3, generateData, (rq,wq,))
     p = multiprocessing.Pool(1, dataStorage, (wq,order, shiftingParameters, len(uniqueRuns),))
 
     rq.join()

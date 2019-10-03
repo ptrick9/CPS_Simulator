@@ -29,6 +29,8 @@ type FusionCenter struct {
 	CheckedIds		[]int
 	NodeDataList	[]NodeData
 	Validators 		map[int]int //stores validators...id -> time  latest time for id is stored
+	NodeSquares 	map[int]Tuple  //store what square a node is in
+	SquarePop  		map[Tuple][]int //store nodes in square
 }
 
 //Init initializes the values for the server
@@ -49,6 +51,8 @@ func (s *FusionCenter) Init(){
 	s.CheckedIds = make([]int, 0)
 	s.NodeDataList = make([]NodeData, s.P.TotalNodes)
 	s.Validators = make(map[int]int)
+	s.NodeSquares = make(map[int]Tuple)
+	s.SquarePop = make(map[Tuple][]int)
 }
 
 func (s *FusionCenter) MakeNodeData() {
@@ -455,11 +459,64 @@ func (s *FusionCenter) CleanupReadings() {
 	}
 }
 
+func pos(value int, array []int) int {
+	for p, v := range array {
+		if (v == value) {
+			return p
+		}
+	}
+	return -1
+}
+
+func remove(s []int, i int) []int {
+	s[i] = s[0]
+	return s[1:]
+}
+
 
 //Send is called by a node to deliver a reading to the server.
 // Statistics are calculated each Time data is received
 func (s *FusionCenter) Send(n *NodeImpl, rd Reading, tp bool) {
 	//fmt.Printf("Sending to server:\nTime: %v, ID: %v, X: %v, Y: %v, Sensor Value: %v\n", rd.Time, rd.Id, rd.Xpos, rd.YPos, rd.SensorVal)
+
+
+	//NodeSquares 	map[int]Tuple  //store what square a node is in
+	//SquarePop  		map[Tuple][]int //store nodes in square
+
+	v, ok := s.NodeSquares[n.Id] //check if node has been recorded before
+	newSquare := Tuple{int(rd.Xpos / float32(s.P.XDiv)), int(rd.YPos / float32(s.P.YDiv))}
+	if ok { //node has been recorded before
+		if v == newSquare { //no changes to make
+
+		} else { //node has changed squares, need to update square pop
+			elements := s.SquarePop[v]
+			ind := pos(n.Id, elements)
+			s.SquarePop[v] = remove(elements, ind)
+
+			_, ok = s.SquarePop[newSquare] //check if square exists
+			if ok {//exists, so just append
+				s.SquarePop[newSquare] = append(s.SquarePop[newSquare], n.Id) //add id to new square
+			} else {//does not exist, create
+				s.SquarePop[newSquare] = []int{n.Id}
+			}
+			s.NodeSquares[n.Id] = newSquare //update nodes square log
+		}
+	} else {
+		_, ok = s.SquarePop[newSquare] //check if square exists
+		if ok {//exists, so just append
+			s.SquarePop[newSquare] = append(s.SquarePop[newSquare], n.Id) //add id to new square
+		} else {//does not exist, create
+			s.SquarePop[newSquare] = []int{n.Id}
+		}
+		s.NodeSquares[n.Id] = newSquare //update nodes square log
+	}
+
+	// add node to correct square
+
+
+
+
+
 
 	if rd.SensorVal > s.P.DetectionThreshold {
 
@@ -477,15 +534,7 @@ func (s *FusionCenter) Send(n *NodeImpl, rd Reading, tp bool) {
 		}
 	}
 
-	/*for len(s.TimeBuckets) <= rd.Time {
-		s.TimeBuckets = append(s.TimeBuckets, make([]Reading,0))
-	}
-	currBucket := (s.TimeBuckets)[rd.Time]
-	if len(currBucket) != 0 { //currBucket != nil
-		(s.TimeBuckets)[rd.Time] = append(currBucket, rd)
-	} else {
-		(s.TimeBuckets)[rd.Time] = append((s.TimeBuckets)[rd.Time], rd) //s.TimeBuckets[rd.Time] = []float64{rd.sensorVal}
-	}*/
+
 
 	s.UpdateSquareAvg(rd)
 	tile := s.P.Grid[int(rd.Xpos)/s.P.XDiv][int(rd.YPos)/s.P.YDiv]
@@ -523,7 +572,13 @@ func (s *FusionCenter) Send(n *NodeImpl, rd Reading, tp bool) {
 				}
 			}
 		}
-		if validations >= s.P.ValidationThreshold {
+
+		//if validations >= s.P.ValidationThreshold {
+		offset := math.Ceil(math.Log(float64(s.P.TotalNodes))/math.Log(10)/2)
+		//fmt.Println(offset)
+		neededValidators := int(offset) + int(math.Sqrt(float64(len(s.SquarePop[newSquare]))))
+		//fmt.Println(s.SquarePop[newSquare])
+		if validations >= neededValidators {
 			s.P.CenterCoord = Coord{X: int(rd.Xpos), Y: int(rd.YPos)}
 			if s.P.SuperNodes {
 				s.Sch.AddRoutePoint(s.P.CenterCoord)
@@ -535,10 +590,10 @@ func (s *FusionCenter) Send(n *NodeImpl, rd Reading, tp bool) {
 				}
 			}
 
-			fmt.Fprintln(s.P.DetectionFile, fmt.Sprintf("Confirmation T: %v ID: %v %v/%v %v", rd.Time, rd.Id, validations, s.P.ValidationThreshold, s.CheckedIds))
+			fmt.Fprintln(s.P.DetectionFile, fmt.Sprintf("Confirmation T: %v ID: %v %v/%v %v", rd.Time, rd.Id, validations, neededValidators, s.CheckedIds))
 
 		} else {
-			fmt.Fprintln(s.P.DetectionFile, fmt.Sprintf("Rejection T: %v ID: %v %v/%v", rd.Time, rd.Id, validations, s.P.ValidationThreshold))
+			fmt.Fprintln(s.P.DetectionFile, fmt.Sprintf("Rejection T: %v ID: %v %v/%v", rd.Time, rd.Id, validations, neededValidators))
 
 		}
 	}
