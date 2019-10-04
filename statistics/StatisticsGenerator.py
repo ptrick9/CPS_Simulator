@@ -14,7 +14,7 @@ from zipfile import *
 #basePath = "C:/Users/patrick/Downloads/fineGrainedBomb/fineGrainedBomb/"
 #basePath = "C:/Users/patrick/Downloads/driftExploreHullBombMove/"
 #basePath = "C:/Users/patrick/Downloads/driftExplorerBombADC/"
-basePath = "C:/Users/patrick/Downloads/driftExplorerBombADC_more/"
+basePath = "C:/Users/patrick/Downloads/driftExplorerBombAdaptiveADC/"
 #basePath = "C:/Users/patrick/Downloads/driftTest/"
 figurePath = "C:/Users/patrick/Dropbox/Patrick/udel/SUMMER2018/git_simulator/CPS_Simulator/driftExploreCommBomb/"
 
@@ -27,7 +27,7 @@ ZIP = True
 data = {}
 
 
-pickleName = "driftExplorerBombADC_more"
+pickleName = "driftExplorerBombAdaptiveADC"
 #pickleName = "driftExplorerBombADC_qTest"
 
 
@@ -171,7 +171,7 @@ def dataStorage(wq, order, variation, total):
         waiting += 1
 
         dat = {'data': data, 'order': order, 'var': variation}
-        if waiting > 20 or wq.qsize() < 2:
+        if waiting > 200 or wq.qsize() < 2:
             try:
                 f = open('%s.pickle' % (pickleName), 'wb')
                 pickle.dump(dat, f)
