@@ -89,13 +89,14 @@ type NodeData struct {
 //MakeGrid initializes a grid of Square objects according to the size of the map
 func (s FusionCenter) MakeGrid() {
 	navigable := true
-	s.P.Grid = make([][]*Square, s.P.SquareColCM) //this creates the p.Grid and only works if row is same size as column
+	s.P.Grid = make([][]*Square, s.P.MaxX/s.P.SquareColCM + 1) //this creates the p.Grid and only works if row is same size as column
 	for i := range s.P.Grid {
-		s.P.Grid[i] = make([]*Square, s.P.SquareRowCM)
+		s.P.Grid[i] = make([]*Square, s.P.MaxY/s.P.SquareRowCM + 1)
 	}
 
-	for i := 0; i < s.P.SquareColCM; i++ {
-		for j := 0; j < s.P.SquareRowCM; j++ {
+	fmt.Printf("squares = %v %v\n", s.P.MaxX/s.P.SquareColCM, s.P.MaxY/s.P.SquareRowCM)
+	for i := 0; i <= s.P.MaxX/s.P.SquareColCM; i++ {
+		for j := 0; j <= s.P.MaxY/s.P.SquareRowCM; j++ {
 
 			travelList := make([]bool, 0)
 			for k := 0; k < s.P.NumSuperNodes; k++ {
@@ -541,7 +542,7 @@ func (s *FusionCenter) Send(n *NodeImpl, rd Reading, tp bool) {
 	tile.LastReadingTime = rd.Time
 	tile.SquareValues += math.Pow(float64(rd.SensorVal-float64(tile.Avg)), 2)
 	if s.P.ServerRecal {
-		if rd.SensorVal > (float64(s.GetSquareAverage(s.P.Grid[int(rd.Xpos)/s.P.XDiv][int(rd.YPos)/s.P.YDiv])) + s.P.CalibrationThresholdCM) { //Check if x over grid avg
+		if rd.SensorVal > (float64(tile.Avg) + s.P.CalibrationThresholdCM) { //Check if x over grid avg
 			fmt.Fprintf(n.P.DriftExploreFile, "ID: %v T: %v In: %v CUR: %v NT: %v %v SERVRECAL\n", n.Id, n.P.CurrentTime, n.InitialSensitivity, n.Sensitivity, n.NodeTime, rd.SensorVal)
 			n.Recalibrate()
 			s.LastRecal[n.Id] = s.P.Iterations_used
@@ -550,6 +551,23 @@ func (s *FusionCenter) Send(n *NodeImpl, rd Reading, tp bool) {
 	}
 
 	if rd.SensorVal > s.P.DetectionThreshold {
+		if tile.Avg > float32(s.P.DetectionThreshold) && tile.NumEntry > 2 {
+			if FloatDist(Tuple32{rd.Xpos, rd.YPos}, Tuple32{float32(s.P.B.X), float32(s.P.B.Y)}) > s.P.DetectionDistance {
+				//do nothing here
+			} else {
+				if !s.P.DriftExplorer && tp{
+					s.P.FoundBomb = true
+				}
+			}
+
+			fmt.Fprintln(s.P.DetectionFile, fmt.Sprintf("Confirmation T: %v ID: %v %v/%v %v", rd.Time, rd.Id, tile.NumEntry, len(s.SquarePop[newSquare]), s.CheckedIds))
+
+		} else {
+			fmt.Fprintln(s.P.DetectionFile, fmt.Sprintf("Rejection T: %v ID: %v %v/%v", rd.Time, rd.Id, tile.NumEntry, len(s.SquarePop[newSquare])))
+		}
+	}
+
+	/*if rd.SensorVal > s.P.DetectionThreshold {
 		s.CheckedIds = make([]int, 0)
 		validations := 0
 		for t:= (s.P.CurrentTime / 1000) - s.P.ReadingHistorySize; t <= s.P.CurrentTime / 1000; t++ {
@@ -596,7 +614,7 @@ func (s *FusionCenter) Send(n *NodeImpl, rd Reading, tp bool) {
 			fmt.Fprintln(s.P.DetectionFile, fmt.Sprintf("Rejection T: %v ID: %v %v/%v", rd.Time, rd.Id, validations, neededValidators))
 
 		}
-	}
+	}*/
 }
 
 //CalcStats calculates the mean, standard deviation and variance of the entire area at one Time
