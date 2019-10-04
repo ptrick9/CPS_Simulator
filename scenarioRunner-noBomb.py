@@ -30,8 +30,8 @@ def runner(queue):
         print("%d\\%d" % (job[1], job[2]))
         #print(job)
         command = "./simulator/Simulation "+' '.join(job[0])
-        print(command)
-        #os.system(command + " 1>/dev/null")
+        #print(command)
+        os.system(command + " 1>/dev/null")
         queue.task_done()
 
 
@@ -84,7 +84,7 @@ if __name__ == '__main__':
     SuperNodeSpeed = ["-SuperNodeSpeed=%d" % d for d in [3]]
     SquareRowCM = ["-SquareRowCM=%d" % d for d in [60]]
     SquareColCM = ["-SquareColCM=%d" % d for d in [320]]
-    validationThreshold = ["-validationThreshold=%d" % d for d in [0, 1, 2, 3, 4]]
+    validationThreshold = ["-validationThreshold=%d" % d for d in [0]]
     serverRecal = ["-serverRecal=%s" % s for s in ['true', 'false']]
     driftExplore = ["-driftExplorer=%s" % s for s in ['true']]
     #randomBomb = ["-randomBomb=%s -sensorPath=%s -fineSensorPath=%s -csvSensor=%s" % (s[0], s[1], s[2], s[3]) for s in [('true', '', 'fine_bomb.csv', 'false'), ('false', 'smooth_marathon.csv', 'fine_bomb_marathon.csv', 'true')]]
@@ -105,7 +105,7 @@ if __name__ == '__main__':
     for r in runs:
         for i in range(factor):
             j = [zz for zz in r]
-            j.append("-OutputFileName=/home/simulator/simData/driftExplorerNoBombTest/Log_%d" % x)
+            j.append("-OutputFileName=/home/simulator/simData/driftExplorerNoBombAdaptiveADC/Log_%d" % x)
 
             
             v = j

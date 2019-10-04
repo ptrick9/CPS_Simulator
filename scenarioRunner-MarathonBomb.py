@@ -84,7 +84,7 @@ if __name__ == '__main__':
     SuperNodeSpeed = ["-SuperNodeSpeed=%d" % d for d in [3]]
     SquareRowCM = ["-SquareRowCM=%d" % d for d in [60]]
     SquareColCM = ["-SquareColCM=%d" % d for d in [320]]
-    validationThreshold = ["-validationThreshold=%d" % d for d in [0, 1, 2, 3, 4]]
+    validationThreshold = ["-validationThreshold=%d" % d for d in [0]]
     serverRecal = ["-serverRecal=%s" % s for s in ['true', 'false']]
     driftExplore = ["-driftExplorer=%s" % s for s in ['false']]
     helper = ["-fineSensorPath=%s -csvSensor=%s" % (s[0], s[1]) for s in [("fine_bomb9x9.csv", 'false')]]
@@ -104,7 +104,7 @@ if __name__ == '__main__':
     for r in runs:
         for i in range(factor):
             j = [zz for zz in r]
-            j.append("-OutputFileName=/home/simulator/simData/driftExplorerBombADC_more/Log_%d" % x)
+            j.append("-OutputFileName=/home/simulator/simData/driftExplorerBombAdaptiveADC/Log_%d" % x)
 
             
             v = j
