@@ -89,11 +89,25 @@ public class SimulatorController implements Drawable {
         this.checkMenuGridLines.selectedProperty().addListener(event -> draw());
         this.checkMenuQuadrants.selectedProperty().addListener(event -> draw());
         this.checkMenuWalls.selectedProperty().addListener(event -> draw());
-        this.checkMenuSensorCoverage.selectedProperty().addListener(event -> draw());
-        this.toggleGroupNodeColor.selectedToggleProperty().addListener(event -> draw());
-        this.toggleGroupExtras.selectedToggleProperty().addListener(event -> draw());
+        this.checkMenuSensorCoverage.selectedProperty().addListener(event -> {
+            room.getFileManager().loadSamplesFile();
+            draw();
+        });
+        this.toggleGroupNodeColor.selectedToggleProperty().addListener(event -> {
+            room.getFileManager().loadSamplesFile();
+            draw();
+        });
+        this.toggleGroupExtras.selectedToggleProperty().addListener(event -> {
+            if (toggleGroupExtras.getSelectedToggle() == radioMenuSensorReading) {
+                room.getFileManager().loadGridFile();
+            }
+            draw();
+        });
         this.checkMenuItemShowText.selectedProperty().addListener(event-> draw());
-        this.checkMenuAdHoc.selectedProperty().addListener(event-> draw());
+        this.checkMenuAdHoc.selectedProperty().addListener(event-> {
+            room.getFileManager().loadAdHocFile();
+            draw();
+        });
 
         this.canvas = new AdvancedCanvas(this);
         this.canvas.widthProperty().bind(containerCanvas.widthProperty());
@@ -272,9 +286,11 @@ public class SimulatorController implements Drawable {
             canvas.drawBlock(color, true, node.getX(), y);
         }
 
-        for (AdHoc adHoc : room.getAdHocs()) {
-            Node leader = room.getNodeByID(adHoc.getLeaderID());
-            canvas.drawBlock(Color.DARKGREEN, true, leader.getX(), room.getHeight() - leader.getY() - 1);
+        if (room.getAdHocs() != null) {
+            for (AdHoc adHoc : room.getAdHocs()) {
+                Node leader = room.getNodeByID(adHoc.getLeaderID());
+                canvas.drawBlock(Color.DARKGREEN, true, leader.getX(), room.getHeight() - leader.getY() - 1);
+            }
         }
 
     }
