@@ -13,8 +13,11 @@ from zipfile import *
 #basePath = "C:/Users/patrick/Downloads/bigData/"
 #basePath = "C:/Users/patrick/Downloads/fineGrainedBomb/fineGrainedBomb/"
 #basePath = "C:/Users/patrick/Downloads/driftExploreHullBombMove/"
-basePath = "C:/Users/patrick/Downloads/driftExplorerNoBomb/"
-basePath = "C:/Users/patrick/Downloads/driftExplorerBombADC/"
+#basePath = "C:/Users/patrick/Downloads/driftExplorerBombADC/"
+basePath = "C:/Users/patrick/Downloads/driftExplorerBombAdaptiveADC/"
+
+basePath = "C:/Users/patrick/Downloads/driftExplorerBombSquare/"
+
 #basePath = "C:/Users/patrick/Downloads/driftTest/"
 figurePath = "C:/Users/patrick/Dropbox/Patrick/udel/SUMMER2018/git_simulator/CPS_Simulator/driftExploreCommBomb/"
 
@@ -27,7 +30,8 @@ ZIP = True
 data = {}
 
 
-pickleName = "driftExplorerBombADCtest"
+pickleName = "driftExplorerBombSquare"
+#pickleName = "driftExplorerBombADC_qTest"
 
 
 def buildDetectionList(basePath, runs):
@@ -90,7 +94,7 @@ def generateData(rq, wq):
         print(job)
         p = getParameters("%s%s" % (basePath, file))
         det = getDetections(basePath, file)
-        firstDet = -1
+        firstDet = 10000
         try:
             firstDet = next(x for x in det if x.TPConf()).time
         except:
@@ -144,37 +148,45 @@ def dataStorage(wq, order, variation, total):
 
     i = 0
     failed = 0
+    pickleOpen = False
+    data = {}
+    waiting = 0
     while True:
-        data = {}
         job = wq.get()
-        try:
-            with open('%s.pickle' % (pickleName), 'rb') as handle:
-                data = pickle.load(handle)# protocol=pickle.HIGHEST_PROTOCOL)
-                data = data['data']
-                handle.close()
-        except:
-            pass
+        if not pickleOpen:
+            try:
+                print("opening")
+                with open('%s.pickle' % (pickleName), 'rb') as handle:
+                    data = pickle.load(handle)# protocol=pickle.HIGHEST_PROTOCOL)
+                    data = data['data']
+                    handle.close()
+                    pickleOpen = True
+            except:
+                pass
         run = job[0]
         det = job[1]
         k = job[2]
 
         if k in data:
             data[k].append(run)
-            #allData[k].append(det)
         else:
             data[k] = [run]
-            #allData[k] = [det]
+        waiting += 1
 
         dat = {'data': data, 'order': order, 'var': variation}
-        fail = True
-        try:
-            f = open('%s.pickle' % (pickleName), 'wb')
-            pickle.dump(dat, f)
-            f.close()
-            fail = False
-        except:
-            failed += 1
-            pass
+        if waiting > 200 or wq.qsize() < 2:
+            try:
+                f = open('%s.pickle' % (pickleName), 'wb')
+                pickle.dump(dat, f)
+                f.close()
+                waiting = 0
+                pickleOpen = False
+                #fail = False
+            except:
+                failed += 1
+                pass
+        else:
+            print(waiting, wq.qsize())
         i += 1
         print("Total %d/%d Failed %d/%d" % (i, total, failed, i))
         #with open('driftExploreBomb.pickle', 'wb') as handle:
@@ -265,7 +277,7 @@ if __name__ == '__main__':
     for run in uniqueRuns:
         rq.put([run, order])
 
-    p = multiprocessing.Pool(1, generateData, (rq,wq,))
+    p = multiprocessing.Pool(3, generateData, (rq,wq,))
     p = multiprocessing.Pool(1, dataStorage, (wq,order, shiftingParameters, len(uniqueRuns),))
 
     rq.join()

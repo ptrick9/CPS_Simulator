@@ -2,7 +2,7 @@ import re
 import random
 
 
-f = open('C:/Users/patrick/Downloads/marathon_movement/marathon2_200_3.scb', 'r')
+f = open('/home/simulator/git-simulator/movement/marathon2_200_3.scb', 'r')
 
 coord = re.compile(r'(-?\d+,-?\d+)')
 

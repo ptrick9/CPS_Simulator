@@ -790,8 +790,10 @@ func SetupFiles(p *Params) {
 
 func SetupParameters(p *Params, r *RegionParams) {
 
-	p.XDiv = p.MaxX / p.SquareColCM
-	p.YDiv = p.MaxY / p.SquareRowCM
+	//p.XDiv = p.MaxX / p.SquareColCM
+	//p.YDiv = p.MaxY / p.SquareRowCM
+	p.XDiv = p.SquareColCM
+	p.YDiv = p.SquareRowCM
 
 	//The capacity for a square should be equal to the area of the square
 	//So we take the side length (xDiv) and square it

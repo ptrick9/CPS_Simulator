@@ -29,6 +29,8 @@ type FusionCenter struct {
 	CheckedIds		[]int
 	NodeDataList	[]NodeData
 	Validators 		map[int]int //stores validators...id -> time  latest time for id is stored
+	NodeSquares 	map[int]Tuple  //store what square a node is in
+	SquarePop  		map[Tuple][]int //store nodes in square
 }
 
 //Init initializes the values for the server
@@ -49,6 +51,8 @@ func (s *FusionCenter) Init(){
 	s.CheckedIds = make([]int, 0)
 	s.NodeDataList = make([]NodeData, s.P.TotalNodes)
 	s.Validators = make(map[int]int)
+	s.NodeSquares = make(map[int]Tuple)
+	s.SquarePop = make(map[Tuple][]int)
 }
 
 func (s *FusionCenter) MakeNodeData() {
@@ -85,13 +89,14 @@ type NodeData struct {
 //MakeGrid initializes a grid of Square objects according to the size of the map
 func (s FusionCenter) MakeGrid() {
 	navigable := true
-	s.P.Grid = make([][]*Square, s.P.SquareColCM) //this creates the p.Grid and only works if row is same size as column
+	s.P.Grid = make([][]*Square, s.P.MaxX/s.P.SquareColCM + 1) //this creates the p.Grid and only works if row is same size as column
 	for i := range s.P.Grid {
-		s.P.Grid[i] = make([]*Square, s.P.SquareRowCM)
+		s.P.Grid[i] = make([]*Square, s.P.MaxY/s.P.SquareRowCM + 1)
 	}
 
-	for i := 0; i < s.P.SquareColCM; i++ {
-		for j := 0; j < s.P.SquareRowCM; j++ {
+	fmt.Printf("squares = %v %v\n", s.P.MaxX/s.P.SquareColCM, s.P.MaxY/s.P.SquareRowCM)
+	for i := 0; i <= s.P.MaxX/s.P.SquareColCM; i++ {
+		for j := 0; j <= s.P.MaxY/s.P.SquareRowCM; j++ {
 
 			travelList := make([]bool, 0)
 			for k := 0; k < s.P.NumSuperNodes; k++ {
@@ -455,11 +460,64 @@ func (s *FusionCenter) CleanupReadings() {
 	}
 }
 
+func pos(value int, array []int) int {
+	for p, v := range array {
+		if (v == value) {
+			return p
+		}
+	}
+	return -1
+}
+
+func remove(s []int, i int) []int {
+	s[i] = s[0]
+	return s[1:]
+}
+
 
 //Send is called by a node to deliver a reading to the server.
 // Statistics are calculated each Time data is received
 func (s *FusionCenter) Send(n *NodeImpl, rd Reading, tp bool) {
 	//fmt.Printf("Sending to server:\nTime: %v, ID: %v, X: %v, Y: %v, Sensor Value: %v\n", rd.Time, rd.Id, rd.Xpos, rd.YPos, rd.SensorVal)
+
+
+	//NodeSquares 	map[int]Tuple  //store what square a node is in
+	//SquarePop  		map[Tuple][]int //store nodes in square
+
+	v, ok := s.NodeSquares[n.Id] //check if node has been recorded before
+	newSquare := Tuple{int(rd.Xpos / float32(s.P.XDiv)), int(rd.YPos / float32(s.P.YDiv))}
+	if ok { //node has been recorded before
+		if v == newSquare { //no changes to make
+
+		} else { //node has changed squares, need to update square pop
+			elements := s.SquarePop[v]
+			ind := pos(n.Id, elements)
+			s.SquarePop[v] = remove(elements, ind)
+
+			_, ok = s.SquarePop[newSquare] //check if square exists
+			if ok {//exists, so just append
+				s.SquarePop[newSquare] = append(s.SquarePop[newSquare], n.Id) //add id to new square
+			} else {//does not exist, create
+				s.SquarePop[newSquare] = []int{n.Id}
+			}
+			s.NodeSquares[n.Id] = newSquare //update nodes square log
+		}
+	} else {
+		_, ok = s.SquarePop[newSquare] //check if square exists
+		if ok {//exists, so just append
+			s.SquarePop[newSquare] = append(s.SquarePop[newSquare], n.Id) //add id to new square
+		} else {//does not exist, create
+			s.SquarePop[newSquare] = []int{n.Id}
+		}
+		s.NodeSquares[n.Id] = newSquare //update nodes square log
+	}
+
+	// add node to correct square
+
+
+
+
+
 
 	if rd.SensorVal > s.P.DetectionThreshold {
 
@@ -477,22 +535,14 @@ func (s *FusionCenter) Send(n *NodeImpl, rd Reading, tp bool) {
 		}
 	}
 
-	/*for len(s.TimeBuckets) <= rd.Time {
-		s.TimeBuckets = append(s.TimeBuckets, make([]Reading,0))
-	}
-	currBucket := (s.TimeBuckets)[rd.Time]
-	if len(currBucket) != 0 { //currBucket != nil
-		(s.TimeBuckets)[rd.Time] = append(currBucket, rd)
-	} else {
-		(s.TimeBuckets)[rd.Time] = append((s.TimeBuckets)[rd.Time], rd) //s.TimeBuckets[rd.Time] = []float64{rd.sensorVal}
-	}*/
+
 
 	s.UpdateSquareAvg(rd)
 	tile := s.P.Grid[int(rd.Xpos)/s.P.XDiv][int(rd.YPos)/s.P.YDiv]
 	tile.LastReadingTime = rd.Time
 	tile.SquareValues += math.Pow(float64(rd.SensorVal-float64(tile.Avg)), 2)
 	if s.P.ServerRecal {
-		if rd.SensorVal > (float64(s.GetSquareAverage(s.P.Grid[int(rd.Xpos)/s.P.XDiv][int(rd.YPos)/s.P.YDiv])) + s.P.CalibrationThresholdCM) { //Check if x over grid avg
+		if rd.SensorVal > (float64(tile.Avg) + s.P.CalibrationThresholdCM) { //Check if x over grid avg
 			fmt.Fprintf(n.P.DriftExploreFile, "ID: %v T: %v In: %v CUR: %v NT: %v %v SERVRECAL\n", n.Id, n.P.CurrentTime, n.InitialSensitivity, n.Sensitivity, n.NodeTime, rd.SensorVal)
 			n.Recalibrate()
 			s.LastRecal[n.Id] = s.P.Iterations_used
@@ -501,6 +551,23 @@ func (s *FusionCenter) Send(n *NodeImpl, rd Reading, tp bool) {
 	}
 
 	if rd.SensorVal > s.P.DetectionThreshold {
+		if tile.Avg > float32(s.P.DetectionThreshold) && tile.NumEntry > 2 {
+			if FloatDist(Tuple32{rd.Xpos, rd.YPos}, Tuple32{float32(s.P.B.X), float32(s.P.B.Y)}) > s.P.DetectionDistance {
+				//do nothing here
+			} else {
+				if !s.P.DriftExplorer && tp{
+					s.P.FoundBomb = true
+				}
+			}
+
+			fmt.Fprintln(s.P.DetectionFile, fmt.Sprintf("Confirmation T: %v ID: %v %v/%v %v", rd.Time, rd.Id, tile.NumEntry, len(s.SquarePop[newSquare]), s.CheckedIds))
+
+		} else {
+			fmt.Fprintln(s.P.DetectionFile, fmt.Sprintf("Rejection T: %v ID: %v %v/%v", rd.Time, rd.Id, tile.NumEntry, len(s.SquarePop[newSquare])))
+		}
+	}
+
+	/*if rd.SensorVal > s.P.DetectionThreshold {
 		s.CheckedIds = make([]int, 0)
 		validations := 0
 		for t:= (s.P.CurrentTime / 1000) - s.P.ReadingHistorySize; t <= s.P.CurrentTime / 1000; t++ {
@@ -523,7 +590,13 @@ func (s *FusionCenter) Send(n *NodeImpl, rd Reading, tp bool) {
 				}
 			}
 		}
-		if validations >= s.P.ValidationThreshold {
+
+		//if validations >= s.P.ValidationThreshold {
+		offset := math.Ceil(math.Log(float64(s.P.TotalNodes))/math.Log(10)/2)
+		//fmt.Println(offset)
+		neededValidators := int(offset) + int(math.Sqrt(float64(len(s.SquarePop[newSquare]))))
+		//fmt.Println(s.SquarePop[newSquare])
+		if validations >= neededValidators {
 			s.P.CenterCoord = Coord{X: int(rd.Xpos), Y: int(rd.YPos)}
 			if s.P.SuperNodes {
 				s.Sch.AddRoutePoint(s.P.CenterCoord)
@@ -535,13 +608,13 @@ func (s *FusionCenter) Send(n *NodeImpl, rd Reading, tp bool) {
 				}
 			}
 
-			fmt.Fprintln(s.P.DetectionFile, fmt.Sprintf("Confirmation T: %v ID: %v %v/%v %v", rd.Time, rd.Id, validations, s.P.ValidationThreshold, s.CheckedIds))
+			fmt.Fprintln(s.P.DetectionFile, fmt.Sprintf("Confirmation T: %v ID: %v %v/%v %v", rd.Time, rd.Id, validations, neededValidators, s.CheckedIds))
 
 		} else {
-			fmt.Fprintln(s.P.DetectionFile, fmt.Sprintf("Rejection T: %v ID: %v %v/%v", rd.Time, rd.Id, validations, s.P.ValidationThreshold))
+			fmt.Fprintln(s.P.DetectionFile, fmt.Sprintf("Rejection T: %v ID: %v %v/%v", rd.Time, rd.Id, validations, neededValidators))
 
 		}
-	}
+	}*/
 }
 
 //CalcStats calculates the mean, standard deviation and variance of the entire area at one Time

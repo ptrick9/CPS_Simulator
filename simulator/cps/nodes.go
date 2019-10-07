@@ -943,8 +943,9 @@ func (curNode *NodeImpl) report(rawConc float64) {
 		} else if inWind == 0 && !curNode.P.CSVSensor {
 			//we are in the wind zone and the bomb is random, we are
 			//therefore inside the detection range but this can't happen as we would ahve a high concentration
-		} else {
+		} else if inWind == 0 && curNode.P.CSVSensor {
 			//we are in the wind zone and the bomb is random, so it isn't possible to get here....
+			//fmt.Printf("\n %v %v %v %v %v %v\n", curNode.Id, curNode.P.TimeStep, inWind, curNode.P.CSVSensor, highSensor, highConcentration)
 			fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("FN Wind T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, rawConc))
 		}
 	} else if !inRange && highConcentration && highSensor {
