@@ -89,14 +89,20 @@ type NodeData struct {
 //MakeGrid initializes a grid of Square objects according to the size of the map
 func (s FusionCenter) MakeGrid() {
 	navigable := true
-	s.P.Grid = make([][]*Square, s.P.MaxX/s.P.SquareColCM + 1) //this creates the p.Grid and only works if row is same size as column
+
+
+	/*s.P.Grid = make([][]*Square, s.P.MaxX/s.P.SquareColCM + 1) //this creates the p.Grid and only works if row is same size as column
 	for i := range s.P.Grid {
 		s.P.Grid[i] = make([]*Square, s.P.MaxY/s.P.SquareRowCM + 1)
+	}*/
+	s.P.Grid = make([][]*Square, s.P.GridWidth) //this creates the p.Grid and only works if row is same size as column
+	for i := range s.P.Grid {
+		s.P.Grid[i] = make([]*Square, s.P.GridHeight)
 	}
 
 	fmt.Printf("squares = %v %v\n", s.P.MaxX/s.P.SquareColCM, s.P.MaxY/s.P.SquareRowCM)
-	for i := 0; i <= s.P.MaxX/s.P.SquareColCM; i++ {
-		for j := 0; j <= s.P.MaxY/s.P.SquareRowCM; j++ {
+	for i := 0; i < s.P.GridWidth; i++ {
+		for j := 0; j < s.P.GridHeight; j++ {
 
 			travelList := make([]bool, 0)
 			for k := 0; k < s.P.NumSuperNodes; k++ {
@@ -559,7 +565,7 @@ func (s *FusionCenter) Send(n *NodeImpl, rd Reading, tp bool) {
 					s.P.FoundBomb = true
 				}
 			}
-
+			fmt.Printf("\n grid %v %v %v\n", tile.X, tile.Y, tile.Avg)
 			fmt.Fprintln(s.P.DetectionFile, fmt.Sprintf("Confirmation T: %v ID: %v %v/%v %v", rd.Time, rd.Id, tile.NumEntry, len(s.SquarePop[newSquare]), s.CheckedIds))
 
 		} else {

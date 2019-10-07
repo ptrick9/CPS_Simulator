@@ -489,7 +489,7 @@ func main() {
 			} else if event.Instruction == cps.GRID {
 				if p.GridPrint {
 					//x := printGrid(p.Grid)
-					printGrid(p.Grid)
+					printGrid(p, p.Grid)
 
 					//fmt.Fprintln(p.GridFile, x)
 					p.Events.Push(&cps.Event{nil, cps.GRID, p.CurrentTime + 1000, 0})
@@ -552,12 +552,39 @@ func main() {
 	if p.EnergyPrintCM {
 		PrintNodeBatteryOverTimeFast(p)
 	}
+	if p.GridPrint {
+		printGrid(p, p.Grid)
+
+		amount := 0
+		for i := 0; i < p.CurrentNodes; i ++ {
+			//fmt.Printf("%v\n", p.NodeList[i].Valid)
+			if p.NodeList[i].Valid {
+				amount += 1
+			}
+		}
+		fmt.Fprintln(p.PositionFile, "t= ", int(p.CurrentTime/1000), " amount= ", amount)
+		var buffer bytes.Buffer
+		for i := 0; i < p.CurrentNodes; i ++ {
+
+			if p.NodeList[i].Valid {
+				buffer.WriteString(fmt.Sprintf("ID: %v x: %v y: %v\n", p.NodeList[i].GetID(), int(p.NodeList[i].GetX()), int(p.NodeList[i].GetY())))
+				//fmt.Fprintln(p.PositionFile, "ID:", p.NodeList[i].GetID(), "x:", int(p.NodeList[i].GetX()), "y:", int(p.NodeList[i].GetY()))
+			}
+		}
+		fmt.Fprint(p.PositionFile, buffer.String())
+
+		if !p.SuperNodes {
+			fmt.Fprintln(p.RoutingFile, "Amount:", 0)
+		} else {
+			fmt.Fprintln(p.RoutingFile, "Amount:", p.NumSuperNodes)
+		}
+	}
 
 	p.PositionFile.Seek(0, 0)
 	fmt.Fprintln(p.PositionFile, "Image:", p.ImageFileNameCM)
 	fmt.Fprintln(p.PositionFile, "Width:", p.MaxX)
 	fmt.Fprintln(p.PositionFile, "Height:", p.MaxY)
-	fmt.Fprintf(p.PositionFile, "Amount: %-8v\n", int(p.CurrentTime/1000))
+	fmt.Fprintf(p.PositionFile, "Amount: %-8v\n", int(p.CurrentTime/1000)+1)
 
 	if iters < p.Iterations_of_event-1 {
 		fmt.Printf("\nFound bomb at iteration: %v \nSimulation Complete\n", int(p.CurrentTime/1000))
@@ -605,10 +632,10 @@ func main() {
 }
 
 //printGrid saves the current measurements of each Square into a buffer to print into the file
-func printGrid(g [][]*cps.Square) {
+func printGrid(p *cps.Params, g [][]*cps.Square) {
 	var buffer bytes.Buffer
-	for y := 0; y < len(g[0]); y++ {
-		for x:=0; x < len(g); x++ {
+	for y := 0; y < p.GridHeight; y++ {
+		for x:=0; x < p.GridWidth; x++ {
 			buffer.WriteString(fmt.Sprintf("%.2f\t", g[x][y].Avg))
 		}
 		buffer.WriteString("\n")

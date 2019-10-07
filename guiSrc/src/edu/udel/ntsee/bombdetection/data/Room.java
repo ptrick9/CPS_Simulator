@@ -164,6 +164,7 @@ public class Room {
         this.superNodes = fileManager.getRoutes() != null ? fileManager.getRoutes().getData(getIndex()) : null;
         this.adhocs = fileManager.getAdHocs() != null ? fileManager.getAdHocs().getData(getIndex()) : null;
         this.sensorReadings = fileManager.getSensorReadings() != null ? fileManager.getSensorReadings().getGrid(getIndex()) : null;
+
     }
 
     public void close() throws IOException {

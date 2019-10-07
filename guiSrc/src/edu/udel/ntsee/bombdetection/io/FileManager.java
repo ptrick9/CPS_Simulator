@@ -89,7 +89,7 @@ public class FileManager {
 
     public void loadGridFile() {
 
-        if (sensorReadings == null) {
+        if (sensorReadings != null) {
             return;
         }
 

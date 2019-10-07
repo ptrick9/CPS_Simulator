@@ -716,8 +716,10 @@ func SetupFiles(p *Params) {
 
 
 	//Write parameters to gridFile
-	fmt.Fprintln(p.GridFile, "Width:", p.SquareColCM)
-	fmt.Fprintln(p.GridFile, "Height:", p.SquareRowCM)
+	p.GridHeight = int(math.Ceil(float64(p.MaxY)/float64(p.SquareRowCM)))
+	p.GridWidth = int(math.Ceil(float64(p.MaxX)/float64(p.SquareColCM)))
+	fmt.Fprintln(p.GridFile, "Width:", p.GridWidth)
+	fmt.Fprintln(p.GridFile, "Height:", p.GridHeight)
 
 
 	p.EnergyFile, err = os.Create(p.OutputFileNameCM + "-node.txt")

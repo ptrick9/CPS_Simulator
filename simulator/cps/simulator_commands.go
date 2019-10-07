@@ -72,6 +72,9 @@ type Params struct {
 	NodesPrint    bool
 	GridPrint     bool
 
+	GridWidth 		int
+	GridHeight 		int
+
 	MoveReadingsFile *os.File
 	DriftFile      *os.File
 	NodeFile       *os.File
