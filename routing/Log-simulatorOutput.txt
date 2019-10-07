@@ -1,5 +1,0 @@
-Width: 408
-Height: 408
-Amount: 0
-Bomb x: 0
-Bomb y: 0
