@@ -6,7 +6,7 @@ The open area CPS simulator is a program designed to simulate the detection of a
 
 ### [Quick Link To Tutorial](#tutorial)
 ### [Simulator Instructions](#simulator)
-<!-- ### [Data Processing Instructions](#data-processing) -->
+### [Data Processing Instructions](#data-processing)
 
 
 ## General Detection
@@ -87,3 +87,16 @@ on Toolbar: View.
 |  Before Detection             |  Bomb Detected |
 :-------------------------:|:-------------------------:
 | ![Pre Detection](https://imgur.com/AomBuDe.png) |  ![Detected](https://imgur.com/61HAKHD.png) |
+
+# Data Processing
+Data processing is handled in a jupyter notebook.
+Due to the large element of randomness in the simulator, meaningful data can only really be gathered by hundreds of runs. This can take a long time for big simulations, and to save you this time, an already processed dataset has been included in the tutorial_output folder.
+
+1. To get started, open either Powershell or Terminal and navigate to the `CPS_Simulator/tutorial_output` directory. Then run: `jupyter notebook` on linux or mac and `jupyter-notebook.exe` on Windows. This will start a jupyter session and should open a web browser. If not, navigate your browser to the url given by the output of your `juptyer notebook` command.
+2. In your web browser, click the `StatisticEngine.ipynb` file
+3. This should open a new tab to the data processor
+4. Here you will see python code to process the provided data files. In each cell on the page you can either press `ctrl+Enter` or click the run button at the top of the page.
+    - Jupyter allows for us to run cells in order and pause the python interpreter, so if we ingest all of our data (sometimes a long process) in one cell and make a mistake trying to process it in another, we don't need to reingest our data, we can simply fix our processing step and rerun.
+6. In the final cell, we filter the data, average similar runs, and then graph them. You can see, we end up with a graph showing that as we increase the number of validators required to make a bomb detection, we experience fewer false positives per second.
+
+![False Positive Rejection](https://imgur.com/CP3nHqH.png)
