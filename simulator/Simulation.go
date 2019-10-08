@@ -578,6 +578,14 @@ func main() {
 		} else {
 			fmt.Fprintln(p.RoutingFile, "Amount:", p.NumSuperNodes)
 		}
+		fmt.Fprintln(p.EnergyFile, "Amount:", len(p.NodeList))  //big time waster
+		if p.EnergyPrint {
+			var buffer bytes.Buffer
+			for i := 0; i < p.CurrentNodes; i ++ {
+				buffer.WriteString(fmt.Sprintf("%v\n", p.NodeList[i]))
+			}
+			fmt.Fprintf(p.EnergyFile, buffer.String())
+		}
 	}
 
 	p.PositionFile.Seek(0, 0)

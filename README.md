@@ -10,43 +10,43 @@ The open area CPS simulator is a program designed to simulate the detection of a
 
 
 ## General Detection
-The simulator runs with the given parameters until it detects a bomb. In order to detect a bomb, a few things must happen. A node (person) must walk near enough to a bomb for it to create a high reading on the node's sensor. The node's individual energy model must also decide to take a sample within the time period that the node is within the detection radius of the bomb. At some point in the future, again, as determined by the energy model, the node will send its data to the server. 
+The simulator runs with the given parameters until it detects a bomb. In order to detect a bomb, a few things must happen. A node (person) must walk near enough to a bomb for it to create a high reading on the node's sensor. The node's individual energy model must also decide to take a sample within the time period that the node is within the detection radius of the bomb. At some point in the future, again, as determined by the energy model, the node will send its data to the server.
 
-Upon receiving the data from the node, the server will place the readings into a map of the arena, allowing for spatial correlation of multiple readings. In order to better correlate readings and decrease the number of false positives caused by sensor error, the server averages readings over areas. These areas are represented as large (user settable) squares in which the most recent readings in that area are averaged together. Once a square has a high enough average to trigger a detection, a supernode (a highly accurate node with greater sensor accuracy and detection distance) is routed to that area to ensure that there is no false alarm. 
+Upon receiving the data from the node, the server will place the readings into a map of the arena, allowing for spatial correlation of multiple readings. In order to better correlate readings and decrease the number of false positives caused by sensor error, the server averages readings over areas. These areas are represented as large (user settable) squares in which the most recent readings in that area are averaged together. Once a square has a high enough average to trigger a detection, a supernode (a highly accurate node with greater sensor accuracy and detection distance) is routed to that area to ensure that there is no false alarm.
 
 # Tutorial
 
 The simulator project comes with a bash script that builds and runs a test project. In order for everything to compile correctly, some dependencies are required:
 
-* [Golang](https://golang.org/dl/) must be installed 
+* [Golang](https://golang.org/dl/) must be installed
     * Choose most recent version for your system, install, and restart any terminal
     * For Mac you may need to add the go binary to your PATH. This is accomplished by adding `/usr/local/go` to the `/etc/paths` file
 * [Java](http://www.oracle.com/technetwork/java/javase/downloads/jdk10-downloads-4416644.html) w/ JDK must be installed in order to run viewer. Accept agreement and install
-    * If on LINUX, run ``` sudo apt-get install openjdk openjfx ``` which will install the required packages. If you are running Ubuntu 18.04, this does not seem to work. 
-* [Python3](https://www.python.org/downloads/) with numpy, pandas, matplotlib, and jupyter must be installed if you want to use the included statistics processing. 
+    * If on LINUX, run ``` sudo apt-get install openjdk openjfx ``` which will install the required packages. If you are running Ubuntu 18.04, this does not seem to work.
+* [Python3](https://www.python.org/downloads/) with numpy, pandas, matplotlib, and jupyter must be installed if you want to use the included statistics processing.
     * Ensure that python is on the path (checkbox on first page of installer)
     * Once python is installed, we need to install the libraries, this varies by system
         * Windows
             * Python defaults to C:\Users\\--username--\AppData\Local\Programs\Python\Python**__Number__**, so open a shell and get to that directory.
             * `cd Scripts`
-            * `./pip3 install numpy pandas matplotlib jupyter` 
+            * `./pip3 install numpy pandas matplotlib jupyter`
         * Mac
             * install python3
             * `/usr/local/bin/pip3 install numpy pandas matplotlib jupyter`
 
 
-Once Go and Java are installed, you can run one of the test cases. 
+Once Go and Java are installed, you can run one of the test cases.
 
 ### Windows
- 1. Navigate to CPS_Simulator folder in file viewer. 
- 2. `Shift+RightClick` and select `Open Powershell Window Here`. 
+ 1. Navigate to CPS_Simulator folder in file viewer.
+ 2. `Shift+RightClick` and select `Open Powershell Window Here`.
  3. type `python test_run.py`
     * This command will run a script which will compile the simulator and run it with some basic command line arguments
 4. Once completed, navigate to viewer folder and run Viewer program
 5. In viewer, click file->open and select `tutorial-simulatorOutput.txt`
 
 ### Mac
-1. Open terminal and navigate to CPS_Simulator folder 
+1. Open terminal and navigate to CPS_Simulator folder
 2. type `./test_run.sh`
     * This command will run a script which will compile the simulator and run it with some basic command line arguments
 3. Once completed, navigate to viewer folder and run Viewer program
@@ -69,41 +69,17 @@ You will now be able to use the following controls:
 - Scroll up in order to zoom into the room.
 - Scroll down in order to zoom out of the room.
 
-Display Details: This is varried depending on the options selected
-on Toolbar: View. 
-- Nodes are displayed as the color blue and turn yellow when taking a
-  GPS Reading if (View -> Nodes -> GPS Reading) is enabled. 
-- Nodes will be a color between green (100) and red (0) depending on
-  its battery level when (View -> Nodes -> Battery Level) is enabled.
+Display Details: This is varied depending on the options selected
+on Toolbar: View.
+- Black lines represent walls or buildings in the scenario
+- Blue squares represent node locations
 - Nodes will have a yellow circle around them when taking a Sensor Reading
-  if (View -> Nodes -> Sensor Coverage) is enabled. 
-- Super nodes are displayed as the color light purple
-	- Super Node paths are outlined grid squares
-	- Key locations targeted by super nodes will be a color between
-	  green and red. The longer the location is active, the closer
-	  to red this will appear to be.
+  if (View -> Nodes -> Sensor Coverage) is enabled.
 - If (View -> Extras -> Sensor Reading) is selected the room will be overlayed
   with a subgrid of red squares. Low sensor readings will make a square closer
   to transparent, while higher sensor readings will make this square appear
   more solid.
 
-
-  
-  
-
 |  Before Detection             |  Detected and Supernode Routed |
 :-------------------------:|:-------------------------:
-| ![Pre Detection](https://i.imgur.com/jQerHVi.png) |  ![Detected](https://i.imgur.com/Sas5XaO.png) |
-# Data Processing
-Data processing is handled in a jupyter notebook. This is a preliminary setup and can/will be improved on in the future. 
-Due to the large element of randomness in the simulator, meaningful data can only really be gathered by hundreds of runs. This can take a long time for big simulations, and to save you this time, we've included 600 log files in the folder `test_data` as well as a rudimentary script which reads, aggregates, and lets you explore these statistics. 
-
-1. To get started, open either Powershell or Terminal and navigate to the `CPS_Simulator` directory. Then type: `jupyter notebook`. This will start a jupyter session and should open a web browser. If not, navigate your browser to the url given by the output of your `juptyer notebook` command. 
-2. In your web browser, click the `DataProcessory.ipynb` file
-3. This should open a new tab to the data processor
-4. Here you will be able to see our python code. In each cell on the page you can either press `ctrl+Enter` or click the run button at the top of the page. 
-    - Jupyter allows for us to run cells in order and pause the python interpreter, so if we ingest all of our data (sometimes a long process) in one cell and make a mistake trying to process it in another, we don't need to reingest our data, we can simply fix our processing step and rerun. 
-5. In the third to last cell, you can see all of our data as it was read in
-6. In the final cell, we filter the data, average similar runs, and then graph them. You can see, we end up with a graph showing that as we increase our detection threshold, we get fewer true positives, a reasonable conclusion as a higher detection threshold requires more nodes to be closer to the bomb. 
-
-![Graph of Detection Threshold](https://i.imgur.com/v7j5PnS.png)
+| ![Pre Detection](https://imgur.com/AomBuDe.png) |  ![Detected](https://imgur.com/61HAKHD.png) |
