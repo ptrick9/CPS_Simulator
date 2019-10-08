@@ -6,7 +6,7 @@ The open area CPS simulator is a program designed to simulate the detection of a
 
 ### [Quick Link To Tutorial](#tutorial)
 ### [Simulator Instructions](#simulator)
-### [Data Processing Instructions](#data-processing)
+<!-- ### [Data Processing Instructions](#data-processing) -->
 
 
 ## General Detection
@@ -36,6 +36,10 @@ The simulator project comes with a bash script that builds and runs a test proje
 
 
 Once Go and Java are installed, you can run one of the test cases.
+
+
+### All Platforms
+1. Please download the files from this [Google Drive](https://drive.google.com/drive/folders/1g77OqPrcu9dB5okUgC5AI4Z974BK7CmF?usp=sharing) and place them into the CPS_Simulator folder.
 
 ### Windows
  1. Navigate to CPS_Simulator folder in file viewer.
@@ -80,6 +84,6 @@ on Toolbar: View.
   to transparent, while higher sensor readings will make this square appear
   more solid.
 
-|  Before Detection             |  Detected and Supernode Routed |
+|  Before Detection             |  Bomb Detected |
 :-------------------------:|:-------------------------:
 | ![Pre Detection](https://imgur.com/AomBuDe.png) |  ![Detected](https://imgur.com/61HAKHD.png) |
