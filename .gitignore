@@ -200,3 +200,5 @@ statistics/driftExplorePar\.pickle
 *.pickle
 
 test
+
+!tutorial_output/*.pickle
