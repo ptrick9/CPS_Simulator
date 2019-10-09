@@ -811,8 +811,13 @@ func (curNode *NodeImpl) GetReadings() {
 
 		}
 
-		if(curNode.P.RecalReject && ((curNode.P.CurrentTime/1000) - curNode.NodeTime) < 2) {
+		/*if(curNode.P.RecalReject && ((curNode.P.CurrentTime/1000) - curNode.NodeTime) < 2) {
 
+		} else {
+			curNode.report(RawConc)
+		}*/
+		if ((curNode.P.CurrentTime/1000) - curNode.NodeTime) < 2 {
+			//skip
 		} else {
 			curNode.report(RawConc)
 		}
@@ -845,8 +850,14 @@ func (curNode *NodeImpl) GetReadingsCSV() {
 			RawConcentration = float64(trueInterpolate(newX, newY, curNode.P.CurrentTime, curNode.P.TimeStep, false, curNode.P))
 		}
 
-		if(curNode.P.RecalReject && ((curNode.P.CurrentTime/1000) - curNode.NodeTime) < 2) {
+		/*if(curNode.P.RecalReject && ((curNode.P.CurrentTime/1000) - curNode.NodeTime) < 2) {
 
+		} else {
+			curNode.report(RawConcentration)
+		}*/
+
+		if ((curNode.P.CurrentTime/1000) - curNode.NodeTime) < 2 {
+			//skip
 		} else {
 			curNode.report(RawConcentration)
 		}
@@ -866,8 +877,13 @@ func (curNode *NodeImpl) GetSensor() {
 		//need to verify where we read from
 
 
-		if(curNode.P.RecalReject && ((curNode.P.CurrentTime/1000) - curNode.NodeTime) < 2) {
+		/*if(curNode.P.RecalReject && ((curNode.P.CurrentTime/1000) - curNode.NodeTime) < 2) {
 
+		} else {
+			curNode.report(RawConcentration)
+		}*/
+		if ((curNode.P.CurrentTime/1000) - curNode.NodeTime) < 2 {
+			//skip
 		} else {
 			curNode.report(RawConcentration)
 		}

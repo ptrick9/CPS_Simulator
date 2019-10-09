@@ -122,8 +122,8 @@ func (s FusionCenter) MakeGrid() {
 				}
 			}
 
-			s.P.Grid[i][j] = &Square{i, j, 0.0, 0, make([]float32, s.P.NumGridSamples),
-				s.P.NumGridSamples, 0.0, 0, 0, false,
+			s.P.Grid[i][j] = &Square{i, j, 3.0, 0, make([]float32, s.P.NumGridSamples),
+				s.P.NumGridSamples, 3.0, 0, 0, false,
 				0.0, 0.0, false, travelList, map[Tuple]*NodeImpl{}, sync.Mutex{}, 0, navigable, false}
 		}
 	}
@@ -535,6 +535,9 @@ func (s *FusionCenter) Send(n *NodeImpl, rd Reading, tp bool) {
 					n.Recalibrate()
 					s.LastRecal[n.Id] = s.P.Iterations_used
 					recalReject = true
+					if(tp) {
+						fmt.Fprintf(s.P.DetectionFile, "FN Recal T: %v ID: %v\n", rd.Time, rd.Id)
+					}
 				} else {
 					recalReject = false
 				}
@@ -582,16 +585,16 @@ func (s *FusionCenter) Send(n *NodeImpl, rd Reading, tp bool) {
 							s.P.FoundBomb = true
 						}
 					}
-					fmt.Fprintln(s.P.DetectionFile, fmt.Sprintf("Confirmation T: %v ID: %v %v/%v %v %v", rd.Time, rd.Id, tile.NumEntry, len(s.SquarePop[newSquare]), s.CheckedIds, n.NodeTime))
+					fmt.Fprintln(s.P.DetectionFile, fmt.Sprintf("Confirmation T: %v ID: %v %v/%v %v", rd.Time, rd.Id, tile.NumEntry, len(s.SquarePop[newSquare]), s.CheckedIds))
 
 				}
 			} else {
-				if s.P.RecalReject && recalReject {
-					fmt.Fprintln(s.P.DetectionFile, fmt.Sprintf("r Rejection T: %v ID: %v %v/%v", rd.Time, rd.Id, tile.NumEntry, len(s.SquarePop[newSquare])))
+				/*if s.P.RecalReject && recalReject {
+					fmt.Fprintln(s.P.DetectionFile, fmt.Sprintf("Rejection T: %v ID: %v %v/%v", rd.Time, rd.Id, tile.NumEntry, len(s.SquarePop[newSquare])))
 				} else {
 					fmt.Fprintln(s.P.DetectionFile, fmt.Sprintf("Rejection T: %v ID: %v %v/%v", rd.Time, rd.Id, tile.NumEntry, len(s.SquarePop[newSquare])))
-				}
-				//fmt.Fprintln(s.P.DetectionFile, fmt.Sprintf("Rejection T: %v ID: %v %v/%v", rd.Time, rd.Id, tile.NumEntry, len(s.SquarePop[newSquare])))
+				}*/
+				fmt.Fprintln(s.P.DetectionFile, fmt.Sprintf("Rejection T: %v ID: %v %v/%v", rd.Time, rd.Id, tile.NumEntry, len(s.SquarePop[newSquare])))
 			}
 		}
 	} else if(s.P.ValidationType == "validators") {
@@ -621,13 +624,12 @@ func (s *FusionCenter) Send(n *NodeImpl, rd Reading, tp bool) {
 				}
 			}
 			//if validations >= s.P.ValidationThreshold {
-			offset := math.Ceil(math.Log(float64(s.P.TotalNodes)) / math.Log(10) / 2)
-			//fmt.Println(offset)
-			neededValidators := int(offset) + int(math.Sqrt(float64(len(s.SquarePop[newSquare]))))
-			//fmt.Println(s.SquarePop[newSquare])
+			//offset := math.Ceil(math.Log(float64(s.P.TotalNodes)) / math.Log(10) / 2)
+			//neededValidators := int(offset) + int(math.Sqrt(float64(len(s.SquarePop[newSquare]))))
+			neededValidators := s.P.ValidationThreshold
 			if validations >= neededValidators {
 				if s.P.RecalReject && recalReject {
-					fmt.Fprintln(s.P.DetectionFile, fmt.Sprintf("r Rejection T: %v ID: %v %v/%v", rd.Time, rd.Id, validations, neededValidators))
+					fmt.Fprintln(s.P.DetectionFile, fmt.Sprintf("Rejection T: %v ID: %v %v/%v", rd.Time, rd.Id, validations, neededValidators))
 				} else {
 					s.P.CenterCoord = Coord{X: int(rd.Xpos), Y: int(rd.YPos)}
 					if s.P.SuperNodes {
@@ -642,12 +644,12 @@ func (s *FusionCenter) Send(n *NodeImpl, rd Reading, tp bool) {
 					fmt.Fprintln(s.P.DetectionFile, fmt.Sprintf("Confirmation T: %v ID: %v %v/%v %v", rd.Time, rd.Id, validations, neededValidators, s.CheckedIds))
 				}
 			} else {
-				if s.P.RecalReject && recalReject {
-					fmt.Fprintln(s.P.DetectionFile, fmt.Sprintf("r Rejection T: %v ID: %v %v/%v", rd.Time, rd.Id, validations, neededValidators))
+				/*if s.P.RecalReject && recalReject {
+					fmt.Fprintln(s.P.DetectionFile, fmt.Sprintf("Rejection T: %v ID: %v %v/%v", rd.Time, rd.Id, validations, neededValidators))
 				} else {
 					fmt.Fprintln(s.P.DetectionFile, fmt.Sprintf("Rejection T: %v ID: %v %v/%v", rd.Time, rd.Id, validations, neededValidators))
-				}
-				//fmt.Fprintln(s.P.DetectionFile, fmt.Sprintf("Rejection T: %v ID: %v %v/%v", rd.Time, rd.Id, validations, neededValidators))
+				}*/
+				fmt.Fprintln(s.P.DetectionFile, fmt.Sprintf("Rejection T: %v ID: %v %v/%v", rd.Time, rd.Id, validations, neededValidators))
 			}
 		}
 	}
