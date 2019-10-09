@@ -16,7 +16,7 @@ from zipfile import *
 #basePath = "C:/Users/patrick/Downloads/driftExplorerBombADC/"
 basePath = "C:/Users/patrick/Downloads/driftExplorerBombAdaptiveADC/"
 
-basePath = "C:/Users/patrick/Downloads/driftExplorerBombSquareBig/"
+basePath = "C:/Users/patrick/Downloads/driftExplorerFireflyNoBombSquare/"
 
 #basePath = "C:/Users/patrick/Downloads/driftTest/"
 figurePath = "C:/Users/patrick/Dropbox/Patrick/udel/SUMMER2018/git_simulator/CPS_Simulator/driftExploreCommBomb/"
@@ -30,7 +30,7 @@ ZIP = True
 data = {}
 
 
-pickleName = "driftExplorerBombSquareBig"
+pickleName = "driftExplorerFireflyNoBombSquare"
 #pickleName = "driftExplorerBombADC_qTest"
 
 

@@ -217,4 +217,6 @@ type Params struct {
 	ReadingHistorySize	int
 	ServerRecal 	bool
 	MinDistance 	int
+
+	ValidationType string
 }
