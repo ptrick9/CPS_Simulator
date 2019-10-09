@@ -635,7 +635,7 @@ func main() {
 
 	}
 
-	p.Server.PrintStatsFile()
+	//p.Server.PrintStatsFile()
 
 }
 

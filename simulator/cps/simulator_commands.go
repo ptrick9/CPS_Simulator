@@ -219,4 +219,5 @@ type Params struct {
 	MinDistance 	int
 
 	ValidationType string
+	RecalReject 	bool
 }

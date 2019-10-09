@@ -521,102 +521,133 @@ func (s *FusionCenter) Send(n *NodeImpl, rd Reading, tp bool) {
 	// add node to correct square
 
 
+	recalReject := false
 
 
-
-
-	if rd.SensorVal > s.P.DetectionThreshold {
-
-		_, ok := s.Readings[Key{int(rd.Xpos / float32(s.P.XDiv)), int(rd.YPos / float32(s.P.YDiv)), rd.Time / 1000}]
-		if ok {
-			s.Readings[Key{int(rd.Xpos / float32(s.P.XDiv)), int(rd.YPos / float32(s.P.YDiv)), rd.Time / 1000}] = append(s.Readings[Key{int(rd.Xpos / float32(s.P.XDiv)), int(rd.YPos / float32(s.P.YDiv)), rd.Time / 1000}], rd)
-		} else {
-			s.Readings[Key{int(rd.Xpos / float32(s.P.XDiv)), int(rd.YPos / float32(s.P.YDiv)), rd.Time / 1000}] = []Reading{rd}
-		}
-		s.Times = make(map[int]bool, 0)
-		if s.Times[rd.Time] {
-
-		} else {
-			s.Times[rd.Time] = true
-		}
-	}
-
-
-
-	s.UpdateSquareAvg(rd)
 	tile := s.P.Grid[int(rd.Xpos)/s.P.XDiv][int(rd.YPos)/s.P.YDiv]
 	tile.LastReadingTime = rd.Time
 	tile.SquareValues += math.Pow(float64(rd.SensorVal-float64(tile.Avg)), 2)
 	if s.P.ServerRecal {
 		if rd.SensorVal > (float64(tile.Avg) + s.P.CalibrationThresholdCM) { //Check if x over grid avg
-			fmt.Fprintf(n.P.DriftExploreFile, "ID: %v T: %v In: %v CUR: %v NT: %v %v SERVRECAL\n", n.Id, n.P.CurrentTime, n.InitialSensitivity, n.Sensitivity, n.NodeTime, rd.SensorVal)
-			n.Recalibrate()
-			s.LastRecal[n.Id] = s.P.Iterations_used
-			//fmt.Println(s.LastRecal)
+			if s.P.RecalReject {
+				if ((s.P.CurrentTime/1000)-n.NodeTime) > 200 { //hasn't been recalibrated too recently, need to reject and recal
+					fmt.Fprintf(n.P.DriftExploreFile, "ID: %v T: %v In: %v CUR: %v NT: %v %v SERVRECAL\n", n.Id, n.P.CurrentTime, n.InitialSensitivity, n.Sensitivity, n.NodeTime, rd.SensorVal)
+					n.Recalibrate()
+					s.LastRecal[n.Id] = s.P.Iterations_used
+					recalReject = true
+				} else {
+					recalReject = false
+				}
+			} else {
+				fmt.Fprintf(n.P.DriftExploreFile, "ID: %v T: %v In: %v CUR: %v NT: %v %v SERVRECAL\n", n.Id, n.P.CurrentTime, n.InitialSensitivity, n.Sensitivity, n.NodeTime, rd.SensorVal)
+				n.Recalibrate()
+				s.LastRecal[n.Id] = s.P.Iterations_used
+			}
 		}
 	}
+
+	if !recalReject { //if reading shouldn't be rejected
+		s.UpdateSquareAvg(rd)
+
+		if rd.SensorVal > s.P.DetectionThreshold {
+
+			_, ok := s.Readings[Key{int(rd.Xpos / float32(s.P.XDiv)), int(rd.YPos / float32(s.P.YDiv)), rd.Time / 1000}]
+			if ok {
+				s.Readings[Key{int(rd.Xpos / float32(s.P.XDiv)), int(rd.YPos / float32(s.P.YDiv)), rd.Time / 1000}] = append(s.Readings[Key{int(rd.Xpos / float32(s.P.XDiv)), int(rd.YPos / float32(s.P.YDiv)), rd.Time / 1000}], rd)
+			} else {
+				s.Readings[Key{int(rd.Xpos / float32(s.P.XDiv)), int(rd.YPos / float32(s.P.YDiv)), rd.Time / 1000}] = []Reading{rd}
+			}
+			s.Times = make(map[int]bool, 0)
+			if s.Times[rd.Time] {
+
+			} else {
+				s.Times[rd.Time] = true
+			}
+		}
+
+
+	}
+
 
 	if(s.P.ValidationType == "square") {
 		if rd.SensorVal > s.P.DetectionThreshold {
 			if tile.Avg > float32(s.P.DetectionThreshold) && tile.NumEntry > 2 {
-				if FloatDist(Tuple32{rd.Xpos, rd.YPos}, Tuple32{float32(s.P.B.X), float32(s.P.B.Y)}) > s.P.DetectionDistance {
-					//do nothing here
-				} else {
-					if !s.P.DriftExplorer && tp {
-						s.P.FoundBomb = true
+				if s.P.RecalReject && recalReject { //true && true means we are rejecting and we should reject
+					fmt.Fprintln(s.P.DetectionFile, fmt.Sprintf("Rejection T: %v ID: %v %v/%v", rd.Time, rd.Id, tile.NumEntry, len(s.SquarePop[newSquare])))
+				} else { //any other case
+					if FloatDist(Tuple32{rd.Xpos, rd.YPos}, Tuple32{float32(s.P.B.X), float32(s.P.B.Y)}) > s.P.DetectionDistance {
+						//do nothing here
+					} else {
+						if !s.P.DriftExplorer && tp {
+							s.P.FoundBomb = true
+						}
 					}
-				}
-				fmt.Printf("\n grid %v %v %v\n", tile.X, tile.Y, tile.Avg)
-				fmt.Fprintln(s.P.DetectionFile, fmt.Sprintf("Confirmation T: %v ID: %v %v/%v %v", rd.Time, rd.Id, tile.NumEntry, len(s.SquarePop[newSquare]), s.CheckedIds))
+					fmt.Fprintln(s.P.DetectionFile, fmt.Sprintf("Confirmation T: %v ID: %v %v/%v %v %v", rd.Time, rd.Id, tile.NumEntry, len(s.SquarePop[newSquare]), s.CheckedIds, n.NodeTime))
 
+				}
 			} else {
-				fmt.Fprintln(s.P.DetectionFile, fmt.Sprintf("Rejection T: %v ID: %v %v/%v", rd.Time, rd.Id, tile.NumEntry, len(s.SquarePop[newSquare])))
+				if s.P.RecalReject && recalReject {
+					fmt.Fprintln(s.P.DetectionFile, fmt.Sprintf("r Rejection T: %v ID: %v %v/%v", rd.Time, rd.Id, tile.NumEntry, len(s.SquarePop[newSquare])))
+				} else {
+					fmt.Fprintln(s.P.DetectionFile, fmt.Sprintf("Rejection T: %v ID: %v %v/%v", rd.Time, rd.Id, tile.NumEntry, len(s.SquarePop[newSquare])))
+				}
+				//fmt.Fprintln(s.P.DetectionFile, fmt.Sprintf("Rejection T: %v ID: %v %v/%v", rd.Time, rd.Id, tile.NumEntry, len(s.SquarePop[newSquare])))
 			}
 		}
 	} else if(s.P.ValidationType == "validators") {
 		if rd.SensorVal > s.P.DetectionThreshold {
 			s.CheckedIds = make([]int, 0)
 			validations := 0
-			for t := (s.P.CurrentTime / 1000) - s.P.ReadingHistorySize; t <= s.P.CurrentTime/1000; t++ {
-				for x := int((rd.Xpos - float32(s.P.DetectionDistance)) / float32(s.P.XDiv)); x < int((rd.Xpos+float32(s.P.DetectionDistance))/float32(s.P.XDiv)); x++ {
-					for y := int((rd.YPos - float32(s.P.DetectionDistance)) / float32(s.P.YDiv)); y < int((rd.YPos+float32(s.P.DetectionDistance))/float32(s.P.YDiv)); y++ {
-						for r := range s.Readings[Key{x, y, t}] {
-							currRead := s.Readings[Key{x, y, t}][r]
-							if FloatDist(Tuple32{currRead.Xpos, currRead.YPos}, Tuple32{rd.Xpos, rd.YPos}) < s.P.DetectionDistance {
-								if currRead.Id != rd.Id && !Is_in(currRead.Id, s.CheckedIds) && currRead.SensorVal > s.P.DetectionThreshold {
-									s.CheckedIds = append(s.CheckedIds, currRead.Id)
-									if tp {
+			if !recalReject {
+				for t := (s.P.CurrentTime / 1000) - s.P.ReadingHistorySize; t <= s.P.CurrentTime/1000; t++ {
+					for x := int((rd.Xpos - float32(s.P.DetectionDistance)) / float32(s.P.XDiv)); x < int((rd.Xpos+float32(s.P.DetectionDistance))/float32(s.P.XDiv)); x++ {
+						for y := int((rd.YPos - float32(s.P.DetectionDistance)) / float32(s.P.YDiv)); y < int((rd.YPos+float32(s.P.DetectionDistance))/float32(s.P.YDiv)); y++ {
+							for r := range s.Readings[Key{x, y, t}] {
+								currRead := s.Readings[Key{x, y, t}][r]
+								if FloatDist(Tuple32{currRead.Xpos, currRead.YPos}, Tuple32{rd.Xpos, rd.YPos}) < s.P.DetectionDistance {
+									if currRead.Id != rd.Id && !Is_in(currRead.Id, s.CheckedIds) && currRead.SensorVal > s.P.DetectionThreshold {
+										s.CheckedIds = append(s.CheckedIds, currRead.Id)
+										if tp {
+											s.Validators[rd.Id] = t
+										}
+										validations++
+									} else if currRead.SensorVal > s.P.DetectionThreshold && tp {
 										s.Validators[rd.Id] = t
 									}
-									validations++
-								} else if currRead.SensorVal > s.P.DetectionThreshold && tp {
-									s.Validators[rd.Id] = t
 								}
 							}
 						}
 					}
 				}
 			}
-
 			//if validations >= s.P.ValidationThreshold {
 			offset := math.Ceil(math.Log(float64(s.P.TotalNodes)) / math.Log(10) / 2)
 			//fmt.Println(offset)
 			neededValidators := int(offset) + int(math.Sqrt(float64(len(s.SquarePop[newSquare]))))
 			//fmt.Println(s.SquarePop[newSquare])
 			if validations >= neededValidators {
-				s.P.CenterCoord = Coord{X: int(rd.Xpos), Y: int(rd.YPos)}
-				if s.P.SuperNodes {
-					s.Sch.AddRoutePoint(s.P.CenterCoord)
-				}
-				if FloatDist(Tuple32{rd.Xpos, rd.YPos}, Tuple32{float32(s.P.B.X), float32(s.P.B.Y)}) > s.P.DetectionDistance {
+				if s.P.RecalReject && recalReject {
+					fmt.Fprintln(s.P.DetectionFile, fmt.Sprintf("r Rejection T: %v ID: %v %v/%v", rd.Time, rd.Id, validations, neededValidators))
 				} else {
-					if !s.P.DriftExplorer && tp {
-						s.P.FoundBomb = true
+					s.P.CenterCoord = Coord{X: int(rd.Xpos), Y: int(rd.YPos)}
+					if s.P.SuperNodes {
+						s.Sch.AddRoutePoint(s.P.CenterCoord)
 					}
+					if FloatDist(Tuple32{rd.Xpos, rd.YPos}, Tuple32{float32(s.P.B.X), float32(s.P.B.Y)}) > s.P.DetectionDistance {
+					} else {
+						if !s.P.DriftExplorer && tp {
+							s.P.FoundBomb = true
+						}
+					}
+					fmt.Fprintln(s.P.DetectionFile, fmt.Sprintf("Confirmation T: %v ID: %v %v/%v %v", rd.Time, rd.Id, validations, neededValidators, s.CheckedIds))
 				}
-				fmt.Fprintln(s.P.DetectionFile, fmt.Sprintf("Confirmation T: %v ID: %v %v/%v %v", rd.Time, rd.Id, validations, neededValidators, s.CheckedIds))
 			} else {
-				fmt.Fprintln(s.P.DetectionFile, fmt.Sprintf("Rejection T: %v ID: %v %v/%v", rd.Time, rd.Id, validations, neededValidators))
+				if s.P.RecalReject && recalReject {
+					fmt.Fprintln(s.P.DetectionFile, fmt.Sprintf("r Rejection T: %v ID: %v %v/%v", rd.Time, rd.Id, validations, neededValidators))
+				} else {
+					fmt.Fprintln(s.P.DetectionFile, fmt.Sprintf("Rejection T: %v ID: %v %v/%v", rd.Time, rd.Id, validations, neededValidators))
+				}
+				//fmt.Fprintln(s.P.DetectionFile, fmt.Sprintf("Rejection T: %v ID: %v %v/%v", rd.Time, rd.Id, validations, neededValidators))
 			}
 		}
 	}
