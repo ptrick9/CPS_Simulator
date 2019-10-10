@@ -9,8 +9,8 @@ def runner(queue):
         print("%d\\%d" % (job[1], job[2]))
         #print(job)
         command = "./simulator/Simulation "+' '.join(job[0])
-        print(command)
-        #os.system(command + " 1>/dev/null")
+        #print(command)
+        os.system(command + " 1>/dev/null")
         queue.task_done()
 
 
@@ -90,7 +90,7 @@ if __name__ == '__main__':
     for r in runs:
         for i in range(factor):
             j = [zz for zz in r]
-            j.append("-OutputFileName=/home/simulator/simData/driftExplorerBombSquareBig/Log_%d" % x)
+            j.append("-OutputFileName=/home/simulator/simData/driftExplorerNoBombFinal/Log_%d" % x)
 
             
             v = j
