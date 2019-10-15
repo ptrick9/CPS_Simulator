@@ -131,8 +131,8 @@ func (s FusionCenter) MakeGrid() {
 
 //CheckDetections iterates through the grid and validates detections by nodes
 func (s FusionCenter) CheckDetections() {
-	for x := 0; x < s.P.SquareColCM; x++ {
-		for y := 0; y < s.P.SquareRowCM; y++ {
+	for x := 0; x < s.P.GridWidth; x++ {
+		for y := 0; y < s.P.GridHeight; y++ {
 			bombSquare := s.P.Grid[s.P.B.X/s.P.XDiv][s.P.B.Y/s.P.YDiv]
 			bs_y := float64(s.P.B.Y / s.P.YDiv)
 			bs_x := float64(s.P.B.X / s.P.XDiv)
