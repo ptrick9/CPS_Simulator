@@ -1,6 +1,6 @@
 import os
 
-basePath = "C:/Users/patrick/Downloads/driftExplorerBombFinal2/"
+basePath = "C:/Users/patrick/Downloads/driftExplorerBombFinalGridSize3/"
 
 
 for f in os.listdir(basePath):
