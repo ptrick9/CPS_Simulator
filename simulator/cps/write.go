@@ -1422,6 +1422,8 @@ func GetFlags(p *Params) {
 
 	flag.StringVar(&p.ValidationType, "validationType", "square", "Type of validation: square or validators")
 
+	flag.BoolVar(&p.RecalReject, "recalReject", false, "reject if hasn't been recalibrated recently")
+
 	flag.StringVar(&p.SensorPath, "sensorPath", "Circle_2D.csv", "Sensor Reading Inputs")
 
 	flag.StringVar(&p.FineSensorPath, "fineSensorPath", "Circle_2D.csv", "Sensor Reading Inputs")
@@ -1680,6 +1682,7 @@ func WriteFlags(p * Params){
 	buf.WriteString(fmt.Sprintf("detectionWindow=%v\n", p.ReadingHistorySize))
 	buf.WriteString(fmt.Sprintf("totalNodes=%v\n", p.TotalNodes))
 	buf.WriteString(fmt.Sprintf("validaitonType=%v\n", p.ValidationType))
+	buf.WriteString(fmt.Sprintf("recalReject=%v\n", p.RecalReject))
 	fmt.Fprintf(p.RunParamFile,buf.String())
 }
 

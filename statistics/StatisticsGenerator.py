@@ -16,7 +16,7 @@ from zipfile import *
 #basePath = "C:/Users/patrick/Downloads/driftExplorerBombADC/"
 basePath = "C:/Users/patrick/Downloads/driftExplorerBombAdaptiveADC/"
 
-basePath = "C:/Users/patrick/Downloads/driftExplorerFireflyNoBombSquare/"
+basePath = "C:/Users/patrick/Downloads/driftExplorerBombFinalGridSize2/"
 
 #basePath = "C:/Users/patrick/Downloads/driftTest/"
 figurePath = "C:/Users/patrick/Dropbox/Patrick/udel/SUMMER2018/git_simulator/CPS_Simulator/driftExploreCommBomb/"
@@ -30,7 +30,7 @@ ZIP = True
 data = {}
 
 
-pickleName = "driftExplorerFireflyNoBombSquare"
+pickleName = "driftExplorerBombFinalGridSize2"
 #pickleName = "driftExplorerBombADC_qTest"
 
 
@@ -43,8 +43,8 @@ def buildDetectionList(basePath, runs):
         print(next(x for x in detections if x.TPConf()))
 
 
-def getDetections(basePath, run):
-    return BuildDetections("%s%s" % (basePath, run))
+def getDetections(basePath, run, p):
+    return BuildDetections("%s%s" % (basePath, run), p)
 
 def getDistance(basePath, run):
     return buildBetterDistance("%s%s" % (basePath, run))
@@ -93,7 +93,7 @@ def generateData(rq, wq):
         run = {}
         print(job)
         p = getParameters("%s%s" % (basePath, file))
-        det = getDetections(basePath, file)
+        det = getDetections(basePath, file, p)
         firstDet = 10000
         try:
             firstDet = next(x for x in det if x.TPConf()).time
@@ -110,6 +110,10 @@ def generateData(rq, wq):
         run['# False Negatives Drift'] = sum([1 if x.FN() and x.Drift() and x.time < firstDet else 0 for x in det])
         run['# Total False Negatives'] = sum([1 if x.FN() else 0 for x in det])
         run['# Total False Positives'] = sum([1 if x.FP() else 0 for x in det])
+        run['True Positive Readings'] = [x.errorADC for x in det if x.TP() and x.time < firstDet]
+
+        #if p['validaitonType'] == 'square':
+        #    run['False Positive Confirmation Timing'] = [x.time for x in det if x.FPConf()]
 
         dists = getDistance(basePath, file)
 
@@ -277,7 +281,7 @@ if __name__ == '__main__':
     for run in uniqueRuns:
         rq.put([run, order])
 
-    p = multiprocessing.Pool(3, generateData, (rq,wq,))
+    p = multiprocessing.Pool(3, generateData, (rq,wq,), maxtasksperchild=3)
     p = multiprocessing.Pool(1, dataStorage, (wq,order, shiftingParameters, len(uniqueRuns),))
 
     rq.join()

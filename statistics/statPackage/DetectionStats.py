@@ -66,6 +66,9 @@ class Detection:
     def FP(self):
         return self.typ == 'FP'
 
+    def TP(self):
+        return self.typ == 'TP'
+
     def Drift(self):
         return self.cause == ' Drift '
 
@@ -96,14 +99,14 @@ def CountTPConfirmation(d):
 def CountFN(d):
     return sum([1 if x.FN() else 0 for x in d])
 
-def BuildDetections(basename):
+def BuildDetections(basename, p):
 
     zf = ZipFile(basename)
     temp = os.path.split(basename)[1]
     n = temp.split(".zip")[0]
 
-    if 'low' in n:
-        n = n[:-3]
+    if 'p2' in n:
+        n = n[:-2]
 
     f = zf.open("%s%s" % (n, "-detection.txt"))
 
@@ -131,12 +134,22 @@ def BuildDetections(basename):
 
     regexFN = r"(?P<type>FN) (?P<cause>Window) T: (?P<enterTime>\d+) CT: (?P<currentTime>\d+) ID: (?P<ident>\d+)"
 
+    regexFNRecal = r"(?P<type>FN) (?P<cause>Recal) T: (?P<time>\d+) ID: (?P<ident>\d+)"
+
     FNMatches = re.finditer(regexFN, longBoi, re.MULTILINE)
 
     for matchNum, match in enumerate(FNMatches, start=1):
         ident = int(match.group('ident'))
         ct = int(match.group('currentTime'))
         detections.append(Detection(ident, ct, '', -1, -1, 'FN', -1, -1, -1, -1, -1, -1, 'Window'))
+
+    FNRecalMatches = re.finditer(regexFNRecal, longBoi, re.MULTILINE)
+
+    for matchNum, match in enumerate(FNRecalMatches, start=1):
+        ident = int(match.group('ident'))
+        time = int(match.group('time'))
+        detections.append(Detection(ident, time, '', -1, -1, 'FN', -1, -1, -1, -1, -1, -1, 'Recal'))
+        #print("%s FNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN" % basename)
 
     detailedMatches = re.finditer(regexDetail, longBoi, re.MULTILINE)
 
@@ -185,6 +198,10 @@ def buildBetterDistance(basename):
     zf = ZipFile(basename)
     temp = os.path.split(basename)[1]
     n = temp.split(".zip")[0]
+
+    if 'p2' in n:
+        n = n[:-2]
+
     f = zf.open("%s%s" % (n, "-distance.txt"))
 
     #f = open('%s-simulatorOutput.txt' % basename)
@@ -219,6 +236,10 @@ def buildApproachDistances(basename, maxDistance, granularity):
     zf = ZipFile(basename)
     temp = os.path.split(basename)[1]
     n = temp.split(".zip")[0]
+
+    if 'p2' in n:
+        n = n[:-2]
+
     f = zf.open("%s%s" % (n, "-simulatorOutput.txt"))
 
     #f = open('%s-simulatorOutput.txt' % basename)
