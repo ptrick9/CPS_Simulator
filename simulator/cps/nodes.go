@@ -123,7 +123,7 @@ type NodeImpl struct {
 	InitialSensitivity float64
 	Valid 			   bool
 
-	allReadings 	   [1000]float64
+	//allReadings 	   [1000]float64
 	calibrateTimes 	   []int
 	calibrateReading   []float64
 
@@ -131,8 +131,37 @@ type NodeImpl struct {
 
 	TotalPacketsSent    int
 	TotalBytesSent		int
+
+	IsClusterMember		bool
 	IsClusterHead		bool
+
+	NodeBounds			*Bounds //the node's representative bounds object
+	NodeClusterParams	*ClusterMemberParams
 	Recalibrated 		bool
+	CHPenalty			float64
+	ReadingsBuffer		[]Reading
+	TimeLastSentReadings	int
+	TimeLastAccel		int
+	LastMoveTime		int
+	Velocity			float64
+	SampleRate			float64
+
+	LastReading			 float64
+	ReadingPercentChange float64
+	LastAccel			 float64
+	MovePercentChange	 float64
+	MovementModifier	 float64
+	SensorModifier		 float64
+
+	SampleRateSensor	 float64
+	SampleRateMovement   float64
+	SampleRateBattery    float64
+
+	ScheduledEvent		 *Event
+	BatteryPercent		 float64
+
+	LastNSampleRates	 []float64
+	//Online				bool //whether the node is still online (battery is still high enough)
 }
 
 //NodeMovement controls the movement of all the normal nodes
@@ -220,8 +249,6 @@ func (curNode *NodeImpl) TurnValid(x, y int, p *Params) bool {
 	}
 	return false
 }
-
-
 
 func (curNode *NodeImpl) ADCReading(raw float32) int {
 
@@ -341,6 +368,14 @@ func (curNode *NodeImpl) Move(p *Params) {
 			curNode.Sitting = 0
 		}
 	}
+	if curNode.LastAccel == 0.0 {
+		curNode.MovePercentChange = float64(curNode.AccelerometerSpeed[len(curNode.AccelerometerSpeed) - 1]) / 1.5
+	} else {
+		curNode.MovePercentChange = curNode.LastAccel - float64(curNode.AccelerometerSpeed[len(curNode.AccelerometerSpeed) - 1]) / curNode.LastAccel
+	}
+	curNode.LastAccel = float64(curNode.AccelerometerSpeed[len(curNode.AccelerometerSpeed) - 1])
+	//fmt.Fprintf(curNode.P.SamplingData, "ID:%v T:%v M:%v,%v\n", curNode.Id, curNode.P.CurrentTime, curNode.AccelerometerSpeed[len(curNode.AccelerometerSpeed) - 1],
+	//	curNode.MovePercentChange)
 }
 
 func (curNode *NodeImpl) Recalibrate() {
@@ -414,51 +449,35 @@ func (curNode *NodeImpl) LogBatteryPower(t int){
 	//}
 }
 
-func (curNode *NodeImpl) SendtoServer(packet int){
-	//int packet = num bytes in packet
-	curNode.TotalBytesSent += packet;
-	curNode.TotalPacketsSent += 1;
-
-	//code to send to server goes here
-}
-
-func (curNode *NodeImpl) SendtoClusterHead(packet int){
-	//int packet = num bytes in packet
-	curNode.TotalBytesSent += packet;
-	curNode.TotalPacketsSent += 1;
-
-	//code to send to cluster head goes here
-}
-
 
 //decrement battery due to transmitting/receiving over BlueTooth
-func (curNode *NodeImpl) DecrementPowerBT(packet int){
-	curNode.Battery = curNode.Battery - curNode.BatteryLossBT*curNode.Battery
+func (curNode *NodeImpl) DecrementPowerBT(){
+	curNode.Battery = curNode.Battery - float32(curNode.P.SamplingLossBTCM)
 }
 
 //decrement battery due to transmitting/receiving over WiFi
 func (curNode *NodeImpl) DecrementPowerWifi(packet int){
-	curNode.Battery = curNode.Battery - curNode.BatteryLossWifi
+	curNode.Battery = curNode.Battery - float32(curNode.P.SamplingLossWifiCM)
 }
 
 //decrement battery due to transmitting/receiving over 4G
-func (curNode *NodeImpl) DecrementPower4G(packet int){
-	curNode.Battery = curNode.Battery - curNode.BatteryLoss4G*curNode.Battery
+func (curNode *NodeImpl) DecrementPower4G(){
+	curNode.Battery = curNode.Battery - float32(curNode.P.SamplingLoss4GCM)
 }
 
 //decrement battery due to sampling Accelerometer
 func (curNode *NodeImpl) DecrementPowerAccel(){
-	curNode.Battery = curNode.Battery - curNode.BatteryLossAccelerometer*curNode.Battery
+	curNode.Battery = curNode.Battery - float32(curNode.P.SamplingLossAccelCM)
 }
 
 //decrement battery due to transmitting/receiving GPS
 func (curNode *NodeImpl) DecrementPowerGPS(){
-	curNode.Battery = curNode.Battery - curNode.BatteryLossGPS*curNode.Battery
+	curNode.Battery = curNode.Battery - float32(curNode.P.SamplingLossGPSCM)
 }
 
 //decrement battery due to using GPS
 func (curNode *NodeImpl) DecrementPowerSensor(){
-	curNode.Battery = curNode.Battery - curNode.BatteryLossSensor*curNode.Battery
+	curNode.Battery = curNode.Battery - float32(curNode.P.SamplingLossSensorCM)
 }
 
 
@@ -682,6 +701,68 @@ func RawConcentration(dist float32) float32 {
 func transformCoord(c Coord, p *Params) Coord {
 	return Coord{X: transformX(c.X, p), Y: transformY(c.Y, p)}
 }
+//UpdatSampleRatePart find the sample rate due to one of three factors
+//Called anytime the sense or move events are called
+func (curNode *NodeImpl) UpdateSampleRatePart(modifier string, value float64) {
+	//samplesPerMeter := 10.0
+	rate := 0.0
+	if modifier == "sensor" {
+		rate = curNode.P.SensorSampleRate//0.05
+		curNode.SampleRateSensor = rate
+	} else if modifier == "movement" {
+		//rate = curNode.P.MaxSampleRate / * value
+		rate = curNode.P.SamplesPerMeter * value
+		curNode.SampleRateMovement = rate
+	} else if modifier == "battery" {
+		rate = ( curNode.P.MaxSampleRate / (100.0 - float64(curNode.P.ThreshHoldBatteryToHave)) )* (value - float64(curNode.P.ThreshHoldBatteryToHave))
+		if value <= float64(curNode.P.ThreshHoldBatteryToHave) {
+			rate = 0.01
+		}
+		//fmt.Println(rate)
+		curNode.SampleRateBattery = rate
+	}else {
+		fmt.Println("Error updating sample rate!")
+	}
+}
+
+//NewSampleRate updates and returns the sample rate calculated based on the SampleRatePart function
+//The maximum of the sensor-based sample rate and movement-based sample rate is used
+//Limited by the sample rate due to the battery
+func (curNode *NodeImpl) NewSampleRate() float64{
+	newRate := 0.0
+	if curNode.SampleRateBattery < curNode.SampleRateSensor {
+		curNode.SampleRateSensor = curNode.SampleRateBattery
+	}
+	if curNode.SampleRateBattery < curNode.SampleRateMovement {
+		curNode.SampleRateMovement = curNode.SampleRateBattery
+	}
+	newRate = MaxFloat64(curNode.SampleRateSensor, curNode.SampleRateMovement)
+	if curNode.SampleRate != newRate {
+		fmt.Fprintf(curNode.P.SampleRates,"ID: %v, T: %v, R: %.2f, S: %.2f, M: %.2f, V: %.2f, B: %.2f\n", curNode.Id,
+			curNode.P.CurrentTime, curNode.SampleRate, curNode.SampleRateSensor, curNode.SampleRateMovement,
+			curNode.Velocity, curNode.SampleRateBattery)
+	}
+	curNode.SampleRate = newRate
+	if curNode.SampleRate > 20 || curNode.SampleRate < 0 {
+		fmt.Printf("\nError! Sample Rate: %v, Sensor: %v, Battery: %v, Movement: %v\n", curNode.SampleRate, curNode.SampleRateSensor, curNode.SampleRateBattery, curNode.SampleRateMovement)
+	}
+	curNode.LastNSampleRates = append(curNode.LastNSampleRates, newRate)
+	if len(curNode.LastNSampleRates) > curNode.P.NumStoredSampleRates {
+		curNode.LastNSampleRates = curNode.LastNSampleRates[1:]
+	}
+	return newRate
+}
+
+func MaxFloat64(val1, val2 float64) float64{
+	if val1 > val2 {
+		return val1
+	} else {
+		return val2
+	}
+}
+
+//Takes cares of taking a node's readings and sends results to the server
+//This function runs if there is no sensor reading CSV
 
 func transformX(x int, p *Params) int {
 	return int(float32(p.FineWidth/2) -  ((float32(p.B.X - x)/2.0)*float32(p.FineScale)))
@@ -757,6 +838,19 @@ func interpolateReading(x , y float32, time, timeStep int, fine bool, p *Params)
 
 	botInter := bl + xPortion * (br - bl)
 	topInter := tl + xPortion * (tr - tl)
+		if(curNode.P.ClusteringOn){
+			newReading := Reading{ADCRead, newX, newY, curNode.P.CurrentTime, curNode.GetID(), curNode.GetCHID()}
+			curNode.ReadingsBuffer = append(curNode.ReadingsBuffer, newReading)
+		} else{
+			if curNode.LastReading == 0.0 {
+				curNode.ReadingPercentChange = ADCRead / 4095
+			} else {
+				curNode.ReadingPercentChange = ADCRead - curNode.LastReading / curNode.LastReading
+			}
+			curNode.LastReading = ADCRead
+			//fmt.Fprintf(curNode.P.SamplingData, "ID:%v T:%v S:%v,%v\n", curNode.Id, curNode.P.CurrentTime, ADCRead, curNode.ReadingPercentChange)
+			curNode.P.Server.Send(curNode, Reading{ADCRead, newX, newY, curNode.P.CurrentTime, curNode.GetID(), curNode.GetCHID()})
+		}
 
 	yPortion := 1.0
 	if nextY != oldY {
@@ -801,6 +895,20 @@ func (curNode *NodeImpl) GetReadings() {
 
 		RawConc := 0.0
 
+
+func (curNode * NodeImpl) GetCHID()(int){
+	if(curNode.NodeClusterParams != nil && curNode.NodeClusterParams.CurrentCluster != nil && curNode.NodeClusterParams.CurrentCluster.ClusterHead != nil){
+		return curNode.NodeClusterParams.CurrentCluster.ClusterHead.Id
+	} else{
+		return -1
+	}
+}
+
+func interpolateReading(x , y float32, time, timeStep int, p *Params) float32{
+	oldX := int(x)
+	oldY := int(y)
+	nextX := int(math.Ceil(float64(x)))
+	nextY := int(math.Ceil(float64(y)))
 
 		if curNode.Distance(*curNode.P.B)/2 < float32((curNode.P.FineWidth/2)/curNode.P.FineScale) {
 			RawConc = float64(trueInterpolate(newX, newY, curNode.P.CurrentTime, curNode.P.TimeStep, true, curNode.P))
@@ -938,6 +1046,11 @@ func (curNode *NodeImpl) report(rawConc float64) {
 		curNode.Recalibrated = true
 		curNode.IncrementNumResets()
 	}
+		if curNode.P.AdaptiveSampling {
+			curNode.BatteryPercent -= 0.01
+			curNode.UpdateSampleRatePart("sensor", ADCRead)
+			curNode.UpdateSampleRatePart("battery", float64(curNode.BatteryPercent))
+			dist := DistFloat32(Tuple32{curNode.X, curNode.Y}, Tuple32{float32(curNode.P.B.X), float32(curNode.P.B.Y)})
 
 	//printing statements to log files, only if the sensor was pinged this iteration
 	//if curNode.HasCheckedSensor && nodesPrint{
@@ -950,7 +1063,9 @@ func (curNode *NodeImpl) report(rawConc float64) {
 		//fmt.Fprintln(nodeFile, "battery:", int(curNode.Battery),)
 		curNode.Recalibrated = false
 	}
+			fmt.Fprintf(curNode.P.SamplingData, "ID:%v T:%v S:%v,%v B:%v,%v D:%v\n", curNode.Id, curNode.P.CurrentTime, ADCRead, curNode.SampleRateSensor, curNode.BatteryPercent, curNode.SampleRateBattery, dist)
 
+		}
 
 	inWind := curNode.P.Server.CheckFalsePosWind(curNode)  //true if in sensor area
 	inRange := float64(d*2) < curNode.P.DetectionDistance      //true = out
@@ -958,6 +1073,9 @@ func (curNode *NodeImpl) report(rawConc float64) {
 	highSensor := ADCRead > curNode.P.DetectionThreshold
 
 	tp := false
+		//Receives the node's distance and calculates its running average
+		//for that square
+		//Only do this if the sensor was pinged this iteration
 
 	if inRange && highConcentration && highSensor {
 		fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("TP T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, rawConc))
@@ -979,6 +1097,46 @@ func (curNode *NodeImpl) report(rawConc float64) {
 			//we are in the wind zone and the bomb is random, so it isn't possible to get here....
 			//fmt.Printf("\n %v %v %v %v %v %v\n", curNode.Id, curNode.P.TimeStep, inWind, curNode.P.CSVSensor, highSensor, highConcentration)
 			fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("FN Wind T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, rawConc))
+		if curNode.Valid {
+			if(curNode.P.ClusteringOn){
+				if(curNode.IsClusterHead){
+					if(curNode.P.CurrentTime - curNode.TimeLastSentReadings > curNode.P.CHSensingTime*1000 || len(curNode.ReadingsBuffer)>curNode.P.MaxCHReadingBufferSize){
+						//Print to file
+						oldest,newest := curNode.GetOldestNewestReadings()
+						fmt.Fprintf(curNode.P.ClusterReadings,"%d-%d-%d-Server-%d-%d-%d\n",curNode.P.CurrentTime/1000,curNode.TimeLastSentReadings/1000,curNode.Id,oldest/1000,newest/1000,len(curNode.ReadingsBuffer))
+
+						//Send to Server and clear readings
+						curNode.SendtoServer()
+						curNode.TimeLastSentReadings = curNode.P.CurrentTime
+					}
+				} else if(curNode.IsClusterMember){
+					if(curNode.P.CurrentTime - curNode.TimeLastSentReadings > curNode.P.CMSensingTime*1000 || len(curNode.ReadingsBuffer)>curNode.P.MaxCMReadingBufferSize){
+						//Print to file
+						oldest,newest := curNode.GetOldestNewestReadings()
+						fmt.Fprintf(curNode.P.ClusterReadings,"%d-%d-%d-BT-%d-%d-%d\n",curNode.P.CurrentTime/1000,curNode.TimeLastSentReadings/1000,curNode.Id,oldest/1000,newest/1000,len(curNode.ReadingsBuffer))
+
+						//Send to Server and clear readings
+						curNode.SendtoClusterHead()
+						curNode.TimeLastSentReadings = curNode.P.CurrentTime
+					}
+				}
+
+			newReading := Reading{ADCRead, newX, newY, curNode.P.CurrentTime, curNode.GetID(), curNode.GetCHID()}
+			curNode.ReadingsBuffer = append(curNode.ReadingsBuffer, newReading)
+
+			} else{
+				newReading := Reading{ADCRead, newX, newY, curNode.P.CurrentTime, curNode.GetID(), curNode.GetCHID()}
+				curNode.ReadingsBuffer = append(curNode.ReadingsBuffer, newReading)
+				if(curNode.P.CurrentTime - curNode.TimeLastSentReadings > curNode.P.CHSensingTime*1000 || len(curNode.ReadingsBuffer)>curNode.P.MaxCHReadingBufferSize){
+					//Print to file
+					oldest,newest := curNode.GetOldestNewestReadings()
+					fmt.Fprintf(curNode.P.ClusterReadings,"%d-%d-%d-Server-%d-%d-%d\n",curNode.P.CurrentTime/1000,curNode.TimeLastSentReadings/1000,curNode.Id,oldest/1000,newest/1000,len(curNode.ReadingsBuffer))
+
+					//Send to Server and clear readings
+					curNode.SendtoServer()
+					curNode.TimeLastSentReadings = curNode.P.CurrentTime
+				}
+			}
 		}
 	} else if !inRange && highConcentration && highSensor {
 		if inWind == 0 {
@@ -1013,11 +1171,85 @@ func (curNode *NodeImpl) report(rawConc float64) {
 	if curNode.Valid {
 		curNode.P.Server.Send(curNode, Reading{ADCRead, newX, newY, curNode.P.CurrentTime, curNode.GetID()}, tp)
 	}
+	if curNode.P.AdaptiveSampling {
+		curNode.ScheduledEvent = &Event{curNode, SENSE, curNode.P.CurrentTime + int(1000.0 / curNode.NewSampleRate()), 0}
+		curNode.P.Events.Push(curNode.ScheduledEvent)
+	} else {
+		curNode.P.Events.Push(&Event{curNode, SENSE, curNode.P.CurrentTime + 500, 0})
+	}
+}
+
+//Get min and max readings
+func (curNode * NodeImpl) GetOldestNewestReadings()(oldest int, newest int){
+
+	oldest = curNode.ReadingsBuffer[0].Time
+	newest = curNode.ReadingsBuffer[0].Time
+
+	for i:=0; i<len(curNode.ReadingsBuffer); i++{
+		if(curNode.ReadingsBuffer[i].Time < oldest){
+			oldest = curNode.ReadingsBuffer[i].Time
+		}
+		if (curNode.ReadingsBuffer[i].Time > newest){
+			newest = curNode.ReadingsBuffer[i].Time
+		}
+	}
+
+	return oldest, newest
+}
+
+//Clustering on: Cluster Head sends all readings to the Server
+//Clustering off: all nodes user this method
+func (curNode *NodeImpl) SendtoServer(){
+
+	//Iterates through Readings Buffer sending all readings
+	for i:=0; i<len(curNode.ReadingsBuffer); i++{
+		curNode.P.Server.Send(curNode, curNode.ReadingsBuffer[i])
+		//Deduct Power for 4G transmission
+		curNode.DecrementPower4G()
+	}
+
+	//clears Clusterhead reading buffer
+	curNode.ReadingsBuffer = []Reading{}
+
+}
+
+//Node sends to Cluster Head
+func (curNode *NodeImpl) SendtoClusterHead(){
+
+	//Append to clusterhead readings buffer
+	clusterHead := curNode.NodeClusterParams.CurrentCluster.ClusterHead
+	clusterHead.ReadingsBuffer = append(clusterHead.ReadingsBuffer, curNode.ReadingsBuffer...)
+
+	for i:=0; i<len(curNode.ReadingsBuffer); i++{
+		//Deduct power for BT transmission
+		curNode.DecrementPowerBT()
+	}
+
+	//clear node's readings
+	curNode.ReadingsBuffer = []Reading{}
 }
 
 func interpolate (start int, end int, portion float32) float32{
 	return (float32(end-start) * portion + float32(start))
 }
+
+//Acceleration
+func (curNode *NodeImpl) UpdateAcceleration(curTime int, newX float32, newY float32, oldX float32, oldY float32){
+	t_elapsed := (float64(curTime) - float64(curNode.TimeLastAccel))/1000.0
+	ax := float64(newX/2-oldX/2)/(t_elapsed*t_elapsed)
+	ay := float64(newY/2-oldY/2)/(t_elapsed*t_elapsed)
+	a_t := float32(math.Sqrt(float64(ax*ax + ay*ay)))
+	curNode.AccelerometerSpeed = append(curNode.AccelerometerSpeed, a_t)
+	curNode.TimeLastAccel = curTime
+}
+
+func (curNode *NodeImpl) UpdateVelocity(curTime int, newX float32, newY float32, oldX float32, oldY float32) {
+	timeElapsed := float64(curTime - curNode.LastMoveTime) / 1000.0
+	curNode.LastMoveTime = curTime
+	dist := DistFloat32(Tuple32{oldX, oldY}, Tuple32{newX, newY})
+	curNode.Velocity =  dist / timeElapsed
+}
+
 
 //HandleMovementCSV does the same as HandleMovement
 func (curNode *NodeImpl) MoveCSV(p *Params) {
@@ -1037,6 +1269,21 @@ func (curNode *NodeImpl) MoveCSV(p *Params) {
 
 		//set the new location in the boolean field to true
 		newX, newY := curNode.GetLoc()
+		p.BoolGrid[int(newX)][int(newY)] = true
+		//Handle movement in the tree (remove and reinsert if neccessary)
+		curNode.NodeBounds.X = float64(newX)
+		curNode.NodeBounds.Y = float64(newY)
+		curNode.P.NodeTree.NodeMovement(curNode.NodeBounds)
+
+		if curNode.P.AdaptiveSampling {
+			curNode.UpdateAcceleration(p.CurrentTime, newX, newY, oldX, oldY)
+			curNode.UpdateVelocity(p.CurrentTime, newX, newY, oldX, oldY)
+			curNode.UpdateSampleRatePart("movement", curNode.Velocity)
+		}
+
+		dist := DistFloat32(Tuple32{curNode.X, curNode.Y}, Tuple32{float32(curNode.P.B.X), float32(curNode.P.B.Y)})
+		fmt.Fprintf(curNode.P.SamplingData, "ID:%v T:%v M:%v,%v B:%v,%v D:%v\n", curNode.Id, curNode.P.CurrentTime, curNode.Velocity,
+			curNode.SampleRateMovement, curNode.BatteryPercent, curNode.SampleRateBattery, dist)
 		//fmt.Println(oldX, oldY,newX, newY, curNode.Id, p.CurrentTime,p.NodeMovements[id][intTime].X, p.NodeMovements[id][intTime+1].X)
 
 		if (!curNode.InBounds(p)) {
@@ -1070,6 +1317,16 @@ func (curNode *NodeImpl) MoveCSV(p *Params) {
 		}
 	}
 
+	//fmt.Printf("%v %v %v %v %v %v %v\n", newX, newY, int(newX), int(newY), p.Width, p.Height, curNode.Valid)
+	/*if curNode.InBounds(p) {
+		curNode.Valid = true
+	} else {
+		curNode.Valid = false
+	}*/
+
+	//Add the node into its new Square's p.TotalNodes
+	//If the node hasn't left the square, that Square's p.TotalNodes will
+	//remain the same after these calculations
 }
 
 //HandleMovement adjusts BoolGrid when nodes move around the map
@@ -1085,7 +1342,8 @@ func (curNode *NodeImpl) MoveNormal(p *Params) {
 	newX, newY := curNode.GetLoc()
 	p.BoolGrid[int(newX)][int(newY)] = true
 
-
+	//Handle movement in the tree (remove and reinsert if neccessary)
+	curNode.P.NodeTree.NodeMovement(curNode.NodeBounds)
 
 	//Add the node into its new Square's p.TotalNodes
 	//If the node hasn't left the square, that Square's p.TotalNodes will
@@ -1095,4 +1353,26 @@ func (curNode *NodeImpl) MoveNormal(p *Params) {
 
 func rangeInt(min, max int) int { //returns a random number between max and min
 	return rand.Intn(max-min) + min
+}
+
+func (curNode *NodeImpl) ScheduleSensing() {
+	/*rate := curNode.NewSampleRate()
+	if rate > 5 {
+		fmt.Println(rate)
+	}*/
+	if curNode.ScheduledEvent.Instruction == MOVE {
+		fmt.Println("Move event")
+	}
+	if curNode.ScheduledEvent.Time == curNode.P.CurrentTime {
+		//schedule new event
+		curNode.ScheduledEvent = &Event{curNode, SENSE, curNode.P.CurrentTime + int(1000.0 / curNode.NewSampleRate()), 0}
+		curNode.P.Events.Push(curNode.ScheduledEvent)
+	} else if curNode.ScheduledEvent.Time - curNode.P.CurrentTime > int(1000.0/ curNode.NewSampleRate()) {
+		//replace old event with new event
+		instruction := curNode.ScheduledEvent.Instruction
+		curNode.P.Events.update(curNode.ScheduledEvent, instruction, curNode.P.CurrentTime + int(1000.0 / curNode.NewSampleRate()))
+	} else if curNode.ScheduledEvent.Time - curNode.P.CurrentTime < int(1000.0 / curNode.NewSampleRate()) {
+		//do nothing
+	}
+
 }

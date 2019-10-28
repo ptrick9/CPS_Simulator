@@ -27,6 +27,7 @@ type FusionCenter struct {
 	Sch		*Scheduler
 	Readings		map[Key][]Reading
 	CheckedIds		[]int
+	DataCount       int
 	NodeDataList	[]NodeData
 	Validators 		map[int]int //stores validators...id -> time  latest time for id is stored
 	NodeSquares 	map[int]Tuple  //store what square a node is in
@@ -35,7 +36,7 @@ type FusionCenter struct {
 
 //Init initializes the values for the server
 func (s *FusionCenter) Init(){
-	s.TimeBuckets = make([][]Reading, s.P.Iterations_used)
+	s.TimeBuckets = make([][]Reading, s.P.Iterations_used) //1st dimension is time, 2nd contains all readings at that time
 	s.Mean = make([]float64, s.P.Iterations_of_event)
 	s.StdDev = make([]float64, s.P.Iterations_of_event)
 	s.Variance = make([]float64, s.P.Iterations_of_event)
@@ -44,9 +45,12 @@ func (s *FusionCenter) Init(){
 	falsePositives = 0
 	truePositives = 0
 
-	s.LastRecal = make([]int, s.P.TotalNodes) //s.P.TotalNodes
+	s.LastRecal = make([]int, s.P.TotalNodes) //Last recalibration time for each node
 	s.Sch = &Scheduler{s.P, s.R, nil}
 
+	s.Readings = make(map[Key][]Reading) //List of all readings within a period of time dictated by ReadingHistorySize
+	s.CheckedIds = make([]int, 0) //List of checked node ids
+	s.DataCount = 0
 	s.Readings = make(map[Key][]Reading)
 	s.CheckedIds = make([]int, 0)
 	s.NodeDataList = make([]NodeData, s.P.TotalNodes)
@@ -70,9 +74,11 @@ type Reading struct {
 	YPos      float32
 	Time      int //Time represented by iteration number
 	Id        int //Node Id number
+	CH_Id	  int //ID of the Node's cluster head when the reading was made
 }
 
 //Key for dictionary of sensor readings
+//To be used in s.Readings map
 type Key struct {
 	X 		int
 	Y		int
@@ -130,6 +136,8 @@ func (s FusionCenter) MakeGrid() {
 }
 
 //CheckDetections iterates through the grid and validates detections by nodes
+//Classifies detections as true positives and false negatives
+//If super nodes are ON, sends them to the location of a true positive
 func (s FusionCenter) CheckDetections() {
 	for x := 0; x < s.P.GridWidth; x++ {
 		for y := 0; y < s.P.GridHeight; y++ {
@@ -333,6 +341,7 @@ func (srv FusionCenter) printPoints(s SuperNodeParent) bytes.Buffer {
 }
 
 //MakeSuperNodes initializes the supernodes to the corners of the map
+//If there are more than 4 super nodes, they are placed at 0,0 so RandomizeSuperNodes MUST be called
 func (s FusionCenter) MakeSuperNodes() {
 
 	top_left_corner := Coord{X: 0, Y: 0}
@@ -485,7 +494,18 @@ func remove(s []int, i int) []int {
 // Statistics are calculated each Time data is received
 func (s *FusionCenter) Send(n *NodeImpl, rd Reading, tp bool) {
 	//fmt.Printf("Sending to server:\nTime: %v, ID: %v, X: %v, Y: %v, Sensor Value: %v\n", rd.Time, rd.Id, rd.Xpos, rd.YPos, rd.SensorVal)
+	_, ok := s.Readings[Key{int(rd.Xpos / float32(s.P.XDiv)), int(rd.YPos / float32(s.P.YDiv)), rd.Time/1000}]
+	if ok {
+		s.Readings[Key{int(rd.Xpos / float32(s.P.XDiv)), int(rd.YPos / float32(s.P.YDiv)), rd.Time / 1000}] = append(s.Readings[Key{int(rd.Xpos / float32(s.P.XDiv)), int(rd.YPos / float32(s.P.YDiv)), rd.Time / 1000}], rd)
+	} else {
+		s.Readings[Key{int(rd.Xpos / float32(s.P.XDiv)), int(rd.YPos / float32(s.P.YDiv)), rd.Time / 1000}] = []Reading{rd}
+	}
+	s.Times = make(map[int]bool, 0)
+	if s.Times[rd.Time] {
 
+	} else {
+		s.Times[rd.Time] = true
+	}
 
 	//NodeSquares 	map[int]Tuple  //store what square a node is in
 	//SquarePop  		map[Tuple][]int //store nodes in square
@@ -524,6 +544,9 @@ func (s *FusionCenter) Send(n *NodeImpl, rd Reading, tp bool) {
 	recalReject := false
 
 
+	s.UpdateSquareAvg(rd)
+
+	//Recalibrate the sensor of it deviates past the threshold
 	tile := s.P.Grid[int(rd.Xpos)/s.P.XDiv][int(rd.YPos)/s.P.YDiv]
 	tile.LastReadingTime = rd.Time
 	tile.SquareValues += math.Pow(float64(rd.SensorVal-float64(tile.Avg)), 2)
@@ -659,26 +682,44 @@ func (s *FusionCenter) Send(n *NodeImpl, rd Reading, tp bool) {
 func (s *FusionCenter) CalcStats() ([]float64, []float64, []float64) {
 	//fmt.Printf("Calculating stats for times: %v", s.times)
 	s.UpdateSquareNumNodes()
-
-	//Calculate the mean
 	sum := 0.0
-	StdDevFromMean := 0.0
-	for i:= range s.Times {
-		for j := 0; j < len(s.TimeBuckets[i]); j++ {
-			//fmt.Printf("Bucket size: %v\n", len(s.TimeBuckets[i]))
-			sum += (s.TimeBuckets)[i][j].SensorVal
-			//fmt.Printf("Time : %v, Elements #: %v, Value: %v\n", i, j, s.TimeBuckets[i][j])
+	//Calculate the mean
+	//StdDevFromMean := 0.0
+	for t := range s.Times {
+		sum = 0.0
+		count := 0
+		for b := range s.Readings {
+			if b.Time == t {
+				for r := range s.Readings[b] {
+					sum += s.Readings[b][r].SensorVal
+					count++
+				}
+			}
 		}
-		for len(s.Mean) <= i {
-			s.Mean = append(s.Mean, sum / float64( len(s.TimeBuckets[i]) ))
-		} /*else {
-			s.Mean[i] = sum / float64(len(s.TimeBuckets[i]))
-		}*/
-		sum = 0
+		if t < 0 {
+			fmt.Println(t)
+		}
+		s.Mean[t] = (s.Mean[t] * float64(s.DataCount) + sum) / float64(s.DataCount + count)
+		s.DataCount += count
 	}
 
-	//Calculate the standard deviation and variance
 	sum = 0.0
+	for t := range s.Times {
+		for b := range s.Readings {
+			if b.Time == t {
+				for r := range s.Readings[b] {
+					sum += math.Pow(s.Readings[b][r].SensorVal - s.Mean[t], 2)
+				}
+			}
+		}
+		s.Variance[t] = sum / float64(s.DataCount)
+		s.StdDev[t] = math.Sqrt(sum / float64(s.DataCount))
+	}
+	s.Times = make(map[int]bool, 0)
+	//fmt.Println(s.Mean)
+
+	//Calculate the standard deviation and variance
+	/*sum = 0.0
 	for i:= range s.Times {
 		for j := 0; j < len((s.TimeBuckets)[i]); j++ {
 			sum += math.Pow((s.TimeBuckets)[i][j].SensorVal - s.Mean[i], 2)
@@ -692,9 +733,7 @@ func (s *FusionCenter) CalcStats() ([]float64, []float64, []float64) {
 
 		for len(s.StdDev) <= i {
 			s.StdDev = append(s.StdDev, math.Sqrt(sum / float64( len((s.TimeBuckets)[i])) ))
-		} /*else {
-			s.StdDev[i] = math.Sqrt(sum / float64( len((s.TimeBuckets)[i])) )
-		}*/
+		}
 
 		//Determine how many std deviations data is away from mean
 		for j:= range s.TimeBuckets[i] {
@@ -714,7 +753,7 @@ func (s *FusionCenter) CalcStats() ([]float64, []float64, []float64) {
 			}
 		}
 		sum = 0
-	}
+	}*/
 	return s.Mean, s.StdDev, s.Variance
 }
 
@@ -734,6 +773,8 @@ func (s FusionCenter) GetMedian(arr []float64) float64{
 	return median
 }
 
+//GetLeastDenseSquares searches the entire grid for the least populated squares and adds them to an array
+//Used in Tick function to direct super node wandering
 func (s FusionCenter) GetLeastDenseSquares() Squares{
 	orderedSquares := make(Squares, 0)
 	for x := 0; x < len(s.P.Grid); x++ {
@@ -752,6 +793,7 @@ func (s FusionCenter) GetLeastDenseSquares() Squares{
 	return orderedSquares
 }
 
+//Used for sorting a list of squares
 type Squares []*Square
 
 func (s *Squares) Len() int{

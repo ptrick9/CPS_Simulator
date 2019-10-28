@@ -186,6 +186,8 @@ import (
 	"./cps"
 	"bytes"
 	"container/heap"
+	"math"
+	"runtime"
 
 	//"CPS_Simulator/simulator/cps"
 	"fmt"
@@ -204,7 +206,7 @@ var (
 	p *cps.Params
 	r *cps.RegionParams
 
-	err error
+	//err error
 
 	// End the command line variables.
 
@@ -261,8 +263,8 @@ func main() {
 	//numStoredSamples = getDashedInput("numStoredSamples")
 	p.MaxX = cps.GetDashedInput("maxX", p)
 	p.MaxY = cps.GetDashedInput("maxY", p)
-	p.BombX = cps.GetDashedInput("bombX", p)
-	p.BombY = cps.GetDashedInput("bombY", p)
+	//p.BombX = cps.GetDashedInput("bombX", p)
+	//p.BombY = cps.GetDashedInput("bombY", p)
 
 	p.B = &cps.Bomb{X: p.BombX, Y: p.BombY}
 
@@ -284,6 +286,9 @@ func main() {
 	p.SquareRowCM = p.SquareRowCM
 	p.SquareColCM = p.SquareColCM
 	p.MinDistance = 1000
+	p.Iterations_used = 0
+	p.Iterations_of_event = p.IterationsCM
+	p.EstimatedPingsNeeded = 10200
 
 	//Initializers
 	cps.MakeBoolGrid(p)
@@ -315,6 +320,28 @@ func main() {
 	}
 	fmt.Printf("Bomb location: %v, %v\n", p.BombX, p.BombY)
 
+	p.NodeTree = &cps.Quadtree{
+		Bounds: cps.Bounds{
+			X:      0,
+			Y:      0,
+			Width:  float64(p.MaxX),
+			Height: float64(p.MaxY),
+		},
+		MaxObjects: 4,
+		MaxLevels:  4,
+		Level:      0,
+		Objects:    make([]*cps.Bounds, 0),
+		ParentTree: nil,
+		SubTrees:   make([]*cps.Quadtree, 0),
+	}
+
+	p.ClusterNetwork = &cps.AdHocNetwork{
+		ClusterHeads:	[]*cps.NodeImpl{},
+		TotalHeads:			0,
+		Threshold:			p.ClusterThreshold,
+		TotalMsgs:			0,
+	}
+
 	//This is where the text file reading ends
 	Vn := make([]float64, 1000)
 	for i := 0; i < 1000; i++ {
@@ -330,11 +357,8 @@ func main() {
 	}
 
 	rand.Seed(time.Now().UnixNano()) //sets random to work properly by tying to to clock
-	p.ThreshHoldBatteryToHave = 30.0 //This is the threshold battery to have for all phones
+	p.ThreshHoldBatteryToHave = 40.0 //This is the threshold battery to have for all phones
 
-	p.Iterations_used = 0
-	p.Iterations_of_event = p.IterationsCM
-	p.EstimatedPingsNeeded = 10200
 
 	cps.SetupFiles(p)
 	cps.SetupParameters(p, r)
@@ -386,6 +410,12 @@ func main() {
 	p.Events.Push(&cps.Event{nil, cps.CLEANUPREADINGS, (p.ReadingHistorySize + 1) * 1000, 0})
 	//p.Events.Push(&cps.Event{nil, cps.VALIDNODES, 999, 0})
 	p.Events.Push(&cps.Event{nil, cps.LOADMOVE, (p.MovementSize-2)*1000, 0})
+	p.Events.Push(&cps.Event{nil, cps.CLUSTERPRINT, 999, 0})
+	p.Events.Push(&cps.Event{nil, cps.CLEANUPREADINGS, (p.ReadingHistorySize + 1) * 1000, 0})
+	p.Events.Push(&cps.Event{nil, cps.SERVERSTATS, 1000, 0})
+	if(p.ClusteringOn){
+		p.Events.Push(&cps.Event{nil,cps.CLUSTERLESSFORM,25,0})
+	}
 
 
 
@@ -398,8 +428,9 @@ func main() {
 		//fmt.Println(event)
 		//fmt.Println(p.CurrentNodes)
 		p.CurrentTime = event.Time
-		if event.Node != nil {
+		if event.Node != nil{
 			if event.Instruction == cps.SENSE {
+				if event.Node.Battery > p.ThreshHoldBatteryToHave {
 
 				if p.CurrentTime/1000 < p.NumNodeMovements-5 {
 					if (p.CSVMovement) {
@@ -419,17 +450,76 @@ func main() {
 				}
 
 			} else if event.Instruction == cps.MOVE {
-				if(p.CSVMovement) {
-					event.Node.MoveCSV(p)
-				} else {
-					event.Node.MoveNormal(p)
+				//if event.Node.Battery > p.ThreshHoldBatteryToHave {
+					if (p.CSVMovement) {
+						event.Node.MoveCSV(p)
+					} else {
+						event.Node.MoveNormal(p)
+					}
+
+					if (event.Node.Valid) {
+						//p.ClusterNetwork.ClearClusterParams(event.Node)
+						event.Node.DecrementPowerGPS()
+					}
+
+
+					//if(p.CurrentTime/1000 <= 100){
+					p.Events.Push(&cps.Event{event.Node, cps.MOVE, p.CurrentTime + 100, 0})
+				//}
+				//}
+
+			}else if event.Instruction == cps.CLUSTERMSG {
+				if event.Node.Battery > p.ThreshHoldBatteryToHave {
+					if (event.Node.Valid) {
+						p.ClusterNetwork.SendHelloMessage(p.NodeBTRange, event.Node)
+					}
+					p.Events.Push(&cps.Event{event.Node, cps.CLUSTERMSG, p.CurrentTime + 1000, 0})
 				}
 				if p.CurrentTime/1000 < p.NumNodeMovements-5 {
 					p.Events.Push(&cps.Event{event.Node, cps.MOVE, p.CurrentTime + 100, 0})
 				}
+
+			} else if event.Instruction == cps.CLUSTERHEADELECT {
+				if event.Node.Battery > p.ThreshHoldBatteryToHave {
+					if (event.Node.Valid) {
+						event.Node.SortMessages()
+						p.ClusterNetwork.ElectClusterHead(event.Node)
+					}
+					p.Events.Push(&cps.Event{event.Node, cps.CLUSTERHEADELECT, p.CurrentTime + 1000, 0})
+				}
+
+			} else if event.Instruction == cps.CLUSTERFORM {
+				if event.Node.Battery > p.ThreshHoldBatteryToHave {
+					if (event.Node.Valid) {
+						//p.ClusterNetwork.GenerateClusters(event.Node)
+						if (event.Node.IsClusterHead) {
+							p.ClusterNetwork.FormClusters(event.Node)
+						}
+					}
+					p.Events.Push(&cps.Event{event.Node, cps.CLUSTERFORM, p.CurrentTime + 1000, 0})
+				}
+			} else if event.Instruction == cps.ScheduleSensor {
+				if p.AdaptiveSampling {
+					event.Node.ScheduleSensing()
+					p.Events.Push(&cps.Event{event.Node, cps.ScheduleSensor, p.CurrentTime + 50, 0})
+				}
 			}
 		} else {
 			if event.Instruction == cps.POSITION {
+				var avBuffer bytes.Buffer
+				validCount := 0
+				aliveCount := 0
+				for i:=0; i<len(p.NodeList); i++{
+					if(p.NodeList[i].Valid){
+						validCount++
+						if(p.NodeList[i].Battery>p.ThreshHoldBatteryToHave){
+							aliveCount++
+						}
+					}
+				}
+				avBuffer.WriteString(fmt.Sprintf("Valid Nodes:%v,Alive Nodes:%v\n",validCount,aliveCount))
+				fmt.Fprintf(p.AliveValidNodes, avBuffer.String())
+
 				//fmt.Printf("Current Time: %v \n", p.CurrentTime)
 
 				if p.PositionPrint {
@@ -455,7 +545,13 @@ func main() {
 				p.Iterations_used += 1
 				p.Events.Push(&cps.Event{nil, cps.POSITION, p.CurrentTime + 1000, 0})
 
-			} else if event.Instruction == cps.SERVER {
+			} else if event.Instruction == cps.CLEANUPREADINGS {
+				p.Server.CleanupReadings()
+				p.Events.Push(&cps.Event{nil,cps.CLEANUPREADINGS, p.CurrentTime + 1000, 0})
+			} else if event.Instruction == cps.SERVERSTATS{
+				p.Server.CalcStats()
+				p.Events.Push(&cps.Event{nil, cps.SERVERSTATS, p.CurrentTime + 1000, 0})
+			}else if event.Instruction == cps.SERVER {
 				if !p.SuperNodes {
 					fmt.Fprintln(p.RoutingFile, "Amount:", 0)
 				} else {
@@ -481,6 +577,7 @@ func main() {
 				if p.EnergyPrint {
 					var buffer bytes.Buffer
 					for i := 0; i < p.CurrentNodes; i ++ {
+							p.NodeList[i].BatteryOverTime[p.CurrentTime/1000] = p.NodeList[i].Battery
 							buffer.WriteString(fmt.Sprintf("%v\n", p.NodeList[i]))
 					}
 					fmt.Fprintf(p.EnergyFile, buffer.String())
@@ -532,9 +629,99 @@ func main() {
 			}	else if event.Instruction == cps.LOADMOVE {
 				cps.PartialReadMovementCSV(p)
 				p.Events.Push(&cps.Event{nil, cps.LOADMOVE, (p.MovementOffset + p.MovementSize-2)*1000, 0})
+			} else if event.Instruction == cps.CLUSTERPRINT {
+				var clusterBuffer bytes.Buffer
+				var clusterStatsBuffer bytes.Buffer
+				var clusterDebugBuffer bytes.Buffer
+
+				totalHeads := p.ClusterNetwork.TotalHeads
+				for i:=0; i<len(p.ClusterNetwork.ClusterHeads); i++{
+					if(p.ClusterNetwork.ClusterHeads[i].NodeClusterParams.CurrentCluster.Total==0){
+						totalHeads--
+					}
+				}
+				clusterBuffer.WriteString(fmt.Sprintf("Amount: %v\n", totalHeads))
+				for i:=0; i<len(p.ClusterNetwork.ClusterHeads); i++{
+					if (p.ClusterNetwork.ClusterHeads[i].NodeClusterParams.CurrentCluster.Total>0){
+						clusterBuffer.WriteString(fmt.Sprintf("%v: [", p.ClusterNetwork.ClusterHeads[i].Id))
+						for j:=0; j<len(p.ClusterNetwork.ClusterHeads[i].NodeClusterParams.CurrentCluster.ClusterMembers); j++ {
+							clusterBuffer.WriteString(fmt.Sprintf("%v", p.ClusterNetwork.ClusterHeads[i].NodeClusterParams.CurrentCluster.ClusterMembers[j].Id))
+							if (j+1 != len( p.ClusterNetwork.ClusterHeads[i].NodeClusterParams.CurrentCluster.ClusterMembers)) {
+								clusterBuffer.WriteString(fmt.Sprintf(", "))
+							}
+						}
+						clusterBuffer.WriteString(fmt.Sprintf("]\n"))
+					}
+
+					clusterStatsBuffer.WriteString(fmt.Sprintf("%v", p.ClusterNetwork.ClusterHeads[i].NodeClusterParams.CurrentCluster.Total))
+					if(i+1 != len(p.ClusterNetwork.ClusterHeads)){
+						clusterStatsBuffer.WriteString(fmt.Sprintf(","))
+					}
+				}
+				clusterStatsBuffer.WriteString(fmt.Sprintln(""))
+
+				clusterHeadCount:=0
+				clusterMemberCount:=0
+				clusterDebugBuffer.WriteString(fmt.Sprint( "", ))
+				for i:=0; i<len(p.NodeList); i++ {
+					if(p.NodeList[i].IsClusterHead){
+						clusterHeadCount++
+					} else if(p.NodeList[i].IsClusterMember){
+						clusterMemberCount++
+					}
+				}
+				clusterDebugBuffer.WriteString(fmt.Sprintf("Iteration: %v\tlen(p.ClusterNetwork.ClusterHeads): %v\tClusterHeads: %v\tClusterMembers: %v\n",p.CurrentTime/1000,len(p.ClusterNetwork.ClusterHeads),clusterHeadCount,clusterMemberCount))
+
+				for i:=0; i<len(p.NodeList); i++ {
+					if(p.NodeList[i].IsClusterHead){
+						for j:=0; j<len(p.NodeList[i].NodeClusterParams.CurrentCluster.ClusterMembers); j++{
+							xDist := p.NodeList[i].X - p.NodeList[i].NodeClusterParams.CurrentCluster.ClusterMembers[j].X
+							yDist := p.NodeList[i].Y - p.NodeList[i].NodeClusterParams.CurrentCluster.ClusterMembers[j].Y
+							radDist := math.Sqrt(float64(xDist*xDist)+float64(yDist*yDist))
+							if(!(p.NodeList[i].IsWithinRange(p.NodeList[i].NodeClusterParams.CurrentCluster.ClusterMembers[j],p.NodeBTRange))){
+								clusterDebugBuffer.WriteString(fmt.Sprintf("\tCluster Member Out of Range: Member:{ID=%v, Coord(%v,%v)} Cluster:{CH_ID=%v, Coord(%v,%v),Size=%v} Dist: %.4f\n",
+									p.NodeList[i].NodeClusterParams.CurrentCluster.ClusterMembers[j].Id,p.NodeList[i].NodeClusterParams.CurrentCluster.ClusterMembers[j].X,p.NodeList[i].NodeClusterParams.CurrentCluster.ClusterMembers[j].Y,
+									p.NodeList[i].Id,p.NodeList[i].X,p.NodeList[i].Y,p.NodeList[i].NodeClusterParams.CurrentCluster.Total, radDist))
+							}
+						}
+
+						for j:=0; j<len(p.ClusterNetwork.ClusterHeads); j++{
+							for k:=0; k<len(p.ClusterNetwork.ClusterHeads[j].NodeClusterParams.CurrentCluster.ClusterMembers); k++{
+								if(p.NodeList[i] == p.ClusterNetwork.ClusterHeads[j].NodeClusterParams.CurrentCluster.ClusterMembers[k]){
+									clusterDebugBuffer.WriteString(fmt.Sprintf("\tCluster Head {CH_ID: %v, Size=%v} is cluster member of {CH_ID: %v, Size=%v}\n", p.NodeList[i].Id,p.NodeList[i].NodeClusterParams.CurrentCluster.Total,p.ClusterNetwork.ClusterHeads[j].Id,p.ClusterNetwork.ClusterHeads[j].NodeClusterParams.CurrentCluster.Total))
+								}
+							}
+						}
+					} else if(p.NodeList[i].IsClusterMember){
+						clusterCount := 0
+						for j:=0; j<len(p.ClusterNetwork.ClusterHeads); j++{
+							for k:=0; k<len(p.ClusterNetwork.ClusterHeads[j].NodeClusterParams.CurrentCluster.ClusterMembers); k++{
+								if(p.NodeList[i] == p.ClusterNetwork.ClusterHeads[j].NodeClusterParams.CurrentCluster.ClusterMembers[k]){
+									clusterCount++
+								}
+							}
+						}
+						if(clusterCount>1){
+							clusterDebugBuffer.WriteString(fmt.Sprintf("\tNode ID=%v is cluster member of %v clusters\n", p.NodeList[i].Id,clusterCount))
+						}
+
+					}
+				}
+				fmt.Fprintf(p.ClusterFile, clusterBuffer.String())
+				fmt.Fprintf(p.ClusterStatsFile, clusterStatsBuffer.String())
+				fmt.Fprintf(p.ClusterDebug, clusterDebugBuffer.String())
+
+				fmt.Fprintf(p.ClusterMessages, "%d,%d\n",p.CurrentTime/1000,p.ClusterNetwork.TotalMsgs)
+
+				p.Events.Push(&cps.Event{nil, cps.CLUSTERPRINT, p.CurrentTime + 1000, 0})
+				p.ClusterNetwork.ResetClusters()
+			} else if event.Instruction == cps.CLUSTERLESSFORM {
+				p.ClusterNetwork.FinalizeClusters(p)
+
+				//fmt.Println()
+				p.Events.Push(&cps.Event{nil, cps.CLUSTERLESSFORM, p.CurrentTime + 1000, 0})
 			}
 		}
-
 	}
 
 	if p.MemProfile != "" {
@@ -677,22 +864,28 @@ func printSuperStats(SNodeList []cps.SuperNodeParent) bytes.Buffer {
 
 func PrintNodeBatteryOverTime(p * cps.Params)  {
 
-	fmt.Fprint(p.BatteryFile, "Time,")
-	for i := range p.NodeList{
-		n := p.NodeList[i]
-		fmt.Fprint(p.BatteryFile, "Node",n.GetID(),",")
-	}
-	fmt.Fprint(p.BatteryFile, "\n")
+	//fmt.Fprint(p.BatteryFile, "Time,")
+	//for i := range p.NodeList{
+	//	n := p.NodeList[i]
+	//	fmt.Fprintf(p.BatteryFile, "Node %d",n.Id)
+	//	if(i<len(p.NodeList)){
+	//		fmt.Fprint(p.BatteryFile, ",")
+	//	}
+	//}
+	//fmt.Fprint(p.BatteryFile, "\n")
 
 	for t:=0; t<p.Iterations_of_event; t++{
-		fmt.Fprint(p.BatteryFile, t, ",")
+		fmt.Fprintf(p.BatteryFile, "%d,",t)
 		for i := range p.NodeList{
 			n := p.NodeList[i]
-			fmt.Fprint(p.BatteryFile, n.BatteryOverTime[t],",")
+			fmt.Fprintf(p.BatteryFile, "%.4f",n.BatteryOverTime[t],)
+			if(i<len(p.NodeList)){
+				fmt.Fprint(p.BatteryFile, ",")
+			}
 		}
 		fmt.Fprint(p.BatteryFile, "\n")
 	}
-	p.BatteryFile.Sync()
+	//p.BatteryFile.Sync()
 }
 func PrintNodeBatteryOverTimeFast(p * cps.Params)  {
 	var buffer bytes.Buffer

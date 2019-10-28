@@ -337,6 +337,9 @@ func HandleMovement(p *Params) {
 		newX, newY := p.NodeList[j].GetLoc()
 		p.BoolGrid[int(newX)][int(newY)] = true
 
+		//sync the QuadTree
+		p.NodeTree.NodeMovement(p.NodeList[j].NodeBounds)
+
 		//writes the node information to the file
 		if p.EnergyPrint {
 			fmt.Fprintln(p.EnergyFile, p.NodeList[j])
@@ -352,7 +355,6 @@ func HandleMovement(p *Params) {
 func HandleMovementCSV(p *Params) {
 	time := p.Iterations_used
 	for j := 0; j < len(p.NodeList); j++ {
-
 		if p.NodeList[j].Valid {
 			oldX, oldY := p.NodeList[j].GetLoc()
 			p.BoolGrid[int(oldX)][int(oldY)] = false //set the old spot false since the node will now move away
@@ -368,6 +370,8 @@ func HandleMovementCSV(p *Params) {
 		//set the new location in the boolean field to true
 		newX, newY := p.NodeList[j].GetLoc()
 
+		//sync the QuadTree
+		p.NodeTree.NodeMovement(p.NodeList[j].NodeBounds)
 		if p.NodeList[j].InBounds(p) {
 			p.NodeList[j].Valid = true
 		} else {
@@ -422,6 +426,17 @@ func InitializeNodeParameters(p *Params, nodeNum int) *NodeImpl{
 	curNode.InitialSensitivity = s0 + (s1)*math.Exp(-float64(curNode.NodeTime)/p.Tau1) + (s2)*math.Exp(-float64(curNode.NodeTime)/p.Tau2)
 	curNode.Sensitivity = curNode.InitialSensitivity
 
+	curNode.MovementModifier = 0.5
+	curNode.SensorModifier = 0.5
+	curNode.LastAccel = 0
+	curNode.LastReading = 0
+
+	curNode.BatteryPercent = 75.0
+	curNode.SampleRateSensor = 0.05
+	curNode.SampleRateBattery = 0.05
+
+	curNode.LastNSampleRates = make([]float64, 0)
+
 	return &curNode
 }
 
@@ -431,6 +446,8 @@ func SetupCSVNodes(p *Params) {
 
 		newNode.X = float32(p.NodeMovements[i][0].X)
 		newNode.Y = float32(p.NodeMovements[i][0].Y)
+
+		newNode.BatteryOverTime = map[int]float32{}
 
 		if newNode.InBounds(p) {
 			newNode.Valid = true
@@ -442,8 +459,39 @@ func SetupCSVNodes(p *Params) {
 
 		p.NodeList = append(p.NodeList, newNode)
 		p.CurrentNodes += 1
-		p.Events.Push(&Event{newNode, SENSE, 0, 0})
-		p.Events.Push(&Event{newNode, MOVE, 0, 0})
+
+		newNode.ScheduledEvent = &Event{newNode,SENSE,0,0}
+		p.Events.Push(&Event{newNode,MOVE,0,0})
+		p.Events.Push(newNode.ScheduledEvent)
+		p.Events.Push(&Event{newNode, ScheduleSensor, 0, 0})
+
+		if(p.ClusteringOn){
+			newNode.IsClusterHead = false
+			newNode.IsClusterMember = false
+			newNode.NodeClusterParams = &ClusterMemberParams{}
+			p.Events.Push(&Event{newNode,CLUSTERMSG,10,0})
+			p.Events.Push(&Event{newNode,CLUSTERHEADELECT,15,0})
+			p.Events.Push(&Event{newNode,CLUSTERFORM,20,0})
+			p.ClusterNetwork.ClearClusterParams(newNode)
+			newNode.TimeLastSentReadings = p.CurrentTime
+			newNode.ReadingsBuffer = []Reading{}
+			newNode.CHPenalty = 1.0 //initialized to 1
+		}
+
+		newNode.AccelerometerSpeed = []float32{}
+		newNode.TimeLastAccel = p.CurrentTime
+		newNode.LastMoveTime = p.CurrentTime
+
+		bNewNode := Bounds{
+			X:	float64(newNode.X),
+			Y:	float64(newNode.Y),
+			Width:	0,
+			Height:	0,
+			CurTree:	p.NodeTree,
+			CurNode: 	newNode,
+		}
+		p.NodeList[len(p.NodeList)-1].NodeBounds = &bNewNode
+		p.NodeTree.Insert(&bNewNode)
 
 	}
 
@@ -454,6 +502,8 @@ func SetupRandomNodes(p *Params) {
 		if p.Iterations_used == p.NodeEntryTimes[i][2] {
 
 			newNode := InitializeNodeParameters(p, i)
+
+			newNode.BatteryOverTime = map[int]float32{}
 
 			xx := rangeInt(1, p.MaxX)
 			yy := rangeInt(1, p.MaxY)
@@ -470,7 +520,39 @@ func SetupRandomNodes(p *Params) {
 
 			p.NodeList = append(p.NodeList, newNode)
 			p.CurrentNodes += 1
+			p.Events.Push(&Event{newNode, SENSE, 0, 0})
 
+			if(p.ClusteringOn){
+				newNode.NodeClusterParams.CurrentCluster.ClusterHead = nil //nil Cluster Head signifies having no cluster head
+				newNode.IsClusterHead = false
+				newNode.IsClusterMember = false
+				newNode.NodeClusterParams = &ClusterMemberParams{}
+				newNode.IsClusterHead = false
+				newNode.IsClusterMember = false
+				newNode.NodeClusterParams = &ClusterMemberParams{}
+				p.Events.Push(&Event{newNode,CLUSTERMSG,10,0})
+				p.Events.Push(&Event{newNode,CLUSTERHEADELECT,15,0})
+				p.Events.Push(&Event{newNode,CLUSTERFORM,20,0})
+				p.ClusterNetwork.ClearClusterParams(newNode)
+				newNode.TimeLastSentReadings = p.CurrentTime
+				newNode.ReadingsBuffer = []Reading{}
+				newNode.CHPenalty = 1.0 //initialized to 1
+			}
+
+			if newNode.Valid{
+				bNewNode := Bounds{
+					X:	float64(newNode.X),
+					Y:	float64(newNode.Y),
+					Width:	0,
+					Height:	0,
+					CurTree:	p.NodeTree,
+					CurNode: 	newNode,
+				}
+				p.NodeList[len(p.NodeList)-1].NodeBounds = &bNewNode
+				p.NodeTree.Insert(&bNewNode)
+				newNode.Battery = 100.0
+			}
+			//newNode.Online = true
 		}
 	}
 }
@@ -728,7 +810,7 @@ func SetupFiles(p *Params) {
 	}
 	p.Files = append(p.Files, p.OutputFileNameCM + "-node.txt")
 
-	p.BatteryFile, err = os.Create(p.OutputFileNameCM + "-batteryusage.txt")
+	p.BatteryFile, err = os.Create(p.OutputFileNameCM + "-batteryusage.csv")
 	if err != nil {
 		log.Fatal("Cannot create file", err)
 	}
@@ -771,6 +853,50 @@ func SetupFiles(p *Params) {
 		}
 		p.Files = append(p.Files, p.OutputFileNameCM+"-driftExplore.txt")
 	}
+	p.ClusterDebug, err = os.Create(p.OutputFileNameCM + "-adhoc_debug.txt")
+	if err != nil{
+		log.Fatal("Cannot create file", err)
+	}
+
+
+	p.ClusterMessages, err = os.Create(p.OutputFileNameCM + "-cluster_messages.txt")
+	if err != nil{
+		log.Fatal("Cannot create file", err)
+	}
+
+
+	if(p.ClusteringOn){
+		p.ClusterReadings, err = os.Create(p.OutputFileNameCM + "-cluster_readings_CL_ON.txt")
+		if err != nil{
+			log.Fatal("Cannot create file", err)
+		}
+
+		p.AliveValidNodes, err = os.Create(p.OutputFileNameCM + "-nodes_alive_valid_CL_ON.txt")
+		if err != nil{
+			log.Fatal("Cannot create file", err)
+		}
+	} else{
+		p.ClusterReadings, err = os.Create(p.OutputFileNameCM + "-cluster_readings_CL_OFF.txt")
+		if err != nil{
+			log.Fatal("Cannot create file", err)
+		}
+
+		p.AliveValidNodes, err = os.Create(p.OutputFileNameCM + "-nodes_alive_valid_CL_OFF.txt")
+		if err != nil{
+			log.Fatal("Cannot create file", err)
+		}
+	}
+
+	p.ClusterFile, err = os.Create(p.OutputFileNameCM + "-adhoc.txt")
+	if err != nil{
+		log.Fatal("Cannot create file", err)
+	}
+
+	p.ClusterStatsFile, err = os.Create(p.OutputFileNameCM + "-clusters.txt")
+	if err != nil{
+		log.Fatal("Cannot create file", err)
+	}
+	//defer p.AttractionFile.Close()
 
 	//defer p.ServerFile.Close()
 	p.NodeDataFile, err = os.Create(p.OutputFileNameCM + "-nodeData.txt")
@@ -785,6 +911,21 @@ func SetupFiles(p *Params) {
 	}
 	p.Files = append(p.Files, p.OutputFileNameCM+"-distance.txt")
 
+	p.DetectionFile, err = os.Create(p.OutputFileNameCM + "-detection.txt")
+	if err != nil {
+		log.Fatal("Cannot create file", err)
+	}
+	//defer p.ServerFile.Close()
+
+	p.SamplingData, err = os.Create(p.OutputFileNameCM + "-samplingParams.txt")
+	if err != nil {
+		log.Fatal("Cannot create file", err)
+	}
+
+	p.SampleRates, err = os.Create(p.OutputFileNameCM + "-samplingRates.txt")
+	if err != nil {
+		log.Fatal("Cannot create file", err)
+	}
 
 	fmt.Println(p.Files)
 
@@ -807,8 +948,8 @@ func SetupParameters(p *Params, r *RegionParams) {
 
 	p.TotalPercentBatteryToUse = float32(p.ThresholdBatteryToUseCM)
 	//p.BatteryCharges = GetLinearBatteryValues(len(p.NodeEntryTimes))
-	p.BatteryCharges = GetNormDistro(p.TotalNodes, 70.0, 15) //battery values come from normal distribution
-																		//mean = 70%, std = 15%
+	p.BatteryCharges = GetNormDistro(p.TotalNodes, 70.0, 8) //battery values come from normal distribution
+																		//mean = 70%, std = 8%
 	p.BatteryLosses = GetLinearBatteryLossConstant(len(p.NodeEntryTimes), float32(p.NaturalLossCM))
 
 	//updated because of the variable renaming to BatteryLosses__ and SamplingLoss__CM
@@ -1396,11 +1537,22 @@ func FlipSquares(p *Params, r *RegionParams) {
 }
 
 func GetFlags(p *Params) {
-	//p = cps.Params{}
+	//Logging Parameters
+	flag.BoolVar(&p.PositionPrintCM, "logPosition", false, "Whether you want to write position info to a log file")
+	flag.BoolVar(&p.GridPrintCM, "logGrid", false, "Whether you want to write p.Grid info to a log file")
+	flag.BoolVar(&p.EnergyPrintCM, "logEnergy", false, "Whether you want to write energy into to a log file")
+	flag.BoolVar(&p.NodesPrintCM, "logNodes", false, "Whether you want to write node readings to a log file")
 
-	flag.StringVar(&p.CPUProfile, "cpuprofile", "", "write cpu profile to `file`")
+	//Energy Parameters
 
-	flag.StringVar(&p.MemProfile, "memprofile", "", "write memory profile to `file`")
+	//Optional Functions
+	flag.BoolVar(&p.RegionRouting, "regionRouting", true, "True if you want to use the new routing algorithm with regions and cutting")
+	flag.BoolVar(&p.ClusteringOn,"clusteringOn",true,"True: nodes will form clusters, False: no clusters will form")
+	flag.BoolVar(&p.CSVSensor, "csvSensor", true, "Read Sensor Values from CSV")
+	flag.BoolVar(&p.CSVMovement, "csvMove", true, "Read Movements from CSV")
+	flag.BoolVar(&p.SuperNodes, "superNodes", true, "Enable SuperNodes")
+	flag.BoolVar(&p.DoOptimize, "doOptimize", false, "whether or not to optimize the simulator")
+	flag.BoolVar(&p.NoEnergyModelCM, "noEnergy", false, "Whether or not to ignore energy model for simulation")
 
 	//fmt.Println(os.Args[1:], "\nhmmm? \n ") //C:\Users\Nick\Desktop\comand line experiments\src
 
@@ -1410,115 +1562,110 @@ func GetFlags(p *Params) {
 
 	flag.IntVar(&p.NegativeSittingStopThresholdCM, "negativeSittingStopThreshold", -10,
 		"Negative number sitting is set to when board map is reset")
+	//File Setup
+	flag.StringVar(&p.InputFileNameCM, "inputFileName", "Log1_in.txt", "Name of the input text file")
+	flag.StringVar(&p.ImageFileNameCM, "imageFileName", "circle_justWalls_x4.png", "Name of the input text file")
+	flag.StringVar(&p.OutputFileNameCM, "OutputFileName", "Log", "Name of the output text file prefix")
 
-	flag.IntVar(&p.SittingStopThresholdCM, "sittingStopThreshold", 5,
-		"How long it takes for a node to stay seated")
+	flag.StringVar(&p.SensorPath, "sensorPath", "Circle_2D.csv", "Sensor Reading Inputs")
+	flag.StringVar(&p.FineSensorPath, "fineSensorPath", "Circle_2D.csv", "Sensor Reading Inputs")
+	flag.StringVar(&p.MovementPath, "movementPath", "Circle_2D.csv", "Movement Inputs")
 
-	flag.Float64Var(&p.GridCapacityPercentageCM, "GridCapacityPercentage", .9,
-		"Percent the sub-Grid can be filled")
+	flag.StringVar(&p.StimFileNameCM, "stimFileName", "circle_0.txt", "Name of the stimulus text file")
+	flag.StringVar(&p.OutRoutingNameCM, "outRoutingName", "log.txt", "Name of the stimulus text file")
 
-	flag.StringVar(&p.InputFileNameCM, "inputFileName", "Log1_in.txt",
-		"Name of the input text file")
+	flag.StringVar(&p.OutRoutingStatsNameCM, "outRoutingStatsName", "routingStats.txt", "Name of the output file for stats")
 
 	flag.StringVar(&p.ValidationType, "validationType", "square", "Type of validation: square or validators")
 
 	flag.BoolVar(&p.RecalReject, "recalReject", false, "reject if hasn't been recalibrated recently")
 
 	flag.StringVar(&p.SensorPath, "sensorPath", "Circle_2D.csv", "Sensor Reading Inputs")
+	//Thresholds and Values
+	flag.IntVar(&p.IterationsCM, "iterations", 200, "Read Movements from CSV")
+	flag.IntVar(&p.SquareRowCM, "SquareRowCM", 50, "Number of rows of p.Grid squares, 1 through p.MaxX")
+	flag.IntVar(&p.SquareColCM, "SquareColCM", 50, "Number of columns of p.Grid squares, 1 through p.MaxY")
+	flag.IntVar(&p.BombX, "bombX", 0, "X position of the bomb")
+	flag.IntVar(&p.BombY, "bombY", 0, "Y position of the bomb")
+	flag.IntVar(&p.NumSuperNodes, "numSuperNodes", 4, "the number of super nodes in the simulator")
+	flag.IntVar(&p.SuperNodeType, "SuperNodeType", 0, "the type of super node used in the simulator")
 
-	flag.StringVar(&p.FineSensorPath, "fineSensorPath", "Circle_2D.csv", "Sensor Reading Inputs")
-
-	flag.StringVar(&p.MovementPath, "movementPath", "Circle_2D.csv", "Movement Inputs")
-
-	flag.StringVar(&p.OutputFileNameCM, "OutputFileName", "Log",
-		"Name of the output text file prefix")
-
-	flag.Float64Var(&p.NaturalLossCM, "naturalLoss", .005,
-		"battery loss due to natural causes")
-
-
-	flag.Float64Var(&p.SamplingLossSensorCM, "sensorSamplingLoss", .001,
-		"battery loss due to sensor sampling")
-
-	flag.Float64Var(&p.SamplingLossGPSCM, "GPSSamplingLoss", .005,
-		"battery loss due to GPS sampling")
-
-	flag.Float64Var(&p.SamplingLossSensorCM, "serverSamplingLoss", .01,
-		"battery loss due to server sampling")
-
-	flag.Float64Var(&p.SamplingLossBTCM, "SamplingLossBTCM", .0001,
-		"battery loss due to BlueTooth sampling")
+	flag.Float64Var(&p.DetectionThresholdCM, "detectionThreshold", 4000.0,"Value where if a node gets this reading or higher, it will trigger a detection")
+	flag.IntVar(&p.ValidationThreshold, "validationThreshold", 1, "Number of detections required to validate a detection")
+	flag.Float64Var(&p.CalibrationThresholdCM, "RecalibrationThreshold", 3.0, "Value over grid average to recalibrate node")
+	flag.Float64Var(&p.StdDevThresholdCM, "StandardDeviationThreshold", 1.7, "Detection Threshold based on standard deviations from mean")
+	flag.IntVar(&p.ClusterThreshold, "clusterThresh,",8, "max size of a node cluster")
+	flag.Float64Var(&p.DetectionDistance, "detectionDistance", 6.0, "Detection Distance")
 
 
-	flag.Float64Var(&p.SamplingLossWifiCM, "SamplingLossWifiCM", .001,
-		"battery loss due to WiFi sampling")
 
-	flag.Float64Var(&p.SamplingLoss4GCM, "SamplingLoss4GCM", .005,
-		"battery loss due to 4G sampling")
-
-	flag.Float64Var(&p.SamplingLossAccelCM, "SamplingLossAccelCM", .001,
-		"battery loss due to accelerometer sampling")
-
-	flag.IntVar(&p.ThresholdBatteryToHaveCM, "thresholdBatteryToHave", 30,
-		"Threshold battery phones should have")
-
-	flag.IntVar(&p.ThresholdBatteryToUseCM, "thresholdBatteryToUse", 10,
-		"Threshold of battery phones should consume from all forms of sampling")
-
-	flag.IntVar(&p.MovementSamplingSpeedCM, "movementSamplingSpeed", 20,
-		"the threshold of speed to increase sampling rate")
-
-	flag.IntVar(&p.MovementSamplingPeriodCM, "movementSamplingPeriod", 1,
-		"the threshold of speed to increase sampling rate")
-
-	flag.IntVar(&p.MaxBufferCapacityCM, "maxBufferCapacity", 25,
-		"maximum capacity for the buffer before it sends data to the server")
-
-	flag.StringVar(&p.EnergyModelCM, "energyModel", "variable",
-		"this determines the energy loss model that will be used")
-
-	flag.BoolVar(&p.NoEnergyModelCM, "noEnergy", false,
-		"Whether or not to ignore energy model for simulation")
-
+	flag.Float64Var(&p.NodeBTRange, "nodeBTRange",20.0,"bluetooth range of each node")
+	flag.IntVar(&p.CMSensingTime, "cmSensingTime,",2, "seconds a cluster member will sense/record readings before sending to cluster head")
+	flag.IntVar(&p.CHSensingTime, "chSensingTime,",4, "seconds a cluster head will sense//collect from CM/record readings before sending to server")
+	flag.IntVar(&p.MaxCMReadingBufferSize, "maxCMReadingBufferSize,",10, "max readings buffer size of a cluster member. CM must send to CH when buffer is this size")
+	flag.IntVar(&p.MaxCHReadingBufferSize, "maxCHReadingBufferSize,",100, "max readings buffer size of a cluster head. CH must send to server when buffer is this size")
 	flag.IntVar(&p.SensorSamplingPeriodCM, "sensorSamplingPeriod", 1000,
 		"rate of the sensor sampling period when custom energy model is chosen")
-
 	flag.IntVar(&p.GPSSamplingPeriodCM, "GPSSamplingPeriod", 1000,
 		"rate of the GridGPS sampling period when custom energy model is chosen")
-
 	flag.IntVar(&p.ServerSamplingPeriodCM, "serverSamplingPeriod", 1000,
 		"rate of the server sampling period when custom energy model is chosen")
-
 	flag.IntVar(&p.NumStoredSamplesCM, "nodeStoredSamples", 10,
 		"number of samples stored by individual nodes for averaging")
-
 	flag.IntVar(&p.GridStoredSamplesCM, "GridStoredSamples", 10,
 		"number of samples stored by p.Grid squares for averaging")
-
-	flag.Float64Var(&p.DetectionThresholdCM, "detectionThreshold", 4000.0, //11180.0,
-		"Value where if a node gets this reading or higher, it will trigger a detection")
-
 	flag.Float64Var(&p.ErrorModifierCM, "errorMultiplier", 1.0,
 		"Multiplier for error values in system")
 
-	flag.BoolVar(&p.CSVSensor, "csvSensor", true, "Read Sensor Values from CSV")
+	flag.Float64Var(&p.NaturalLossCM, "naturalLoss", .005,
+		"battery loss due to natural causes")
+	flag.Float64Var(&p.SamplingLossSensorCM, "sensorSamplingLoss", .001,
+		"battery loss due to sensor sampling")
+	flag.Float64Var(&p.SamplingLossGPSCM, "GPSSamplingLoss", (3.44*math.Pow(10,-6)),
+		"battery loss due to GPS sampling")
+	flag.Float64Var(&p.SamplingLossSensorCM, "serverSamplingLoss", .01,
+		"battery loss due to server sampling")
+	flag.Float64Var(&p.SamplingLossBTCM, "SamplingLossBTCM", (9.79*math.Pow(10,-5)),
+		"battery loss due to BlueTooth sampling")
+	flag.Float64Var(&p.SamplingLossWifiCM, "SamplingLossWifiCM", .01,
+		"battery loss due to WiFi sampling")
+	flag.Float64Var(&p.SamplingLoss4GCM, "SamplingLoss4GCM", (9.79*math.Pow(10,-4)),
+		"battery loss due to 4G sampling")
+	flag.Float64Var(&p.SamplingLossAccelCM, "SamplingLossAccelCM", (3.827*math.Pow(10,-10)),
+		"battery loss due to accelerometer sampling")
+	flag.IntVar(&p.ThresholdBatteryToHaveCM, "thresholdBatteryToHave", 30,
+		"Threshold battery phones should have")
+	flag.IntVar(&p.ThresholdBatteryToUseCM, "thresholdBatteryToUse", 10,
+		"Threshold of battery phones should consume from all forms of sampling")
+	flag.IntVar(&p.MovementSamplingSpeedCM, "movementSamplingSpeed", 20,
+		"the threshold of speed to increase sampling rate")
+	flag.IntVar(&p.MovementSamplingPeriodCM, "movementSamplingPeriod", 1,
+		"the threshold of speed to increase sampling rate")
+	flag.IntVar(&p.MaxBufferCapacityCM, "maxBufferCapacity", 25,
+		"maximum capacity for the buffer before it sends data to the server")
+	flag.StringVar(&p.EnergyModelCM, "energyModel", "variable",
+		"this determines the energy loss model that will be used")
+	flag.IntVar(&p.NegativeSittingStopThresholdCM, "negativeSittingStopThreshold", -10,
+		"Negative number sitting is set to when board map is reset")
+	flag.IntVar(&p.SittingStopThresholdCM, "sittingStopThreshold", 5,
+		"How long it takes for a node to stay seated")
+	flag.Float64Var(&p.GridCapacityPercentageCM, "GridCapacityPercentage", .9,
+		"Percent the sub-Grid can be filled")
+	flag.IntVar(&p.SuperNodeSpeed, "SuperNodeSpeed", 3, "the speed of the super node")
+	flag.IntVar(&p.ReadingHistorySize, "readingHistorySize", 60, "Number of times stored in Readings")
+	flag.Float64Var(&p.SensorSampleRate, "defaultSensorSampleRate", 0.05, "Default sampling rate due to the sensor")
+	flag.Float64Var(&p.MaxSampleRate, "maxSampleRate", 20.0, "Maximum possible sampling rate")
+	flag.Float64Var(&p.SamplesPerMeter, "samplesPerMeter", 2, "Number of samples taker per meter traveled for a node")
 
-	flag.BoolVar(&p.CSVMovement, "csvMove", true, "Read Movements from CSV")
+	//Other
+	flag.StringVar(&p.CPUProfile, "cpuprofile", "", "write cpu profile to `file`")
+	flag.StringVar(&p.MemProfile, "memprofile", "", "write memory profile to `file`")
+	flag.BoolVar(&p.AdaptiveSampling, "adaptiveSampling", false, "Toggles adaptive sampling system")
+	flag.IntVar(&p.NumStoredSampleRates, "storedSampleRates", 5, "Number of sample rates that a node can store")
 
-	flag.BoolVar(&p.SuperNodes, "superNodes", true, "Enable SuperNodes")
-
-	flag.IntVar(&p.IterationsCM, "iterations", 200, "Read Movements from CSV")
-
+	//fmt.Println(os.Args[1:], "\nhmmm? \n ") //C:\Users\Nick\Desktop\comand line experiments\src
 	//Range 1, 2, or 4
 	//Currently works for only a few numbers, can be easily expanded but is not currently dynamic
-	flag.IntVar(&p.NumSuperNodes, "numSuperNodes", 4, "the number of super nodes in the simulator")
-
-	flag.Float64Var(&p.CalibrationThresholdCM, "RecalibrationThreshold", 3.0, "Value over grid average to recalibrate node")
-
-	flag.Float64Var(&p.StdDevThresholdCM, "StandardDeviationThreshold", 1.7, "Detection Threshold based on standard deviations from mean")
-
-	flag.Float64Var(&p.DetectionDistance, "detectionDistance", 6.0, "Detection Distance")
-
 	//Range: 0-2
 	//0: default routing algorithm, points added onto the end of the path and routed to in that order
 	//flag.IntVar(&p.SuperNodeType, "p.SuperNodeType", 0, "the type of super node used in the simulator")
@@ -1532,20 +1679,12 @@ func GetFlags(p *Params) {
 	//	5: sophisticated routing algorithm, begin inside regions, only routed inside region
 	//	6: regional return trip routing algorithm, routed inside region based on most points
 	//	7: regional return trip routing algorithm, routed inside region based on oldest point
-	flag.IntVar(&p.SuperNodeType, "SuperNodeType", 0, "the type of super node used in the simulator")
-
 	//Range: 0-...
 	//Theoretically could be as high as possible
 	//Realistically should remain around 10
-	flag.IntVar(&p.SuperNodeSpeed, "SuperNodeSpeed", 3, "the speed of the super node")
-
-
 	//Range: true/false
 	//Tells the simulator whether or not to optimize the path of all the super nodes
 	//Only works when multiple super nodes are active in the same area
-	flag.BoolVar(&p.DoOptimize, "doOptimize", false, "whether or not to optimize the simulator")
-
-
 	//Range: 0-4
 	//	0: begin in center, routed anywhere
 	//	1: begin inside circles located in the corners, only routed inside circle
@@ -1683,6 +1822,13 @@ func WriteFlags(p * Params){
 	buf.WriteString(fmt.Sprintf("totalNodes=%v\n", p.TotalNodes))
 	buf.WriteString(fmt.Sprintf("validaitonType=%v\n", p.ValidationType))
 	buf.WriteString(fmt.Sprintf("recalReject=%v\n", p.RecalReject))
+	buf.WriteString(fmt.Sprintf("clusterThresh=%v\n", p.ClusterThreshold))
+	buf.WriteString(fmt.Sprintf("nodeBTRange=%v\n", p.NodeBTRange))
+	buf.WriteString(fmt.Sprintf("clusteringOn=%v\n",p.ClusteringOn))
+	buf.WriteString(fmt.Sprintf("cmSensingTime=%v\n",p.CMSensingTime))
+	buf.WriteString(fmt.Sprintf("chSensingTime=%v\n",p.CHSensingTime))
+	buf.WriteString(fmt.Sprintf("maxCMReadingBufferSize=%v\n",p.MaxCMReadingBufferSize))
+	buf.WriteString(fmt.Sprintf("maxCHReadingBufferSize=%v\n",p.MaxCHReadingBufferSize))
 	fmt.Fprintf(p.RunParamFile,buf.String())
 }
 

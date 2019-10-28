@@ -91,6 +91,14 @@ type Params struct {
 	ZipFiles 		bool
 	Files 			[]string
 	NodeDataFile   *os.File
+	ClusterFile	   *os.File
+	ClusterStatsFile *os.File
+	ClusterDebug	*os.File
+	ClusterReadings *os.File
+	ClusterMessages *os.File
+	AliveValidNodes	*os.File
+	SamplingData    *os.File
+	SampleRates     *os.File
 
 	SensorPath  string
 	FineSensorPath  string
@@ -141,11 +149,12 @@ type Params struct {
 
 	FileName string
 
-	RegionRouting bool
-	AStarRouting  bool
-	CSVMovement   bool
-	CSVSensor     bool
-	SuperNodes     bool
+	RegionRouting    bool
+	AStarRouting     bool
+	CSVMovement      bool
+	CSVSensor        bool
+	SuperNodes       bool
+	AdaptiveSampling bool
 
 	CurrentNodes               int
 	NumWallNodes               int
@@ -209,6 +218,23 @@ type Params struct {
 	FineScale		int
 	Scale 			int
 
+	NodeTree				* Quadtree
+	ClusterNetwork			* AdHocNetwork
+	NodeBTRange				float64
+	ClusterThreshold		int
+	ClusteringOn			bool
+
+	CMSensingTime		int
+	CHSensingTime		int
+	MaxCMReadingBufferSize	int
+	MaxCHReadingBufferSize	int
+
+	ReadingHistorySize	int
+
+	SensorSampleRate     float64
+	SamplesPerMeter      float64
+	MaxSampleRate        float64
+	NumStoredSampleRates int
 	DriftExplorer 	bool
 	NumNodeMovements 	int
 	MovementOffset 		int
