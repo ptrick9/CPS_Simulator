@@ -26,7 +26,7 @@ if __name__ == '__main__':
 
     paths = []
     for pop in [[200, 10000], [500, 4000], [1000, 2000], [2000, 1000], [5000, 400], [10000, 200]]:
-        for it in [1, 2]:
+        for it in [3, 4]:
             paths.append((pop[0], it, pop[1]))
 
     #movementPath = ["-movementPath=%s" % s for s in ["/home/simulator/git-simulator/movement/marathon_street_2000_%d.scb" % i for i in range(1,10)]]
@@ -90,7 +90,7 @@ if __name__ == '__main__':
     for r in runs:
         for i in range(factor):
             j = [zz for zz in r]
-            j.append("-OutputFileName=/home/simulator/simData/driftExplorerNoBombFinal/Log_%d" % x)
+            j.append("-OutputFileName=/home/simulator/simData/driftExplorerNoBombFinal2/Log_%d" % x)
 
             
             v = j

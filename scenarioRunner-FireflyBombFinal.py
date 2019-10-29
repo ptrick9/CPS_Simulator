@@ -9,8 +9,8 @@ def runner(queue):
         print("%d\\%d" % (job[1], job[2]))
         #print(job)
         command = "./simulator/Simulation "+' '.join(job[0])
-        print(command)
-        #os.system(command + " 1>/dev/null")
+        #print(command)
+        os.system(command + " 1>/dev/null")
         queue.task_done()
 
 
@@ -64,7 +64,7 @@ if __name__ == '__main__':
     #Squares = ["-SquareRowCM=%d -SquareColCM=%d" % (d, d) for d in [3, 4, 5]]
     #validationThreshold = ["-validationThreshold=%d" % d for d in [0]]
     serverRecal = ["-serverRecal=%s" % s for s in ['true', 'false']]
-    driftExplore = ["-driftExplorer=%s" % s for s in ['true']]
+    driftExplore = ["-driftExplorer=%s" % s for s in ['false']]
     helper = ["-fineSensorPath=%s -csvSensor=%s" % (s[0], s[1]) for s in [("fine_bomb9x9.csv", 'false')]]
     commBomb = ["-commandBomb=%s -bombX=%d -bombY=%d" % (s[0], s[1], s[2]) for s in [("true", 1007, 1491),("true", 988, 1333),("true", 213, 256),("true", 1090, 154),("true", 289, 366),("true", 1275, 875),("true", 840, 1436),("true", 808, 1149),("true", 874, 1365),("true", 983, 891),("true", 1117, 1813),("true", 1172, 1355),("true", 223, 263),("true", 1137, 923),("true", 1109, 1086),("true", 921, 1212),("true", 800, 419),("true", 976, 1170),("true", 1000, 1179),("true", 713, 383),("true", 1199, 937),("true", 266, 646),("true", 1340, 809),("true", 1147, 847),("true", 1127, 959)]]
     #detectionWindow = ["-detectionWindow=%d" % d for d in [100]]
