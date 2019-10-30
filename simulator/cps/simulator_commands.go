@@ -87,8 +87,10 @@ type Params struct {
 	RunParamFile   *os.File
 	DriftExploreFile *os.File
 	DistanceFile 	*os.File
+	ServerReadingsFile 	*os.File
 	ZipFiles 		bool
-	Files 			[]string
+	//Files 			[]string
+	Files 			[]*os.File
 	NodeDataFile   *os.File
 
 	SensorPath  string
@@ -218,4 +220,8 @@ type Params struct {
 
 	ValidationType string
 	RecalReject 	bool
+	NodeBuffer		bool
+	MaxBufferedSamples	int
+	MaxTimeBuffer		int
+
 }

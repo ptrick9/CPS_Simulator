@@ -9,12 +9,15 @@ energy loss for
 	Accel
 	Sensor
 	SensorReset
-Accelerometer Smapling
-Nodes store samples and report less often
+Accelerometer Sampling --
+Nodes store samples and report less often --
 Server aware of density
 adaptive sampling rate
 	travel speed
 	battery level
+
+
+
 
 
 BLE Energy (https://www.eecs.umich.edu/courses/eecs589/papers/06215496.pdf)
@@ -47,3 +50,5 @@ accelerometer (https://www.nxp.com/docs/en/application-note/AN4999.pdf)
 	~3uW
 
 power usage 4g wifi? https://www.cs.purdue.edu/homes/chunyi/pubs/wowmom16-zhang.pdf
+
+

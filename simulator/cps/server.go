@@ -31,6 +31,7 @@ type FusionCenter struct {
 	Validators 		map[int]int //stores validators...id -> time  latest time for id is stored
 	NodeSquares 	map[int]Tuple  //store what square a node is in
 	SquarePop  		map[Tuple][]int //store nodes in square
+	ReceivedReadings 	int
 }
 
 //Init initializes the values for the server
@@ -53,6 +54,7 @@ func (s *FusionCenter) Init(){
 	s.Validators = make(map[int]int)
 	s.NodeSquares = make(map[int]Tuple)
 	s.SquarePop = make(map[Tuple][]int)
+	s.ReceivedReadings = 0
 }
 
 func (s *FusionCenter) MakeNodeData() {
@@ -481,6 +483,7 @@ func remove(s []int, i int) []int {
 }
 
 
+
 //Send is called by a node to deliver a reading to the server.
 // Statistics are calculated each Time data is received
 func (s *FusionCenter) Send(n *NodeImpl, rd Reading, tp bool) {
@@ -489,6 +492,8 @@ func (s *FusionCenter) Send(n *NodeImpl, rd Reading, tp bool) {
 
 	//NodeSquares 	map[int]Tuple  //store what square a node is in
 	//SquarePop  		map[Tuple][]int //store nodes in square
+
+	s.ReceivedReadings += 1
 
 	v, ok := s.NodeSquares[n.Id] //check if node has been recorded before
 	newSquare := Tuple{int(rd.Xpos / float32(s.P.XDiv)), int(rd.YPos / float32(s.P.YDiv))}

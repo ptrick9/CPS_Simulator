@@ -609,7 +609,8 @@ func SetupFiles(p *Params) {
 	if err != nil {
 		log.Fatal("Cannot create file", err)
 	}
-	p.Files = append(p.Files, p.OutputFileNameCM + "-simulatorOutput.txt")
+	//p.Files = append(p.Files, p.OutputFileNameCM + "-simulatorOutput.txt")
+	p.Files = append(p.Files, p.PositionFile)
 
 	//Print parameters to position file
 	fmt.Fprintln(p.PositionFile, "Image:", p.ImageFileNameCM)
@@ -623,7 +624,8 @@ func SetupFiles(p *Params) {
 	if err != nil {
 		log.Fatal("Cannot create file", err)
 	}
-	p.Files = append(p.Files, p.OutputFileNameCM + "-drift.txt")
+	//p.Files = append(p.Files, p.OutputFileNameCM + "-drift.txt")
+	p.Files = append(p.Files, p.DriftFile)
 
 	//Printing parameters to driftFile
 	fmt.Fprintln(p.DriftFile, "Number of Nodes:", p.TotalNodes)
@@ -652,7 +654,8 @@ func SetupFiles(p *Params) {
 	if err != nil {
 		log.Fatal("Cannot create file", err)
 	}
-	p.Files = append(p.Files, p.OutputFileNameCM + "-grid.txt")
+	//p.Files = append(p.Files, p.OutputFileNameCM + "-grid.txt")
+	p.Files = append(p.Files, p.GridFile)
 
 
 	//Write parameters to gridFile
@@ -666,50 +669,58 @@ func SetupFiles(p *Params) {
 	if err != nil {
 		log.Fatal("Cannot create file", err)
 	}
-	p.Files = append(p.Files, p.OutputFileNameCM + "-node.txt")
+	//p.Files = append(p.Files, p.OutputFileNameCM + "-node.txt")
+	p.Files = append(p.Files, p.EnergyFile)
 
 	p.BatteryFile, err = os.Create(p.OutputFileNameCM + "-batteryusage.txt")
 	if err != nil {
 		log.Fatal("Cannot create file", err)
 	}
-	p.Files = append(p.Files, p.OutputFileNameCM + "-batteryusage.txt")
+	//p.Files = append(p.Files, p.OutputFileNameCM + "-batteryusage.txt")
+	p.Files = append(p.Files, p.BatteryFile)
 
 	p.RunParamFile, err = os.Create(p.OutputFileNameCM + "-parameters.txt")
 	if err != nil {
 		log.Fatal("Cannot create file", err)
 	}
-	p.Files = append(p.Files, p.OutputFileNameCM + "-parameters.txt")
+	//p.Files = append(p.Files, p.OutputFileNameCM + "-parameters.txt")
+	p.Files = append(p.Files, p.RunParamFile)
 
 	p.RoutingFile, err = os.Create(p.OutputFileNameCM + "-path.txt")
 	if err != nil {
 		log.Fatal("Cannot create file", err)
 	}
-	p.Files = append(p.Files, p.OutputFileNameCM + "-path.txt")
+	//p.Files = append(p.Files, p.OutputFileNameCM + "-path.txt")
+	p.Files = append(p.Files, p.RoutingFile)
 
 	p.MoveReadingsFile, err = os.Create(p.OutputFileNameCM + "-movementReadings.txt")
 	if err != nil {
 		log.Fatal("Cannot create file", err)
 	}
-	p.Files = append(p.Files, p.OutputFileNameCM + "-movementReadings.txt")
+	//p.Files = append(p.Files, p.OutputFileNameCM + "-movementReadings.txt")
+	p.Files = append(p.Files, p.MoveReadingsFile)
 
 	p.ServerFile, err = os.Create(p.OutputFileNameCM + "-server.txt")
 	if err != nil {
 		log.Fatal("Cannot create file", err)
 	}
-	p.Files = append(p.Files, p.OutputFileNameCM + "-server.txt")
+	//p.Files = append(p.Files, p.OutputFileNameCM + "-server.txt")
+	p.Files = append(p.Files, p.ServerFile)
 
 	p.DetectionFile, err = os.Create(p.OutputFileNameCM + "-detection.txt")
 	if err != nil {
 		log.Fatal("Cannot create file", err)
 	}
-	p.Files = append(p.Files, p.OutputFileNameCM + "-detection.txt")
+	//p.Files = append(p.Files, p.OutputFileNameCM + "-detection.txt")
+	p.Files = append(p.Files, p.DetectionFile)
 
 	if p.DriftExplorer || !p.DriftExplorer {
 		p.DriftExploreFile, err = os.Create(p.OutputFileNameCM + "-driftExplore.txt")
 		if err != nil {
 			log.Fatal("Cannot create file", err)
 		}
-		p.Files = append(p.Files, p.OutputFileNameCM+"-driftExplore.txt")
+		//p.Files = append(p.Files, p.OutputFileNameCM+"-driftExplore.txt")
+		p.Files = append(p.Files, p.DriftExploreFile)
 	}
 
 	//defer p.ServerFile.Close()
@@ -717,13 +728,21 @@ func SetupFiles(p *Params) {
 	if err != nil {
 		log.Fatal("Cannot create file", err)
 	}
-	p.Files = append(p.Files, p.OutputFileNameCM+"-nodeData.txt")
+	//p.Files = append(p.Files, p.OutputFileNameCM+"-nodeData.txt")
+	p.Files = append(p.Files, p.NodeDataFile)
 
 	p.DistanceFile, err = os.Create(p.OutputFileNameCM + "-distance.txt")
 	if err != nil {
 		log.Fatal("Cannot create file", err)
 	}
-	p.Files = append(p.Files, p.OutputFileNameCM+"-distance.txt")
+	//p.Files = append(p.Files, p.OutputFileNameCM+"-distance.txt")
+	p.Files = append(p.Files, p.DistanceFile)
+
+	p.ServerReadingsFile, err = os.Create(p.OutputFileNameCM + "-serverReadings.txt")
+	if err != nil {
+		log.Fatal("Cannot create file", err)
+	}
+	p.Files = append(p.Files, p.ServerReadingsFile)
 
 
 	fmt.Println(p.Files)
@@ -1527,6 +1546,12 @@ func GetFlags(p *Params) {
 
 	flag.BoolVar(&p.RandomBomb, "randomBomb", false, "Toggles random bomb placement")
 	flag.BoolVar(&p.ZipFiles, "zipFiles", false, "Toggles Zipping of output files")
+
+	flag.BoolVar(&p.NodeBuffer, "nodeBuffer", false, "Whether to allow the node to buffer samples before server")
+	flag.IntVar(&p.MaxBufferedSamples, "nodeBufferSamples", 10, "Max number of samples to buffer before sending average")
+	flag.IntVar(&p.MaxTimeBuffer, "nodeTimeBuffer", 10, "Max number of seconds between server updates")
+
+
 	flag.Parse()
 	fmt.Println("Natural Loss: ", p.NaturalLossCM)
 	fmt.Println("Sensor Sampling Loss: ", p.SamplingLossSensorCM)
@@ -1615,13 +1640,18 @@ func WriteFlags(p * Params){
 	buf.WriteString(fmt.Sprintf("totalNodes=%v\n", p.TotalNodes))
 	buf.WriteString(fmt.Sprintf("validaitonType=%v\n", p.ValidationType))
 	buf.WriteString(fmt.Sprintf("recalReject=%v\n", p.RecalReject))
+	buf.WriteString(fmt.Sprintf("nodeBuff=%v\n", p.NodeBuffer))
+	buf.WriteString(fmt.Sprintf("nodeBufferSamples=%v\n", p.MaxBufferedSamples))
+	buf.WriteString(fmt.Sprintf("nodeTimeBuffer=%v\n", p.MaxTimeBuffer))
+
+
 	fmt.Fprintf(p.RunParamFile,buf.String())
 }
 
 
 
 
-func ZipFiles(filename string, files []string) error {
+func ZipFiles(filename string, files []*os.File) error {
 
 	newZipFile, err := os.Create(filename)
 	if err != nil {
@@ -1634,7 +1664,7 @@ func ZipFiles(filename string, files []string) error {
 
 	// Add files to zip
 	for _, file := range files {
-		if err = AddFileToZip(zipWriter, file); err != nil {
+		if err = AddFileToZip(zipWriter, file.Name()); err != nil {
 			return err
 		}
 	}

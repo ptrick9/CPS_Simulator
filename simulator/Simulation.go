@@ -224,7 +224,7 @@ func main() {
 	r = &cps.RegionParams{}
 
 	p.Events = Events
-	p.Server = cps.FusionCenter{p, r, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil}
+	p.Server = cps.FusionCenter{p, r, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, 0}
 
 	p.Tau1 = 3500
 	p.Tau2 = 9000
@@ -382,6 +382,7 @@ func main() {
 	p.Events.Push(&cps.Event{nil, cps.CLEANUPREADINGS, (p.ReadingHistorySize + 1) * 1000, 0})
 	//p.Events.Push(&cps.Event{nil, cps.VALIDNODES, 999, 0})
 	p.Events.Push(&cps.Event{nil, cps.LOADMOVE, (p.MovementSize-2)*1000, 0})
+	p.Events.Push(&cps.Event{nil, cps.REPORTSENDS, 999, 0})
 
 
 
@@ -528,6 +529,10 @@ func main() {
 			}	else if event.Instruction == cps.LOADMOVE {
 				cps.PartialReadMovementCSV(p)
 				p.Events.Push(&cps.Event{nil, cps.LOADMOVE, (p.MovementOffset + p.MovementSize-2)*1000, 0})
+			}	else if event.Instruction == cps.REPORTSENDS {
+				fmt.Fprintf(p.ServerReadingsFile, "%v\n", p.Server.ReceivedReadings)
+				p.Server.ReceivedReadings = 0
+				p.Events.Push(&cps.Event{nil, cps.REPORTSENDS, p.CurrentTime + 1000, 0})
 			}
 		}
 
@@ -597,7 +602,7 @@ func main() {
 	}
 
 	if p.ZipFiles {
-		p.MoveReadingsFile.Close()
+		/*p.MoveReadingsFile.Close()
 		p.DriftFile.Close()
 		p.NodeFile.Close()
 		p.PositionFile.Close()
@@ -613,6 +618,10 @@ func main() {
 
 		if p.DriftExplorer {
 			p.DriftExploreFile.Close()
+		}*/
+
+		for _, file := range(p.Files) {
+			file.Close()
 		}
 
 		output := p.OutputFileNameCM + ".zip"
@@ -623,7 +632,7 @@ func main() {
 
 		for _, file := range(p.Files) {
 
-			var err = os.Remove(file)
+			var err = os.Remove(file.Name())
 			if err != nil {
 				fmt.Println(err)
 			}

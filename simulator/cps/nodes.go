@@ -89,15 +89,17 @@ type NodeImpl struct {
 	InverseGPS       float32   //Algorithm place holder declared here for speed
 	InverseServer    float32   //Algorithm place holder declared here for speed
 	SampleHistory    []float32 //a history of the node's readings
-	Avg              float32   //weighted average of the node's most recent readings
-	TotalSamples     int       //total number of samples taken by a node
-	NumAccelRead     int
-	TotalAccelVal    float64
-	AvgAccel 		 float64
-	SpeedWeight      float32   //weight given to averaging of node's samples, based on node's speed
-	NumResets        int       //number of times a node has had to reset due to drifting
-	Concentration    float64   //used to determine reading of node
-	SpeedGPSPeriod   int
+	Avg             float32   //weighted average of the node's most recent readings
+	TotalSamples    int       //total number of samples taken by a node
+	NumAccelRead    int
+	TotalAccelVal   float64
+	AvgAccel        float64
+	SpeedWeight     float32   //weight given to averaging of node's samples, based on node's speed
+	NumResets       int       //number of times a node has had to reset due to drifting
+	Concentration   float64   //used to determine reading of node
+	SpeedGPSPeriod  int
+	LastSend        int
+	BufferedSamples int
 
 	Current  int
 	Previous int
@@ -354,7 +356,7 @@ func (curNode *NodeImpl) UpdateHistory(newValue float32) {
 
 	//var decreaseRatio = curNode.SpeedWeight / 100.0
 	//fmt.Printf("Speed Weight %v\n", curNode.SpeedWeight)
-	var decreaseRatio = float32(1.0) //prevent any things with speed weight for now
+	//var decreaseRatio = float32(1.0) //prevent any things with speed weight for now
 
 	if curNode.TotalSamples > len(curNode.SampleHistory) { //if the node has taken more than x total samples
 		numSamples = len(curNode.SampleHistory) //we only average over the x most recent ones
@@ -365,7 +367,7 @@ func (curNode *NodeImpl) UpdateHistory(newValue float32) {
 	for i := 0; i < numSamples; i++ {
 		if curNode.SampleHistory[i] != 0 {
 			//weight the values of the sampleHistory when added to the sum variable based on the speed, so older values are weighted less
-			sum += curNode.SampleHistory[i] - ((decreaseRatio) * float32(i))
+			sum += curNode.SampleHistory[i]// - ((decreaseRatio) * float32(i))
 		} else {
 			sum += 0
 		}
@@ -791,7 +793,9 @@ func (curNode *NodeImpl) report(rawConc float64) {
 
 	//if curNode.HasCheckedSensor {
 	curNode.IncrementTotalSamples()
-	curNode.UpdateHistory(float32(errorDist))
+	curNode.UpdateHistory(float32(ADCRead))
+
+
 	//}
 
 	//If the reading is more than 2 standard deviations away from the grid average, then recalibrate
@@ -827,48 +831,107 @@ func (curNode *NodeImpl) report(rawConc float64) {
 
 	tp := false
 
-	if inRange && highConcentration && highSensor {
-		fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("TP T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, rawConc))
-		tp = true
-	} else if inRange && highConcentration && !highSensor {
-		fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("FN Drift T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, rawConc))
-	} else if inRange && !highConcentration && highSensor {
-		fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("FP Drift T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, rawConc))
-	} else if inRange && !highConcentration && !highSensor {
-		if inWind == 1 && !curNode.P.CSVSensor {
-			//outside bomb range and the bomb is random , this isn't a real FN
-		} else if inWind == 1 && curNode.P.CSVSensor{
-			//we are not  in the wind area, and the bomb isn't random, this is a FN due to wind
-			fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("FN Wind T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, rawConc))
-		} else if inWind == 0 && !curNode.P.CSVSensor {
-			//we are in the wind zone and the bomb is random, we are
-			//therefore inside the detection range but this can't happen as we would ahve a high concentration
-		} else if inWind == 0 && curNode.P.CSVSensor {
-			//we are in the wind zone and the bomb is random, so it isn't possible to get here....
-			//fmt.Printf("\n %v %v %v %v %v %v\n", curNode.Id, curNode.P.TimeStep, inWind, curNode.P.CSVSensor, highSensor, highConcentration)
-			fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("FN Wind T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, rawConc))
+	if !curNode.P.NodeBuffer { //send every sample, make a decision all times
+		if inRange && highConcentration && highSensor {
+			fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("TP T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, rawConc))
+			tp = true
+		} else if inRange && highConcentration && !highSensor {
+			fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("FN Drift T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, rawConc))
+		} else if inRange && !highConcentration && highSensor {
+			fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("FP Drift T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, rawConc))
+		} else if inRange && !highConcentration && !highSensor {
+			if inWind == 1 && !curNode.P.CSVSensor {
+				//outside bomb range and the bomb is random , this isn't a real FN
+			} else if inWind == 1 && curNode.P.CSVSensor {
+				//we are not  in the wind area, and the bomb isn't random, this is a FN due to wind
+				fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("FN Wind T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, rawConc))
+			} else if inWind == 0 && !curNode.P.CSVSensor {
+				//we are in the wind zone and the bomb is random, we are
+				//therefore inside the detection range but this can't happen as we would ahve a high concentration
+			} else if inWind == 0 && curNode.P.CSVSensor {
+				//we are in the wind zone and the bomb is random, so it isn't possible to get here....
+				//fmt.Printf("\n %v %v %v %v %v %v\n", curNode.Id, curNode.P.TimeStep, inWind, curNode.P.CSVSensor, highSensor, highConcentration)
+				fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("FN Wind T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, rawConc))
+			}
+		} else if !inRange && highConcentration && highSensor {
+			if inWind == 0 {
+				//we are in a wind zone, therefore this FP is caused by wind...not possible to have in a random
+				fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("FP Wind T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, rawConc))
+			}
+		} else if !inRange && highConcentration && !highSensor {
+			fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("FN Drift T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, rawConc))
+		} else if !inRange && !highConcentration && highSensor {
+			fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("FP Drift T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, rawConc))
+		} else if !inRange && !highConcentration && !highSensor {
+			//true negative
 		}
-	} else if !inRange && highConcentration && highSensor {
-		if inWind == 0 {
-			//we are in a wind zone, therefore this FP is caused by wind...not possible to have in a random
-			fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("FP Wind T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, rawConc))
+
+		if curNode.Valid {
+			curNode.P.Server.Send(curNode, Reading{ADCRead, newX, newY, curNode.P.CurrentTime, curNode.GetID()}, tp)
 		}
-	} else if !inRange && highConcentration && !highSensor {
-		fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("FN Drift T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, rawConc))
-	} else if !inRange && !highConcentration && highSensor {
-		fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("FP Drift T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, rawConc))
-	} else if !inRange && !highConcentration && !highSensor {
-		//true negative
-	}
+	} else {
 
 
 
-	//Receives the node's distance and calculates its running average
-	//for that square
-	//Only do this if the sensor was pinged this iteration
 
-	if curNode.Valid {
-		curNode.P.Server.Send(curNode, Reading{ADCRead, newX, newY, curNode.P.CurrentTime, curNode.GetID()}, tp)
+		if highSensor { //if we have a high sensor reading we will ALWAYS send that value
+			if inRange && highConcentration { //this is a true positive
+				fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("TP T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, rawConc))
+				tp = true
+			} else if !inRange && highConcentration {
+				if inWind == 0 {
+					//we are in a wind zone, therefore this FP is caused by wind...not possible to have in a random
+					fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("FP Wind T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, rawConc))
+				} else { //this isn't possible
+
+				}
+			} else {
+				fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("FP Drift T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, rawConc))
+			}
+		} else { // no high sensor
+			if inRange && highConcentration {
+				fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("FN Drift T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, rawConc))
+			} else if inRange && !highConcentration {
+				if inWind == 1 && !curNode.P.CSVSensor {
+					//outside bomb range and the bomb is random , this isn't a real FN
+				} else if inWind == 1 && curNode.P.CSVSensor {
+					//we are not  in the wind area, and the bomb isn't random, this is a FN due to wind
+					fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("FN Wind T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, rawConc))
+				} else if inWind == 0 && !curNode.P.CSVSensor {
+					//we are in the wind zone and the bomb is random, we are
+					//therefore inside the detection range but this can't happen as we would ahve a high concentration
+				} else if inWind == 0 && curNode.P.CSVSensor {
+					//we are in the wind zone and the bomb is random, so it isn't possible to get here....
+					//fmt.Printf("\n %v %v %v %v %v %v\n", curNode.Id, curNode.P.TimeStep, inWind, curNode.P.CSVSensor, highSensor, highConcentration)
+					fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("FN Wind T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, rawConc))
+				}
+			} else {
+				//real TN
+			}
+		}
+
+		floatTemp := float32(curNode.P.CurrentTime)
+		intTime := int(floatTemp/1000)
+		send := highSensor || curNode.BufferedSamples - curNode.P.MaxBufferedSamples <= 0 || intTime - curNode.LastSend > curNode.P.MaxTimeBuffer || curNode.AvgAccel > 0.1
+
+		if send {
+			//send for high sensor, too many samples, too much time, too much movement
+			if highSensor { //we are sending because high sensor
+				//we only send the high value, we don't need to worry about the average
+				curNode.P.Server.Send(curNode, Reading{ADCRead, newX, newY, curNode.P.CurrentTime, curNode.GetID()}, tp)
+			} else { //we are sending because it has been too long/too many samples
+				curNode.P.Server.Send(curNode, Reading{float64(curNode.GetAvg()), newX, newY, curNode.P.CurrentTime, curNode.GetID()}, tp)
+			}
+
+			//update our tracking variables
+			curNode.BufferedSamples += 1
+			curNode.LastSend = intTime
+
+		} else {
+			//we aren't sending anything here so we need to update our buffered samples number
+			curNode.BufferedSamples += 1
+		}
+
 	}
 }
 
@@ -908,9 +971,6 @@ func (curNode *NodeImpl) MoveCSV(p *Params) {
 			accelRead = math.Sqrt(math.Pow(deltaX, 2)+math.Pow(deltaY, 2)) / deltaT
 			curNode.addAccelReading(accelRead)
 		}
-
-
-
 		curNode.LastMovementTime = floatTemp/1000.0
 
 
