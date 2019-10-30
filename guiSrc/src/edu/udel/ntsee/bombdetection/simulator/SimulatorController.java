@@ -270,7 +270,7 @@ public class SimulatorController implements Drawable {
 
         // Bomb
         int by = room.getHeight() - (int)room.getBomb().getY() - 1;
-        canvas.drawCircle(Color.RED, canvas.getCamera().getBlockSize(), (int)room.getBomb().getX(), by);
+        canvas.drawCircle(Color.RED, canvas.getCamera().getBlockSize()*3, (int)room.getBomb().getX(), by);
 
         // Nodes
         for (int i = 0; i < nodes.size(); i++) {
@@ -341,10 +341,11 @@ public class SimulatorController implements Drawable {
         for (int y=yStart; y<=yEnd; y++) {
 
             int flipY = Math.max(0, grid.getValues().length - y - 1);
-            for (int x=xStart; x<=xEnd; x++) {
 
+            for (int x=xStart; x<=xEnd; x++) {
+                int flipX = Math.max(0, grid.getValues()[0].length - x - 1);
                 double reading = grid.getValues()[flipY][x];
-                if (reading > 0) {
+                if (reading > 3.0) {
                     double amount = reading - grid.getMinValue();
                     double max = Math.max(grid.getMaxValue(), 20);
                     canvas.getGraphicsContext2D().setGlobalAlpha(amount / max);
@@ -354,7 +355,7 @@ public class SimulatorController implements Drawable {
         }
 
         canvas.getGraphicsContext2D().restore();
-        sensorGridLegend.setMax(grid.getMaxValue());
+        sensorGridLegend.setMax(Math.max(grid.getMaxValue(), 20));
 
     }
 
