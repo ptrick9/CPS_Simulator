@@ -323,75 +323,14 @@ func CreateBoard(x int, y int, p *Params) {
 	}
 }
 
-//HandleMovement adjusts BoolGrid when nodes move around the map
-func HandleMovement(p *Params) {
-	for j := 0; j < len(p.NodeList); j++ {
-
-		oldX, oldY := p.NodeList[j].GetLoc()
-		p.BoolGrid[int(oldX)][int(oldY)] = false //set the old spot false since the node will now move away
-
-		//move the node to its new location
-		p.NodeList[j].Move(p)
-
-		//set the new location in the boolean field to true
-		newX, newY := p.NodeList[j].GetLoc()
-		p.BoolGrid[int(newX)][int(newY)] = true
-
-		//writes the node information to the file
-		if p.EnergyPrint {
-			fmt.Fprintln(p.EnergyFile, p.NodeList[j])
-		}
-
-		//Add the node into its new Square's p.TotalNodes
-		//If the node hasn't left the square, that Square's p.TotalNodes will
-		//remain the same after these calculations
-	}
-}
-
-//HandleMovementCSV does the same as HandleMovement
-func HandleMovementCSV(p *Params) {
-	time := p.Iterations_used
-	for j := 0; j < len(p.NodeList); j++ {
-
-		if p.NodeList[j].Valid {
-			oldX, oldY := p.NodeList[j].GetLoc()
-			p.BoolGrid[int(oldX)][int(oldY)] = false //set the old spot false since the node will now move away
-		}
-		//move the node to its new location
-		//p.NodeList[j].Move(p)
-
-		id := p.NodeList[j].GetID()
-		p.NodeList[j].X = float32(p.NodeMovements[id][time].X)
-		p.NodeList[j].Y = float32(p.NodeMovements[id][time].Y)
 
 
-		//set the new location in the boolean field to true
-		newX, newY := p.NodeList[j].GetLoc()
-
-		if p.NodeList[j].InBounds(p) {
-			p.NodeList[j].Valid = true
-		} else {
-			p.NodeList[j].Valid = false
-		}
-		if p.NodeList[j].Valid {
-			p.BoolGrid[int(newX)][int(newY)] = true
-		}
-
-		//writes the node information to the file
-		if p.EnergyPrint {
-			fmt.Fprintln(p.EnergyFile, p.NodeList[j])
-		}
-
-		//Add the node into its new Square's p.TotalNodes
-		//If the node hasn't left the square, that Square's p.TotalNodes will
-		//remain the same after these calculations
-	}
-}
 
 //InitializeNodeParameters sets all the defaulted node values to semi-random values
 func InitializeNodeParameters(p *Params, nodeNum int) *NodeImpl{
 
 	var initHistory = make([]float32, p.NumStoredSamples)
+	var accelHistory = make([]float64, p.NumStoredSamples)
 
 	//initialize nodes to invalid starting point as starting point will be selected after initialization
 	curNode := NodeImpl{P: p, X: -1, Y: -1, Id: len(p.NodeList), SampleHistory: initHistory, Concentration: 0,
@@ -402,7 +341,8 @@ func InitializeNodeParameters(p *Params, nodeNum int) *NodeImpl{
 		BatteryLoss4G:            p.BatteryLosses4G[nodeNum],
 		BatteryLossAccelerometer: p.BatteryLossesAccelerometer[nodeNum],
 		BatteryLossWifi:		  p.BatteryLossesWiFi[nodeNum],
-		BatteryLossBT:			  p.BatteryLossesBT[nodeNum]}
+		BatteryLossBT:			  p.BatteryLossesBT[nodeNum],
+		AccelerometerSpeedHistory: accelHistory}
 
 	//values to determine coefficients
 	curNode.SetS0(rand.Float64()*0.005 + 0.33)

@@ -347,13 +347,9 @@ func main() {
 	fmt.Println("xDiv is ", p.XDiv, " yDiv is ", p.YDiv, " square capacity is ", p.SquareCapacity)
 
 
-	p.WallNodeList = make([]cps.WallNodes, p.NumWallNodes)
-
 	p.NodeList = make([]*cps.NodeImpl, 0)
 
-	for i := 0; i < p.NumWallNodes; i++ {
-		p.WallNodeList[i] = cps.WallNodes{Node: &cps.NodeImpl{X: float32(p.Wpos[i][0]), Y: float32(p.Wpos[i][1])}}
-	}
+
 
 	p.Server.MakeGrid()
 
@@ -405,7 +401,7 @@ func main() {
 					if (p.CSVMovement) {
 						event.Node.MoveCSV(p)
 					} else {
-						event.Node.MoveNormal(p)
+						//event.Node.MoveNormal(p)
 					}
 				}
 				if (p.DriftExplorer) {
@@ -422,7 +418,7 @@ func main() {
 				if(p.CSVMovement) {
 					event.Node.MoveCSV(p)
 				} else {
-					event.Node.MoveNormal(p)
+					//event.Node.MoveNormal(p)
 				}
 				if p.CurrentTime/1000 < p.NumNodeMovements-5 {
 					p.Events.Push(&cps.Event{event.Node, cps.MOVE, p.CurrentTime + 100, 0})

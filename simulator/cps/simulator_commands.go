@@ -167,7 +167,6 @@ type Params struct {
 	NumStoredSamples int
 	NumGridSamples   int
 
-	WallNodeList []WallNodes
 	NodeList     []*NodeImpl
 
 	BatteryCharges []float32

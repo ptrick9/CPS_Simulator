@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"math"
 	"math/rand"
-	"sort"
 )
 
 //Global variables used in battery loss dynamics
@@ -17,7 +16,7 @@ type NodeParent interface {
 	Distance(b Bomb) float32        //distance to bomb in the form of the node's reading
 	Row(div int) int                //Row of node
 	Col(div int) int                //Column of node
-	GetSpeed() []float32            //History of accelerometer based speeds of node
+	GetSpeed() []float64            //History of accelerometer based speeds of node
 	//BatteryLossDynamic()   //Battery loss based of ratios of battery usage
 	//BatteryLossDynamic1()  //2 stage buffer battery loss
 	UpdateHistory(newValue float32) //updates history of node's samples
@@ -66,11 +65,8 @@ type NodeImpl struct {
 	BatteryLossAccelerometer		float32
 
 	ToggleCheckIterator             int      //node's personal iterator mostly for cascading pings
-	//HasCheckedSensor                bool     //did the node just ping the sensor?
 	TotalChecksSensor               int      //total sensor pings of node
-	//HasCheckedGPS                   bool     //did the node just ping the GPS?
 	TotalChecksGPS                  int      //total GPS pings of node
-	//HasCheckedServer                bool     //did the node just communicate with the server?
 	TotalChecksServer               int      //how many times did the node communicate with the server?
 	PingPeriod                      float32  //This is the aggregate ping period used in some ping rate determining algorithms
 	SensorPingPeriod                float32  //This is the ping period for the sensor
@@ -84,22 +80,24 @@ type NodeImpl struct {
 	BufferI                         int      //This is to keep track of the node's buffer size
 	XPos                            [100]float32 //x pos buffer of node
 	YPos                            [100]float32 //y pos buffer of node
-	Value                           [100]int //Value buffer of node
 	AccelerometerSpeedServer        [100]int //Accelerometer speed history of node
 	Time                            [100]int //This keeps track of when specific pings are made
-	//speedGPSPeriod int //This is a special period for speed based GPS pings but it is not used and may never be
 	AccelerometerPosition [2][3]int //This is the accelerometer model of node
-	AccelerometerSpeed    []float32 //History of accelerometer speeds recorded
-	InverseSensor         float32   //Algorithm place holder declared here for speed
-	InverseGPS            float32   //Algorithm place holder declared here for speed
-	InverseServer         float32   //Algorithm place holder declared here for speed
-	SampleHistory         []float32 //a history of the node's readings
-	Avg                   float32   //weighted average of the node's most recent readings
-	TotalSamples          int       //total number of samples taken by a node
-	SpeedWeight           float32   //weight given to averaging of node's samples, based on node's speed
-	NumResets             int       //number of times a node has had to reset due to drifting
-	Concentration         float64   //used to determine reading of node
-	SpeedGPSPeriod        int
+	AccelerometerSpeedHistory    []float64 //History of accelerometer speeds recorded
+	LastMovementTime float32
+	InverseSensor    float32   //Algorithm place holder declared here for speed
+	InverseGPS       float32   //Algorithm place holder declared here for speed
+	InverseServer    float32   //Algorithm place holder declared here for speed
+	SampleHistory    []float32 //a history of the node's readings
+	Avg              float32   //weighted average of the node's most recent readings
+	TotalSamples     int       //total number of samples taken by a node
+	NumAccelRead     int
+	TotalAccelVal    float64
+	AvgAccel 		 float64
+	SpeedWeight      float32   //weight given to averaging of node's samples, based on node's speed
+	NumResets        int       //number of times a node has had to reset due to drifting
+	Concentration    float64   //used to determine reading of node
+	SpeedGPSPeriod   int
 
 	Current  int
 	Previous int
@@ -141,31 +139,6 @@ type NodeImpl struct {
 type NodeMovement interface {
 	NodeParent
 	Move(p *Params)
-}
-
-//Bouncing nodes bound around the grid
-type Bn struct {
-	*NodeImpl
-	X_speed int
-	Y_speed int
-}
-
-//Wall nodes go in a straight line from top/bottom or
-//	side/side
-type Wn struct {
-	*NodeImpl
-	Speed int
-	Dir   int
-}
-
-//Random nodes get assigned a random x, y velocity every
-//	move update
-type Rn struct {
-	*NodeImpl
-}
-
-type WallNodes struct {
-	Node *NodeImpl
 }
 
 //Coord is a struct that contains x and y coordinates of
@@ -237,9 +210,6 @@ func (curNode *NodeImpl) ADCReading(raw float32) int {
 }
 
 func (curNode NodeImpl) String() string {
-	//return fmt.Sprintf("x: %v y: %v Id: %v battery: %v sensor checked: %v sensor checks: %v GPS checked: %v GPS checks: %v server checked: %v server checks: %v buffer: %v ", int(curNode.X), curNode.Y, curNode.Id, curNode.Battery, curNode.HasCheckedSensor, curNode.TotalChecksSensor, curNode.HasCheckedGPS, curNode.TotalChecksGPS, curNode.HasCheckedServer, curNode.TotalChecksServer,curNode.BufferI)
-	//return fmt.Sprintf("x: %v y: %v valid: %v", int(curNode.X), int(curNode.Y), curNode.Valid)
-	//return fmt.Sprintf("battery: %v sensor checked: %v GPS checked: %v ", int(curNode.Battery), curNode.HasCheckedSensor, curNode.HasCheckedGPS)
 	return fmt.Sprintf("battery: %v sensor checked: %v GPS checked: %v ", int(curNode.Battery), true, true)
 
 }
@@ -252,103 +222,10 @@ func (c Coord) Equals(c2 Coord) bool {
 	return c.X == c2.X && c.Y == c2.Y
 }
 
-func (curNode *NodeImpl) Move(p *Params) {
-	if curNode.Sitting <= curNode.P.SittingStopThresholdCM {
-		curNode.OldX = int(curNode.X) / curNode.P.XDiv
-		curNode.OldY = int(curNode.Y) / curNode.P.YDiv
-
-		var potentialSpots []GridSpot
-
-		//only add the ones that are valid to move to into the list
-		if int(curNode.Y)-1 >= 0 &&
-			int(curNode.X) >= 0 &&
-			int(curNode.X) < curNode.P.Width &&
-			int(curNode.Y)-1 < curNode.P.Height &&
-
-			curNode.P.BoardMap[int(curNode.X)][int(curNode.Y)-1] != -1 &&
-			curNode.P.BoolGrid[int(curNode.X)][int(curNode.Y)-1] == false { // &&
-			//curNode.P.BoardMap[int(curNode.X)][curNode.Y-1] <= curNode.P.BoardMap[int(curNode.X)][curNode.Y] {
-
-			up := GridSpot{int(curNode.X), int(curNode.Y) - 1, curNode.P.BoardMap[int(curNode.X)][int(curNode.Y)-1]}
-			potentialSpots = append(potentialSpots, up)
-		}
-		if int(curNode.X)+1 < curNode.P.Width &&
-			int(curNode.X)+1 >= 0 &&
-			int(curNode.Y) < curNode.P.Height &&
-			curNode.Y >= 0 &&
-
-			curNode.P.BoardMap[int(curNode.X)+1][int(curNode.Y)] != -1 &&
-			curNode.P.BoolGrid[int(curNode.X)+1][int(curNode.Y)] == false { // &&
-			//curNode.P.BoardMap[int(curNode.X)+1][curNode.Y] <= curNode.P.BoardMap[int(curNode.X)][curNode.Y] {
-
-			right := GridSpot{int(curNode.X) + 1, int(curNode.Y), curNode.P.BoardMap[int(curNode.X)+1][int(curNode.Y)]}
-			potentialSpots = append(potentialSpots, right)
-		}
-		if int(curNode.Y)+1 < curNode.P.Height &&
-			curNode.Y+1 >= 0 &&
-			int(curNode.X) < curNode.P.Width &&
-			int(curNode.X) >= 0 &&
-
-			curNode.P.BoardMap[int(curNode.X)][int(curNode.Y)+1] != -1 &&
-			curNode.P.BoolGrid[int(curNode.X)][int(curNode.Y)+1] == false { //&&
-			//curNode.P.BoardMap[int(curNode.X)][curNode.Y+1] <= curNode.P.BoardMap[int(curNode.X)][curNode.Y] {
-
-			down := GridSpot{int(curNode.X), int(curNode.Y) + 1, curNode.P.BoardMap[int(curNode.X)][int(curNode.Y)+1]}
-			potentialSpots = append(potentialSpots, down)
-		}
-		if int(curNode.X)-1 >= 0 &&
-			int(curNode.X)-1 < curNode.P.Width &&
-			curNode.Y >= 0 &&
-			int(curNode.Y) < curNode.P.Height &&
-
-			curNode.P.BoardMap[int(curNode.X)-1][int(curNode.Y)] != -1 &&
-			curNode.P.BoolGrid[int(curNode.X)-1][int(curNode.Y)] == false { // &&
-			//curNode.P.BoardMap[int(curNode.X)-1][curNode.Y] <= curNode.P.BoardMap[int(curNode.X)][curNode.Y] {
-
-			left := GridSpot{int(curNode.X) - 1, int(curNode.Y), curNode.P.BoardMap[int(curNode.X)-1][int(curNode.Y)]}
-			potentialSpots = append(potentialSpots, left)
-		}
-
-		sort.Sort(byRandom(potentialSpots))
-		sort.Sort(byRandom(potentialSpots))
-		sort.Sort(byRandom(potentialSpots))
-		sort.Sort(byValue(potentialSpots))
-
-		/*for i := 0; i < len(potentialSpots); i++ {
-			if curNode.P.Grid[potentialSpots[i].Y/curNode.P.YDiv][potentialSpots[i].X/curNode.P.XDiv].ActualNumNodes <= curNode.P.SquareCapacity {
-				int(curNode.X) = potentialSpots[i].X
-				curNode.Y = potentialSpots[i].Y
-				break
-			}
-		}*/
-
-		//If there are no potential spots, do not move
-		if len(potentialSpots) > 0 {
-			curNode.X = float32(potentialSpots[0].X)
-			curNode.Y = float32(potentialSpots[0].Y)
-		}
-
-		//Change number of nodes in square
-		/*if int(curNode.X)/curNode.P.XDiv != curNode.OldX || curNode.Y/curNode.P.YDiv != curNode.OldY {
-			curNode.P.Grid[curNode.Y/curNode.P.YDiv][int(curNode.X)/curNode.P.XDiv].ActualNumNodes = curNode.P.Grid[curNode.Y/curNode.P.YDiv][int(curNode.X)/curNode.P.XDiv].ActualNumNodes + 1
-			curNode.P.Grid[curNode.OldY][curNode.OldX].ActualNumNodes = curNode.P.Grid[curNode.OldY][curNode.OldX].ActualNumNodes - 1
-		}*/
-
-		//curNode.P.Server.UpdateSquareNumNodes()
-		if curNode.Diffx == 0 && curNode.Diffy == 0 || curNode.Sitting < 0 {
-			curNode.Sitting = curNode.Sitting + 1
-		} else {
-			curNode.Sitting = 0
-		}
-	}
-}
-
 func (curNode *NodeImpl) Recalibrate() {
 	curNode.P.Server.NodeDataList[curNode.Id].SelfRecalTimes = append(curNode.P.Server.NodeDataList[curNode.Id].SelfRecalTimes, curNode.P.CurrentTime / 1000)
 	curNode.Sensitivity = curNode.InitialSensitivity
 	curNode.NodeTime = (curNode.P.CurrentTime/1000)
-	//fmt.Fprintf(curNode.P.DriftExploreFile, "ID: %v T: %v In: %v CUR: %v NT: %v RECAL\n", curNode.Id, curNode.P.CurrentTime, curNode.InitialSensitivity, curNode.Sensitivity, curNode.NodeTime)
-	//fmt.Printf("Node %v recalibrated!\curNode", curNode.Id)
 	curNode.Recalibrated = true
 }
 
@@ -404,14 +281,7 @@ func (curNode *NodeImpl) LogBatteryPower(t int){
 		curNode.BatteryOverTime = map[int]float32{}
 	}
 	curNode.BatteryOverTime[t] = curNode.Battery;
-	//used to test the log file writing and the python processing code
-	//if(curNode.Id%4==0){
-	//	curNode.DecrementPowerSensor()
-	//	curNode.DecrementPower4G(100)
-	//}
-	//if(curNode.Id%3==0){
-	//	curNode.DecrementPowerSensor()
-	//}
+
 }
 
 func (curNode *NodeImpl) SendtoServer(packet int){
@@ -464,7 +334,7 @@ func (curNode *NodeImpl) DecrementPowerSensor(){
 
 /* updateHistory shifts all values in the sample history slice to the right and adds the Value at the beginning
 Therefore, each Time a node takes a sample in main, it also adds this sample to the beginning of the sample history.
-Each sample is only stored until ln more samples have been taken (this variable is in hello.go)
+Each sample is only stored until ln more samples have been taken (this variable is in write.go)
 */
 func (curNode *NodeImpl) UpdateHistory(newValue float32) {
 
@@ -482,7 +352,9 @@ func (curNode *NodeImpl) UpdateHistory(newValue float32) {
 	var sum float32
 	var numSamples int //variable for number of samples to average over
 
-	var decreaseRatio = curNode.SpeedWeight / 100.0
+	//var decreaseRatio = curNode.SpeedWeight / 100.0
+	//fmt.Printf("Speed Weight %v\n", curNode.SpeedWeight)
+	var decreaseRatio = float32(1.0) //prevent any things with speed weight for now
 
 	if curNode.TotalSamples > len(curNode.SampleHistory) { //if the node has taken more than x total samples
 		numSamples = len(curNode.SampleHistory) //we only average over the x most recent ones
@@ -650,8 +522,8 @@ func (curNode *NodeImpl) GeoDist(b Bomb) float32 {
 }
 
 //Returns array of accelerometer speeds recorded for a specific node
-func (curNode *NodeImpl) GetSpeed() []float32 {
-	return curNode.AccelerometerSpeed
+func (curNode *NodeImpl) GetSpeed() []float64 {
+	return curNode.AccelerometerSpeedHistory
 }
 
 //Returns a different version of the distance to the bomb
@@ -712,14 +584,10 @@ func interpolateReading(x , y float32, time, timeStep int, fine bool, p *Params)
 	transX := transformXF(x, p)
 	transY := transformYF(y, p)
 
-
 	oldX := int(transX)
 	oldY := int(transY)
 	nextX := int(math.Ceil(float64(transX)))
 	nextY := int(math.Ceil(float64(transY)))
-
-
-
 
 	tl := 0.0
 	tr := 0.0
@@ -1026,7 +894,28 @@ func (curNode *NodeImpl) MoveCSV(p *Params) {
 
 		//set the new location in the boolean field to true
 		newX, newY := curNode.GetLoc()
-		//fmt.Println(oldX, oldY,newX, newY, curNode.Id, p.CurrentTime,p.NodeMovements[id][intTime].X, p.NodeMovements[id][intTime+1].X)
+
+		//accelerometer code
+
+		deltaX := math.Abs(float64(oldX) - float64(newX))
+		deltaY := math.Abs(float64(oldY) - float64(newY))
+		deltaT := float64(((floatTemp/1000.0) - curNode.LastMovementTime))
+		accelRead := 0.0
+
+		if deltaT == 0 { //likely a sense + move op
+			//don't do anything here, we already read this
+		} else {
+			accelRead = math.Sqrt(math.Pow(deltaX, 2)+math.Pow(deltaY, 2)) / deltaT
+			curNode.addAccelReading(accelRead)
+		}
+
+
+
+		curNode.LastMovementTime = floatTemp/1000.0
+
+
+
+
 
 		if (!curNode.InBounds(p)) {
 			//fmt.Println(oldX, oldY,newX, newY, curNode.Id, p.CurrentTime,p.NodeMovements[id][intTime].X, p.NodeMovements[id][intTime+1].X)
@@ -1061,29 +950,30 @@ func (curNode *NodeImpl) MoveCSV(p *Params) {
 
 }
 
-//HandleMovement adjusts BoolGrid when nodes move around the map
-func (curNode *NodeImpl) MoveNormal(p *Params) {
-
-	oldX, oldY := curNode.GetLoc()
-	p.BoolGrid[int(oldX)][int(oldY)] = false //set the old spot false since the node will now move away
-
-	//move the node to its new location
-	curNode.Move(p)
-
-	//set the new location in the boolean field to true
-	newX, newY := curNode.GetLoc()
-	p.BoolGrid[int(newX)][int(newY)] = true
-
-
-
-	//Add the node into its new Square's p.TotalNodes
-	//If the node hasn't left the square, that Square's p.TotalNodes will
-	//remain the same after these calculations
-
-}
 
 func rangeInt(min, max int) int { //returns a random number between max and min
 	return rand.Intn(max-min) + min
 }
 
+
+func (curNode *NodeImpl) addAccelReading(accelValue float64) {
+
+
+	//haven't taken enough readings to fill
+	if curNode.NumAccelRead < curNode.P.NumStoredSamples {
+		curNode.TotalAccelVal += accelValue
+		curNode.AccelerometerSpeedHistory[curNode.NumAccelRead % curNode.P.NumStoredSamples] = accelValue
+	} else { //we have filled and now need to remove the oldest
+		curNode.TotalAccelVal -= curNode.AccelerometerSpeedHistory[curNode.NumAccelRead % curNode.P.NumStoredSamples]
+		curNode.TotalAccelVal += accelValue
+		curNode.AccelerometerSpeedHistory[curNode.NumAccelRead % curNode.P.NumStoredSamples] = accelValue
+	}
+
+	curNode.NumAccelRead += 1
+	curNode.AvgAccel = curNode.TotalAccelVal / math.Min(float64(curNode.NumAccelRead), float64(curNode.P.NumStoredSamples))
+	curNode.AvgAccel =  math.Round(curNode.AvgAccel*100)/100
+
+
+
+}
 
