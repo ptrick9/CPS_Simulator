@@ -8,8 +8,7 @@ type Params struct {
 	Events 						   PriorityQueue
 	CurrentTime					   int
 
-	NegativeSittingStopThresholdCM int     // This is a negative number for the sitting to be set to when map is reset
-	SittingStopThresholdCM         int     // This is the threshold for the longest Time a node can sit before no longer moving
+
 	GridCapacityPercentageCM       float64 // This is the percent of a subgrid that can be filled with nodes, between 0.0 and 1.0
 	ErrorModifierCM                float64 // Multiplier for error model
 	OutputFileNameCM               string  // This is the prefix of the output text file

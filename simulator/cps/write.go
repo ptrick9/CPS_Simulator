@@ -1408,12 +1408,6 @@ func GetFlags(p *Params) {
 	flag.IntVar(&p.BombYCM, "bombY", 0, "Y location of bomb")
 	flag.BoolVar(&p.CommBomb, "commandBomb", false, "Whether to use command line for bomb coords")
 
-	flag.IntVar(&p.NegativeSittingStopThresholdCM, "negativeSittingStopThreshold", -10,
-		"Negative number sitting is set to when board map is reset")
-
-	flag.IntVar(&p.SittingStopThresholdCM, "sittingStopThreshold", 5,
-		"How long it takes for a node to stay seated")
-
 	flag.Float64Var(&p.GridCapacityPercentageCM, "GridCapacityPercentage", .9,
 		"Percent the sub-Grid can be filled")
 
@@ -1623,8 +1617,6 @@ func WriteFlags(p * Params){
 	var buf bytes.Buffer
 	buf.WriteString(fmt.Sprintf("cpuprofile=%v\n", p.CPUProfile))
 	buf.WriteString(fmt.Sprintf("memprofile=%v\n", p.MemProfile))
-	buf.WriteString(fmt.Sprintf("negativeSittingStopThreshold=%v\n", p.NegativeSittingStopThresholdCM))
-	buf.WriteString(fmt.Sprintf("sittingStopThreshold=%v\n", p.SittingStopThresholdCM))
 	buf.WriteString(fmt.Sprintf("GridCapacityPercentage=%v\n", p.GridCapacityPercentageCM))
 	buf.WriteString(fmt.Sprintf("inputFileName=%v\n", p.InputFileNameCM))
 	buf.WriteString(fmt.Sprintf("sensorPath=%v\n", p.SensorPath))

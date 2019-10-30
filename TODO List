@@ -1,0 +1,49 @@
+TODO List
+
+energy for all nodes --
+energy loss for 
+	BT
+	GPS
+	WiFi
+	LTE
+	Accel
+	Sensor
+	SensorReset
+Accelerometer Smapling
+Nodes store samples and report less often
+Server aware of density
+adaptive sampling rate
+	travel speed
+	battery level
+
+
+BLE Energy (https://www.eecs.umich.edu/courses/eecs589/papers/06215496.pdf)
+	wakeup -- 15mW * 1ms
+	RX -- 66mW * 8us/B
+	TX -- 84mW * 8us/B
+	IFS -- 45mW * 150us
+	post -- 24mW * 1.4ms
+
+General Power Paper (https://www.usenix.org/legacy/event/atc10/tech/full_papers/Carroll.pdf)
+
+GPS Energy
+	143mW
+
+Wifi
+	720mW
+
+2.5G
+	620mW
+
+
+Snapdragon 845
+	Modem
+		x20 LTE modem
+
+
+gps uses 3% of wifi
+
+accelerometer (https://www.nxp.com/docs/en/application-note/AN4999.pdf)
+	~3uW
+
+power usage 4g wifi? https://www.cs.purdue.edu/homes/chunyi/pubs/wowmom16-zhang.pdf
