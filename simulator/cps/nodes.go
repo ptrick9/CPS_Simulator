@@ -693,10 +693,37 @@ func (curNode *NodeImpl) GetReadings() {
 		}
 
 	}
-	curNode.P.Events.Push(&Event{curNode, SENSE, curNode.P.CurrentTime + 500, 0})
+
+	curNode.scheduleSense()
+
+	//curNode.P.Events.Push(&Event{curNode, SENSE, curNode.P.CurrentTime + 500, 0})
 
 }
 
+
+func (curNode *NodeImpl) scheduleSense() {
+
+	nextSampleTime := int(2000*(1.25-math.Pow(curNode.AvgAccel, 2)))
+	//fmt.Printf("%v %v\n", curNode.Id, curNode.Battery)
+	if nextSampleTime < 0 {
+		//fmt.Printf("ERROR %v %v\n", curNode.AvgAccel)
+		nextSampleTime = 500
+	}
+
+	curNode.P.Events.Push(&Event{curNode, SENSE, curNode.P.CurrentTime + nextSampleTime, 0})
+}
+
+func (curNode *NodeImpl) DebugScheduleSense() int{
+
+	nextSampleTime := int(2000*(1.25-math.Pow(curNode.AvgAccel, 2)))
+	//fmt.Printf("%v %v\n", curNode.Id, curNode.Battery)
+	if nextSampleTime < 0 {
+		//fmt.Printf("ERROR %v %v\n", curNode.AvgAccel)
+		nextSampleTime = 500
+	}
+
+	return nextSampleTime
+}
 
 //Takes cares of taking a node's readings and printing detections and stuff
 func (curNode *NodeImpl) GetReadingsCSV() {
@@ -734,6 +761,7 @@ func (curNode *NodeImpl) GetReadingsCSV() {
 		//curNode.report(RawConcentration)
 
 	}
+
 	curNode.P.Events.Push(&Event{curNode, SENSE, curNode.P.CurrentTime + 500, 0})
 }
 

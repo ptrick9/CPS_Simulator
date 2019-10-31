@@ -383,6 +383,7 @@ func main() {
 	//p.Events.Push(&cps.Event{nil, cps.VALIDNODES, 999, 0})
 	p.Events.Push(&cps.Event{nil, cps.LOADMOVE, (p.MovementSize-2)*1000, 0})
 	p.Events.Push(&cps.Event{nil, cps.REPORTSENDS, 999, 0})
+	p.Events.Push(&cps.Event{nil, cps.DEBUGACCEL, 999, 0})
 
 
 
@@ -533,6 +534,9 @@ func main() {
 				fmt.Fprintf(p.ServerReadingsFile, "%v\n", p.Server.ReceivedReadings)
 				p.Server.ReceivedReadings = 0
 				p.Events.Push(&cps.Event{nil, cps.REPORTSENDS, p.CurrentTime + 1000, 0})
+			}	else if event.Instruction == cps.DEBUGACCEL {
+				fmt.Fprintf(p.MoveReadingsFile, "%v %v %v\n", p.NodeList[20].AvgAccel, p.NodeList[20].DebugScheduleSense(), p.NodeList[20].Battery)
+				p.Events.Push(&cps.Event{nil, cps.DEBUGACCEL, p.CurrentTime + 1000, 0})
 			}
 		}
 

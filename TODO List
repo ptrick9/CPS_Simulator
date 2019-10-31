@@ -6,15 +6,16 @@ energy loss for
 	GPS
 	WiFi
 	LTE
-	Accel
+	Accel --neglibile
 	Sensor
 	SensorReset
 Accelerometer Sampling --
 Nodes store samples and report less often --
-Server aware of density
+Server aware of density --
+Server Feedback Density?
 adaptive sampling rate
-	travel speed
-	battery level
+	travel speed --
+	battery level 
 
 
 
@@ -52,3 +53,21 @@ accelerometer (https://www.nxp.com/docs/en/application-note/AN4999.pdf)
 power usage 4g wifi? https://www.cs.purdue.edu/homes/chunyi/pubs/wowmom16-zhang.pdf
 
 
+Qualcomm CHIP
+BT
+	Tx 46mA@3.3V  --> 150mW
+	Tx 46mA@1.3V --> 59mW
+	Rx 32mA@1.3V
+
+
+Wifi
+	Tx 110mA@1.3V  --> 140mW
+	Rx 59mA@1.3V  --> 76mW
+
+GPS
+	17mA@1.3V + .15mA@1.8V --> 22mW
+
+
+https://devzone.nordicsemi.com/nordic/nordic-blog/b/blog/posts/nrf51-current-consumption-for-common-scenarios
+BTLE
+	89 uA
