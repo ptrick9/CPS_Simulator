@@ -224,4 +224,8 @@ type Params struct {
 	MaxBufferedSamples	int
 	MaxTimeBuffer		int
 
+	MaxBattery float32
+
+	Debug 			bool
+
 }

@@ -230,6 +230,8 @@ func main() {
 	p.Tau2 = 9000
 	p.FoundBomb = false
 
+	p.MaxBattery = 3400*3600
+
 	rand.Seed(time.Now().UTC().UnixNano())
 
 	//getFlags()
@@ -383,7 +385,11 @@ func main() {
 	//p.Events.Push(&cps.Event{nil, cps.VALIDNODES, 999, 0})
 	p.Events.Push(&cps.Event{nil, cps.LOADMOVE, (p.MovementSize-2)*1000, 0})
 	p.Events.Push(&cps.Event{nil, cps.REPORTSENDS, 999, 0})
-	p.Events.Push(&cps.Event{nil, cps.DEBUGACCEL, 999, 0})
+	p.Events.Push(&cps.Event{nil, cps.GPSDECREMENT, 999, 0})
+
+	if p.Debug {
+		p.Events.Push(&cps.Event{nil, cps.DEBUGACCEL, 999, 0})
+	}
 
 
 
@@ -535,8 +541,15 @@ func main() {
 				p.Server.ReceivedReadings = 0
 				p.Events.Push(&cps.Event{nil, cps.REPORTSENDS, p.CurrentTime + 1000, 0})
 			}	else if event.Instruction == cps.DEBUGACCEL {
-				fmt.Fprintf(p.MoveReadingsFile, "%v %v %v\n", p.NodeList[20].AvgAccel, p.NodeList[20].DebugScheduleSense(), p.NodeList[20].Battery)
+				fmt.Fprintf(p.MoveReadingsFile, "%v %v %v\n", p.NodeList[20].AvgAccel, p.NodeList[20].DebugScheduleSense(), p.NodeList[20].BatteryToPercent())
 				p.Events.Push(&cps.Event{nil, cps.DEBUGACCEL, p.CurrentTime + 1000, 0})
+			}	else if event.Instruction == cps.GPSDECREMENT {
+				for _,node := range(p.NodeList) {
+					if node.Valid {
+						node.DecrementPowerGPS()
+					}
+				}
+				p.Events.Push(&cps.Event{nil, cps.GPSDECREMENT, p.CurrentTime + 1000, 0})
 			}
 		}
 

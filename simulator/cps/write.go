@@ -334,14 +334,14 @@ func InitializeNodeParameters(p *Params, nodeNum int) *NodeImpl{
 
 	//initialize nodes to invalid starting point as starting point will be selected after initialization
 	curNode := NodeImpl{P: p, X: -1, Y: -1, Id: len(p.NodeList), SampleHistory: initHistory, Concentration: 0,
-		Cascade: nodeNum, Battery: p.BatteryCharges[nodeNum], BatteryLossScalar: p.BatteryLosses[nodeNum],
-		BatteryLossSensor:        p.BatteryLossesSensor[nodeNum],
-		BatteryLossGPS:           p.BatteryLossesGPS[nodeNum],
-		BatteryLossServer:        p.BatteryLossesServer[nodeNum],
-		BatteryLoss4G:            p.BatteryLosses4G[nodeNum],
-		BatteryLossAccelerometer: p.BatteryLossesAccelerometer[nodeNum],
-		BatteryLossWifi:		  p.BatteryLossesWiFi[nodeNum],
-		BatteryLossBT:			  p.BatteryLossesBT[nodeNum],
+		Cascade: nodeNum, Battery: (p.BatteryCharges[nodeNum]/100.0)*p.MaxBattery, BatteryLossScalar: p.BatteryLosses[nodeNum],
+		BatteryLossSensor:        float32(p.SamplingLossSensorCM),
+		BatteryLossGPS:           float32(p.SamplingLossGPSCM),
+		BatteryLossServer:        float32(p.SamplingLossServerCM),
+		BatteryLoss4G:            float32(p.SamplingLoss4GCM),
+		BatteryLossAccelerometer: float32(p.SamplingLossAccelCM),
+		BatteryLossWifi:		  float32(p.SamplingLossWifiCM),
+		BatteryLossBT:			  float32(p.SamplingLossBTCM),
 		AccelerometerSpeedHistory: accelHistory}
 
 	//values to determine coefficients
@@ -1393,20 +1393,20 @@ func GetFlags(p *Params) {
 	flag.Float64Var(&p.SamplingLossSensorCM, "sensorSamplingLoss", .001,
 		"battery loss due to sensor sampling")
 
-	flag.Float64Var(&p.SamplingLossGPSCM, "GPSSamplingLoss", .005,
+	flag.Float64Var(&p.SamplingLossGPSCM, "GPSSamplingLoss", 43,
 		"battery loss due to GPS sampling")
 
 	flag.Float64Var(&p.SamplingLossSensorCM, "serverSamplingLoss", .01,
 		"battery loss due to server sampling")
 
-	flag.Float64Var(&p.SamplingLossBTCM, "SamplingLossBTCM", .0001,
+	flag.Float64Var(&p.SamplingLossBTCM, "SamplingLossBTCM", .89,
 		"battery loss due to BlueTooth sampling")
 
 
-	flag.Float64Var(&p.SamplingLossWifiCM, "SamplingLossWifiCM", .001,
+	flag.Float64Var(&p.SamplingLossWifiCM, "SamplingLossWifiCM", 140,
 		"battery loss due to WiFi sampling")
 
-	flag.Float64Var(&p.SamplingLoss4GCM, "SamplingLoss4GCM", .005,
+	flag.Float64Var(&p.SamplingLoss4GCM, "SamplingLoss4GCM", 1730,
 		"battery loss due to 4G sampling")
 
 	flag.Float64Var(&p.SamplingLossAccelCM, "SamplingLossAccelCM", .001,
@@ -1550,6 +1550,7 @@ func GetFlags(p *Params) {
 	flag.BoolVar(&p.NodeBuffer, "nodeBuffer", false, "Whether to allow the node to buffer samples before server")
 	flag.IntVar(&p.MaxBufferedSamples, "nodeBufferSamples", 10, "Max number of samples to buffer before sending average")
 	flag.IntVar(&p.MaxTimeBuffer, "nodeTimeBuffer", 10, "Max number of seconds between server updates")
+	flag.BoolVar(&p.Debug, "debug", false, "whether to enable debug output")
 
 
 	flag.Parse()

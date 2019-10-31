@@ -315,7 +315,7 @@ func (curNode *NodeImpl) DecrementPowerWifi(packet int){
 
 //decrement battery due to transmitting/receiving over 4G
 func (curNode *NodeImpl) DecrementPower4G(){
-	curNode.Battery = curNode.Battery - float32(curNode.P.SamplingLoss4GCM)
+	curNode.Battery = curNode.Battery - float32(curNode.P.SamplingLoss4GCM)*0.5
 }
 
 //decrement battery due to sampling Accelerometer
@@ -725,6 +725,11 @@ func (curNode *NodeImpl) DebugScheduleSense() int{
 	return nextSampleTime
 }
 
+func (curNode *NodeImpl) BatteryToPercent() float32 {
+
+	return curNode.Battery / curNode.P.MaxBattery
+}
+
 //Takes cares of taking a node's readings and printing detections and stuff
 func (curNode *NodeImpl) GetReadingsCSV() {
 
@@ -793,6 +798,7 @@ func (curNode *NodeImpl) GetSensor() {
 
 func (curNode *NodeImpl) report(rawConc float64) {
 
+	curNode.DecrementPowerBT()
 
 	newX, newY := curNode.GetLoc()
 
@@ -898,10 +904,6 @@ func (curNode *NodeImpl) report(rawConc float64) {
 			curNode.P.Server.Send(curNode, Reading{ADCRead, newX, newY, curNode.P.CurrentTime, curNode.GetID()}, tp)
 		}
 	} else {
-
-
-
-
 		if highSensor { //if we have a high sensor reading we will ALWAYS send that value
 			if inRange && highConcentration { //this is a true positive
 				fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("TP T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, rawConc))
