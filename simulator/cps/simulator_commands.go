@@ -88,6 +88,7 @@ type Params struct {
 	DriftExploreFile *os.File
 	DistanceFile 	*os.File
 	ServerReadingsFile 	*os.File
+	PacketsSentFile 	*os.File
 	ZipFiles 		bool
 	//Files 			[]string
 	Files 			[]*os.File

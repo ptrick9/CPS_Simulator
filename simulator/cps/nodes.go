@@ -67,7 +67,7 @@ type NodeImpl struct {
 	ToggleCheckIterator             int      //node's personal iterator mostly for cascading pings
 	TotalChecksSensor               int      //total sensor pings of node
 	TotalChecksGPS                  int      //total GPS pings of node
-	TotalChecksServer               int      //how many times did the node communicate with the server?
+	TotalServerPackets              int      //how many times did the node communicate with the server?
 	PingPeriod                      float32  //This is the aggregate ping period used in some ping rate determining algorithms
 	SensorPingPeriod                float32  //This is the ping period for the sensor
 	GPSPingPeriod                   float32  //This is the ping period for the GPS
@@ -902,6 +902,7 @@ func (curNode *NodeImpl) report(rawConc float64) {
 
 		if curNode.Valid {
 			curNode.P.Server.Send(curNode, Reading{ADCRead, newX, newY, curNode.P.CurrentTime, curNode.GetID()}, tp)
+			curNode.TotalServerPackets += 1
 		}
 	} else {
 		if highSensor { //if we have a high sensor reading we will ALWAYS send that value
@@ -942,19 +943,21 @@ func (curNode *NodeImpl) report(rawConc float64) {
 
 		floatTemp := float32(curNode.P.CurrentTime)
 		intTime := int(floatTemp/1000)
-		send := highSensor || curNode.BufferedSamples - curNode.P.MaxBufferedSamples <= 0 || intTime - curNode.LastSend > curNode.P.MaxTimeBuffer || curNode.AvgAccel > 0.1
+		send := highSensor || curNode.BufferedSamples - curNode.P.MaxBufferedSamples >= 0 || intTime - curNode.LastSend > curNode.P.MaxTimeBuffer || curNode.AvgAccel > 0.1
 
 		if send {
 			//send for high sensor, too many samples, too much time, too much movement
 			if highSensor { //we are sending because high sensor
 				//we only send the high value, we don't need to worry about the average
 				curNode.P.Server.Send(curNode, Reading{ADCRead, newX, newY, curNode.P.CurrentTime, curNode.GetID()}, tp)
+				curNode.TotalServerPackets += 1
 			} else { //we are sending because it has been too long/too many samples
 				curNode.P.Server.Send(curNode, Reading{float64(curNode.GetAvg()), newX, newY, curNode.P.CurrentTime, curNode.GetID()}, tp)
+				curNode.TotalServerPackets += 1
 			}
 
 			//update our tracking variables
-			curNode.BufferedSamples += 1
+			curNode.BufferedSamples = 0
 			curNode.LastSend = intTime
 
 		} else {

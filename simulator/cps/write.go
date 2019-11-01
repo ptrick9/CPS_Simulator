@@ -361,6 +361,7 @@ func InitializeNodeParameters(p *Params, nodeNum int) *NodeImpl{
 	curNode.NodeTime = 0
 	curNode.InitialSensitivity = s0 + (s1)*math.Exp(-float64(curNode.NodeTime)/p.Tau1) + (s2)*math.Exp(-float64(curNode.NodeTime)/p.Tau2)
 	curNode.Sensitivity = curNode.InitialSensitivity
+	curNode.TotalServerPackets = 0
 
 	return &curNode
 }
@@ -743,6 +744,12 @@ func SetupFiles(p *Params) {
 		log.Fatal("Cannot create file", err)
 	}
 	p.Files = append(p.Files, p.ServerReadingsFile)
+
+	p.PacketsSentFile, err = os.Create(p.OutputFileNameCM + "-packetsSent.txt")
+	if err != nil {
+		log.Fatal("Cannot create file", err)
+	}
+	p.Files = append(p.Files, p.PacketsSentFile)
 
 
 	fmt.Println(p.Files)

@@ -224,7 +224,7 @@ func main() {
 	r = &cps.RegionParams{}
 
 	p.Events = Events
-	p.Server = cps.FusionCenter{p, r, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, 0}
+	p.Server = cps.FusionCenter{p, r, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, 0, 0}
 
 	p.Tau1 = 3500
 	p.Tau2 = 9000
@@ -605,6 +605,17 @@ func main() {
 			fmt.Fprintf(p.EnergyFile, buffer.String())
 		}
 	}
+
+	//print node send and server packets
+	var buffer bytes.Buffer
+	for _, node := range(p.NodeList) {
+		buffer.WriteString(fmt.Sprintf("%v\n", node.TotalServerPackets))
+	}
+	buffer.WriteString(fmt.Sprintf("%v\n", p.Server.Recalibrations))
+	fmt.Fprintf(p.PacketsSentFile, buffer.String())
+
+
+	
 
 	p.PositionFile.Seek(0, 0)
 	fmt.Fprintln(p.PositionFile, "Image:", p.ImageFileNameCM)

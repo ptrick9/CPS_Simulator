@@ -32,6 +32,7 @@ type FusionCenter struct {
 	NodeSquares 	map[int]Tuple  //store what square a node is in
 	SquarePop  		map[Tuple][]int //store nodes in square
 	ReceivedReadings 	int
+	Recalibrations 		int
 }
 
 //Init initializes the values for the server
@@ -538,6 +539,7 @@ func (s *FusionCenter) Send(n *NodeImpl, rd Reading, tp bool) {
 	tile.SquareValues += math.Pow(float64(rd.SensorVal-float64(tile.Avg)), 2)
 	if s.P.ServerRecal {
 		if rd.SensorVal > (float64(tile.Avg) + s.P.CalibrationThresholdCM) { //Check if x over grid avg
+			s.Recalibrations += 1
 			if s.P.RecalReject {
 				if ((s.P.CurrentTime/1000)-n.NodeTime) > 200 { //hasn't been recalibrated too recently, need to reject and recal
 					fmt.Fprintf(n.P.DriftExploreFile, "ID: %v T: %v In: %v CUR: %v NT: %v %v SERVRECAL\n", n.Id, n.P.CurrentTime, n.InitialSensitivity, n.Sensitivity, n.NodeTime, rd.SensorVal)

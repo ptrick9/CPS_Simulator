@@ -270,7 +270,7 @@ public class SimulatorController implements Drawable {
 
         // Bomb
         int by = room.getHeight() - (int)room.getBomb().getY() - 1;
-        canvas.drawCircle(Color.RED, canvas.getCamera().getBlockSize()*3, (int)room.getBomb().getX(), by);
+        //canvas.drawCircle(Color.RED, canvas.getCamera().getBlockSize()*3, (int)room.getBomb().getX(), by);
 
         // Nodes
         for (int i = 0; i < nodes.size(); i++) {
