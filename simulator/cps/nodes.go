@@ -101,6 +101,11 @@ type NodeImpl struct {
 	LastSend        int
 	BufferedSamples int
 
+	AccelSend 		int 		//send due to accelerometer
+	HighSend 		int			//send because high reading
+	TimeSend 		int			//send because time
+	SampleSend 		int			//send because too many buffered samples
+
 	Current  int
 	Previous int
 	Diffx    int
@@ -947,6 +952,19 @@ func (curNode *NodeImpl) report(rawConc float64) {
 
 		if send {
 			//send for high sensor, too many samples, too much time, too much movement
+
+			//record reason for sending
+			if highSensor {
+				curNode.HighSend += 1
+			} else if curNode.AvgAccel > 0.1 {
+				curNode.AccelSend += 1
+			} else if intTime - curNode.LastSend > curNode.P.MaxTimeBuffer {
+				curNode.TimeSend += 1
+			} else {
+				curNode.SampleSend += 1
+			}
+
+
 			if highSensor { //we are sending because high sensor
 				//we only send the high value, we don't need to worry about the average
 				curNode.P.Server.Send(curNode, Reading{ADCRead, newX, newY, curNode.P.CurrentTime, curNode.GetID()}, tp)

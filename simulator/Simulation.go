@@ -609,13 +609,13 @@ func main() {
 	//print node send and server packets
 	var buffer bytes.Buffer
 	for _, node := range(p.NodeList) {
-		buffer.WriteString(fmt.Sprintf("%v\n", node.TotalServerPackets))
+		buffer.WriteString(fmt.Sprintf("%v %v %v %v %v\n", node.TotalServerPackets, node.HighSend, node.AccelSend, node.TimeSend, node.SampleSend))
 	}
 	buffer.WriteString(fmt.Sprintf("%v\n", p.Server.Recalibrations))
 	fmt.Fprintf(p.PacketsSentFile, buffer.String())
 
 
-	
+
 
 	p.PositionFile.Seek(0, 0)
 	fmt.Fprintln(p.PositionFile, "Image:", p.ImageFileNameCM)

@@ -291,6 +291,27 @@ def buildApproachDistances(basename, maxDistance, granularity):
 
 
 
+def networkUsage(basename):
+
+    zf = ZipFile(basename)
+    temp = os.path.split(basename)[1]
+    n = temp.split(".zip")[0]
+
+    if 'p2' in n:
+        n = n[:-2]
+
+    f = zf.open("%s%s" % (n, "-packetsSent.txt"))
+
+    #f = open('%s-simulatorOutput.txt' % basename)
+    data = []
+    for line in f:
+        line = line.decode("utf-8")
+        line = line.rstrip()
+        data.append(int(line))
+
+    return data
+
+
 
 
 

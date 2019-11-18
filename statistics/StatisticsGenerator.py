@@ -17,7 +17,7 @@ from zipfile import *
 basePath = "C:/Users/patrick/Downloads/driftExplorerBombAdaptiveADC/"
 
 basePath = "C:/Users/patrick/Downloads/driftExplorerBombFinalGridSize2/"
-basePath = "C:/Users/patrick/Downloads/driftExplorerNoBombFinalGridFinalRun/"
+basePath = "C:/Users/patrick/Downloads/driftExplorerSquareEnergyBomb/"
 
 #basePath = "C:/Users/patrick/Downloads/driftTest/"
 figurePath = "C:/Users/patrick/Dropbox/Patrick/udel/SUMMER2018/git_simulator/CPS_Simulator/driftExploreCommBomb/"
@@ -31,7 +31,7 @@ ZIP = True
 data = {}
 
 
-pickleName = "driftExplorerNoBombFinalGridFinal"
+pickleName = "driftExplorerSquareEnergyBomb"
 #pickleName = "driftExplorerBombADC_qTest"
 
 
@@ -49,6 +49,9 @@ def getDetections(basePath, run, p):
 
 def getDistance(basePath, run):
     return buildBetterDistance("%s%s" % (basePath, run))
+
+def getNetwork(basePath, run):
+    return networkUsage("%s%s" % (basePath, run))
 
 def determineDifferences(basePath, runs):
     params = {}
@@ -116,12 +119,16 @@ def generateData(rq, wq):
         run['True Positive Readings'] = [x.errorADC for x in det if x.TP() and x.time < firstDet]
         run['True Positive Findings'] = [x.errorADC for x in det if x.TPConf() and x.time == firstDet]
 
+
         #if p['validaitonType'] == 'square':
         #    run['False Positive Confirmation Timing'] = [x.time for x in det if x.FPConf()]
 
         dists = getDistance(basePath, file)
-
         run['Distances'] = dists
+
+        net = getNetwork(basePath, file)
+        run['Network Usage'] = net
+        run['Total Network'] = sum(net)
 
 
         run['config'] = {}
