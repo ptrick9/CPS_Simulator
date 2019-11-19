@@ -71,7 +71,7 @@ if __name__ == '__main__':
     validTypes = ['-validationType=validators -SquareRowCM=3 -SquareColCM=3 -validationThreshold=0 -detectionWindow=100', '-validationType=validators -SquareRowCM=3 -SquareColCM=3 -validationThreshold=1 -detectionWindow=100', '-validationType=validators -SquareRowCM=3 -SquareColCM=3 -validationThreshold=2 -detectionWindow=100', '-validationType=validators -SquareRowCM=3 -SquareColCM=3 -validationThreshold=3 -detectionWindow=100', '-validationType=validators -SquareRowCM=3 -SquareColCM=3 -validationThreshold=4 -detectionWindow=100', '-validationType=square -SquareRowCM=2 -SquareColCM=2 -GridStoredSamples=10', '-validationType=square -SquareRowCM=4 -SquareColCM=4 -GridStoredSamples=10', '-validationType=square -SquareRowCM=6 -SquareColCM=6 -GridStoredSamples=10', '-validationType=square -SquareRowCM=8 -SquareColCM=8 -GridStoredSamples=10', '-validationType=square -SquareRowCM=10 -SquareColCM=10 -GridStoredSamples=10', '-validationType=square -SquareRowCM=12 -SquareColCM=12 -GridStoredSamples=10', '-validationType=square -SquareRowCM=14 -SquareColCM=14 -GridStoredSamples=10', '-validationType=square -SquareRowCM=16 -SquareColCM=16 -GridStoredSamples=10']
 
     recalReject = ["-recalReject=%s" % s for s in ['false']]
-    nodeBuffer = ["-nodeBuffer=%s" % s for s in ['true', 'false']]
+    nodeBuffer = ["-nodeBuffer=%s -nodeBufferSamples=%s -nodeTimeBuffer=%s" % (s[0], s[1], s[2]) for s in [('true', 10, 10), ('true', 20, 20), ('true', 50, 50), ('false', 10, 10) ]]
 
     #sensorPath, fineSensorPath
     runs = (list(itertools.product(*[switches, scenarios, movementPath, detectionThreshold,
@@ -89,7 +89,7 @@ if __name__ == '__main__':
     for r in runs:
         for i in range(factor):
             j = [zz for zz in r]
-            j.append("-OutputFileName=/home/simulator/simData/driftExplorerSquareEnergyNoBomb/Log_%d" % x)
+            j.append("-OutputFileName=/home/simulator/simData/driftExplorerSquareEnergyNoBombNetwork/Log_%d" % x)
 
             
             v = j
