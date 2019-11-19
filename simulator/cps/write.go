@@ -1558,6 +1558,7 @@ func GetFlags(p *Params) {
 	flag.IntVar(&p.MaxBufferedSamples, "nodeBufferSamples", 10, "Max number of samples to buffer before sending average")
 	flag.IntVar(&p.MaxTimeBuffer, "nodeTimeBuffer", 10, "Max number of seconds between server updates")
 	flag.BoolVar(&p.Debug, "debug", false, "whether to enable debug output")
+	flag.Float64Var(&p.AccelSendThresh, "accelSendThresh", 0.1, "Threshold to trigger early send")
 
 
 	flag.Parse()
@@ -1651,6 +1652,7 @@ func WriteFlags(p * Params){
 	buf.WriteString(fmt.Sprintf("nodeBuff=%v\n", p.NodeBuffer))
 	buf.WriteString(fmt.Sprintf("nodeBufferSamples=%v\n", p.MaxBufferedSamples))
 	buf.WriteString(fmt.Sprintf("nodeTimeBuffer=%v\n", p.MaxTimeBuffer))
+	buf.WriteString(fmt.Sprintf("accelSendThresh=%v\n", p.AccelSendThresh))
 
 
 	fmt.Fprintf(p.RunParamFile,buf.String())

@@ -17,7 +17,7 @@ from zipfile import *
 basePath = "C:/Users/patrick/Downloads/driftExplorerBombAdaptiveADC/"
 
 basePath = "C:/Users/patrick/Downloads/driftExplorerBombFinalGridSize2/"
-basePath = "C:/Users/patrick/Downloads/driftExplorerSquareEnergyBomb/"
+basePath = "C:/Users/patrick/Downloads/driftExplorerSquareEnergyNoBombNetwork/"
 
 #basePath = "C:/Users/patrick/Downloads/driftTest/"
 figurePath = "C:/Users/patrick/Dropbox/Patrick/udel/SUMMER2018/git_simulator/CPS_Simulator/driftExploreCommBomb/"
@@ -31,7 +31,7 @@ ZIP = True
 data = {}
 
 
-pickleName = "driftExplorerSquareEnergyBomb"
+pickleName = "driftExplorerSquareEnergyNoBombNetwork"
 #pickleName = "driftExplorerBombADC_qTest"
 
 
@@ -126,10 +126,14 @@ def generateData(rq, wq):
         dists = getDistance(basePath, file)
         run['Distances'] = dists
 
-        net = getNetwork(basePath, file)
-        run['Network Usage'] = net
-        run['Total Network'] = sum(net)
-
+        netStats = getNetwork(basePath, file)
+        run['Network Usage'] = netStats[0]
+        run['Total Network'] = sum(netStats[0])
+        run['High Sends'] = netStats[1]
+        run['Accel Sends'] = netStats[2]
+        run['Time Sends'] = netStats[3]
+        run['Sample Sends'] = netStats[4]
+        run['Recal Count'] = netStats[5]
 
         run['config'] = {}
         for k in p.keys():

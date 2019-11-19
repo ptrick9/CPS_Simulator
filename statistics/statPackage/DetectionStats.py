@@ -303,13 +303,28 @@ def networkUsage(basename):
     f = zf.open("%s%s" % (n, "-packetsSent.txt"))
 
     #f = open('%s-simulatorOutput.txt' % basename)
-    data = []
+    packetSent = []
+    highSend = []
+    accelSend = []
+    timeSend = []
+    sampleSend = []
+    recalCount = 0
+
     for line in f:
         line = line.decode("utf-8")
         line = line.rstrip()
-        data.append(int(line))
+        ll = line.split(' ')
+        if len(ll) > 1:
+            data = [int(x) for x in ll]
+            packetSent.append(data[0])
+            highSend.append(data[1])
+            accelSend.append(data[2])
+            timeSend.append(data[3])
+            sampleSend.append(data[4])
+        else:
+            recalCount = int(ll[0])
 
-    return data
+    return [packetSent, highSend, accelSend, timeSend, sampleSend, recalCount]
 
 
 

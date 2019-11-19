@@ -948,7 +948,7 @@ func (curNode *NodeImpl) report(rawConc float64) {
 
 		floatTemp := float32(curNode.P.CurrentTime)
 		intTime := int(floatTemp/1000)
-		send := highSensor || curNode.BufferedSamples - curNode.P.MaxBufferedSamples >= 0 || intTime - curNode.LastSend > curNode.P.MaxTimeBuffer || curNode.AvgAccel > 0.1
+		send := highSensor || curNode.BufferedSamples - curNode.P.MaxBufferedSamples >= 0 || intTime - curNode.LastSend > curNode.P.MaxTimeBuffer || curNode.AvgAccel > curNode.P.AccelSendThresh
 
 		if send {
 			//send for high sensor, too many samples, too much time, too much movement
@@ -956,7 +956,7 @@ func (curNode *NodeImpl) report(rawConc float64) {
 			//record reason for sending
 			if highSensor {
 				curNode.HighSend += 1
-			} else if curNode.AvgAccel > 0.1 {
+			} else if curNode.AvgAccel > curNode.P.AccelSendThresh {
 				curNode.AccelSend += 1
 			} else if intTime - curNode.LastSend > curNode.P.MaxTimeBuffer {
 				curNode.TimeSend += 1

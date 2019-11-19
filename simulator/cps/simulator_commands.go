@@ -229,4 +229,6 @@ type Params struct {
 
 	Debug 			bool
 
+	AccelSendThresh 	float64
+
 }

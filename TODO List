@@ -18,8 +18,14 @@ adaptive sampling rate
 	battery level 
 
 
+number of messages / node
+size of data sent/received
+active nodes after some period of time
 
 
+
+max mAH
+	3400
 
 BLE Energy (https://www.eecs.umich.edu/courses/eecs589/papers/06215496.pdf)
 	wakeup -- 15mW * 1ms
