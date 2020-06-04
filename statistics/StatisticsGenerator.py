@@ -14,10 +14,11 @@ from zipfile import *
 #basePath = "C:/Users/patrick/Downloads/fineGrainedBomb/fineGrainedBomb/"
 #basePath = "C:/Users/patrick/Downloads/driftExploreHullBombMove/"
 #basePath = "C:/Users/patrick/Downloads/driftExplorerBombADC/"
-basePath = "C:/Users/patrick/Downloads/driftExplorerBombAdaptiveADC/"
+#basePath = "C:/Users/patrick/Downloads/driftExplorerBombAdaptiveADC/"
 
-basePath = "C:/Users/patrick/Downloads/driftExplorerBombFinalGridSize2/"
-basePath = "C:/Users/patrick/Downloads/driftExplorerNoBombFinalGridFinalRun/"
+#basePath = "C:/Users/patrick/Downloads/driftExplorerBombFinalGridSize2/"
+#basePath = "C:/Users/patrick/Downloads/driftExplorerNoBombFinalGridFinalRun/"
+basePath = "C:/Users/patrick/Downloads/noBomb_stadium/"
 
 #basePath = "C:/Users/patrick/Downloads/driftTest/"
 figurePath = "C:/Users/patrick/Dropbox/Patrick/udel/SUMMER2018/git_simulator/CPS_Simulator/driftExploreCommBomb/"
@@ -31,8 +32,9 @@ ZIP = True
 data = {}
 
 
-pickleName = "driftExplorerNoBombFinalGridFinal"
+#pickleName = "driftExplorerNoBombFinalGridFinal"
 #pickleName = "driftExplorerBombADC_qTest"
+pickleName = "noBomb_stadium"
 
 
 def buildDetectionList(basePath, runs):
@@ -300,6 +302,8 @@ if __name__ == '__main__':
         #pickle.dump({data, handle)
 
     #data = generateData(uniqueRuns)
+
+
 
     with open('driftExplorePar.pickle', 'rb') as handle:
         data = pickle.load(handle)
