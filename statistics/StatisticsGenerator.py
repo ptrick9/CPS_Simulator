@@ -14,9 +14,11 @@ from zipfile import *
 #basePath = "C:/Users/patrick/Downloads/fineGrainedBomb/fineGrainedBomb/"
 #basePath = "C:/Users/patrick/Downloads/driftExploreHullBombMove/"
 #basePath = "C:/Users/patrick/Downloads/driftExplorerBombADC/"
-basePath = "C:/Users/patrick/Downloads/driftExplorerBombAdaptiveADC/"
+#basePath = "C:/Users/patrick/Downloads/driftExplorerBombAdaptiveADC/"
 
-basePath = "C:/Users/patrick/Downloads/driftExplorerBombFinalGridSize2/"
+#basePath = "C:/Users/patrick/Downloads/driftExplorerBombFinalGridSize2/"
+#basePath = "C:/Users/patrick/Downloads/driftExplorerNoBombFinalGridFinalRun/"
+basePath = "C:/Users/patrick/Downloads/noBomb_stadium/"
 
 #basePath = "C:/Users/patrick/Downloads/driftTest/"
 figurePath = "C:/Users/patrick/Dropbox/Patrick/udel/SUMMER2018/git_simulator/CPS_Simulator/driftExploreCommBomb/"
@@ -30,8 +32,9 @@ ZIP = True
 data = {}
 
 
-pickleName = "driftExplorerBombFinalGridSize2"
+#pickleName = "driftExplorerNoBombFinalGridFinal"
 #pickleName = "driftExplorerBombADC_qTest"
+pickleName = "noBomb_stadium"
 
 
 def buildDetectionList(basePath, runs):
@@ -101,16 +104,19 @@ def generateData(rq, wq):
             pass
         run['Detection Time'] = firstDet
         run['# True Positive Rejections'] = sum([1 if x.TPRej() and x.time < firstDet else 0 for x in det])
+        run['# True Positive = Rejections'] = sum([1 if x.TPRej() and x.time <= firstDet else 0 for x in det])
         run['# False Positives'] = sum([1 if x.FP() and x.time < firstDet else 0 for x in det])
         run['# False Positive Confirmations'] = sum([1 if x.FPConf() and x.time < firstDet else 0 for x in det])
+        run['# False Positive = Confirmations'] = sum([1 if x.FPConf() and x.time <= firstDet else 0 for x in det])
         run['# False Positive Rejections'] = sum([1 if x.FPRej() and x.time < firstDet else 0 for x in det])
         run['# False Positive Wind'] = sum([1 if x.FP() and x.time < firstDet and x.Wind() else 0 for x in det])
         run['# False Positive Drift'] = sum([1 if x.FP() and x.time < firstDet and x.Drift() else 0 for x in det])
-        run['# False Negatives'] = sum([1 if x.FN() and x.time < firstDet else 0 for x in det])
+        run['# False Negatives'] = sum([1 if x.FN() and x.time <= firstDet else 0 for x in det])
         run['# False Negatives Drift'] = sum([1 if x.FN() and x.Drift() and x.time < firstDet else 0 for x in det])
         run['# Total False Negatives'] = sum([1 if x.FN() else 0 for x in det])
         run['# Total False Positives'] = sum([1 if x.FP() else 0 for x in det])
         run['True Positive Readings'] = [x.errorADC for x in det if x.TP() and x.time < firstDet]
+        run['True Positive Findings'] = [x.errorADC for x in det if x.TPConf() and x.time == firstDet]
 
         #if p['validaitonType'] == 'square':
         #    run['False Positive Confirmation Timing'] = [x.time for x in det if x.FPConf()]
@@ -296,6 +302,8 @@ if __name__ == '__main__':
         #pickle.dump({data, handle)
 
     #data = generateData(uniqueRuns)
+
+
 
     with open('driftExplorePar.pickle', 'rb') as handle:
         data = pickle.load(handle)
