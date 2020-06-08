@@ -9,8 +9,8 @@ def runner(queue):
         print("%d\\%d" % (job[1], job[2]))
         #print(job)
         command = "./simulator/Simulation "+' '.join(job[0])
-        print(command)
-        #os.system(command + " 1>/dev/null")
+        #print(command)
+        os.system(command + " 1>/dev/null")
         queue.task_done()
 
 
@@ -22,21 +22,22 @@ if __name__ == '__main__':
 
     #switches = ["-logNodes=false -logPosition=false -logGrid=false -logEnergy=false -regionRouting=true -noEnergy=true -csvSensor=false -csvMove=true -zipFiles=true"]
     switches = ["-logNodes=false -logPosition=false -logGrid=false -logEnergy=false -regionRouting=true -noEnergy=true -csvMove=true -zipFiles=true -windRegionPath=hull_fine_bomb_fixWind_9x9.txt"]
-    scenarios = ["-inputFileName=%s -imageFileName=%s -stimFileName=circle_0.txt -outRoutingStatsName=routingStats.txt -iterations=10000 -superNodes=false -doOptimize=false" % (s[0], s[1]) for s in [['Scenario_3.txt', 'marathon_street_map.png']]]
+    scenarios = ["-inputFileName=%s -imageFileName=%s -stimFileName=circle_0.txt -outRoutingStatsName=routingStats.txt -iterations=10000 -superNodes=false -doOptimize=false" % (s[0], s[1]) for s in [['Scenario_Stadium.txt', 'DelawareStadiumWalls.png']]]
 
     paths = []
-    for pop in [[200, 10000], [500, 4000], [1000, 2000], [2000, 1000], [5000, 400], [10000, 200]]:
-        for it in [3, 4]:
+    for pop in [[500, 20000], [1000, 2000], [2000, 1000], [3500, 500]]: #[[200, 10000], [500, 4000], [1000, 2000], [2000, 1000], [5000, 400], [10000, 200]]:
+        for it in [1, 2, 3, 4]:
             paths.append((pop[0], it, pop[1]))
 
     #movementPath = ["-movementPath=%s" % s for s in ["/home/simulator/git-simulator/movement/marathon_street_2000_%d.scb" % i for i in range(1,10)]]
-    movementPath = ["-movementPath=/home/simulator/git-simulator/movement/marathon2_%d_%d.scb -totalNodes=%d -moveSize=%d" % (s[0], s[1], s[0], s[2]) for s in paths]
+    #movementPath = ["-movementPath=/home/simulator/git-simulator/movement/marathon2_%d_%d.scb -totalNodes=%d -moveSize=%d" % (s[0], s[1], s[0], s[2]) for s in paths]
+    movementPath = ["-movementPath=/home/simulator/git-simulator/movement/Stadium_%d_%d.scb -totalNodes=%d -moveSize=%d" % (s[0], s[1], s[0], s[2]) for s in paths]
 
     sensorPath = ["-sensorPath=%s" %s for s in ["smooth_marathon.csv"]]
     detectionDistance = ["-detectionDistance=%d" % d for d in [6]]
     detectionThreshold = ["-detectionThreshold=%d" % d for d in[5]]
-    sittingStopThreshold = ["-sittingStopThreshold=%d" % d for d in [5]]
-    negativeSittingStopThreshold = ["-negativeSittingStopThreshold=%d" % d for d in [-10]]
+    #sittingStopThreshold = ["-sittingStopThreshold=%d" % d for d in [5]]
+    #negativeSittingStopThreshold = ["-negativeSittingStopThreshold=%d" % d for d in [-10]]
     GridCapacityPercentage = ["-GridCapacityPercentage=%f" % f for f in [0.9]]
     naturalLoss = ["-naturalLoss=%f" % f for f in [0.005]]
     sensorSamplingLoss = ["-sensorSamplingLoss=%f" % f for f in [0.001]]
@@ -77,7 +78,7 @@ if __name__ == '__main__':
 
     #sensorPath, fineSensorPath
     runs = (list(itertools.product(*[switches, scenarios, movementPath, detectionThreshold,
-                                     detectionDistance, sittingStopThreshold, negativeSittingStopThreshold, GridCapacityPercentage,
+                                     detectionDistance, GridCapacityPercentage,
                                      naturalLoss,sensorSamplingLoss,GPSSamplingLoss,serverSamplingLoss,SamplingLossBTCM,SamplingLossWifiCM,
                                      SamplingLoss4GCM,SamplingLossAccelCM,thresholdBatteryToHave,thresholdBatteryToUse,movementSamplingSpeed,
                                      movementSamplingPeriod,maxBufferCapacity,sensorSamplingPeriod,GPSSamplingPeriod,serverSamplingPeriod,
@@ -90,7 +91,7 @@ if __name__ == '__main__':
     for r in runs:
         for i in range(factor):
             j = [zz for zz in r]
-            j.append("-OutputFileName=/home/simulator/simData/driftExplorerNoBombFinal2/Log_%d" % x)
+            j.append("-OutputFileName=/home/simulator/simData/noBomb_stadium/Log_%d" % x)
 
             
             v = j
@@ -98,6 +99,6 @@ if __name__ == '__main__':
             x+= 1
 
        
-    p = multiprocessing.Pool(1, runner, (q,))
+    p = multiprocessing.Pool(15, runner, (q,))
 
     q.join()
