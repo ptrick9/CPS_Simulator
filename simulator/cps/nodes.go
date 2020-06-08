@@ -954,8 +954,8 @@ func (curNode *NodeImpl) report(rawConc float64) {
 
 	inWind := curNode.P.Server.CheckFalsePosWind(curNode)  //true if in sensor area
 	inRange := float64(d*2) < curNode.P.DetectionDistance      //true = out
-	highConcentration := ADCClean > curNode.P.DetectionThreshold
-	highSensor := ADCRead > curNode.P.DetectionThreshold
+	highConcentration := ADCClean > curNode.P.DetectionThreshold //true reading of the sensor
+	highSensor := ADCRead > curNode.P.DetectionThreshold //error model influenced reading of the sensor
 
 	tp := false
 

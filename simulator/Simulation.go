@@ -408,13 +408,13 @@ func main() {
 						event.Node.MoveNormal(p)
 					}
 				}
-				if (p.DriftExplorer) {
+				if (p.DriftExplorer) { //no sensor csv, just checking FP
 					event.Node.GetSensor()
 				} else {
-					if (p.CSVSensor) {
+					if (p.CSVSensor) { //if we have a big CSV file of the entire event
 						event.Node.GetReadingsCSV()
 					} else {
-						event.Node.GetReadings()
+						event.Node.GetReadings() //if we have no big file, just the small 'FINE' csv file
 					}
 				}
 
@@ -429,7 +429,7 @@ func main() {
 				}
 			}
 		} else {
-			if event.Instruction == cps.POSITION {
+			if event.Instruction == cps.POSITION { //runs through all valid nodes and prints their location
 				//fmt.Printf("Current Time: %v \n", p.CurrentTime)
 
 				if p.PositionPrint {
@@ -455,7 +455,7 @@ func main() {
 				p.Iterations_used += 1
 				p.Events.Push(&cps.Event{nil, cps.POSITION, p.CurrentTime + 1000, 0})
 
-			} else if event.Instruction == cps.SERVER {
+			} else if event.Instruction == cps.SERVER { //scheduling for super nodes
 				if !p.SuperNodes {
 					fmt.Fprintln(p.RoutingFile, "Amount:", 0)
 				} else {
