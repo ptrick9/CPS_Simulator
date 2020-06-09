@@ -24,13 +24,15 @@ type FusionCenter struct {
 	Variance 		[]float64
 	Times 			map[int]bool
 	LastRecal		[]int
-	Sch		*Scheduler
+	Sch				*Scheduler
 	Readings		map[Key][]Reading
 	CheckedIds		[]int
 	NodeDataList	[]NodeData
 	Validators 		map[int]int //stores validators...id -> time  latest time for id is stored
 	NodeSquares 	map[int]Tuple  //store what square a node is in
 	SquarePop  		map[Tuple][]int //store nodes in square
+	NodeTree		*Quadtree //stores node locations in quadtree format
+	ClusterNetwork	* AdHocNetwork //stores cluster information
 }
 
 //Init initializes the values for the server

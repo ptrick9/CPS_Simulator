@@ -131,8 +131,35 @@ type NodeImpl struct {
 
 	TotalPacketsSent    int
 	TotalBytesSent		int
+	IsClusterMember		bool
 	IsClusterHead		bool
 	Recalibrated 		bool
+
+	NodeClusterParams *ClusterMemberParams
+	CHPenalty float64
+	ReadingsBuffer		[]Reading
+	TimeLastSentReadings	int
+	TimeLastAccel		int
+	LastMoveTime		int
+	Velocity			float64
+	SampleRate			float64
+
+	LastReading			 float64
+	ReadingPercentChange float64
+	LastAccel			 float64
+	MovePercentChange	 float64
+	MovementModifier	 float64
+	SensorModifier		 float64
+
+	SampleRateSensor	 float64
+	SampleRateMovement   float64
+	SampleRateBattery    float64
+
+	ScheduledEvent		 *Event
+	BatteryPercent		 float64
+
+	LastNSampleRates	 []float64
+	CurTree				 *Quadtree
 }
 
 //NodeMovement controls the movement of all the normal nodes
@@ -191,28 +218,28 @@ type Path struct {
 
 //Returns the x Index of the square in which the specific
 //	node currently resides
-func (curNode *NodeImpl) Row(div int) int {
-	return int(curNode.Y) / div
+func (node *NodeImpl) Row(div int) int {
+	return int(node.Y) / div
 }
 
 //Returns the y Index of the square in which the specific
 //	node currently resides
-func (curNode *NodeImpl) Col(div int) int {
-	return int(curNode.X) / div
+func (node *NodeImpl) Col(div int) int {
+	return int(node.X) / div
 }
 
-func (curNode *NodeImpl) InBounds(p *Params) bool {
-	if int(curNode.X) < curNode.P.Width && int(curNode.X) >= 0 {
-		if int(curNode.Y) < curNode.P.Height && curNode.Y >= 0 {
+func (node *NodeImpl) InBounds(p *Params) bool {
+	if int(node.X) < p.Width && int(node.X) >= 0 {
+		if int(node.Y) < p.Height && node.Y >= 0 {
 			return true
 		}
 	}
 	return false
 }
 
-func (curNode *NodeImpl) TurnValid(x, y int, p *Params) bool {
-	if x < curNode.P.Width && x >= 0 {
-		if y < curNode.P.Height && y >= 0 {
+func (node *NodeImpl) TurnValid(x, y int, p *Params) bool {
+	if x < p.Width && x >= 0 {
+		if y < p.Height && y >= 0 {
 			//fmt.Printf("%v valid", curNode.Id)
 			return true
 
@@ -223,12 +250,12 @@ func (curNode *NodeImpl) TurnValid(x, y int, p *Params) bool {
 
 
 
-func (curNode *NodeImpl) ADCReading(raw float32) int {
+func (node *NodeImpl) ADCReading(raw float32) int {
 
-	level := (raw - curNode.P.ADCOffset)/curNode.P.ADCWidth
+	level := (raw - node.P.ADCOffset)/ node.P.ADCWidth
 
-	if level > curNode.P.MaxADC {
-		level = curNode.P.MaxADC
+	if level > node.P.MaxADC {
+		level = node.P.MaxADC
 	} else if level < 0 {
 		level = 0
 	}
@@ -236,11 +263,11 @@ func (curNode *NodeImpl) ADCReading(raw float32) int {
 	return int(level)
 }
 
-func (curNode NodeImpl) String() string {
+func (node NodeImpl) String() string {
 	//return fmt.Sprintf("x: %v y: %v Id: %v battery: %v sensor checked: %v sensor checks: %v GPS checked: %v GPS checks: %v server checked: %v server checks: %v buffer: %v ", int(curNode.X), curNode.Y, curNode.Id, curNode.Battery, curNode.HasCheckedSensor, curNode.TotalChecksSensor, curNode.HasCheckedGPS, curNode.TotalChecksGPS, curNode.HasCheckedServer, curNode.TotalChecksServer,curNode.BufferI)
 	//return fmt.Sprintf("x: %v y: %v valid: %v", int(curNode.X), int(curNode.Y), curNode.Valid)
 	//return fmt.Sprintf("battery: %v sensor checked: %v GPS checked: %v ", int(curNode.Battery), curNode.HasCheckedSensor, curNode.HasCheckedGPS)
-	return fmt.Sprintf("battery: %v sensor checked: %v GPS checked: %v ", int(curNode.Battery), true, true)
+	return fmt.Sprintf("battery: %v sensor checked: %v GPS checked: %v ", int(node.Battery), true, true)
 
 }
 
@@ -252,60 +279,60 @@ func (c Coord) Equals(c2 Coord) bool {
 	return c.X == c2.X && c.Y == c2.Y
 }
 
-func (curNode *NodeImpl) Move(p *Params) {
-	if curNode.Sitting <= curNode.P.SittingStopThresholdCM {
-		curNode.OldX = int(curNode.X) / curNode.P.XDiv
-		curNode.OldY = int(curNode.Y) / curNode.P.YDiv
+func (node *NodeImpl) Move(p *Params) {
+	if node.Sitting <= p.SittingStopThresholdCM {
+		node.OldX = int(node.X) / p.XDiv
+		node.OldY = int(node.Y) / p.YDiv
 
 		var potentialSpots []GridSpot
 
 		//only add the ones that are valid to move to into the list
-		if int(curNode.Y)-1 >= 0 &&
-			int(curNode.X) >= 0 &&
-			int(curNode.X) < curNode.P.Width &&
-			int(curNode.Y)-1 < curNode.P.Height &&
+		if int(node.Y)-1 >= 0 &&
+			int(node.X) >= 0 &&
+			int(node.X) < p.Width &&
+			int(node.Y)-1 < p.Height &&
 
-			curNode.P.BoardMap[int(curNode.X)][int(curNode.Y)-1] != -1 &&
-			curNode.P.BoolGrid[int(curNode.X)][int(curNode.Y)-1] == false { // &&
-			//curNode.P.BoardMap[int(curNode.X)][curNode.Y-1] <= curNode.P.BoardMap[int(curNode.X)][curNode.Y] {
+			p.BoardMap[int(node.X)][int(node.Y)-1] != -1 &&
+			p.BoolGrid[int(node.X)][int(node.Y)-1] == false { // &&
+			//curp.BoardMap[int(curNode.X)][curNode.Y-1] <= curp.BoardMap[int(curNode.X)][curNode.Y] {
 
-			up := GridSpot{int(curNode.X), int(curNode.Y) - 1, curNode.P.BoardMap[int(curNode.X)][int(curNode.Y)-1]}
+			up := GridSpot{int(node.X), int(node.Y) - 1, p.BoardMap[int(node.X)][int(node.Y)-1]}
 			potentialSpots = append(potentialSpots, up)
 		}
-		if int(curNode.X)+1 < curNode.P.Width &&
-			int(curNode.X)+1 >= 0 &&
-			int(curNode.Y) < curNode.P.Height &&
-			curNode.Y >= 0 &&
+		if int(node.X)+1 < p.Width &&
+			int(node.X)+1 >= 0 &&
+			int(node.Y) < p.Height &&
+			node.Y >= 0 &&
 
-			curNode.P.BoardMap[int(curNode.X)+1][int(curNode.Y)] != -1 &&
-			curNode.P.BoolGrid[int(curNode.X)+1][int(curNode.Y)] == false { // &&
-			//curNode.P.BoardMap[int(curNode.X)+1][curNode.Y] <= curNode.P.BoardMap[int(curNode.X)][curNode.Y] {
+			p.BoardMap[int(node.X)+1][int(node.Y)] != -1 &&
+			p.BoolGrid[int(node.X)+1][int(node.Y)] == false { // &&
+			//curp.BoardMap[int(curNode.X)+1][curNode.Y] <= curp.BoardMap[int(curNode.X)][curNode.Y] {
 
-			right := GridSpot{int(curNode.X) + 1, int(curNode.Y), curNode.P.BoardMap[int(curNode.X)+1][int(curNode.Y)]}
+			right := GridSpot{int(node.X) + 1, int(node.Y), p.BoardMap[int(node.X)+1][int(node.Y)]}
 			potentialSpots = append(potentialSpots, right)
 		}
-		if int(curNode.Y)+1 < curNode.P.Height &&
-			curNode.Y+1 >= 0 &&
-			int(curNode.X) < curNode.P.Width &&
-			int(curNode.X) >= 0 &&
+		if int(node.Y)+1 < p.Height &&
+			node.Y+1 >= 0 &&
+			int(node.X) < p.Width &&
+			int(node.X) >= 0 &&
 
-			curNode.P.BoardMap[int(curNode.X)][int(curNode.Y)+1] != -1 &&
-			curNode.P.BoolGrid[int(curNode.X)][int(curNode.Y)+1] == false { //&&
-			//curNode.P.BoardMap[int(curNode.X)][curNode.Y+1] <= curNode.P.BoardMap[int(curNode.X)][curNode.Y] {
+			p.BoardMap[int(node.X)][int(node.Y)+1] != -1 &&
+			p.BoolGrid[int(node.X)][int(node.Y)+1] == false { //&&
+			//curp.BoardMap[int(curNode.X)][curNode.Y+1] <= curp.BoardMap[int(curNode.X)][curNode.Y] {
 
-			down := GridSpot{int(curNode.X), int(curNode.Y) + 1, curNode.P.BoardMap[int(curNode.X)][int(curNode.Y)+1]}
+			down := GridSpot{int(node.X), int(node.Y) + 1, p.BoardMap[int(node.X)][int(node.Y)+1]}
 			potentialSpots = append(potentialSpots, down)
 		}
-		if int(curNode.X)-1 >= 0 &&
-			int(curNode.X)-1 < curNode.P.Width &&
-			curNode.Y >= 0 &&
-			int(curNode.Y) < curNode.P.Height &&
+		if int(node.X)-1 >= 0 &&
+			int(node.X)-1 < p.Width &&
+			node.Y >= 0 &&
+			int(node.Y) < p.Height &&
 
-			curNode.P.BoardMap[int(curNode.X)-1][int(curNode.Y)] != -1 &&
-			curNode.P.BoolGrid[int(curNode.X)-1][int(curNode.Y)] == false { // &&
-			//curNode.P.BoardMap[int(curNode.X)-1][curNode.Y] <= curNode.P.BoardMap[int(curNode.X)][curNode.Y] {
+			p.BoardMap[int(node.X)-1][int(node.Y)] != -1 &&
+			p.BoolGrid[int(node.X)-1][int(node.Y)] == false { // &&
+			//curp.BoardMap[int(curNode.X)-1][curNode.Y] <= curp.BoardMap[int(curNode.X)][curNode.Y] {
 
-			left := GridSpot{int(curNode.X) - 1, int(curNode.Y), curNode.P.BoardMap[int(curNode.X)-1][int(curNode.Y)]}
+			left := GridSpot{int(node.X) - 1, int(node.Y), p.BoardMap[int(node.X)-1][int(node.Y)]}
 			potentialSpots = append(potentialSpots, left)
 		}
 
@@ -315,7 +342,7 @@ func (curNode *NodeImpl) Move(p *Params) {
 		sort.Sort(byValue(potentialSpots))
 
 		/*for i := 0; i < len(potentialSpots); i++ {
-			if curNode.P.Grid[potentialSpots[i].Y/curNode.P.YDiv][potentialSpots[i].X/curNode.P.XDiv].ActualNumNodes <= curNode.P.SquareCapacity {
+			if curp.Grid[potentialSpots[i].Y/curp.YDiv][potentialSpots[i].X/curp.XDiv].ActualNumNodes <= curp.SquareCapacity {
 				int(curNode.X) = potentialSpots[i].X
 				curNode.Y = potentialSpots[i].Y
 				break
@@ -324,32 +351,32 @@ func (curNode *NodeImpl) Move(p *Params) {
 
 		//If there are no potential spots, do not move
 		if len(potentialSpots) > 0 {
-			curNode.X = float32(potentialSpots[0].X)
-			curNode.Y = float32(potentialSpots[0].Y)
+			node.X = float32(potentialSpots[0].X)
+			node.Y = float32(potentialSpots[0].Y)
 		}
 
 		//Change number of nodes in square
-		/*if int(curNode.X)/curNode.P.XDiv != curNode.OldX || curNode.Y/curNode.P.YDiv != curNode.OldY {
-			curNode.P.Grid[curNode.Y/curNode.P.YDiv][int(curNode.X)/curNode.P.XDiv].ActualNumNodes = curNode.P.Grid[curNode.Y/curNode.P.YDiv][int(curNode.X)/curNode.P.XDiv].ActualNumNodes + 1
-			curNode.P.Grid[curNode.OldY][curNode.OldX].ActualNumNodes = curNode.P.Grid[curNode.OldY][curNode.OldX].ActualNumNodes - 1
+		/*if int(curNode.X)/curp.XDiv != curNode.OldX || curNode.Y/curp.YDiv != curNode.OldY {
+			curp.Grid[curNode.Y/curp.YDiv][int(curNode.X)/curp.XDiv].ActualNumNodes = curp.Grid[curNode.Y/curp.YDiv][int(curNode.X)/curp.XDiv].ActualNumNodes + 1
+			curp.Grid[curNode.OldY][curNode.OldX].ActualNumNodes = curp.Grid[curNode.OldY][curNode.OldX].ActualNumNodes - 1
 		}*/
 
-		//curNode.P.Server.UpdateSquareNumNodes()
-		if curNode.Diffx == 0 && curNode.Diffy == 0 || curNode.Sitting < 0 {
-			curNode.Sitting = curNode.Sitting + 1
+		//curp.Server.UpdateSquareNumNodes()
+		if node.Diffx == 0 && node.Diffy == 0 || node.Sitting < 0 {
+			node.Sitting = node.Sitting + 1
 		} else {
-			curNode.Sitting = 0
+			node.Sitting = 0
 		}
 	}
 }
 
-func (curNode *NodeImpl) Recalibrate() {
-	curNode.P.Server.NodeDataList[curNode.Id].SelfRecalTimes = append(curNode.P.Server.NodeDataList[curNode.Id].SelfRecalTimes, curNode.P.CurrentTime / 1000)
-	curNode.Sensitivity = curNode.InitialSensitivity
-	curNode.NodeTime = (curNode.P.CurrentTime/1000)
+func (node *NodeImpl) Recalibrate() {
+	node.P.Server.NodeDataList[node.Id].SelfRecalTimes = append(node.P.Server.NodeDataList[node.Id].SelfRecalTimes, node.P.CurrentTime / 1000)
+	node.Sensitivity = node.InitialSensitivity
+	node.NodeTime = (node.P.CurrentTime/1000)
 	//fmt.Fprintf(curNode.P.DriftExploreFile, "ID: %v T: %v In: %v CUR: %v NT: %v RECAL\n", curNode.Id, curNode.P.CurrentTime, curNode.InitialSensitivity, curNode.Sensitivity, curNode.NodeTime)
 	//fmt.Printf("Node %v recalibrated!\curNode", curNode.Id)
-	curNode.Recalibrated = true
+	node.Recalibrated = true
 }
 
 //Returns the arr with the element at Index curNode removed
@@ -397,13 +424,13 @@ func Remove_and_insert(arr []Coord, ind1, ind2 int) []Coord {
 	return append(arr[:ind2], append(arr1, arr[ind2:]...)...)
 }
 
-func (curNode *NodeImpl) LogBatteryPower(t int){
+func (node *NodeImpl) LogBatteryPower(t int){
 	//fmt.Println("entered function")
 	//t should be p.TimeStep
-	if(curNode.BatteryOverTime == nil){
-		curNode.BatteryOverTime = map[int]float32{}
+	if(node.BatteryOverTime == nil){
+		node.BatteryOverTime = map[int]float32{}
 	}
-	curNode.BatteryOverTime[t] = curNode.Battery;
+	node.BatteryOverTime[t] = node.Battery;
 	//used to test the log file writing and the python processing code
 	//if(curNode.Id%4==0){
 	//	curNode.DecrementPowerSensor()
@@ -414,51 +441,51 @@ func (curNode *NodeImpl) LogBatteryPower(t int){
 	//}
 }
 
-func (curNode *NodeImpl) SendtoServer(packet int){
+func (node *NodeImpl) SendtoServer(packet int){
 	//int packet = num bytes in packet
-	curNode.TotalBytesSent += packet;
-	curNode.TotalPacketsSent += 1;
+	node.TotalBytesSent += packet;
+	node.TotalPacketsSent += 1;
 
 	//code to send to server goes here
 }
 
-func (curNode *NodeImpl) SendtoClusterHead(packet int){
+func (node *NodeImpl) SendtoClusterHead(packet int){
 	//int packet = num bytes in packet
-	curNode.TotalBytesSent += packet;
-	curNode.TotalPacketsSent += 1;
+	node.TotalBytesSent += packet;
+	node.TotalPacketsSent += 1;
 
 	//code to send to cluster head goes here
 }
 
 
 //decrement battery due to transmitting/receiving over BlueTooth
-func (curNode *NodeImpl) DecrementPowerBT(packet int){
-	curNode.Battery = curNode.Battery - curNode.BatteryLossBT*curNode.Battery
+func (node *NodeImpl) DecrementPowerBT(packet int){
+	node.Battery = node.Battery - node.BatteryLossBT*node.Battery
 }
 
 //decrement battery due to transmitting/receiving over WiFi
-func (curNode *NodeImpl) DecrementPowerWifi(packet int){
-	curNode.Battery = curNode.Battery - curNode.BatteryLossWifi
+func (node *NodeImpl) DecrementPowerWifi(packet int){
+	node.Battery = node.Battery - node.BatteryLossWifi
 }
 
 //decrement battery due to transmitting/receiving over 4G
-func (curNode *NodeImpl) DecrementPower4G(packet int){
-	curNode.Battery = curNode.Battery - curNode.BatteryLoss4G*curNode.Battery
+func (node *NodeImpl) DecrementPower4G(packet int){
+	node.Battery = node.Battery - node.BatteryLoss4G*node.Battery
 }
 
 //decrement battery due to sampling Accelerometer
-func (curNode *NodeImpl) DecrementPowerAccel(){
-	curNode.Battery = curNode.Battery - curNode.BatteryLossAccelerometer*curNode.Battery
+func (node *NodeImpl) DecrementPowerAccel(){
+	node.Battery = node.Battery - node.BatteryLossAccelerometer*node.Battery
 }
 
 //decrement battery due to transmitting/receiving GPS
-func (curNode *NodeImpl) DecrementPowerGPS(){
-	curNode.Battery = curNode.Battery - curNode.BatteryLossGPS*curNode.Battery
+func (node *NodeImpl) DecrementPowerGPS(){
+	node.Battery = node.Battery - node.BatteryLossGPS*node.Battery
 }
 
 //decrement battery due to using GPS
-func (curNode *NodeImpl) DecrementPowerSensor(){
-	curNode.Battery = curNode.Battery - curNode.BatteryLossSensor*curNode.Battery
+func (node *NodeImpl) DecrementPowerSensor(){
+	node.Battery = node.Battery - node.BatteryLossSensor*node.Battery
 }
 
 
@@ -466,14 +493,14 @@ func (curNode *NodeImpl) DecrementPowerSensor(){
 Therefore, each Time a node takes a sample in main, it also adds this sample to the beginning of the sample history.
 Each sample is only stored until ln more samples have been taken (this variable is in hello.go)
 */
-func (curNode *NodeImpl) UpdateHistory(newValue float32) {
+func (node *NodeImpl) UpdateHistory(newValue float32) {
 
 	//loop through the sample history slice in reverse order, excluding 0th Index
-	for i := len(curNode.SampleHistory) - 1; i > 0; i-- {
-		curNode.SampleHistory[i] = curNode.SampleHistory[i-1] //set the current Index equal to the Value of the previous Index
+	for i := len(node.SampleHistory) - 1; i > 0; i-- {
+		node.SampleHistory[i] = node.SampleHistory[i-1] //set the current Index equal to the Value of the previous Index
 	}
 
-	curNode.SampleHistory[0] = newValue //set 0th Index to new measured Value
+	node.SampleHistory[0] = newValue //set 0th Index to new measured Value
 
 	/* Now calculate the weighted average of the sample history. Note that if a node is stationary, all values
 	averaged over are weighted equally. The faster the node is moving, the less the older values are worth when
@@ -482,26 +509,26 @@ func (curNode *NodeImpl) UpdateHistory(newValue float32) {
 	var sum float32
 	var numSamples int //variable for number of samples to average over
 
-	var decreaseRatio = curNode.SpeedWeight / 100.0
+	var decreaseRatio = node.SpeedWeight / 100.0
 
-	if curNode.TotalSamples > len(curNode.SampleHistory) { //if the node has taken more than x total samples
-		numSamples = len(curNode.SampleHistory) //we only average over the x most recent ones
+	if node.TotalSamples > len(node.SampleHistory) { //if the node has taken more than x total samples
+		numSamples = len(node.SampleHistory) //we only average over the x most recent ones
 	} else { //if it doesn't have x samples taken yet
-		numSamples = curNode.TotalSamples //we only average over the number of samples it's taken
+		numSamples = node.TotalSamples //we only average over the number of samples it's taken
 	}
 
 	for i := 0; i < numSamples; i++ {
-		if curNode.SampleHistory[i] != 0 {
+		if node.SampleHistory[i] != 0 {
 			//weight the values of the sampleHistory when added to the sum variable based on the speed, so older values are weighted less
-			sum += curNode.SampleHistory[i] - ((decreaseRatio) * float32(i))
+			sum += node.SampleHistory[i] - ((decreaseRatio) * float32(i))
 		} else {
 			sum += 0
 		}
 	}
-	curNode.Avg = sum / float32(numSamples)
+	node.Avg = sum / float32(numSamples)
 }
 
-func (curNode *NodeImpl) getDriftSlope() (float32, float32){
+func (node *NodeImpl) getDriftSlope() (float32, float32){
 	var r float32
 	var slope float32
 
@@ -516,18 +543,18 @@ func (curNode *NodeImpl) getDriftSlope() (float32, float32){
 	var xSqrSum float32
 	//size := float32(len(curNode.SampleHistory))
 
-	for i:= range curNode.SampleHistory {
+	for i:= range node.SampleHistory {
 		ySum += float32(i)
 	}
-	yAvg = ySum / float32(len(curNode.SampleHistory))
-	for i := range curNode.SampleHistory {
-		sum += (curNode.SampleHistory[i] - curNode.Avg) * (float32(i) - yAvg)
-		squareSumX += math.Pow( float64(curNode.SampleHistory[i] - curNode.Avg), 2)
+	yAvg = ySum / float32(len(node.SampleHistory))
+	for i := range node.SampleHistory {
+		sum += (node.SampleHistory[i] - node.Avg) * (float32(i) - yAvg)
+		squareSumX += math.Pow( float64(node.SampleHistory[i] - node.Avg), 2)
 		squareSumY += math.Pow( float64(i - 1), 2)
 
-		xSum += curNode.SampleHistory[i]
-		xySum += curNode.SampleHistory[i] * float32(i)
-		xSqrSum += float32(math.Pow(float64(curNode.SampleHistory[i]), 2))
+		xSum += node.SampleHistory[i]
+		xySum += node.SampleHistory[i] * float32(i)
+		xSqrSum += float32(math.Pow(float64(node.SampleHistory[i]), 2))
 	}
 	r = sum / float32(math.Sqrt(squareSumX * squareSumY))
 	//slope = ( (size * xySum) - (xSum * ySum) ) / ( (size * float32(xSqrSum)) - float32(math.Pow(float64(xSum), 2)) )
@@ -540,128 +567,128 @@ func (curNode *NodeImpl) getDriftSlope() (float32, float32){
 
 /* this function increments a node's total number of samples by 1
 it's called whenever the node takes a new sample */
-func (curNode *NodeImpl) IncrementTotalSamples() {
-	curNode.TotalSamples++
+func (node *NodeImpl) IncrementTotalSamples() {
+	node.TotalSamples++
 }
 
 //getter function for average
-func (curNode *NodeImpl) GetAvg() float32 {
-	return curNode.Avg
+func (node *NodeImpl) GetAvg() float32 {
+	return node.Avg
 }
 
 //increases numResets field
-func (curNode *NodeImpl) IncrementNumResets() {
-	curNode.NumResets++
+func (node *NodeImpl) IncrementNumResets() {
+	node.NumResets++
 }
 
 //setter function for concentration field
-func (curNode *NodeImpl) SetConcentration(conc float64) {
-	curNode.Concentration = conc
+func (node *NodeImpl) SetConcentration(conc float64) {
+	node.Concentration = conc
 }
 
 //getter function for ID field
-func (curNode *NodeImpl) GetID() int {
-	return curNode.Id
+func (node *NodeImpl) GetID() int {
+	return node.Id
 }
 
 //getter function for x and y locations
-func (curNode *NodeImpl) GetLoc() (float32, float32) {
-	return curNode.X, curNode.Y
+func (node *NodeImpl) GetLoc() (float32, float32) {
+	return node.X, node.Y
 }
 
-func (curNode *NodeImpl) GetLocCoord() Coord {
-	return Coord{X: int(curNode.X), Y: int(curNode.Y)}
+func (node *NodeImpl) GetLocCoord() Coord {
+	return Coord{X: int(node.X), Y: int(node.Y)}
 }
 
-func (curNode *NodeImpl) GetTransformedLocCoord(p *Params) Coord {
-	return Coord{X: transformX(int(curNode.X), p), Y: transformY(int(curNode.Y), p)}
+func (node *NodeImpl) GetTransformedLocCoord(p *Params) Coord {
+	return Coord{X: transformX(int(node.X), p), Y: transformY(int(node.Y), p)}
 }
 
 //setter function for S0
-func (curNode *NodeImpl) SetS0(s0 float64) {
-	curNode.S0 = s0
+func (node *NodeImpl) SetS0(s0 float64) {
+	node.S0 = s0
 }
 
 //setter function for S1
-func (curNode *NodeImpl) SetS1(s1 float64) {
-	curNode.S1 = s1
+func (node *NodeImpl) SetS1(s1 float64) {
+	node.S1 = s1
 }
 
 //setter function for S2
-func (curNode *NodeImpl) SetS2(s2 float64) {
-	curNode.S2 = s2
+func (node *NodeImpl) SetS2(s2 float64) {
+	node.S2 = s2
 }
 
 //setter function for E0
-func (curNode *NodeImpl) SetE0(e0 float64) {
-	curNode.E0 = e0
+func (node *NodeImpl) SetE0(e0 float64) {
+	node.E0 = e0
 }
 
 //setter function for E1
-func (curNode *NodeImpl) SetE1(e1 float64) {
-	curNode.E1 = e1
+func (node *NodeImpl) SetE1(e1 float64) {
+	node.E1 = e1
 }
 
 //setter function for E2
-func (curNode *NodeImpl) SetE2(e2 float64) {
-	curNode.E2 = e2
+func (node *NodeImpl) SetE2(e2 float64) {
+	node.E2 = e2
 }
 
 //setter function for ET1
-func (curNode *NodeImpl) SetET1(et1 float64) {
-	curNode.ET1 = et1
+func (node *NodeImpl) SetET1(et1 float64) {
+	node.ET1 = et1
 }
 
 //setter function for ET2
-func (curNode *NodeImpl) SetET2(et2 float64) {
-	curNode.ET2 = et2
+func (node *NodeImpl) SetET2(et2 float64) {
+	node.ET2 = et2
 }
 
 //getter function for all parameters
-func (curNode *NodeImpl) GetParams() (float64, float64, float64, float64, float64, float64, float64, float64) {
-	return curNode.S0, curNode.S1, curNode.S2, curNode.E0, curNode.E1, curNode.E2, curNode.ET1, curNode.ET2
+func (node *NodeImpl) GetParams() (float64, float64, float64, float64, float64, float64, float64, float64) {
+	return node.S0, node.S1, node.S2, node.E0, node.E1, node.E2, node.ET1, node.ET2
 }
 
 //getter function for just S0 - S2 parameters
-func (curNode *NodeImpl) GetCoefficients() (float64, float64, float64) {
-	return curNode.S0, curNode.S1, curNode.S2
+func (node *NodeImpl) GetCoefficients() (float64, float64, float64) {
+	return node.S0, node.S1, node.S2
 }
 
 //getter function for x
-func (curNode *NodeImpl) GetX() float32 {
-	return curNode.X
+func (node *NodeImpl) GetX() float32 {
+	return node.X
 }
 
 //getter function for y
-func (curNode *NodeImpl) GetY() float32 {
-	return curNode.Y
+func (node *NodeImpl) GetY() float32 {
+	return node.Y
 }
 
 //This is the actual upload to the server
-func (curNode *NodeImpl) Server() {
+func (node *NodeImpl) Server() {
 	//getData(&s,curNode.XPos[0:curNode.BufferI],curNode.YPos[0:curNode.BufferI],curNode.Value[0:curNode.BufferI],curNode.Time[0:curNode.BufferI], curNode.Id,curNode.BufferI)
-	curNode.BufferI = 0
+	node.BufferI = 0
 }
 
 //Returns node distance to the bomb
-func (curNode *NodeImpl) GeoDist(b Bomb) float32 {
+func (node *NodeImpl) GeoDist(b Bomb) float32 {
 	//this needs to be changed
-	return float32(math.Pow(float64(math.Abs(float64(curNode.X)-float64(b.X))), 2) + math.Pow(float64(math.Abs(float64(curNode.Y)-float64(b.Y))), 2))
+	return float32(math.Pow(float64(math.Abs(float64(node.X)-float64(b.X))), 2) + math.Pow(float64(math.Abs(float64(node.Y)-float64(b.Y))), 2))
 }
 
 //Returns array of accelerometer speeds recorded for a specific node
-func (curNode *NodeImpl) GetSpeed() []float32 {
-	return curNode.AccelerometerSpeed
+func (node *NodeImpl) GetSpeed() []float32 {
+	return node.AccelerometerSpeed
 }
 
 //Returns a different version of the distance to the bomb
-func (curNode *NodeImpl) GetValue() int {
-	return int(math.Sqrt(math.Pow(float64(int(curNode.X)-curNode.P.B.X), 2) + math.Pow(float64(curNode.Y-float32(curNode.P.B.Y)), 2)))
+func (node *NodeImpl) GetValue() int {
+	return int(math.Sqrt(math.Pow(float64(int(node.X)-node.P.B.X), 2) + math.Pow(float64(node.Y-float32(node.P.B.Y)), 2)))
 }
 
 
-func (curNode *NodeImpl) Distance(b Bomb) float32 {
-	return float32(math.Sqrt(math.Pow(float64(math.Abs(float64(curNode.X)-float64(b.X))),2) + math.Pow(float64(math.Abs(float64(curNode.Y)-float64(b.Y))),2)))
+func (node *NodeImpl) Distance(b Bomb) float32 {
+	return float32(math.Sqrt(math.Pow(float64(math.Abs(float64(node.X)-float64(b.X))),2) + math.Pow(float64(math.Abs(float64(node.Y)-float64(b.Y))),2)))
 }
 
 //Returns a float representing the detection of the bomb
@@ -791,19 +818,19 @@ func trueInterpolate(x , y float32, time, timeStep int, fine bool, p *Params) fl
 
 
 //Takes cares of taking a node's readings and printing detections and stuff
-func (curNode *NodeImpl) GetReadings() {
+func (node *NodeImpl) GetReadings() {
 
 
-	if curNode.Valid { //Check if node should actually take readings or if it hasn't shown up yet
-		newX, newY := curNode.GetLoc()
+	if node.Valid { //Check if node should actually take readings or if it hasn't shown up yet
+		newX, newY := node.GetLoc()
 
 		//RawConc := RawConcentration(curNode.Distance(*curNode.P.B)/2) //this is the node's reported Value without error
 
 		RawConc := 0.0
 
 
-		if curNode.Distance(*curNode.P.B)/2 < float32((curNode.P.FineWidth/2)/curNode.P.FineScale) {
-			RawConc = float64(trueInterpolate(newX, newY, curNode.P.CurrentTime, curNode.P.TimeStep, true, curNode.P))
+		if node.Distance(*node.P.B)/2 < float32((node.P.FineWidth/2)/node.P.FineScale) {
+			RawConc = float64(trueInterpolate(newX, newY, node.P.CurrentTime, node.P.TimeStep, true, node.P))
 
 			if RawConc == -1.0 {
 				RawConc = 0.0
@@ -816,38 +843,38 @@ func (curNode *NodeImpl) GetReadings() {
 		} else {
 			curNode.report(RawConc)
 		}*/
-		if ((curNode.P.CurrentTime/1000) - curNode.NodeTime) < 2 {
+		if ((node.P.CurrentTime/1000) - node.NodeTime) < 2 {
 			//skip
 		} else {
-			curNode.report(RawConc)
+			node.report(RawConc)
 		}
 
 	}
-	curNode.P.Events.Push(&Event{curNode, SENSE, curNode.P.CurrentTime + 500, 0})
+	node.P.Events.Push(&Event{node, SENSE, node.P.CurrentTime + 500, 0})
 
 }
 
 
 //Takes cares of taking a node's readings and printing detections and stuff
-func (curNode *NodeImpl) GetReadingsCSV() {
+func (node *NodeImpl) GetReadingsCSV() {
 
-	if curNode.Valid { //check if node has shown up yet
+	if node.Valid { //check if node has shown up yet
 
-		newX, newY := curNode.GetLoc()
+		newX, newY := node.GetLoc()
 
 
 		RawConcentration := 0.0
-		if curNode.Distance(*curNode.P.B)/2 < float32((curNode.P.FineWidth/2)/curNode.P.FineScale) {
+		if node.Distance(*node.P.B)/2 < float32((node.P.FineWidth/2)/node.P.FineScale) {
 			//fmt.Printf("\n %v %v %v %v", curNode.P.B.X, curNode.P.B.Y, curNode.Distance(*curNode.P.B)/2, float32((curNode.P.FineWidth/2)/curNode.P.FineScale))
-			RawConcentration = float64(trueInterpolate(newX, newY, curNode.P.CurrentTime, curNode.P.TimeStep, true, curNode.P))
+			RawConcentration = float64(trueInterpolate(newX, newY, node.P.CurrentTime, node.P.TimeStep, true, node.P))
 			if RawConcentration == -1.0 {
-				RawConcentration = float64(trueInterpolate(newX, newY, curNode.P.CurrentTime, curNode.P.TimeStep, false, curNode.P))
+				RawConcentration = float64(trueInterpolate(newX, newY, node.P.CurrentTime, node.P.TimeStep, false, node.P))
 
 				//RawConcentration = 0.0
 			}
 
 		} else {
-			RawConcentration = float64(trueInterpolate(newX, newY, curNode.P.CurrentTime, curNode.P.TimeStep, false, curNode.P))
+			RawConcentration = float64(trueInterpolate(newX, newY, node.P.CurrentTime, node.P.TimeStep, false, node.P))
 		}
 
 		/*if(curNode.P.RecalReject && ((curNode.P.CurrentTime/1000) - curNode.NodeTime) < 2) {
@@ -856,20 +883,20 @@ func (curNode *NodeImpl) GetReadingsCSV() {
 			curNode.report(RawConcentration)
 		}*/
 
-		if ((curNode.P.CurrentTime/1000) - curNode.NodeTime) < 2 {
+		if ((node.P.CurrentTime/1000) - node.NodeTime) < 2 {
 			//skip
 		} else {
-			curNode.report(RawConcentration)
+			node.report(RawConcentration)
 		}
 		//curNode.report(RawConcentration)
 
 	}
-	curNode.P.Events.Push(&Event{curNode, SENSE, curNode.P.CurrentTime + 500, 0})
+	node.P.Events.Push(&Event{node, SENSE, node.P.CurrentTime + 500, 0})
 }
 
-func (curNode *NodeImpl) GetSensor() {
+func (node *NodeImpl) GetSensor() {
 
-	if curNode.Valid { //check if node has shown up yet
+	if node.Valid { //check if node has shown up yet
 
 
 		RawConcentration := 0.0
@@ -882,38 +909,38 @@ func (curNode *NodeImpl) GetSensor() {
 		} else {
 			curNode.report(RawConcentration)
 		}*/
-		if ((curNode.P.CurrentTime/1000) - curNode.NodeTime) < 2 {
+		if ((node.P.CurrentTime/1000) - node.NodeTime) < 2 {
 			//skip
 		} else {
-			curNode.report(RawConcentration)
+			node.report(RawConcentration)
 		}
 		//curNode.report(RawConcentration)
 
 	}
-	curNode.P.Events.Push(&Event{curNode, SENSE, curNode.P.CurrentTime + 500, 0})
+	node.P.Events.Push(&Event{node, SENSE, node.P.CurrentTime + 500, 0})
 }
 
-func (curNode *NodeImpl) report(rawConc float64) {
+func (node *NodeImpl) report(rawConc float64) {
 
 
-	newX, newY := curNode.GetLoc()
+	newX, newY := node.GetLoc()
 
-	S0, S1, S2, E0, E1, E2, ET1, ET2 := curNode.GetParams()
-	sError := (S0 + E0) + (S1+E1)*math.Exp(-float64(((curNode.P.CurrentTime/1000)-curNode.NodeTime))/(curNode.P.Tau1+ET1)) + (S2+E2)*math.Exp(-float64(((curNode.P.CurrentTime/1000)-curNode.NodeTime))/(curNode.P.Tau2+ET2))
-	curNode.Sensitivity = S0 + (S1)*math.Exp(-float64(((curNode.P.CurrentTime/1000)-curNode.NodeTime))/curNode.P.Tau1) + (S2)*math.Exp(-float64(((curNode.P.CurrentTime/1000)-curNode.NodeTime))/curNode.P.Tau2)
+	S0, S1, S2, E0, E1, E2, ET1, ET2 := node.GetParams()
+	sError := (S0 + E0) + (S1+E1)*math.Exp(-float64(((node.P.CurrentTime/1000)-node.NodeTime))/(node.P.Tau1+ET1)) + (S2+E2)*math.Exp(-float64(((node.P.CurrentTime/1000)-node.NodeTime))/(node.P.Tau2+ET2))
+	node.Sensitivity = S0 + (S1)*math.Exp(-float64(((node.P.CurrentTime/1000)-node.NodeTime))/node.P.Tau1) + (S2)*math.Exp(-float64(((node.P.CurrentTime/1000)-node.NodeTime))/node.P.Tau2)
 	//sNoise := rand.NormFloat64()*float64(curNode.P.ADCWidth)*curNode.P.ErrorModifierCM + float64(rawConc)*sError
 	//sNoise := rand.NormFloat64()*100*curNode.P.ErrorModifierCM + float64(rawConc)*sError
 	sNoise := rand.NormFloat64()*math.Sqrt(3.0) + float64(rawConc)*sError
-	errorDist := sNoise / curNode.Sensitivity //this is the node's actual reading with error
-	clean := float64(rawConc) / curNode.Sensitivity
+	errorDist := sNoise / node.Sensitivity //this is the node's actual reading with error
+	clean := float64(rawConc) / node.Sensitivity
 
 
-	ADCRead := float64(curNode.ADCReading(float32(errorDist)))
-	ADCClean := float64(curNode.ADCReading(float32(clean)))
+	ADCRead := float64(node.ADCReading(float32(errorDist)))
+	ADCClean := float64(node.ADCReading(float32(clean)))
 
 
 
-	d := curNode.Distance(*curNode.P.B)/2
+	d := node.Distance(*node.P.B)/2
 	/*if d < 10 {
 		fmt.Fprintln(curNode.P.MoveReadingsFile, "Time:", curNode.P.CurrentTime/1000, "ID:", curNode.Id, "X:", newX, "Y:",  newY, "Dist:", d, "ADCClean:", ADCClean, "ADCError:", ADCRead, "CleanSense:", clean, "Error:", errorDist, "Raw:", rawConc)
 	}*/
@@ -922,8 +949,8 @@ func (curNode *NodeImpl) report(rawConc float64) {
 	//curNode.NodeTime++
 
 	//if curNode.HasCheckedSensor {
-	curNode.IncrementTotalSamples()
-	curNode.UpdateHistory(float32(errorDist))
+	node.IncrementTotalSamples()
+	node.UpdateHistory(float32(errorDist))
 	//}
 
 	//If the reading is more than 2 standard deviations away from the grid average, then recalibrate
@@ -932,63 +959,63 @@ func (curNode *NodeImpl) report(rawConc float64) {
 
 	//New condition added: also recalibrate when the node's sensitivity is <= 1/10 of its original sensitvity
 	//New condition added: Check to make sure the sensor was pinged this iteration
-	if ((curNode.Sensitivity <= (curNode.InitialSensitivity / 2))  && curNode.P.Iterations_used != 0) {
-		fmt.Fprintf(curNode.P.DriftExploreFile, "ID: %v T: %v In: %v CUR: %v NT: %v RECAL\n", curNode.Id, curNode.P.CurrentTime, curNode.InitialSensitivity, curNode.Sensitivity, curNode.NodeTime)
-		curNode.Recalibrate()
-		curNode.Recalibrated = true
-		curNode.IncrementNumResets()
+	if ((node.Sensitivity <= (node.InitialSensitivity / 2))  && node.P.Iterations_used != 0) {
+		fmt.Fprintf(node.P.DriftExploreFile, "ID: %v T: %v In: %v CUR: %v NT: %v RECAL\n", node.Id, node.P.CurrentTime, node.InitialSensitivity, node.Sensitivity, node.NodeTime)
+		node.Recalibrate()
+		node.Recalibrated = true
+		node.IncrementNumResets()
 	}
 
 	//printing statements to log files, only if the sensor was pinged this iteration
 	//if curNode.HasCheckedSensor && nodesPrint{
-	if curNode.P.NodesPrint {
-		if curNode.Recalibrated {
-			fmt.Fprintln(curNode.P.NodeFile, "ID:", curNode.GetID(), "Average:", curNode.GetAvg(), "Reading:", rawConc, "Error Reading:", errorDist, "Recalibrated")
+	if node.P.NodesPrint {
+		if node.Recalibrated {
+			fmt.Fprintln(node.P.NodeFile, "ID:", node.GetID(), "Average:", node.GetAvg(), "Reading:", rawConc, "Error Reading:", errorDist, "Recalibrated")
 		} else {
-			fmt.Fprintln(curNode.P.NodeFile, "ID:", curNode.GetID(), "Average:", curNode.GetAvg(), "Reading:", rawConc, "Error Reading:", errorDist)
+			fmt.Fprintln(node.P.NodeFile, "ID:", node.GetID(), "Average:", node.GetAvg(), "Reading:", rawConc, "Error Reading:", errorDist)
 		}
 		//fmt.Fprintln(nodeFile, "battery:", int(curNode.Battery),)
-		curNode.Recalibrated = false
+		node.Recalibrated = false
 	}
 
 
-	inWind := curNode.P.Server.CheckFalsePosWind(curNode)  //true if in sensor area
-	inRange := float64(d*2) < curNode.P.DetectionDistance      //true = out
-	highConcentration := ADCClean > curNode.P.DetectionThreshold //true reading of the sensor
-	highSensor := ADCRead > curNode.P.DetectionThreshold //error model influenced reading of the sensor
+	inWind := node.P.Server.CheckFalsePosWind(node)           //true if in sensor area
+	inRange := float64(d*2) < node.P.DetectionDistance        //true = out
+	highConcentration := ADCClean > node.P.DetectionThreshold //true reading of the sensor
+	highSensor := ADCRead > node.P.DetectionThreshold         //error model influenced reading of the sensor
 
 	tp := false
 
 	if inRange && highConcentration && highSensor {
-		fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("TP T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, rawConc))
+		fmt.Fprintln(node.P.DetectionFile, fmt.Sprintf("TP T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", node.P.CurrentTime, node.Id, node.X, node.Y, d, ADCClean, ADCRead, sError, node.Sensitivity, rawConc))
 		tp = true
 	} else if inRange && highConcentration && !highSensor {
-		fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("FN Drift T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, rawConc))
+		fmt.Fprintln(node.P.DetectionFile, fmt.Sprintf("FN Drift T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", node.P.CurrentTime, node.Id, node.X, node.Y, d, ADCClean, ADCRead, sError, node.Sensitivity, rawConc))
 	} else if inRange && !highConcentration && highSensor {
-		fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("FP Drift T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, rawConc))
+		fmt.Fprintln(node.P.DetectionFile, fmt.Sprintf("FP Drift T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", node.P.CurrentTime, node.Id, node.X, node.Y, d, ADCClean, ADCRead, sError, node.Sensitivity, rawConc))
 	} else if inRange && !highConcentration && !highSensor {
-		if inWind == 1 && !curNode.P.CSVSensor {
+		if inWind == 1 && !node.P.CSVSensor {
 			//outside bomb range and the bomb is random , this isn't a real FN
-		} else if inWind == 1 && curNode.P.CSVSensor{
+		} else if inWind == 1 && node.P.CSVSensor{
 			//we are not  in the wind area, and the bomb isn't random, this is a FN due to wind
-			fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("FN Wind T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, rawConc))
-		} else if inWind == 0 && !curNode.P.CSVSensor {
+			fmt.Fprintln(node.P.DetectionFile, fmt.Sprintf("FN Wind T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", node.P.CurrentTime, node.Id, node.X, node.Y, d, ADCClean, ADCRead, sError, node.Sensitivity, rawConc))
+		} else if inWind == 0 && !node.P.CSVSensor {
 			//we are in the wind zone and the bomb is random, we are
 			//therefore inside the detection range but this can't happen as we would ahve a high concentration
-		} else if inWind == 0 && curNode.P.CSVSensor {
+		} else if inWind == 0 && node.P.CSVSensor {
 			//we are in the wind zone and the bomb is random, so it isn't possible to get here....
 			//fmt.Printf("\n %v %v %v %v %v %v\n", curNode.Id, curNode.P.TimeStep, inWind, curNode.P.CSVSensor, highSensor, highConcentration)
-			fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("FN Wind T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, rawConc))
+			fmt.Fprintln(node.P.DetectionFile, fmt.Sprintf("FN Wind T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", node.P.CurrentTime, node.Id, node.X, node.Y, d, ADCClean, ADCRead, sError, node.Sensitivity, rawConc))
 		}
 	} else if !inRange && highConcentration && highSensor {
 		if inWind == 0 {
 			//we are in a wind zone, therefore this FP is caused by wind...not possible to have in a random
-			fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("FP Wind T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, rawConc))
+			fmt.Fprintln(node.P.DetectionFile, fmt.Sprintf("FP Wind T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", node.P.CurrentTime, node.Id, node.X, node.Y, d, ADCClean, ADCRead, sError, node.Sensitivity, rawConc))
 		}
 	} else if !inRange && highConcentration && !highSensor {
-		fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("FN Drift T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, rawConc))
+		fmt.Fprintln(node.P.DetectionFile, fmt.Sprintf("FN Drift T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", node.P.CurrentTime, node.Id, node.X, node.Y, d, ADCClean, ADCRead, sError, node.Sensitivity, rawConc))
 	} else if !inRange && !highConcentration && highSensor {
-		fmt.Fprintln(curNode.P.DetectionFile, fmt.Sprintf("FP Drift T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", curNode.P.CurrentTime, curNode.Id, curNode.X, curNode.Y, d, ADCClean, ADCRead, sError, curNode.Sensitivity, rawConc))
+		fmt.Fprintln(node.P.DetectionFile, fmt.Sprintf("FP Drift T: %v ID: %v (%v, %v) D: %v C: %v E: %v SE: %.3f S: %.3f R: %.3f", node.P.CurrentTime, node.Id, node.X, node.Y, d, ADCClean, ADCRead, sError, node.Sensitivity, rawConc))
 	} else if !inRange && !highConcentration && !highSensor {
 		//true negative
 	}
@@ -1010,8 +1037,8 @@ func (curNode *NodeImpl) report(rawConc float64) {
 	//for that square
 	//Only do this if the sensor was pinged this iteration
 
-	if curNode.Valid {
-		curNode.P.Server.Send(curNode, Reading{ADCRead, newX, newY, curNode.P.CurrentTime, curNode.GetID()}, tp)
+	if node.Valid {
+		node.P.Server.Send(node, Reading{ADCRead, newX, newY, node.P.CurrentTime, node.GetID()}, tp)
 	}
 }
 
@@ -1020,35 +1047,35 @@ func interpolate (start int, end int, portion float32) float32{
 }
 
 //HandleMovementCSV does the same as HandleMovement
-func (curNode *NodeImpl) MoveCSV(p *Params) {
+func (node *NodeImpl) MoveCSV(p *Params) {
 	//time := p.Iterations_used
 	floatTemp := float32(p.CurrentTime)
 	intTime := int(floatTemp/1000)
 	portion := (floatTemp / 1000) - float32(intTime)
 
-	id := curNode.GetID()
+	id := node.GetID()
 
-	if curNode.Valid {
-		oldX, oldY := curNode.GetLoc()
+	if node.Valid {
+		oldX, oldY := node.GetLoc()
 		p.BoolGrid[int(oldX)][int(oldY)] = false //set the old spot false since the node will now move away
 
-		curNode.X = interpolate(p.NodeMovements[id][intTime-p.MovementOffset].X, p.NodeMovements[id][intTime-p.MovementOffset+1].X, portion)
-		curNode.Y = interpolate(p.NodeMovements[id][intTime-p.MovementOffset].Y, p.NodeMovements[id][intTime-p.MovementOffset+1].Y, portion)
+		node.X = interpolate(p.NodeMovements[id][intTime-p.MovementOffset].X, p.NodeMovements[id][intTime-p.MovementOffset+1].X, portion)
+		node.Y = interpolate(p.NodeMovements[id][intTime-p.MovementOffset].Y, p.NodeMovements[id][intTime-p.MovementOffset+1].Y, portion)
 
 		//set the new location in the boolean field to true
-		newX, newY := curNode.GetLoc()
+		newX, newY := node.GetLoc()
 		//fmt.Println(oldX, oldY,newX, newY, curNode.Id, p.CurrentTime,p.NodeMovements[id][intTime].X, p.NodeMovements[id][intTime+1].X)
 
-		if (!curNode.InBounds(p)) {
+		if node.InBounds(p) {
 			//fmt.Println(oldX, oldY,newX, newY, curNode.Id, p.CurrentTime,p.NodeMovements[id][intTime].X, p.NodeMovements[id][intTime+1].X)
-			curNode.Valid = false
+			node.Valid = false
 
 		} else {
 
-			d := curNode.Distance(*curNode.P.B)/2
+			d := node.Distance(*p.B)/2
 			if int(d) < p.MinDistance {
 				p.MinDistance = int(d)
-				fmt.Fprintf(p.DistanceFile, "ID: %v T: %v D: %v\n", curNode.Id, intTime, int(d))
+				fmt.Fprintf(p.DistanceFile, "ID: %v T: %v D: %v\n", node.Id, intTime, int(d))
 			}
 
 			p.BoolGrid[int(newX)][int(newY)] = true
@@ -1056,16 +1083,16 @@ func (curNode *NodeImpl) MoveCSV(p *Params) {
 	}
 
 
-	if !curNode.Valid {
-		curNode.Valid = curNode.TurnValid(p.NodeMovements[id][intTime-p.MovementOffset].X, p.NodeMovements[id][intTime-p.MovementOffset].Y, p)
-		curNode.X = float32(p.NodeMovements[id][intTime-p.MovementOffset].X)
-		curNode.Y = float32(p.NodeMovements[id][intTime-p.MovementOffset].Y)
-		if(curNode.Valid) {
+	if !node.Valid {
+		node.Valid = node.TurnValid(p.NodeMovements[id][intTime-p.MovementOffset].X, p.NodeMovements[id][intTime-p.MovementOffset].Y, p)
+		node.X = float32(p.NodeMovements[id][intTime-p.MovementOffset].X)
+		node.Y = float32(p.NodeMovements[id][intTime-p.MovementOffset].Y)
+		if(node.Valid) {
 			if p.DriftExplorer {
-				curNode.NodeTime = RandomInt(-7000, 0)
+				node.NodeTime = RandomInt(-7000, 0)
 			} else {
 				//curNode.NodeTime = 0
-				curNode.NodeTime = RandomInt(-7000, 0)
+				node.NodeTime = RandomInt(-7000, 0)
 			}
 		}
 	}
@@ -1073,16 +1100,16 @@ func (curNode *NodeImpl) MoveCSV(p *Params) {
 }
 
 //HandleMovement adjusts BoolGrid when nodes move around the map
-func (curNode *NodeImpl) MoveNormal(p *Params) {
+func (node *NodeImpl) MoveNormal(p *Params) {
 
-	oldX, oldY := curNode.GetLoc()
+	oldX, oldY := node.GetLoc()
 	p.BoolGrid[int(oldX)][int(oldY)] = false //set the old spot false since the node will now move away
 
 	//move the node to its new location
-	curNode.Move(p)
+	node.Move(p)
 
 	//set the new location in the boolean field to true
-	newX, newY := curNode.GetLoc()
+	newX, newY := node.GetLoc()
 	p.BoolGrid[int(newX)][int(newY)] = true
 
 
