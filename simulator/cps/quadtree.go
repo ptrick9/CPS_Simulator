@@ -31,11 +31,11 @@ type Bounds struct {
 }
 
 //IsPoint - Checks if a bounds object is a point or not (has no width or height)
-func (b *Bounds) IsPoint() bool {
-
-	return b.Width == 0 && b.Height == 0
-
-}
+//func (b *Bounds) IsPoint() bool {
+//
+//	return b.Width == 0 && b.Height == 0
+//
+//}
 
 // Intersects - Checks if a Bounds object intersects with another Bounds
 func (b *Bounds) Intersects(a Bounds) bool {
@@ -58,9 +58,7 @@ func (qt *Quadtree) NodeMovement(movingNode *NodeImpl) {
 
 	//if moved out in any direction, reinsert in tree
 	if movedDown || movedUp || movedRight || movedLeft {
-		parent := movingNode.CurTree.ParentTree
-		qt.Remove(movingNode)
-		parent.CleanUp()
+		qt.RemoveAndClean(movingNode)
 		qt.Insert(movingNode)
 		//fmt.Printf("INSERT IN TREE: Moving Nodeto (%.4f,%.4f)\n", movingNode.X,movingNode.Y)
 	}
@@ -136,10 +134,10 @@ func (qt *Quadtree) split() {
 	qt.SubTrees[1].Bounds.X, qt.SubTrees[1].Bounds.Y = x, y
 
 	//bottom left node (2)
-	qt.SubTrees[0].Bounds.X, qt.SubTrees[0].Bounds.Y = x, y+subHeight
+	qt.SubTrees[2].Bounds.X, qt.SubTrees[2].Bounds.Y = x, y+subHeight
 
 	//bottom right node (3)
-	qt.SubTrees[0].Bounds.X, qt.SubTrees[0].Bounds.Y = x+subWidth, y+subHeight
+	qt.SubTrees[3].Bounds.X, qt.SubTrees[3].Bounds.Y = x+subWidth, y+subHeight
 
 }
 
@@ -162,6 +160,15 @@ func (qt *Quadtree) getIndex(node NodeImpl) int {
 
 	//pRect can completely fit within the left quadrants
 	//if (pRect.X < verticalMidpoint) && (pRect.X+pRect.Width < verticalMidpoint) {
+	//println("get index:")
+	//print("x: ")
+	//println(int(x))
+	//print("y: ")
+	//println(int(y))
+	//print("vert: ")
+	//println(int(verticalMidpoint))
+	//print("hori: ")
+	//println(int(horizontalMidpoint))
 	if x < verticalMidpoint { //pRect fits within the left quadrants
 
 		if y < horizontalMidpoint {
@@ -187,6 +194,10 @@ func (qt *Quadtree) getIndex(node NodeImpl) int {
 // Insert - Insert the object into the tree. If the tree exceeds its capacity,
 // it will split and add all objects to its corresponding SubTrees.
 func (qt *Quadtree) Insert(node *NodeImpl) {
+	//print("X: ")
+	//println(int(node.X))
+	//print("Y: ")
+	//println(int(node.Y))
 	//pRect.CurTree = qt
 	//qt.Total++
 
@@ -194,13 +205,17 @@ func (qt *Quadtree) Insert(node *NodeImpl) {
 	var index int
 
 	// If we have SubTrees within the Quadtree
+	//print("insert: ")
+	//println(len(qt.SubTrees))
 	if len(qt.SubTrees) > 0 {
 
 		index = qt.getIndex(*node)
 
 		//if index != -1 {
-		node.CurTree = qt.SubTrees[index]
-		node.CurTree.ParentTree = qt
+		//node.CurTree = qt.SubTrees[index]
+		//node.CurTree.ParentTree = qt
+		//print("index: ")
+		//println(index)
 		qt.SubTrees[index].Insert(node)
 		return
 		//}
@@ -209,6 +224,7 @@ func (qt *Quadtree) Insert(node *NodeImpl) {
 	qt.Objects = append(qt.Objects, node)
 
 	// If total objects is greater than max objects and level is less than max levels
+	//println(len(qt.Objects) > qt.MaxObjects)
 	if len(qt.Objects) > qt.MaxObjects && qt.Level < qt.MaxLevels {
 
 		// split if we don't already have SubTrees
@@ -223,10 +239,14 @@ func (qt *Quadtree) Insert(node *NodeImpl) {
 
 			//if index != -1 {
 			splice := qt.Objects[i]                                  // Get the object out of the slice
+			//println(len(qt.Objects))
 			qt.Objects = append(qt.Objects[:i], qt.Objects[i+1:]...) // Remove the object from the slice
+			//println(len(qt.Objects))
+			//print("index: ")
+			//println(index)
 			splice.CurTree = qt.SubTrees[index]
-			splice.CurTree.ParentTree = qt
-			splice.CurTree.Objects = append(splice.CurTree.Objects, splice)
+			//splice.CurTree.ParentTree = qt
+			//splice.CurTree.Objects = append(splice.CurTree.Objects, splice)
 			qt.SubTrees[index].Insert(splice)
 			//} else {
 			//	i++
@@ -317,25 +337,105 @@ func (qt *Quadtree) Clear() {
 
 //PrintTree - Prints the Tree, its SubTrees, and all objects in the subtree in a clean manner
 //			- helps see the hierarchy of the tree
-func (qt *Quadtree) PrintTree(tab string) {
-	var recursiveTab = tab
-	for i := 0; i < len(qt.SubTrees); i++ {
-		fmt.Printf("%sSubtree %d: ", tab, i)
-		if qt.SubTrees != nil && qt.SubTrees[i] != nil {
-			if qt.SubTrees[i].SubTrees != nil {
-				if len(qt.SubTrees[i].SubTrees) > 0 {
-					fmt.Print(qt.SubTrees[i].Bounds)
-					fmt.Print(" ")
-					fmt.Print(qt.SubTrees[i].Objects)
-					fmt.Print()
-					fmt.Print(qt.SubTrees[i].TotalNodes())
-					fmt.Println()
-					recursiveTab = tab + "\t"
-					qt.SubTrees[i].PrintTree(recursiveTab)
-				} else {
-					fmt.Print(qt.SubTrees[i])
-					fmt.Println()
-				}
+//func (qt *Quadtree) PrintTree(tab string) {
+//	var recursiveTab = tab
+//	for i := 0; i < len(qt.SubTrees); i++ {
+//		fmt.Printf("%sSubtree %d: ", tab, i)
+//		if qt.SubTrees != nil && qt.SubTrees[i] != nil {
+//			if qt.SubTrees[i].SubTrees != nil {
+//				if len(qt.SubTrees[i].SubTrees) > 0 {
+//					fmt.Print(qt.SubTrees[i].Bounds)
+//					fmt.Print(" ")
+//					fmt.Print(qt.SubTrees[i].Objects)
+//					fmt.Print()
+//					fmt.Print(qt.SubTrees[i].TotalNodes())
+//					fmt.Println()
+//					recursiveTab = tab + "\t"
+//					qt.SubTrees[i].PrintTree(recursiveTab)
+//				} else {
+//					fmt.Print(qt.SubTrees[i])
+//					fmt.Println()
+//				}
+//			}
+//		}
+//	}
+//}
+
+//PrintTree - Prints a visualization of the tree in the console
+func (qt *Quadtree) PrintTree() {
+	grid := [][]string{}
+
+	top := []string{}
+	bottom := make([]string, int(qt.Bounds.Width))
+	for i := 0; i < int(qt.Bounds.Width); i++ {
+		top = append(top, "-")
+	}
+	copy(bottom, top)
+
+	row := []string{}
+	row = append(row, "|")
+	for i := 1; i < int(qt.Bounds.Width) - 1; i++ {
+		row = append(row, " ")
+	}
+	row = append(row, "|")
+
+	grid = append(grid, top)
+	for i := 1; i < int(qt.Bounds.Height) - 1; i++ {
+		grid = append(grid, make([]string, int(qt.Bounds.Width)))
+		copy(grid[i], row)
+	}
+	grid = append(grid, bottom)
+
+	if len(qt.SubTrees) > 0 {
+		qt.PrintHelper(grid)
+	} else {
+		for _, node := range qt.Objects {
+			grid[int(node.Y)][int(node.X)] = "x"
+		}
+	}
+
+	for i := 0; i < int(qt.Bounds.Height); i++ {
+		for j := 0; j < int(qt.Bounds.Width); j++ {
+			fmt.Print(grid[i][j])
+		}
+		fmt.Println()
+	}
+}
+
+//PrintHelper - Helps PrintTree create the visualization by dealing with SubTrees
+func (qt *Quadtree) PrintHelper(grid [][]string) {
+	xStart := int(qt.Bounds.X)
+	xMid := int(qt.Bounds.X + qt.Bounds.Width/2)
+	xEnd := int(qt.Bounds.X + qt.Bounds.Width)
+	yStart := int(qt.Bounds.Y)
+	yMid := int(qt.Bounds.Y + qt.Bounds.Height/2)
+	yEnd := int(qt.Bounds.Y + qt.Bounds.Height)
+	//print("xStart: ")
+	//println(xStart)
+	//print("xMid: ")
+	//println(xMid)
+	//print("xEnd: ")
+	//println(xEnd)
+	//print("yStart: ")
+	//println(yStart)
+	//print("yMid: ")
+	//println(yMid)
+	//print("yEnd: ")
+	//println(yEnd)
+	for i := yStart + 1; i < yEnd; i++ {
+		grid[i][xMid] = "|"
+	}
+
+	for i := xStart; i < xEnd; i++ {
+		grid[yMid][i] = "-"
+	}
+
+	for _, st := range qt.SubTrees {
+		if len(st.SubTrees) > 0 {
+			st.PrintHelper(grid)
+		} else {
+			for _, node := range st.Objects {
+				grid[int(node.Y)][int(node.X)] = "x"
 			}
 		}
 	}
@@ -389,6 +489,14 @@ func (qt * Quadtree) CleanUp(){
 
 }
 
+//Removes a node from the tree and cleans the tree
+func (qt * Quadtree) RemoveAndClean(node *NodeImpl){
+	parent := node.CurTree.ParentTree
+	qt.Remove(node)
+	parent.CleanUp()
+}
+
+//BringNodesUp - Brings nodes from SubTrees of qt to qt's Objects array
 func (qt *Quadtree) BringNodesUp() {
 
 	for i := 0; i < len(qt.SubTrees); i++ {

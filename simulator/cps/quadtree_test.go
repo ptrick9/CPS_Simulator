@@ -22,7 +22,82 @@ func TestBounds_Intersects(t *testing.T) {
 		args   args
 		want   bool
 	}{
-		// TODO: Add test cases.
+		{"",
+			fields {
+			250.0,
+			250.0,
+			500.0,
+			500.0,
+			nil,
+			},
+		args {
+			Bounds {
+				50.0,
+				50.0,
+				300.0,
+				300.0,
+				nil,
+			},
+		},
+		true,
+		},
+		{"",
+			fields {
+				250.0,
+				250.0,
+				500.0,
+				500.0,
+				nil,
+			},
+			args {
+				Bounds {
+					50.0,
+					50.0,
+					300.0,
+					199.0,
+					nil,
+				},
+			},
+			false,
+		},
+		{"",
+			fields {
+				250.0,
+				250.0,
+				500.0,
+				500.0,
+				nil,
+			},
+			args {
+				Bounds {
+					50.0,
+					50.0,
+					300.0,
+					199.0,
+					nil,
+				},
+			},
+			false,
+		},
+		{"",
+			fields{
+				250.0,
+				250.0,
+				500.0,
+				500.0,
+				nil,
+			},
+			args{
+				Bounds{
+					50.0,
+					50.0,
+					201.0,
+					201.0,
+					nil,
+				},
+			},
+			true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -40,37 +115,6 @@ func TestBounds_Intersects(t *testing.T) {
 	}
 }
 
-func TestBounds_IsPoint(t *testing.T) {
-	type fields struct {
-		X       float64
-		Y       float64
-		Width   float64
-		Height  float64
-		CurTree *Quadtree
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		want   bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			b := &Bounds{
-				X:       tt.fields.X,
-				Y:       tt.fields.Y,
-				Width:   tt.fields.Width,
-				Height:  tt.fields.Height,
-				CurTree: tt.fields.CurTree,
-			}
-			if got := b.IsPoint(); got != tt.want {
-				t.Errorf("IsPoint() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
 func TestGetSearchBounds(t *testing.T) {
 	type args struct {
 		node   *NodeImpl
@@ -81,7 +125,40 @@ func TestGetSearchBounds(t *testing.T) {
 		args args
 		want Bounds
 	}{
-		// TODO: Add test cases.
+		{
+			"",
+			args {
+				&NodeImpl {
+					X: 5,
+					Y: 5,
+				},
+				2,
+			},
+			Bounds {
+				3,
+				3,
+				4,
+				4,
+				nil,
+			},
+		},
+		{
+			"",
+			args {
+				&NodeImpl {
+					X: 20,
+					Y: 300,
+				},
+				15,
+			},
+			Bounds {
+				5,
+				285,
+				30,
+				30,
+				nil,
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -92,7 +169,61 @@ func TestGetSearchBounds(t *testing.T) {
 	}
 }
 
-func TestQuadtree_BringNodesUp(t *testing.T) {
+func TestQuadtree_PrintTree (t *testing.T) {
+	top := Quadtree {
+		Bounds {
+			X: 0,
+			Y: 0,
+			Width: 100,
+			Height: 100,
+		},
+		1,
+		50,
+		0,
+		[]*NodeImpl{},
+		nil,
+		[]*Quadtree{},
+	}
+
+	top.Insert(&NodeImpl{
+		X: 20,
+		Y: 2,
+	})
+
+	top.Insert(&NodeImpl{
+		X: 55,
+		Y: 5,
+	})
+
+	top.Insert(&NodeImpl{
+		X: 27,
+		Y: 5,
+	})
+
+	top.Insert(&NodeImpl{
+		X: 55,
+		Y: 60,
+	})
+
+	top.Insert(&NodeImpl{
+		X: 40,
+		Y: 2,
+	})
+
+	top.Insert(&NodeImpl{
+		X: 40,
+		Y: 15,
+	})
+
+	top.Insert(&NodeImpl{
+		X: 40,
+		Y: 20,
+	})
+
+	top.PrintTree()
+}
+
+/*func TestQuadtree_BringNodesUp(t *testing.T) {
 	type fields struct {
 		Bounds     Bounds
 		MaxObjects int
@@ -123,7 +254,7 @@ func TestQuadtree_BringNodesUp(t *testing.T) {
 	}
 }
 
-func TestQuadtree_CleanUp(t *testing.T) {
+/*func TestQuadtree_CleanUp(t *testing.T) {
 	type fields struct {
 		Bounds     Bounds
 		MaxObjects int
@@ -509,4 +640,4 @@ func TestQuadtree_split(t *testing.T) {
 			}
 		})
 	}
-}
+}*/

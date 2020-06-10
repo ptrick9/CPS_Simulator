@@ -363,51 +363,51 @@ func (adhoc * AdHocNetwork) FinalizeClusters(p * Params){
 
 
 	//Finds viable options for singular nodes (join another cluster or form own)
-	for i:=0; i<len(adhoc.SingularNodes); i++{
-		if adhoc.SingularNodes[i].IsClusterHead {
-			adhoc.FormClusters(adhoc.SingularNodes[i])
-		} else if !adhoc.SingularNodes[i].IsClusterMember {
-			viableOptions := adhoc.SortClusterHeads(adhoc.SingularNodes[i],p.NodeBTRange)
-
-			k := 0
-			joined := false
-			atj := []*NodeImpl{}
-			for !joined && k<len(viableOptions){
-				//fmt.Printf("\tViableOption Total: %d\n",viableOptions[0].NodeClusterParams.CurrentCluster.Total)
-				if viableOptions[k].NodeClusterParams.CurrentCluster.Total < p.ClusterThreshold {
-					clusterHead := viableOptions[k]
-
-					clusterHead.NodeClusterParams.CurrentCluster.ClusterMembers = append(clusterHead.NodeClusterParams.CurrentCluster.ClusterMembers, adhoc.SingularNodes[i])
-					clusterHead.NodeClusterParams.CurrentCluster.Total++
-
-					adhoc.SingularNodes[i].IsClusterMember = true
-					adhoc.SingularNodes[i].NodeClusterParams.CurrentCluster = clusterHead.NodeClusterParams.CurrentCluster
-					joined = true
-
-					//adhoc.SingularNodes[i].DecrementPowerBT()
-					//clusterHead.DecrementPowerBT()
-				} else{
-					atj = append(atj, viableOptions[k])
-				}
-				k++
-			}
-			if k==len(viableOptions) {
-				adhoc.SingularNodes[i].NodeClusterParams.CurrentCluster = &Cluster{}
-				adhoc.SingularNodes[i].NodeClusterParams.CurrentCluster.ClusterHead = adhoc.SingularNodes[i]
-				adhoc.SingularNodes[i].NodeClusterParams.CurrentCluster.Total = 0
-				adhoc.SingularNodes[i].NodeClusterParams.CurrentCluster.ClusterMembers = []*NodeImpl{}
-				adhoc.SingularNodes[i].NodeClusterParams.CurrentCluster.ClusterNetwork = adhoc
-				adhoc.SingularNodes[i].IsClusterHead = true
-				adhoc.SingularNodes[i].IsClusterMember = false
-
-				adhoc.ClusterHeads = append(adhoc.ClusterHeads, adhoc.SingularNodes[i])
-				adhoc.TotalHeads++
-				adhoc.SingularNodes[i].NodeClusterParams.AttemptedToJoin = append(adhoc.SingularNodes[i].NodeClusterParams.AttemptedToJoin, atj...)
-
-				//adhoc.SingularNodes[i].DecrementPowerBT()
-			}
-		}
-	}
+	//for i:=0; i<len(adhoc.SingularNodes); i++{
+	//	if adhoc.SingularNodes[i].IsClusterHead {
+	//		adhoc.FormClusters(adhoc.SingularNodes[i])
+	//	} else if !adhoc.SingularNodes[i].IsClusterMember {
+	//		viableOptions := adhoc.SortClusterHeads(adhoc.SingularNodes[i],p.NodeBTRange)
+	//
+	//		k := 0
+	//		joined := false
+	//		atj := []*NodeImpl{}
+	//		for !joined && k<len(viableOptions){
+	//			//fmt.Printf("\tViableOption Total: %d\n",viableOptions[0].NodeClusterParams.CurrentCluster.Total)
+	//			if viableOptions[k].NodeClusterParams.CurrentCluster.Total < p.ClusterThreshold {
+	//				clusterHead := viableOptions[k]
+	//
+	//				clusterHead.NodeClusterParams.CurrentCluster.ClusterMembers = append(clusterHead.NodeClusterParams.CurrentCluster.ClusterMembers, adhoc.SingularNodes[i])
+	//				clusterHead.NodeClusterParams.CurrentCluster.Total++
+	//
+	//				adhoc.SingularNodes[i].IsClusterMember = true
+	//				adhoc.SingularNodes[i].NodeClusterParams.CurrentCluster = clusterHead.NodeClusterParams.CurrentCluster
+	//				joined = true
+	//
+	//				//adhoc.SingularNodes[i].DecrementPowerBT()
+	//				//clusterHead.DecrementPowerBT()
+	//			} else{
+	//				atj = append(atj, viableOptions[k])
+	//			}
+	//			k++
+	//		}
+	//		if k==len(viableOptions) {
+	//			adhoc.SingularNodes[i].NodeClusterParams.CurrentCluster = &Cluster{}
+	//			adhoc.SingularNodes[i].NodeClusterParams.CurrentCluster.ClusterHead = adhoc.SingularNodes[i]
+	//			adhoc.SingularNodes[i].NodeClusterParams.CurrentCluster.Total = 0
+	//			adhoc.SingularNodes[i].NodeClusterParams.CurrentCluster.ClusterMembers = []*NodeImpl{}
+	//			adhoc.SingularNodes[i].NodeClusterParams.CurrentCluster.ClusterNetwork = adhoc
+	//			adhoc.SingularNodes[i].IsClusterHead = true
+	//			adhoc.SingularNodes[i].IsClusterMember = false
+	//
+	//			adhoc.ClusterHeads = append(adhoc.ClusterHeads, adhoc.SingularNodes[i])
+	//			adhoc.TotalHeads++
+	//			adhoc.SingularNodes[i].NodeClusterParams.AttemptedToJoin = append(adhoc.SingularNodes[i].NodeClusterParams.AttemptedToJoin, atj...)
+	//
+	//			//adhoc.SingularNodes[i].DecrementPowerBT()
+	//		}
+	//	}
+	//}
 
 	//If no longer a singular node remove from array and decrease count
 	for i:=0; i<len(adhoc.SingularNodes); i++{
