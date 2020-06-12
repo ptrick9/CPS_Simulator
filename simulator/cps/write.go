@@ -337,6 +337,9 @@ func HandleMovement(p *Params) {
 		newX, newY := p.NodeList[j].GetLoc()
 		p.BoolGrid[int(newX)][int(newY)] = true
 
+		//sync the QuadTree
+		p.NodeTree.NodeMovement(p.NodeList[j])
+
 		//writes the node information to the file
 		if p.EnergyPrint {
 			fmt.Fprintln(p.EnergyFile, p.NodeList[j])
@@ -367,6 +370,9 @@ func HandleMovementCSV(p *Params) {
 
 		//set the new location in the boolean field to true
 		newX, newY := p.NodeList[j].GetLoc()
+
+		//sync the QuadTree
+		p.NodeTree.NodeMovement(p.NodeList[j])
 
 		if p.NodeList[j].InBounds(p) {
 			p.NodeList[j].Valid = true
@@ -422,6 +428,17 @@ func InitializeNodeParameters(p *Params, nodeNum int) *NodeImpl{
 	curNode.InitialSensitivity = s0 + (s1)*math.Exp(-float64(curNode.NodeTime)/p.Tau1) + (s2)*math.Exp(-float64(curNode.NodeTime)/p.Tau2)
 	curNode.Sensitivity = curNode.InitialSensitivity
 
+	curNode.MovementModifier = 0.5
+	curNode.SensorModifier = 0.5
+	curNode.LastAccel = 0
+	curNode.LastReading = 0
+
+	curNode.BatteryPercent = 75.0
+	curNode.SampleRateSensor = 0.05
+	curNode.SampleRateBattery = 0.05
+
+	curNode.LastNSampleRates = make([]float64, 0)
+
 	return &curNode
 }
 
@@ -442,6 +459,31 @@ func SetupCSVNodes(p *Params) {
 
 		p.NodeList = append(p.NodeList, newNode)
 		p.CurrentNodes += 1
+
+		newNode.ScheduledEvent = &Event{newNode,SENSE,0,0}
+		p.Events.Push(&Event{newNode,MOVE,0,0})
+		p.Events.Push(newNode.ScheduledEvent)
+		p.Events.Push(&Event{newNode, ScheduleSensor, 0, 0})
+
+		if(p.ClusteringOn){
+			newNode.IsClusterHead = false
+			newNode.IsClusterMember = false
+			newNode.NodeClusterParams = &ClusterMemberParams{}
+			p.Events.Push(&Event{newNode,CLUSTERMSG,10,0})
+			p.Events.Push(&Event{newNode,CLUSTERHEADELECT,15,0})
+			p.Events.Push(&Event{newNode,CLUSTERFORM,20,0})
+			p.ClusterNetwork.ClearClusterParams(newNode)
+			newNode.TimeLastSentReadings = p.CurrentTime
+			newNode.ReadingsBuffer = []Reading{}
+			newNode.CHPenalty = 1.0 //initialized to 1
+		}
+
+		newNode.AccelerometerSpeed = []float32{}
+		newNode.TimeLastAccel = p.CurrentTime
+		newNode.LastMoveTime = p.CurrentTime
+
+		p.NodeTree.Insert(p.NodeList[len(p.NodeList)-1])
+
 		p.Events.Push(&Event{newNode, SENSE, 0, 0})
 		p.Events.Push(&Event{newNode, MOVE, 0, 0})
 
@@ -1436,6 +1478,11 @@ func GetFlags(p *Params) {
 	flag.Float64Var(&p.NaturalLossCM, "naturalLoss", .005,
 		"battery loss due to natural causes")
 
+	//flag.IntVar(&p.CMSensingTime, "cmSensingTime,",2, "seconds a cluster member will sense/record readings before sending to cluster head")
+	//flag.IntVar(&p.CHSensingTime, "chSensingTime,",4, "seconds a cluster head will sense//collect from CM/record readings before sending to server")
+	//flag.IntVar(&p.MaxCMReadingBufferSize, "maxCMReadingBufferSize,",10, "max readings buffer size of a cluster member. CM must send to CH when buffer is this size")
+	//flag.IntVar(&p.MaxCHReadingBufferSize, "maxCHReadingBufferSize,",100, "max readings buffer size of a cluster head. CH must send to server when buffer is this size")
+
 
 	flag.Float64Var(&p.SamplingLossSensorCM, "sensorSamplingLoss", .001,
 		"battery loss due to sensor sampling")
@@ -1690,6 +1737,10 @@ func WriteFlags(p * Params){
 	buf.WriteString(fmt.Sprintf("clusterThresh=%v\n", p.ClusterThreshold))
 	buf.WriteString(fmt.Sprintf("nodeBTRange=%v\n", p.NodeBTRange))
 	buf.WriteString(fmt.Sprintf("clusteringOn=%v\n",p.ClusteringOn))
+	//buf.WriteString(fmt.Sprintf("cmSensingTime=%v\n",p.CMSensingTime))
+	//buf.WriteString(fmt.Sprintf("chSensingTime=%v\n",p.CHSensingTime))
+	//buf.WriteString(fmt.Sprintf("maxCMReadingBufferSize=%v\n",p.MaxCMReadingBufferSize))
+	//buf.WriteString(fmt.Sprintf("maxCHReadingBufferSize=%v\n",p.MaxCHReadingBufferSize))
 	fmt.Fprintf(p.RunParamFile,buf.String())
 }
 
