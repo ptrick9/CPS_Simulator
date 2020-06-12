@@ -91,6 +91,14 @@ type Params struct {
 	ZipFiles 		bool
 	Files 			[]string
 	NodeDataFile   *os.File
+	ClusterFile	   *os.File
+	ClusterStatsFile *os.File
+	ClusterDebug	*os.File
+	ClusterReadings *os.File
+	ClusterMessages *os.File
+	AliveValidNodes	*os.File
+	SamplingData    *os.File
+	SampleRates     *os.File
 
 	SensorPath  string
 	FineSensorPath  string
@@ -208,6 +216,12 @@ type Params struct {
 	FineHeight		int
 	FineScale		int
 	Scale 			int
+
+	NodeTree				* Quadtree
+	ClusterNetwork			* AdHocNetwork
+	NodeBTRange				float64
+	ClusterThreshold		int
+	ClusteringOn			bool
 
 	DriftExplorer 	bool
 	NumNodeMovements 	int

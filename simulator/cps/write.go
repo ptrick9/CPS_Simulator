@@ -1580,6 +1580,10 @@ func GetFlags(p *Params) {
 
 	flag.BoolVar(&p.RegionRouting, "regionRouting", true, "True if you want to use the new routing algorithm with regions and cutting")
 
+	flag.BoolVar(&p.ClusteringOn,"clusteringOn",true,"True: nodes will form clusters, False: no clusters will form")
+	flag.IntVar(&p.ClusterThreshold, "clusterThresh,",8, "max size of a node cluster")
+	flag.Float64Var(&p.NodeBTRange, "nodeBTRange",20.0,"bluetooth range of each node")
+
 	flag.StringVar(&p.WindRegionPath, "windRegionPath", "hull_testing.txt", "File containing regions formed by wind")
 
 	flag.BoolVar(&p.DriftExplorer, "driftExplorer", false, "True if you want to JUST examine sensor drifting")
@@ -1683,6 +1687,9 @@ func WriteFlags(p * Params){
 	buf.WriteString(fmt.Sprintf("totalNodes=%v\n", p.TotalNodes))
 	buf.WriteString(fmt.Sprintf("validaitonType=%v\n", p.ValidationType))
 	buf.WriteString(fmt.Sprintf("recalReject=%v\n", p.RecalReject))
+	buf.WriteString(fmt.Sprintf("clusterThresh=%v\n", p.ClusterThreshold))
+	buf.WriteString(fmt.Sprintf("nodeBTRange=%v\n", p.NodeBTRange))
+	buf.WriteString(fmt.Sprintf("clusteringOn=%v\n",p.ClusteringOn))
 	fmt.Fprintf(p.RunParamFile,buf.String())
 }
 
