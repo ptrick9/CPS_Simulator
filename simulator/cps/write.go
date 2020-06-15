@@ -464,10 +464,10 @@ func SetupCSVNodes(p *Params) {
 		p.NodeList = append(p.NodeList, newNode)
 		p.CurrentNodes += 1
 
-		newNode.ScheduledEvent = &Event{newNode,SENSE,0,0}
-		p.Events.Push(&Event{newNode,MOVE,0,0})
-		p.Events.Push(newNode.ScheduledEvent)
-		p.Events.Push(&Event{newNode, ScheduleSensor, 0, 0})
+		//newNode.ScheduledEvent = &Event{newNode,SENSE,0,0}
+		//p.Events.Push(&Event{newNode,MOVE,0,0})
+		//p.Events.Push(newNode.ScheduledEvent)
+		//p.Events.Push(&Event{newNode, ScheduleSensor, 0, 0})
 
 		if p.ClusteringOn {
 			newNode.IsClusterHead = false
@@ -487,7 +487,7 @@ func SetupCSVNodes(p *Params) {
 		newNode.LastMoveTime = p.CurrentTime
 
 		if p.ClusteringOn {
-			p.NodeTree.Insert(p.NodeList[len(p.NodeList)-1])
+			p.NodeTree.Insert(newNode)
 		}
 
 		p.Events.Push(&Event{newNode, SENSE, 0, 0})

@@ -229,12 +229,7 @@ func (node *NodeImpl) Col(div int) int {
 }
 
 func (node *NodeImpl) InBounds(p *Params) bool {
-	if int(node.X) < p.Width && int(node.X) >= 0 {
-		if int(node.Y) < p.Height && node.Y >= 0 {
-			return true
-		}
-	}
-	return false
+	return int(node.X) < p.Width && int(node.X) >= 0 && int(node.Y) < p.Height && node.Y >= 0
 }
 
 func (node *NodeImpl) TurnValid(x, y int, p *Params) bool {
@@ -1066,9 +1061,12 @@ func (node *NodeImpl) MoveCSV(p *Params) {
 		newX, newY := node.GetLoc()
 		//fmt.Println(oldX, oldY,newX, newY, curNode.Id, p.CurrentTime,p.NodeMovements[id][intTime].X, p.NodeMovements[id][intTime+1].X)
 
-		if node.InBounds(p) {
+		if !node.InBounds(p) {
 			//fmt.Println(oldX, oldY,newX, newY, curNode.Id, p.CurrentTime,p.NodeMovements[id][intTime].X, p.NodeMovements[id][intTime+1].X)
 			node.Valid = false
+			if p.ClusteringOn {
+				p.NodeTree.RemoveAndClean(node)
+			}
 
 		} else {
 
@@ -1079,6 +1077,11 @@ func (node *NodeImpl) MoveCSV(p *Params) {
 			}
 
 			p.BoolGrid[int(newX)][int(newY)] = true
+
+			//sync the QuadTree
+			if p.ClusteringOn {
+				p.NodeTree.NodeMovement(node)
+			}
 		}
 	}
 

@@ -2,6 +2,7 @@ package cps
 
 import (
 	"fmt"
+	"strconv"
 )
 
 // Quadtree - The quadtree data structure
@@ -389,7 +390,11 @@ func (qt *Quadtree) PrintTree() {
 		qt.PrintHelper(grid)
 	} else {
 		for _, node := range qt.Objects {
-			grid[int(node.Y)][int(node.X)] = "x"
+			if node.NodeClusterParams != nil && node.NodeClusterParams.CurrentCluster != nil {
+				grid[int(node.Y)][int(node.X)] = strconv.Itoa(node.NodeClusterParams.CurrentCluster.ClusterNum)
+			} else {
+				grid[int(node.Y)][int(node.X)] = "x"
+			}
 		}
 	}
 
@@ -434,7 +439,11 @@ func (qt *Quadtree) PrintHelper(grid [][]string) {
 			st.PrintHelper(grid)
 		} else {
 			for _, node := range st.Objects {
-				grid[int(node.Y)][int(node.X)] = "x"
+				if node.NodeClusterParams != nil && node.NodeClusterParams.CurrentCluster != nil {
+					grid[int(node.Y)][int(node.X)] = strconv.Itoa(node.NodeClusterParams.CurrentCluster.ClusterNum)
+				} else {
+					grid[int(node.Y)][int(node.X)] = "x"
+				}
 			}
 		}
 	}
@@ -524,14 +533,16 @@ func GetSearchBounds(node *NodeImpl, radius float64) Bounds {
 }
 
 //Traverses the tree finding all points that intersect with the searchBounds and also are within in a radius distance of center point
-func (qt *Quadtree) WithinRadius(radius float64, center *NodeImpl, searchBounds Bounds, withinDist []*NodeImpl) []*NodeImpl {
+func (qt *Quadtree) WithinRadius(radius float64, center *NodeImpl, withinDist []*NodeImpl) []*NodeImpl {
+
+	searchBounds := GetSearchBounds(center, radius)
 
 	//First traverse through subtrees. If there are any subtrees there are no objects to check in the current tree
 	if qt.SubTrees != nil && len(qt.SubTrees) > 0 {
 		for i := 0; i < len(qt.SubTrees); i++ {
 			//Only move down a level if the tree bounds intersect with the search bounds
 			if qt.SubTrees[i].Bounds.Intersects(searchBounds) {
-				withinDist = qt.SubTrees[i].WithinRadius(radius, center, searchBounds, withinDist)
+				withinDist = qt.SubTrees[i].WithinRadius(radius, center, withinDist)
 			}
 		}
 		//Traverse objects in the subtree.

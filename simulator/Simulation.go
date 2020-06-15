@@ -281,8 +281,8 @@ func main() {
 	p.GridPrint = p.GridPrintCM
 	p.EnergyPrint = p.EnergyPrintCM
 	p.NodesPrint = p.NodesPrintCM
-	p.SquareRowCM = p.SquareRowCM
-	p.SquareColCM = p.SquareColCM
+	//p.SquareRowCM = p.SquareRowCM
+	//p.SquareColCM = p.SquareColCM
 	p.MinDistance = 1000
 
 	//Initializers
@@ -322,8 +322,8 @@ func main() {
 			Width:  float64(p.MaxX),
 			Height: float64(p.MaxY),
 		},
-		MaxObjects: 4,
-		MaxLevels:  4,
+		MaxObjects: 1,
+		MaxLevels:  100,
 		Level:      0,
 		Objects:    make([]*cps.NodeImpl, 0),
 		ParentTree: nil,
@@ -423,13 +423,13 @@ func main() {
 		if event.Node != nil {
 			if event.Instruction == cps.SENSE {
 
-				if p.CurrentTime/1000 < p.NumNodeMovements-5 {
-					if p.CSVMovement {
-						event.Node.MoveCSV(p)
-					} else {
-						event.Node.MoveNormal(p)
-					}
-				}
+				//if p.CurrentTime/1000 < p.NumNodeMovements-5 {
+				//	if p.CSVMovement {
+				//		event.Node.MoveCSV(p)
+				//	} else {
+				//		event.Node.MoveNormal(p)
+				//	}
+				//}
 				if p.DriftExplorer { //no sensor csv, just checking FP
 					event.Node.GetSensor()
 				} else {
@@ -446,7 +446,7 @@ func main() {
 				}
 
 				//if(p.CurrentTime/1000 <= 100){
-				p.Events.Push(&cps.Event{event.Node, cps.MOVE, p.CurrentTime + 100, 0})
+				//p.Events.Push(&cps.Event{event.Node, cps.MOVE, p.CurrentTime + 100, 0})
 				//}
 				//}
 
@@ -458,14 +458,14 @@ func main() {
 					p.Events.Push(&cps.Event{event.Node, cps.CLUSTERMSG, p.CurrentTime + 1000, 0})
 				}
 			} else if event.Instruction == cps.MOVE {
-				//if p.CSVMovement {
-				//	event.Node.MoveCSV(p)
-				//} else {
-				//	event.Node.MoveNormal(p)
-				//}
-				//if p.CurrentTime/1000 < p.NumNodeMovements-5 {
-				//	p.Events.Push(&cps.Event{event.Node, cps.MOVE, p.CurrentTime + 100, 0})
-				//}
+				if p.CSVMovement {
+					event.Node.MoveCSV(p)
+				} else {
+					event.Node.MoveNormal(p)
+				}
+				if p.CurrentTime/1000 < p.NumNodeMovements-5 {
+					p.Events.Push(&cps.Event{event.Node, cps.MOVE, p.CurrentTime + 100, 0})
+				}
 			} else if event.Instruction == cps.CLUSTERHEADELECT {
 				if event.Node.Battery > p.ThreshHoldBatteryToHave {
 					if event.Node.Valid {
