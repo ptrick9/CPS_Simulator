@@ -1087,7 +1087,7 @@ func (node *NodeImpl) MoveCSV(p *Params) {
 		node.Valid = node.TurnValid(p.NodeMovements[id][intTime-p.MovementOffset].X, p.NodeMovements[id][intTime-p.MovementOffset].Y, p)
 		node.X = float32(p.NodeMovements[id][intTime-p.MovementOffset].X)
 		node.Y = float32(p.NodeMovements[id][intTime-p.MovementOffset].Y)
-		if(node.Valid) {
+		if node.Valid {
 			if p.DriftExplorer {
 				node.NodeTime = RandomInt(-7000, 0)
 			} else {

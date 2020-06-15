@@ -407,10 +407,10 @@ func main() {
 	p.Events.Push(&cps.Event{nil, cps.CLEANUPREADINGS, (p.ReadingHistorySize + 1) * 1000, 0})
 	//p.Events.Push(&cps.Event{nil, cps.VALIDNODES, 999, 0})
 	p.Events.Push(&cps.Event{nil, cps.LOADMOVE, (p.MovementSize - 2) * 1000, 0})
-	p.Events.Push(&cps.Event{nil, cps.CLUSTERPRINT, 999, 0})
 	p.Events.Push(&cps.Event{nil, cps.CLEANUPREADINGS, (p.ReadingHistorySize + 1) * 1000, 0})
 	p.Events.Push(&cps.Event{nil, cps.SERVERSTATS, 1000, 0})
 	if p.ClusteringOn {
+		p.Events.Push(&cps.Event{nil, cps.CLUSTERPRINT, 999, 0})
 		p.Events.Push(&cps.Event{nil, cps.CLUSTERLESSFORM, 25, 0})
 	}
 
@@ -429,24 +429,6 @@ func main() {
 					} else {
 						event.Node.MoveNormal(p)
 					}
-
-					if event.Node.Valid {
-						//p.ClusterNetwork.ClearClusterParams(event.Node)
-						event.Node.DecrementPowerGPS()
-					}
-
-					//if(p.CurrentTime/1000 <= 100){
-					p.Events.Push(&cps.Event{event.Node, cps.MOVE, p.CurrentTime + 100, 0})
-					//}
-					//}
-
-				} else if event.Instruction == cps.CLUSTERMSG {
-					if event.Node.Battery > p.ThreshHoldBatteryToHave {
-						if event.Node.Valid {
-							p.ClusterNetwork.SendHelloMessage(p.NodeBTRange, event.Node, p.NodeTree)
-						}
-						p.Events.Push(&cps.Event{event.Node, cps.CLUSTERMSG, p.CurrentTime + 1000, 0})
-					}
 				}
 				if p.DriftExplorer { //no sensor csv, just checking FP
 					event.Node.GetSensor()
@@ -458,15 +440,32 @@ func main() {
 					}
 				}
 
+				if event.Node.Valid {
+					//p.ClusterNetwork.ClearClusterParams(event.Node)
+					event.Node.DecrementPowerGPS()
+				}
+
+				//if(p.CurrentTime/1000 <= 100){
+				p.Events.Push(&cps.Event{event.Node, cps.MOVE, p.CurrentTime + 100, 0})
+				//}
+				//}
+
+			} else if event.Instruction == cps.CLUSTERMSG {
+				if event.Node.Battery > p.ThreshHoldBatteryToHave {
+					if event.Node.Valid {
+						p.ClusterNetwork.SendHelloMessage(p.NodeBTRange, event.Node, p.NodeTree)
+					}
+					p.Events.Push(&cps.Event{event.Node, cps.CLUSTERMSG, p.CurrentTime + 1000, 0})
+				}
 			} else if event.Instruction == cps.MOVE {
-				if p.CSVMovement {
-					event.Node.MoveCSV(p)
-				} else {
-					event.Node.MoveNormal(p)
-				}
-				if p.CurrentTime/1000 < p.NumNodeMovements-5 {
-					p.Events.Push(&cps.Event{event.Node, cps.MOVE, p.CurrentTime + 100, 0})
-				}
+				//if p.CSVMovement {
+				//	event.Node.MoveCSV(p)
+				//} else {
+				//	event.Node.MoveNormal(p)
+				//}
+				//if p.CurrentTime/1000 < p.NumNodeMovements-5 {
+				//	p.Events.Push(&cps.Event{event.Node, cps.MOVE, p.CurrentTime + 100, 0})
+				//}
 			} else if event.Instruction == cps.CLUSTERHEADELECT {
 				if event.Node.Battery > p.ThreshHoldBatteryToHave {
 					if event.Node.Valid {
@@ -566,7 +565,7 @@ func main() {
 				if p.EnergyPrint {
 					var buffer bytes.Buffer
 					for i := 0; i < p.CurrentNodes; i++ {
-						p.NodeList[i].BatteryOverTime[p.CurrentTime/1000] = p.NodeList[i].Battery
+						//p.NodeList[i].BatteryOverTime[p.CurrentTime/1000] = p.NodeList[i].Battery
 						buffer.WriteString(fmt.Sprintf("%v\n", p.NodeList[i]))
 					}
 					fmt.Fprintf(p.EnergyFile, buffer.String())
@@ -869,8 +868,7 @@ func PrintNodeBatteryOverTime(p *cps.Params) {
 	}
 	p.BatteryFile.Sync()
 }
-func
-PrintNodeBatteryOverTimeFast(p *cps.Params) {
+func PrintNodeBatteryOverTimeFast(p *cps.Params) {
 	var buffer bytes.Buffer
 	buffer.WriteString("Time,")
 	for i := range p.NodeList {

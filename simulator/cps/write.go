@@ -338,7 +338,9 @@ func HandleMovement(p *Params) {
 		p.BoolGrid[int(newX)][int(newY)] = true
 
 		//sync the QuadTree
-		p.NodeTree.NodeMovement(p.NodeList[j])
+		if p.ClusteringOn {
+			p.NodeTree.NodeMovement(p.NodeList[j])
+		}
 
 		//writes the node information to the file
 		if p.EnergyPrint {
@@ -372,7 +374,9 @@ func HandleMovementCSV(p *Params) {
 		newX, newY := p.NodeList[j].GetLoc()
 
 		//sync the QuadTree
-		p.NodeTree.NodeMovement(p.NodeList[j])
+		if p.ClusteringOn {
+			p.NodeTree.NodeMovement(p.NodeList[j])
+		}
 
 		if p.NodeList[j].InBounds(p) {
 			p.NodeList[j].Valid = true
@@ -465,7 +469,7 @@ func SetupCSVNodes(p *Params) {
 		p.Events.Push(newNode.ScheduledEvent)
 		p.Events.Push(&Event{newNode, ScheduleSensor, 0, 0})
 
-		if(p.ClusteringOn){
+		if p.ClusteringOn {
 			newNode.IsClusterHead = false
 			newNode.IsClusterMember = false
 			newNode.NodeClusterParams = &ClusterMemberParams{}
@@ -482,7 +486,9 @@ func SetupCSVNodes(p *Params) {
 		newNode.TimeLastAccel = p.CurrentTime
 		newNode.LastMoveTime = p.CurrentTime
 
-		p.NodeTree.Insert(p.NodeList[len(p.NodeList)-1])
+		if p.ClusteringOn {
+			p.NodeTree.Insert(p.NodeList[len(p.NodeList)-1])
+		}
 
 		p.Events.Push(&Event{newNode, SENSE, 0, 0})
 		p.Events.Push(&Event{newNode, MOVE, 0, 0})
