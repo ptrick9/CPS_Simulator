@@ -714,6 +714,12 @@ func SetupFiles(p *Params) {
 	}
 	p.Files = append(p.Files, p.OutputFileNameCM + "-grid.txt")
 
+	p.OutputLog, err = os.Create(p.OutputFileNameCM + "-OutputLog.txt")
+	if err != nil {
+		log.Fatal("Cannot create file", err)
+	}
+	p.Files = append(p.Files, p.OutputFileNameCM + "-OutputLog.txt")
+
 
 	//Write parameters to gridFile
 	p.GridHeight = int(math.Ceil(float64(p.MaxY)/float64(p.SquareRowCM)))
@@ -1566,6 +1572,8 @@ func GetFlags(p *Params) {
 	flag.IntVar(&p.SquareRowCM, "SquareRowCM", 50, "Number of rows of p.Grid squares, 1 through p.MaxX")
 
 	flag.IntVar(&p.SquareColCM, "SquareColCM", 50, "Number of columns of p.Grid squares, 1 through p.MaxY")
+
+	flag.Float64Var(&p.GridScale, "GridScale", 1.0, "Set the scale of square length and width")
 
 
 	flag.StringVar(&p.ImageFileNameCM, "imageFileName", "circle_justWalls_x4.png", "Name of the input text file")

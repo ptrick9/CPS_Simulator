@@ -43,6 +43,7 @@ type Params struct {
 	GridPrintCM                    bool    //This is either true or false for whether to print grid readings to log file
 	SquareRowCM                    int     //This is an int 1 through maxX representing how many rows of squares there are
 	SquareColCM                    int     //This is an int 1 through maxY representing how many columns of squares there are
+	GridScale                      float64 //Size to scale grid by
 	StdDevThresholdCM			   float64 //Detection Threshold based on standard deviations from mean
 	CalibrationThresholdCM		   float64
 	DetectionDistance 			   float64
@@ -88,6 +89,7 @@ type Params struct {
 	RunParamFile   *os.File
 	DriftExploreFile *os.File
 	DistanceFile 	*os.File
+	OutputLog		*os.File
 	ZipFiles 		bool
 	Files 			[]string
 	NodeDataFile   *os.File

@@ -224,7 +224,7 @@ func main() {
 	r = &cps.RegionParams{}
 
 	p.Events = Events
-	p.Server = cps.FusionCenter{p, r, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil}
+	p.Server = cps.FusionCenter{p, r, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil}
 
 	p.Tau1 = 3500
 	p.Tau2 = 9000
@@ -281,10 +281,14 @@ func main() {
 	p.GridPrint = p.GridPrintCM
 	p.EnergyPrint = p.EnergyPrintCM
 	p.NodesPrint = p.NodesPrintCM
-	p.SquareRowCM = p.SquareRowCM
-	p.SquareColCM = p.SquareColCM
-	p.MinDistance = 1000
 
+	if p.SquareRowCM!=p.SquareColCM{     //Checks if square row and square column are equal values
+		err=fmt.Errorf("square row does not equal square column")
+		log.Fatal("Square Row does not equal square column ", err)
+	}
+	p.SquareRowCM = int(float64(p.SquareRowCM)*float64(p.GridScale))
+	p.SquareColCM = int(float64(p.SquareColCM)*float64(p.GridScale))
+	p.MinDistance = 1000
 	//Initializers
 	cps.MakeBoolGrid(p)
 	p.Server.Init()
@@ -292,7 +296,6 @@ func main() {
 	if (p.SuperNodes) {
 		p.Server.MakeSuperNodes()
 	}
-
 	//cps.GenerateRouting(p, r)
 
 	//cps.FlipSquares(p, r)
@@ -494,8 +497,8 @@ func main() {
 					//fmt.Fprintln(p.GridFile, x)
 					p.Events.Push(&cps.Event{nil, cps.GRID, p.CurrentTime + 1000, 0})
 					fmt.Fprint(p.GridFile, "----------------\n")
-					//fmt.Println(p.Grid)
-
+					fmt.Fprintln(p.OutputLog,p.Server.SquareReport)
+					fmt.Fprintln(p.OutputLog,"----------------\n")
 				}
 			} else if event.Instruction == cps.GARBAGECOLLECT {
 				runtime.GC()

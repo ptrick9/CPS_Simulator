@@ -31,6 +31,7 @@ type FusionCenter struct {
 	Validators 		map[int]int //stores validators...id -> time  latest time for id is stored
 	NodeSquares 	map[int]Tuple  //store what square a node is in
 	SquarePop  		map[Tuple][]int //store nodes in square
+	SquareReport    map[int]KeyData //Stores location, time, value, and adcreading of a square
 }
 
 //Init initializes the values for the server
@@ -53,6 +54,7 @@ func (s *FusionCenter) Init(){
 	s.Validators = make(map[int]int)
 	s.NodeSquares = make(map[int]Tuple)
 	s.SquarePop = make(map[Tuple][]int)
+	s.SquareReport= make(map[int]KeyData)
 }
 
 func (s *FusionCenter) MakeNodeData() {
@@ -70,6 +72,12 @@ type Reading struct {
 	YPos      float32
 	Time      int //Time represented by iteration number
 	Id        int //Node Id number
+}
+
+type KeyData struct {
+	X, Y      int
+	Time      int
+	ADCval    int
 }
 
 //Key for dictionary of sensor readings
@@ -520,7 +528,6 @@ func (s *FusionCenter) Send(n *NodeImpl, rd Reading, tp bool) {
 
 	// add node to correct square
 
-
 	recalReject := false
 
 
@@ -571,7 +578,8 @@ func (s *FusionCenter) Send(n *NodeImpl, rd Reading, tp bool) {
 
 	}
 
-
+	s.SquareReport[n.Id]=KeyData {int(rd.Xpos / float32(s.P.XDiv)), int(rd.YPos / float32(s.P.YDiv)), int(s.P.Iterations_used), int(rd.SensorVal)} //Dont need to use checks like we do above since time always changes
+	//Should this be n.ADCread(rd.sensorval) or just sensor val
 	if(s.P.ValidationType == "square") {
 		if rd.SensorVal > s.P.DetectionThreshold {
 			if tile.Avg > float32(s.P.DetectionThreshold) && tile.NumEntry > 2 {
