@@ -335,6 +335,10 @@ func main() {
 		TotalHeads:   0,
 		Threshold:    p.ClusterThreshold,
 		TotalMsgs:    0,
+		NodeTree: 	  p.NodeTree,
+		DegreeWeight: 0.6,
+		BatteryWeight: 0.4,
+		Penalty: 0.7,
 	}
 
 	//This is where the text file reading ends
@@ -410,8 +414,8 @@ func main() {
 	p.Events.Push(&cps.Event{nil, cps.CLEANUPREADINGS, (p.ReadingHistorySize + 1) * 1000, 0})
 	p.Events.Push(&cps.Event{nil, cps.SERVERSTATS, 1000, 0})
 	if p.ClusteringOn {
-		p.Events.Push(&cps.Event{nil, cps.CLUSTERPRINT, 999, 0})
-		p.Events.Push(&cps.Event{nil, cps.CLUSTERLESSFORM, 25, 0})
+		//p.Events.Push(&cps.Event{nil, cps.CLUSTERPRINT, 999, 0})
+		//p.Events.Push(&cps.Event{nil, cps.CLUSTERLESSFORM, 25, 0})
 	}
 
 	p.CurrentTime = 0
@@ -485,7 +489,7 @@ func main() {
 					}
 					p.Events.Push(&cps.Event{event.Node, cps.CLUSTERFORM, p.CurrentTime + 1000, 0})
 				}
-			} else if event.Instruction == cps.ScheduleSensor {
+			//} else if event.Instruction == cps.ScheduleSensor {
 				//if p.AdaptiveSampling {
 				//	event.Node.ScheduleSensing()
 				//	p.Events.Push(&cps.Event{event.Node, cps.ScheduleSensor, p.CurrentTime + 50, 0})

@@ -232,15 +232,8 @@ func (node *NodeImpl) InBounds(p *Params) bool {
 	return int(node.X) < p.Width && int(node.X) >= 0 && int(node.Y) < p.Height && node.Y >= 0
 }
 
-func (node *NodeImpl) TurnValid(x, y int, p *Params) bool {
-	if x < p.Width && x >= 0 {
-		if y < p.Height && y >= 0 {
-			//fmt.Printf("%v valid", curNode.Id)
-			return true
-
-		}
-	}
-	return false
+func (node *NodeImpl) IsValid(x, y int, p *Params) bool {
+	return x < p.Width && x >= 0 && y < p.Height && y >= 0
 }
 
 
@@ -1081,13 +1074,14 @@ func (node *NodeImpl) MoveCSV(p *Params) {
 			//sync the QuadTree
 			if p.ClusteringOn {
 				p.NodeTree.NodeMovement(node)
+				p.ClusterNetwork.ClusterMovement(node, p.NodeBTRange)
 			}
 		}
 	}
 
 
 	if !node.Valid {
-		node.Valid = node.TurnValid(p.NodeMovements[id][intTime-p.MovementOffset].X, p.NodeMovements[id][intTime-p.MovementOffset].Y, p)
+		node.Valid = node.IsValid(p.NodeMovements[id][intTime-p.MovementOffset].X, p.NodeMovements[id][intTime-p.MovementOffset].Y, p)
 		node.X = float32(p.NodeMovements[id][intTime-p.MovementOffset].X)
 		node.Y = float32(p.NodeMovements[id][intTime-p.MovementOffset].Y)
 		if node.Valid {

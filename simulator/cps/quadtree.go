@@ -222,6 +222,7 @@ func (qt *Quadtree) Insert(node *NodeImpl) {
 	}
 	// If we don't have SubTrees within the Quadtree
 	qt.Objects = append(qt.Objects, node)
+	node.CurTree = qt
 
 	// If total objects is greater than max objects and level is less than max levels
 	//println(len(qt.Objects) > qt.MaxObjects)
@@ -363,6 +364,8 @@ func (qt *Quadtree) Clear() {
 
 //PrintTree - Prints a visualization of the tree in the console
 func (qt *Quadtree) PrintTree() {
+	fmt.Println()
+
 	grid := [][]string{}
 
 	top := []string{}
@@ -390,10 +393,12 @@ func (qt *Quadtree) PrintTree() {
 		qt.PrintHelper(grid)
 	} else {
 		for _, node := range qt.Objects {
-			if node.NodeClusterParams != nil && node.NodeClusterParams.CurrentCluster != nil {
-				grid[int(node.Y)][int(node.X)] = strconv.Itoa(node.NodeClusterParams.CurrentCluster.ClusterNum)
-			} else {
-				grid[int(node.Y)][int(node.X)] = "x"
+			if node.Valid {
+				if node.NodeClusterParams != nil && node.NodeClusterParams.CurrentCluster != nil {
+					grid[int(node.Y)][int(node.X)] = strconv.Itoa(node.NodeClusterParams.CurrentCluster.ClusterNum)
+				} else {
+					grid[int(node.Y)][int(node.X)] = "x"
+				}
 			}
 		}
 	}
@@ -439,10 +444,12 @@ func (qt *Quadtree) PrintHelper(grid [][]string) {
 			st.PrintHelper(grid)
 		} else {
 			for _, node := range st.Objects {
-				if node.NodeClusterParams != nil && node.NodeClusterParams.CurrentCluster != nil {
-					grid[int(node.Y)][int(node.X)] = strconv.Itoa(node.NodeClusterParams.CurrentCluster.ClusterNum)
-				} else {
-					grid[int(node.Y)][int(node.X)] = "x"
+				if node.Valid {
+					if node.NodeClusterParams != nil && node.NodeClusterParams.CurrentCluster != nil {
+						grid[int(node.Y)][int(node.X)] = strconv.Itoa(node.NodeClusterParams.CurrentCluster.ClusterNum)
+					} else {
+						grid[int(node.Y)][int(node.X)] = "x"
+					}
 				}
 			}
 		}

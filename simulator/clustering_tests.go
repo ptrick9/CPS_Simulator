@@ -38,8 +38,8 @@ func main() {
 		},
 
 		{
-			X: 40,
-			Y: 2,
+			X: 45,
+			Y: 3,
 		},
 
 		{
@@ -58,22 +58,30 @@ func main() {
 		},
 	}
 
+	//for i := 0; i < 100; i += 5 {
+	//	for j := 0; j < 100; j += 3 {
+	//		nodes = append(nodes, &cps.NodeImpl{X: float32(i), Y: float32(j)})
+	//	}
+	//}
+
+	network := cps.AdHocNetwork{Threshold: 8, NodeTree: &tree, NodeList: []*cps.NodeImpl{}, DegreeWeight: 0.6, BatteryWeight: 0.4, Penalty: 0.7}
+
 	for i, node := range nodes {
 		tree.Insert(node)
+		network.NodeList = append(network.NodeList, node)
 		node.Id = i
 		node.NodeClusterParams = &cps.ClusterMemberParams{RecvMsgs: []*cps.HelloMsg{}}
-		node.IsClusterMember = false
+		//node.IsClusterMember = false
 	}
 
-	network := cps.AdHocNetwork{Threshold: 8}
-
-	for _, node := range nodes {
-		network.SendHelloMessage(8, node, &tree)
-	}
-
-	for _, node := range nodes {
-		network.ElectClusterHead(node)
-	}
+	network.FullRecluster(8)
+	//for _, node := range nodes {
+	//	network.SendHelloMessage(8, node, &tree)
+	//}
+	//
+	//for _, node := range nodes {
+	//	network.ElectClusterHead(node)
+	//}
 
 	//for _, head := range network.ClusterHeads {
 	//	network.FormClusters(head)
@@ -81,5 +89,20 @@ func main() {
 
 	//network.FinalizeClusters()
 
+	tree.PrintTree()
+
+	newNode := cps.NodeImpl{
+		X: 52,
+		Y: 3,
+		NodeClusterParams: &cps.ClusterMemberParams{RecvMsgs: []*cps.HelloMsg{}},
+		//Battery: 4,
+	}
+
+	tree.Insert(&newNode)
+	network.NodeList = append(network.NodeList, &newNode)
+	newNode.Id = 8
+	newNode.NodeClusterParams = &cps.ClusterMemberParams{RecvMsgs: []*cps.HelloMsg{}}
+
+	network.NewNodeHello(8, &newNode, &tree)
 	tree.PrintTree()
 }

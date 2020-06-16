@@ -473,10 +473,12 @@ func SetupCSVNodes(p *Params) {
 			newNode.IsClusterHead = false
 			newNode.IsClusterMember = false
 			newNode.NodeClusterParams = &ClusterMemberParams{}
-			p.Events.Push(&Event{newNode,CLUSTERMSG,10,0})
-			p.Events.Push(&Event{newNode,CLUSTERHEADELECT,15,0})
-			p.Events.Push(&Event{newNode,CLUSTERFORM,20,0})
-			p.ClusterNetwork.ClearClusterParams(newNode)
+			p.NodeTree.Insert(newNode)
+			p.ClusterNetwork.NodeList = append(p.ClusterNetwork.NodeList, newNode)
+			//p.Events.Push(&Event{newNode,CLUSTERMSG,10,0})
+			//p.Events.Push(&Event{newNode,CLUSTERHEADELECT,15,0})
+			//p.Events.Push(&Event{newNode,CLUSTERFORM,20,0})
+			newNode.ClearClusterParams()
 			newNode.TimeLastSentReadings = p.CurrentTime
 			newNode.ReadingsBuffer = []Reading{}
 			newNode.CHPenalty = 1.0 //initialized to 1
@@ -494,6 +496,8 @@ func SetupCSVNodes(p *Params) {
 		p.Events.Push(&Event{newNode, MOVE, 0, 0})
 
 	}
+
+	p.ClusterNetwork.FullRecluster(p.NodeBTRange)
 
 }
 //SetupRandomNodes creates random nodes and appends them to the node list

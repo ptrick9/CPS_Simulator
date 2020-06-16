@@ -25,7 +25,7 @@ const (
 	CLUSTERFORM
 	CLUSTERLESSFORM
 	CLUSTERPRINT
-	ScheduleSensor
+	//ScheduleSensor
 	SERVERSTATS
 
 )
