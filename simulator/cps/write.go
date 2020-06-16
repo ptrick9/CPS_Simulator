@@ -1593,6 +1593,10 @@ func GetFlags(p *Params) {
 
 	flag.BoolVar(&p.RandomBomb, "randomBomb", false, "Toggles random bomb placement")
 	flag.BoolVar(&p.ZipFiles, "zipFiles", false, "Toggles Zipping of output files")
+
+	flag.IntVar(&p.DensityThreshold, "densityThreshold", 10, "Number of nodes to make a square considered dense")
+	flag.IntVar(&p.DensityThresholdRate, "densityThresholdRate", 250, "delay in sense event when nodes are in dense area")
+
 	flag.Parse()
 	fmt.Println("Natural Loss: ", p.NaturalLossCM)
 	fmt.Println("Sensor Sampling Loss: ", p.SamplingLossSensorCM)

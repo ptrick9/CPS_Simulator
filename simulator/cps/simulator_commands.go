@@ -220,4 +220,7 @@ type Params struct {
 
 	ValidationType string
 	RecalReject 	bool
+
+	DensityThreshold int  // number of nodes that must be in a square for it to be considered dense and have the sampling rate decreased
+	DensityThresholdRate int // new time to trigger a sense event
 }
