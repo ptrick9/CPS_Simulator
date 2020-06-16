@@ -1595,7 +1595,8 @@ func GetFlags(p *Params) {
 	flag.BoolVar(&p.ZipFiles, "zipFiles", false, "Toggles Zipping of output files")
 
 	flag.IntVar(&p.DensityThreshold, "densityThreshold", 10, "Number of nodes to make a square considered dense")
-	flag.IntVar(&p.DensityThresholdRate, "densityThresholdRate", 250, "delay in sense event when nodes are in dense area")
+	flag.Float64Var(&p.DensityThresholdScalar, "densityThresholdRate", 1.0, "scales the duration of sampling rate")
+	flag.IntVar(&p.SamplingRateMS,"SamplingRateMS",500,"rate at which nodes sense")
 
 	flag.Parse()
 	fmt.Println("Natural Loss: ", p.NaturalLossCM)

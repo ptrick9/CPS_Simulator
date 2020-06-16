@@ -5,8 +5,8 @@ import (
 )
 
 type Params struct {
-	Events 						   PriorityQueue
-	CurrentTime					   int
+	Events      PriorityQueue
+	CurrentTime int
 
 	NegativeSittingStopThresholdCM int     // This is a negative number for the sitting to be set to when map is reset
 	SittingStopThresholdCM         int     // This is the threshold for the longest Time a node can sit before no longer moving
@@ -222,5 +222,6 @@ type Params struct {
 	RecalReject 	bool
 
 	DensityThreshold int  // number of nodes that must be in a square for it to be considered dense and have the sampling rate decreased
-	DensityThresholdRate int // new time to trigger a sense event
+	DensityThresholdScalar float64 // new time to trigger a sense event
+	SamplingRateMS	 int
 }

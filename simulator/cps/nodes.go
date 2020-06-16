@@ -823,7 +823,10 @@ func (curNode *NodeImpl) GetReadings() {
 		}
 
 	}
+	//curNode.P.Events.Push(&Event{curNode, SENSE, curNode.P.CurrentTime + curNode.P.SamplingRateMS + curNode.P.DensityThresholdRate, 0})
+	//if  curNode.P.DensityThreshold
 	curNode.P.Events.Push(&Event{curNode, SENSE, curNode.P.CurrentTime + 500, 0})
+	//makes next sense at current time + default rate + delay because of threshold
 
 }
 

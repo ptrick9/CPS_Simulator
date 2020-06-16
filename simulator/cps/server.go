@@ -18,19 +18,19 @@ type FusionCenter struct {
 	P *Params
 	R *RegionParams
 
-	TimeBuckets 	[][]Reading //2D array where each sub array is made of the readings at one iteration
-	Mean 			[]float64
-	StdDev 			[]float64
-	Variance 		[]float64
-	Times 			map[int]bool
-	LastRecal		[]int
-	Sch		*Scheduler
-	Readings		map[Key][]Reading
-	CheckedIds		[]int
-	NodeDataList	[]NodeData
-	Validators 		map[int]int //stores validators...id -> time  latest time for id is stored
-	NodeSquares 	map[int]Tuple  //store what square a node is in
-	SquarePop  		map[Tuple][]int //store nodes in square
+	TimeBuckets  [][]Reading //2D array where each sub array is made of the readings at one iteration
+	Mean         []float64
+	StdDev       []float64
+	Variance     []float64
+	Times        map[int]bool
+	LastRecal    []int
+	Sch          *Scheduler
+	Readings     map[Key][]Reading
+	CheckedIds   []int
+	NodeDataList []NodeData
+	Validators   map[int]int     //stores validators...id -> time  latest time for id is stored
+	NodeSquares  map[int]Tuple   //store what square a node is in
+	SquarePop    map[Tuple][]int //store nodes in square
 }
 
 //Init initializes the values for the server
