@@ -333,7 +333,6 @@ func main() {
 	p.ClusterNetwork = &cps.AdHocNetwork{
 		ClusterHeads: []*cps.NodeImpl{},
 		TotalHeads:   0,
-		Threshold:    p.ClusterThreshold,
 		TotalMsgs:    0,
 		NodeTree: 	  p.NodeTree,
 		DegreeWeight: 0.6,
@@ -457,7 +456,7 @@ func main() {
 			} else if event.Instruction == cps.CLUSTERMSG {
 				if event.Node.Battery > p.ThreshHoldBatteryToHave {
 					if event.Node.Valid {
-						p.ClusterNetwork.SendHelloMessage(p.NodeBTRange, event.Node, p.NodeTree)
+						p.ClusterNetwork.SendHelloMessage(event.Node, p)
 					}
 					p.Events.Push(&cps.Event{event.Node, cps.CLUSTERMSG, p.CurrentTime + 1000, 0})
 				}
@@ -474,7 +473,7 @@ func main() {
 				if event.Node.Battery > p.ThreshHoldBatteryToHave {
 					if event.Node.Valid {
 						event.Node.SortMessages()
-						p.ClusterNetwork.ElectClusterHead(event.Node)
+						p.ClusterNetwork.ElectClusterHead(event.Node, p)
 					}
 					p.Events.Push(&cps.Event{event.Node, cps.CLUSTERHEADELECT, p.CurrentTime + 1000, 0})
 				}
@@ -484,7 +483,7 @@ func main() {
 					if event.Node.Valid {
 						//p.ClusterNetwork.GenerateClusters(event.Node)
 						if event.Node.IsClusterHead {
-							p.ClusterNetwork.FormClusters(event.Node)
+							p.ClusterNetwork.FormClusters(event.Node, p)
 						}
 					}
 					p.Events.Push(&cps.Event{event.Node, cps.CLUSTERFORM, p.CurrentTime + 1000, 0})
@@ -705,7 +704,7 @@ func main() {
 				fmt.Fprintf(p.ClusterMessages, "%d,%d\n", p.CurrentTime/1000, p.ClusterNetwork.TotalMsgs)
 
 				p.Events.Push(&cps.Event{nil, cps.CLUSTERPRINT, p.CurrentTime + 1000, 0})
-				p.ClusterNetwork.ResetClusters()
+				//p.ClusterNetwork.ResetClusters()
 			} else if event.Instruction == cps.CLUSTERLESSFORM {
 				p.ClusterNetwork.FinalizeClusters(p)
 

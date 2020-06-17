@@ -481,16 +481,11 @@ func SetupCSVNodes(p *Params) {
 			newNode.ClearClusterParams()
 			newNode.TimeLastSentReadings = p.CurrentTime
 			newNode.ReadingsBuffer = []Reading{}
-			newNode.CHPenalty = 1.0 //initialized to 1
 		}
 
 		newNode.AccelerometerSpeed = []float32{}
 		newNode.TimeLastAccel = p.CurrentTime
 		newNode.LastMoveTime = p.CurrentTime
-
-		if p.ClusteringOn {
-			p.NodeTree.Insert(newNode)
-		}
 
 		p.Events.Push(&Event{newNode, SENSE, 0, 0})
 		p.Events.Push(&Event{newNode, MOVE, 0, 0})
@@ -1488,6 +1483,8 @@ func GetFlags(p *Params) {
 	flag.Float64Var(&p.NaturalLossCM, "naturalLoss", .005,
 		"battery loss due to natural causes")
 
+	flag.BoolVar(&p.WifiOr4G, "wifiOr4G", false, "True: nodes speak to server over wifi, False: nodes speak to server over 4G")
+
 	//flag.IntVar(&p.CMSensingTime, "cmSensingTime,",2, "seconds a cluster member will sense/record readings before sending to cluster head")
 	//flag.IntVar(&p.CHSensingTime, "chSensingTime,",4, "seconds a cluster head will sense//collect from CM/record readings before sending to server")
 	//flag.IntVar(&p.MaxCMReadingBufferSize, "maxCMReadingBufferSize,",10, "max readings buffer size of a cluster member. CM must send to CH when buffer is this size")
@@ -1638,8 +1635,12 @@ func GetFlags(p *Params) {
 	flag.BoolVar(&p.RegionRouting, "regionRouting", true, "True if you want to use the new routing algorithm with regions and cutting")
 
 	flag.BoolVar(&p.ClusteringOn,"clusteringOn",true,"True: nodes will form clusters, False: no clusters will form")
+	flag.BoolVar(&p.RedundantClustering,"redundantClustering",false,"If clusteringOn is set to true, True: nodes will join two clusters, False: clusters will form normally")
 	flag.IntVar(&p.ClusterThreshold, "clusterThresh,",8, "max size of a node cluster")
 	flag.Float64Var(&p.NodeBTRange, "nodeBTRange",20.0,"bluetooth range of each node")
+	flag.Float64Var(&p.DegreeWeight, "degreeWeight", 0.6, "The weight constant applied to the number of neighboring nodes when calculating a node's score")
+	flag.Float64Var(&p.BatteryWeight, "batteryWeight", 0.4, "The weight constant applied to a node's battery when calculating a node's score")
+	flag.Float64Var(&p.Penalty, "penalty", 0.8, "The penalty multiplied to a node's score when it is not already a cluster head")
 
 	flag.StringVar(&p.WindRegionPath, "windRegionPath", "hull_testing.txt", "File containing regions formed by wind")
 
@@ -1747,6 +1748,10 @@ func WriteFlags(p * Params){
 	buf.WriteString(fmt.Sprintf("clusterThresh=%v\n", p.ClusterThreshold))
 	buf.WriteString(fmt.Sprintf("nodeBTRange=%v\n", p.NodeBTRange))
 	buf.WriteString(fmt.Sprintf("clusteringOn=%v\n",p.ClusteringOn))
+	buf.WriteString(fmt.Sprintf("degreeWeight=%v\n",p.DegreeWeight))
+	buf.WriteString(fmt.Sprintf("batteryWeight=%v\n",p.BatteryWeight))
+	buf.WriteString(fmt.Sprintf("penalty=%v\n",p.Penalty))
+	buf.WriteString(fmt.Sprintf("wifiOr4G=%v\n",p.WifiOr4G))
 	//buf.WriteString(fmt.Sprintf("cmSensingTime=%v\n",p.CMSensingTime))
 	//buf.WriteString(fmt.Sprintf("chSensingTime=%v\n",p.CHSensingTime))
 	//buf.WriteString(fmt.Sprintf("maxCMReadingBufferSize=%v\n",p.MaxCMReadingBufferSize))
