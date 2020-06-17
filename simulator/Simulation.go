@@ -493,6 +493,8 @@ func main() {
 					//fmt.Fprintln(p.GridFile, x)
 					p.Events.Push(&cps.Event{nil, cps.GRID, p.CurrentTime + 1000, 0})
 					fmt.Fprint(p.GridFile, "----------------\n")
+					//m:= r.XYcords
+
 				}
 			} else if event.Instruction == cps.GARBAGECOLLECT {
 				runtime.GC()

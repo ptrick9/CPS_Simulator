@@ -222,6 +222,5 @@ type Params struct {
 	RecalReject 	bool
 
 	DensityThreshold int  // number of nodes that must be in a square for it to be considered dense and have the sampling rate decreased
-	DensityThresholdScalar float64 // new time to trigger a sense event
-	SamplingRateMS	 int
+	SamplingPeriodMS	 int
 }

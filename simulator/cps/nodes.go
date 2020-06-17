@@ -824,8 +824,16 @@ func (curNode *NodeImpl) GetReadings() {
 
 	}
 	//curNode.P.Events.Push(&Event{curNode, SENSE, curNode.P.CurrentTime + curNode.P.SamplingRateMS + curNode.P.DensityThresholdRate, 0})
-	//if  curNode.P.DensityThreshold
-	curNode.P.Events.Push(&Event{curNode, SENSE, curNode.P.CurrentTime + 500, 0})
+	//bsy := int(curNode.Y / float32(curNode.P.YDiv))
+	//bsx := int(curNode.X / float32(curNode.P.XDiv))
+	NodesinSquare:=len(curNode.P.Server.SquarePop[Tuple{int(curNode.Y / float32(curNode.P.YDiv)),int(curNode.Y / float32(curNode.P.YDiv))}])  //Nodes in curr node square
+	multiplier:= (NodesinSquare/curNode.P.DensityThreshold)+1 //increases period based on how many times more nodes there are in a square
+	if curNode.Id==451{
+		fmt.Println("Sense at this iteration",curNode.P.Iterations_used,"And this time", curNode.P.CurrentTime, "Nodes in square",NodesinSquare,"multiplier",multiplier)
+	}
+	curNode.P.Events.Push(&Event{curNode, SENSE, curNode.P.CurrentTime + int(float64(curNode.P.SamplingPeriodMS)*float64(multiplier*multiplier)), 0})
+	//Density threshold is considered 2x multiplier if threshold is == 10
+	//Checks the number of nodes in the square the node is in
 	//makes next sense at current time + default rate + delay because of threshold
 
 }
