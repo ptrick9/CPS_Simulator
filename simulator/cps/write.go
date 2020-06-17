@@ -473,22 +473,18 @@ func SetupCSVNodes(p *Params) {
 			newNode.IsClusterHead = false
 			newNode.IsClusterMember = false
 			newNode.NodeClusterParams = &ClusterMemberParams{}
+			p.NodeTree.Insert(newNode)
 			p.Events.Push(&Event{newNode,CLUSTERMSG,10,0})
 			p.Events.Push(&Event{newNode,CLUSTERHEADELECT,15,0})
 			p.Events.Push(&Event{newNode,CLUSTERFORM,20,0})
-			p.ClusterNetwork.ClearClusterParams(newNode)
+			newNode.ClearClusterParams()
 			newNode.TimeLastSentReadings = p.CurrentTime
 			newNode.ReadingsBuffer = []Reading{}
-			newNode.CHPenalty = 1.0 //initialized to 1
 		}
 
 		newNode.AccelerometerSpeed = []float32{}
 		newNode.TimeLastAccel = p.CurrentTime
 		newNode.LastMoveTime = p.CurrentTime
-
-		if p.ClusteringOn {
-			p.NodeTree.Insert(newNode)
-		}
 
 		p.Events.Push(&Event{newNode, SENSE, 0, 0})
 		p.Events.Push(&Event{newNode, MOVE, 0, 0})
@@ -1634,8 +1630,12 @@ func GetFlags(p *Params) {
 	flag.BoolVar(&p.RegionRouting, "regionRouting", true, "True if you want to use the new routing algorithm with regions and cutting")
 
 	flag.BoolVar(&p.ClusteringOn,"clusteringOn",true,"True: nodes will form clusters, False: no clusters will form")
+	flag.BoolVar(&p.RedundantClustering,"redundantClustering",false,"If clusteringOn is set to true, True: nodes will join two clusters, False: clusters will form normally")
 	flag.IntVar(&p.ClusterThreshold, "clusterThresh,",8, "max size of a node cluster")
 	flag.Float64Var(&p.NodeBTRange, "nodeBTRange",20.0,"bluetooth range of each node")
+	flag.Float64Var(&p.DegreeWeight, "degreeWeight", 0.6, "The weight constant applied to the number of neighboring nodes when calculating a node's score")
+	flag.Float64Var(&p.BatteryWeight, "batteryWeight", 0.4, "The weight constant applied to a node's battery when calculating a node's score")
+	flag.Float64Var(&p.Penalty, "penalty", 0.8, "The penalty multiplied to a node's score when it is not already a cluster head")
 
 	flag.StringVar(&p.WindRegionPath, "windRegionPath", "hull_testing.txt", "File containing regions formed by wind")
 

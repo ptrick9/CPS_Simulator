@@ -222,6 +222,7 @@ func (qt *Quadtree) Insert(node *NodeImpl) {
 	}
 	// If we don't have SubTrees within the Quadtree
 	qt.Objects = append(qt.Objects, node)
+	node.CurTree = qt
 
 	// If total objects is greater than max objects and level is less than max levels
 	//println(len(qt.Objects) > qt.MaxObjects)

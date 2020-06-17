@@ -222,6 +222,10 @@ type Params struct {
 	NodeBTRange				float64
 	ClusterThreshold		int
 	ClusteringOn			bool
+	RedundantClustering		bool
+	DegreeWeight			float64
+	BatteryWeight			float64
+	Penalty					float64
 
 	DriftExplorer 	bool
 	NumNodeMovements 	int

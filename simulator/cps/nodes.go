@@ -136,7 +136,6 @@ type NodeImpl struct {
 	Recalibrated 		bool
 
 	NodeClusterParams *ClusterMemberParams
-	CHPenalty float64
 	ReadingsBuffer		[]Reading
 	TimeLastSentReadings	int
 	TimeLastAccel		int
@@ -233,14 +232,7 @@ func (node *NodeImpl) InBounds(p *Params) bool {
 }
 
 func (node *NodeImpl) TurnValid(x, y int, p *Params) bool {
-	if x < p.Width && x >= 0 {
-		if y < p.Height && y >= 0 {
-			//fmt.Printf("%v valid", curNode.Id)
-			return true
-
-		}
-	}
-	return false
+	return x < p.Width && x >= 0 && y < p.Height && y >= 0
 }
 
 
