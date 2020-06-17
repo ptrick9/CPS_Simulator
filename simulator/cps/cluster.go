@@ -54,6 +54,9 @@ func (node * NodeImpl) ComputeClusterScore(p *Params, numWithinDist int,) float6
 	degree := math.Min(float64(numWithinDist), float64(p.ClusterThreshold))
 	battery := float64(node.Battery) * float64(p.ClusterThreshold)/100 //Multiplying by threshold/100 ensures that battery and degree have the same maximum value
 
+	//degree:= float64(numWithinDist)
+	//battery := float64(node.Battery)
+
 	//weighted sum, 60% from degree (# of nodes within distance), 40% from its battery life
 	// penalty used to increase a nodes chance at staying a clusterhead
 	score := p.DegreeWeight*degree + p.BatteryWeight*battery
@@ -96,7 +99,7 @@ func (adhoc * AdHocNetwork) SendHelloMessage(curNode * NodeImpl, p *Params){
 				//if curClusterP.ThisNodeHello.Sender != nil {
 					curClusterP.RecvMsgs = append(curClusterP.RecvMsgs, curNode.NodeClusterParams.ThisNodeHello)
 					//buffer.WriteString(fmt.Sprintf("SenderId=%v\tRecieverId=%v\tSenderCHS=%v\n",curNode.Id,withinDist[j].CurNode.Id,curNode.NodeClusterParams.ThisNodeHello.NodeCHScore))
-					//curNode.DecrementPowerBT()
+					curNode.DecrementPowerBT()
 					adhoc.TotalMsgs++
 				//}
 			//}
@@ -155,16 +158,16 @@ func (node * NodeImpl) PrintClusterNode(){
 	fmt.Println()
 }
 
-func (curNode * NodeImpl) ClearClusterParams(){
+func (node * NodeImpl) ClearClusterParams(){
 	//Reset Cluster Params (all but hello->sender since that will stay the same always)
-	curNode.NodeClusterParams.CurrentCluster = &Cluster{}
-	curNode.NodeClusterParams.CurrentCluster.ClusterMembers = []*NodeImpl{}
+	node.NodeClusterParams.CurrentCluster = &Cluster{}
+	node.NodeClusterParams.CurrentCluster.ClusterMembers = []*NodeImpl{}
 
-	curNode.NodeClusterParams.RecvMsgs = []*HelloMsg{}
-	curNode.NodeClusterParams.ThisNodeHello = &HelloMsg{}
+	node.NodeClusterParams.RecvMsgs = []*HelloMsg{}
+	node.NodeClusterParams.ThisNodeHello = &HelloMsg{}
 
-	curNode.IsClusterMember = false
-	curNode.IsClusterHead = false
+	node.IsClusterMember = false
+	node.IsClusterHead = false
 }
 
 func (adhoc * AdHocNetwork) ResetClusters(p *Params){
@@ -250,8 +253,8 @@ func (adhoc * AdHocNetwork) FormClusters(clusterHead * NodeImpl, p *Params){
 			msgs[i].Sender.IsClusterMember = true
 			msgs[i].Sender.NodeClusterParams.CurrentCluster = clusterHead.NodeClusterParams.CurrentCluster
 
-			//clusterHead.DecrementPowerBT()
-			//clusterHead.NodeClusterParams.RecvMsgs[i].Sender.DecrementPowerBT()
+			clusterHead.DecrementPowerBT()
+			clusterHead.NodeClusterParams.RecvMsgs[i].Sender.DecrementPowerBT()
 
 			//}
 		}
@@ -382,8 +385,8 @@ func (adhoc * AdHocNetwork) FinalizeClusters(p * Params){
 					adhoc.SingularNodes[i].NodeClusterParams.CurrentCluster = clusterHead.NodeClusterParams.CurrentCluster
 					joined = true
 
-					//adhoc.SingularNodes[i].DecrementPowerBT()
-					//clusterHead.DecrementPowerBT()
+					adhoc.SingularNodes[i].DecrementPowerBT()
+					clusterHead.DecrementPowerBT()
 				} else{
 					atj = append(atj, viableOptions[k])
 				}
@@ -402,7 +405,7 @@ func (adhoc * AdHocNetwork) FinalizeClusters(p * Params){
 				adhoc.TotalHeads++
 				adhoc.SingularNodes[i].NodeClusterParams.AttemptedToJoin = append(adhoc.SingularNodes[i].NodeClusterParams.AttemptedToJoin, atj...)
 
-				//adhoc.SingularNodes[i].DecrementPowerBT()
+				adhoc.SingularNodes[i].DecrementPowerBT()
 			}
 		}
 	}

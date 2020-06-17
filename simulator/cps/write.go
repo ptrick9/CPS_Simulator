@@ -1480,6 +1480,8 @@ func GetFlags(p *Params) {
 	flag.Float64Var(&p.NaturalLossCM, "naturalLoss", .005,
 		"battery loss due to natural causes")
 
+	flag.BoolVar(&p.WifiOr4G, "wifiOr4G", false, "True: nodes speak to server over wifi, False: nodes speak to server over 4G")
+
 	//flag.IntVar(&p.CMSensingTime, "cmSensingTime,",2, "seconds a cluster member will sense/record readings before sending to cluster head")
 	//flag.IntVar(&p.CHSensingTime, "chSensingTime,",4, "seconds a cluster head will sense//collect from CM/record readings before sending to server")
 	//flag.IntVar(&p.MaxCMReadingBufferSize, "maxCMReadingBufferSize,",10, "max readings buffer size of a cluster member. CM must send to CH when buffer is this size")
@@ -1743,6 +1745,10 @@ func WriteFlags(p * Params){
 	buf.WriteString(fmt.Sprintf("clusterThresh=%v\n", p.ClusterThreshold))
 	buf.WriteString(fmt.Sprintf("nodeBTRange=%v\n", p.NodeBTRange))
 	buf.WriteString(fmt.Sprintf("clusteringOn=%v\n",p.ClusteringOn))
+	buf.WriteString(fmt.Sprintf("degreeWeight=%v\n",p.DegreeWeight))
+	buf.WriteString(fmt.Sprintf("batteryWeight=%v\n",p.BatteryWeight))
+	buf.WriteString(fmt.Sprintf("penalty=%v\n",p.Penalty))
+	buf.WriteString(fmt.Sprintf("wifiOr4G=%v\n",p.WifiOr4G))
 	//buf.WriteString(fmt.Sprintf("cmSensingTime=%v\n",p.CMSensingTime))
 	//buf.WriteString(fmt.Sprintf("chSensingTime=%v\n",p.CHSensingTime))
 	//buf.WriteString(fmt.Sprintf("maxCMReadingBufferSize=%v\n",p.MaxCMReadingBufferSize))

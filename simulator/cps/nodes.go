@@ -428,25 +428,33 @@ func (node *NodeImpl) LogBatteryPower(t int){
 	//}
 }
 
-func (node *NodeImpl) SendtoServer(packet int){
+func (node *NodeImpl) SendToServer(rd Reading, tp bool){
 	//int packet = num bytes in packet
-	node.TotalBytesSent += packet;
-	node.TotalPacketsSent += 1;
+	//node.TotalBytesSent += packet
+	//node.TotalPacketsSent += 1
 
 	//code to send to server goes here
+	node.DecrementPower4G()
+	node.P.Server.Send(node, rd, tp)
 }
 
-func (node *NodeImpl) SendtoClusterHead(packet int){
+func (node *NodeImpl) SendToClusterHead(rd Reading, tp bool){
 	//int packet = num bytes in packet
-	node.TotalBytesSent += packet;
-	node.TotalPacketsSent += 1;
+	//node.TotalBytesSent += packet
+	//node.TotalPacketsSent += 1
 
 	//code to send to cluster head goes here
+	head := node.NodeClusterParams.CurrentCluster.ClusterHead
+
+	node.DecrementPowerBT()
+	head.DecrementPowerBT()
+	head.DecrementPower4G()
+	node.P.Server.Send(node, rd, tp)
 }
 
 
 //decrement battery due to transmitting/receiving over BlueTooth
-func (node *NodeImpl) DecrementPowerBT(packet int){
+func (node *NodeImpl) DecrementPowerBT(){
 	node.Battery = node.Battery - node.BatteryLossBT*node.Battery
 }
 
@@ -456,7 +464,7 @@ func (node *NodeImpl) DecrementPowerWifi(packet int){
 }
 
 //decrement battery due to transmitting/receiving over 4G
-func (node *NodeImpl) DecrementPower4G(packet int){
+func (node *NodeImpl) DecrementPower4G(){
 	node.Battery = node.Battery - node.BatteryLoss4G*node.Battery
 }
 
@@ -946,7 +954,7 @@ func (node *NodeImpl) report(rawConc float64) {
 
 	//New condition added: also recalibrate when the node's sensitivity is <= 1/10 of its original sensitvity
 	//New condition added: Check to make sure the sensor was pinged this iteration
-	if ((node.Sensitivity <= (node.InitialSensitivity / 2))  && node.P.Iterations_used != 0) {
+	if node.Sensitivity <= node.InitialSensitivity / 2  && node.P.Iterations_used != 0 {
 		fmt.Fprintf(node.P.DriftExploreFile, "ID: %v T: %v In: %v CUR: %v NT: %v RECAL\n", node.Id, node.P.CurrentTime, node.InitialSensitivity, node.Sensitivity, node.NodeTime)
 		node.Recalibrate()
 		node.Recalibrated = true
@@ -1025,12 +1033,16 @@ func (node *NodeImpl) report(rawConc float64) {
 	//Only do this if the sensor was pinged this iteration
 
 	if node.Valid {
-		node.P.Server.Send(node, Reading{ADCRead, newX, newY, node.P.CurrentTime, node.GetID()}, tp)
+		if node.P.ClusteringOn && node.IsClusterMember && !highSensor {
+			node.SendToClusterHead(Reading{ADCRead, newX, newY, node.P.CurrentTime, node.GetID()}, tp)
+		} else {
+			node.SendToServer(Reading{ADCRead, newX, newY, node.P.CurrentTime, node.GetID()}, tp)
+		}
 	}
 }
 
 func interpolate (start int, end int, portion float32) float32{
-	return (float32(end-start) * portion + float32(start))
+	return float32(end-start) * portion + float32(start)
 }
 
 //HandleMovementCSV does the same as HandleMovement
