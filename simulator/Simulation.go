@@ -399,10 +399,9 @@ func main() {
 		p.CurrentTime = event.Time
 		if event.Node != nil {
 			if event.Instruction == cps.SENSE {
-
 				if p.CurrentTime/1000 < p.NumNodeMovements-5 {
 					if (p.CSVMovement) {
-						event.Node.MoveCSV(p)
+						event.Node.MoveCSVsense(p)
 					} else {
 						event.Node.MoveNormal(p)
 					}
