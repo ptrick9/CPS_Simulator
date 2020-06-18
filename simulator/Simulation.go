@@ -422,36 +422,38 @@ func main() {
 		p.CurrentTime = event.Time
 		switch event.Instruction {
 		case cps.SENSE:
-			//if p.CurrentTime/1000 < p.NumNodeMovements-5 {
-			//	if p.CSVMovement {
-			//		event.Node.MoveCSV(p)
-			//	} else {
-			//		event.Node.MoveNormal(p)
-			//	}
-			//}
-			if p.ClusteringOn {
-				p.ClusterNetwork.ClusterMovement(event.Node, p)
-			}
-			if p.DriftExplorer { //no sensor csv, just checking FP
-				event.Node.GetSensor()
-			} else {
-				if p.CSVSensor { //if we have a big CSV file of the entire event
-					event.Node.GetReadingsCSV()
-				} else {
-					event.Node.GetReadings() //if we have no big file, just the small 'FINE' csv file
+			if event.Node.Alive {
+				//if p.CurrentTime/1000 < p.NumNodeMovements-5 {
+				//	if p.CSVMovement {
+				//		event.Node.MoveCSV(p)
+				//	} else {
+				//		event.Node.MoveNormal(p)
+				//	}
+				//}
+				if p.ClusteringOn {
+					p.ClusterNetwork.ClusterMovement(event.Node, p)
 				}
+				if p.DriftExplorer { //no sensor csv, just checking FP
+					event.Node.GetSensor()
+				} else {
+					if p.CSVSensor { //if we have a big CSV file of the entire event
+						event.Node.GetReadingsCSV()
+					} else {
+						event.Node.GetReadings() //if we have no big file, just the small 'FINE' csv file
+					}
+				}
+
+				if event.Node.Valid {
+					//p.ClusterNetwork.ClearClusterParams(event.Node)
+					event.Node.DecrementPowerGPS()
+					event.Node.DecrementPowerSensor()
+				}
+
+				//if(p.CurrentTime/1000 <= 100){
+				//p.Events.Push(&cps.Event{event.Node, cps.MOVE, p.CurrentTime + 100, 0})
+				//}
+				//}
 			}
-
-			if event.Node.Valid {
-				//p.ClusterNetwork.ClearClusterParams(event.Node)
-				event.Node.DecrementPowerGPS()
-			}
-
-			//if(p.CurrentTime/1000 <= 100){
-			//p.Events.Push(&cps.Event{event.Node, cps.MOVE, p.CurrentTime + 100, 0})
-			//}
-			//}
-
 		case cps.CLUSTERMSG:
 			if event.Node.Battery > p.ThreshHoldBatteryToHave {
 				if event.Node.Valid {
@@ -460,13 +462,15 @@ func main() {
 				p.Events.Push(&cps.Event{event.Node, cps.CLUSTERMSG, p.CurrentTime + 1000, 0})
 			}
 		case cps.MOVE:
-			if p.CSVMovement {
-				event.Node.MoveCSV(p)
-			} else {
-				event.Node.MoveNormal(p)
-			}
-			if p.CurrentTime/1000 < p.NumNodeMovements-5 {
-				p.Events.Push(&cps.Event{event.Node, cps.MOVE, p.CurrentTime + 100, 0})
+			if event.Node.Alive {
+				if p.CSVMovement {
+					event.Node.MoveCSV(p)
+				} else {
+					event.Node.MoveNormal(p)
+				}
+				if p.CurrentTime/1000 < p.NumNodeMovements-5 {
+					p.Events.Push(&cps.Event{event.Node, cps.MOVE, p.CurrentTime + 100, 0})
+				}
 			}
 		case cps.CLUSTERHEADELECT:
 			if event.Node.Battery > p.ThreshHoldBatteryToHave {
@@ -513,7 +517,7 @@ func main() {
 
 			if p.PositionPrint {
 				amount := 0
-				for i := 0; i < p.CurrentNodes; i++ {
+				for i := 0; i < len(p.NodeList); i++ {
 					//fmt.Printf("%v\n", p.NodeList[i].Valid)
 					if p.NodeList[i].Valid {
 						amount += 1
@@ -521,7 +525,7 @@ func main() {
 				}
 				fmt.Fprintln(p.PositionFile, "t= ", int(p.CurrentTime/1000), " amount= ", amount)
 				var buffer bytes.Buffer
-				for i := 0; i < p.CurrentNodes; i++ {
+				for i := 0; i < len(p.NodeList); i++ {
 
 					if p.NodeList[i].Valid {
 						buffer.WriteString(fmt.Sprintf("ID: %v x: %v y: %v\n", p.NodeList[i].GetID(), int(p.NodeList[i].GetX()), int(p.NodeList[i].GetY())))
@@ -1018,7 +1022,7 @@ func main() {
 		printGrid(p, p.Grid)
 
 		amount := 0
-		for i := 0; i < p.CurrentNodes; i++ {
+		for i := 0; i < len(p.NodeList); i++ {
 			//fmt.Printf("%v\n", p.NodeList[i].Valid)
 			if p.NodeList[i].Valid {
 				amount += 1
@@ -1026,7 +1030,7 @@ func main() {
 		}
 		fmt.Fprintln(p.PositionFile, "t= ", int(p.CurrentTime/1000), " amount= ", amount)
 		var buffer bytes.Buffer
-		for i := 0; i < p.CurrentNodes; i++ {
+		for i := 0; i < len(p.NodeList); i++ {
 
 			if p.NodeList[i].Valid {
 				buffer.WriteString(fmt.Sprintf("ID: %v x: %v y: %v\n", p.NodeList[i].GetID(), int(p.NodeList[i].GetX()), int(p.NodeList[i].GetY())))

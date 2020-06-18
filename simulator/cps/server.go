@@ -485,7 +485,7 @@ func remove(s []int, i int) []int {
 
 //Send is called by a node to deliver a reading to the server.
 // Statistics are calculated each Time data is received
-func (s *FusionCenter) Send(n *NodeImpl, rd Reading, tp bool) {
+func (s *FusionCenter) Send(n *NodeImpl, rd *Reading, tp bool) {
 	//fmt.Printf("Sending to server:\nTime: %v, ID: %v, X: %v, Y: %v, Sensor Value: %v\n", rd.Time, rd.Id, rd.Xpos, rd.YPos, rd.SensorVal)
 
 
@@ -552,15 +552,15 @@ func (s *FusionCenter) Send(n *NodeImpl, rd Reading, tp bool) {
 	}
 
 	if !recalReject { //if reading shouldn't be rejected
-		s.UpdateSquareAvg(rd)
+		s.UpdateSquareAvg(*rd)
 
 		if rd.SensorVal > s.P.DetectionThreshold {
 
 			_, ok := s.Readings[Key{int(rd.Xpos / float32(s.P.XDiv)), int(rd.YPos / float32(s.P.YDiv)), rd.Time / 1000}]
 			if ok {
-				s.Readings[Key{int(rd.Xpos / float32(s.P.XDiv)), int(rd.YPos / float32(s.P.YDiv)), rd.Time / 1000}] = append(s.Readings[Key{int(rd.Xpos / float32(s.P.XDiv)), int(rd.YPos / float32(s.P.YDiv)), rd.Time / 1000}], rd)
+				s.Readings[Key{int(rd.Xpos / float32(s.P.XDiv)), int(rd.YPos / float32(s.P.YDiv)), rd.Time / 1000}] = append(s.Readings[Key{int(rd.Xpos / float32(s.P.XDiv)), int(rd.YPos / float32(s.P.YDiv)), rd.Time / 1000}], *rd)
 			} else {
-				s.Readings[Key{int(rd.Xpos / float32(s.P.XDiv)), int(rd.YPos / float32(s.P.YDiv)), rd.Time / 1000}] = []Reading{rd}
+				s.Readings[Key{int(rd.Xpos / float32(s.P.XDiv)), int(rd.YPos / float32(s.P.YDiv)), rd.Time / 1000}] = []Reading{*rd}
 			}
 			s.Times = make(map[int]bool, 0)
 			if s.Times[rd.Time] {

@@ -47,18 +47,19 @@ type NodeParent interface {
 //NodeImpl is a struct that implements all the methods listed
 //	above in NodeParent
 type NodeImpl struct {
-	P 								*Params
-	Id                              int      //Id of node
-	OldX                            int      // for movement
-	OldY                            int      // for movement
-	Sitting                         int      // for movement
-	X                               float32      //x pos of node
-	Y                               float32      //y pos of node
-	Battery                         float32  //battery of node
-	BatteryLossScalar               float32  //natural incremental battery loss of node
-	BatteryLossSensor				float32  //sensor based battery loss of node
-	BatteryLossGPS		            float32  //GPS based battery loss of node
-	BatteryLossServer				float32  //server communication based battery loss of node
+	P                 				*Params
+	Id                				int     //Id of node
+	OldX              				int     // for movement
+	OldY              				int     // for movement
+	Sitting           				int     // for movement
+	X                 				float32 //x pos of node
+	Y                 				float32 //y pos of node
+	Alive             				bool    //Has sufficient battery to operate
+	Battery           				float32 //battery of node
+	BatteryLossScalar 				float32 //natural incremental battery loss of node
+	BatteryLossSensor 				float32 //sensor based battery loss of node
+	BatteryLossGPS    				float32 //GPS based battery loss of node
+	BatteryLossServer 				float32 //server communication based battery loss of node
 
 	BatteryLossBT					float32
 	BatteryLossWifi					float32
@@ -88,77 +89,81 @@ type NodeImpl struct {
 	AccelerometerSpeedServer        [100]int //Accelerometer speed history of node
 	Time                            [100]int //This keeps track of when specific pings are made
 	//speedGPSPeriod int //This is a special period for speed based GPS pings but it is not used and may never be
-	AccelerometerPosition [2][3]int //This is the accelerometer model of node
-	AccelerometerSpeed    []float32 //History of accelerometer speeds recorded
-	InverseSensor         float32   //Algorithm place holder declared here for speed
-	InverseGPS            float32   //Algorithm place holder declared here for speed
-	InverseServer         float32   //Algorithm place holder declared here for speed
-	SampleHistory         []float32 //a history of the node's readings
-	Avg                   float32   //weighted average of the node's most recent readings
-	TotalSamples          int       //total number of samples taken by a node
-	SpeedWeight           float32   //weight given to averaging of node's samples, based on node's speed
-	NumResets             int       //number of times a node has had to reset due to drifting
-	Concentration         float64   //used to determine reading of node
-	SpeedGPSPeriod        int
+	AccelerometerPosition 			[2][3]int //This is the accelerometer model of node
+	AccelerometerSpeed    			[]float32 //History of accelerometer speeds recorded
+	InverseSensor         			float32   //Algorithm place holder declared here for speed
+	InverseGPS            			float32   //Algorithm place holder declared here for speed
+	InverseServer         			float32   //Algorithm place holder declared here for speed
+	SampleHistory         			[]float32 //a history of the node's readings
+	Avg                   			float32   //weighted average of the node's most recent readings
+	TotalSamples          			int       //total number of samples taken by a node
+	SpeedWeight           			float32   //weight given to averaging of node's samples, based on node's speed
+	NumResets             			int       //number of times a node has had to reset due to drifting
+	Concentration         			float64   //used to determine reading of node
+	SpeedGPSPeriod        			int
 
-	Current  int
-	Previous int
-	Diffx    int
-	Diffy    int
-	Speed    float32
+	Current  						int
+	Previous 						int
+	Diffx    						int
+	Diffy    						int
+	Speed    						float32
 
 	//The following values are all various drifting parameters of the node
-	NewX               int
-	NewY               int
-	S0                 float64
-	S1                 float64
-	S2                 float64
-	E0                 float64
-	E1                 float64
-	E2                 float64
-	ET1                float64
-	ET2                float64
-	NodeTime           int
-	Sensitivity        float64
-	InitialSensitivity float64
-	Valid 			   bool
+	NewX               				int
+	NewY               				int
+	S0                 				float64
+	S1                 				float64
+	S2                 				float64
+	E0                 				float64
+	E1                 				float64
+	E2                 				float64
+	ET1                				float64
+	ET2                				float64
+	NodeTime           				int
+	Sensitivity        				float64
+	InitialSensitivity 				float64
+	Valid 			   				bool
 
-	allReadings 	   [1000]float64
-	calibrateTimes 	   []int
-	calibrateReading   []float64
+	allReadings 	   				[1000]float64
+	calibrateTimes 	   				[]int
+	calibrateReading   				[]float64
 
-	BatteryOverTime	   map[int]float32
+	BatteryOverTime	   				map[int]float32
 
-	TotalPacketsSent    int
-	TotalBytesSent		int
-	IsClusterMember		bool
-	IsClusterHead		bool
-	Recalibrated 		bool
+	TotalPacketsSent   				int
+	TotalBytesSent					int
+	IsClusterMember					bool
+	IsClusterHead					bool
+	Recalibrated 					bool
 
 	NodeClusterParams *ClusterMemberParams
-	ReadingsBuffer		[]Reading
-	TimeLastSentReadings	int
-	TimeLastAccel		int
-	LastMoveTime		int
-	Velocity			float64
-	SampleRate			float64
+	ReadingsBuffer					[]Reading
+	TimeLastSentReadings			int
+	TimeLastAccel					int
+	LastMoveTime					int
+	Velocity						float64
+	SampleRate						float64
 
-	LastReading			 float64
-	ReadingPercentChange float64
-	LastAccel			 float64
-	MovePercentChange	 float64
-	MovementModifier	 float64
-	SensorModifier		 float64
+	LastReading						float64
+	ReadingPercentChange			float64
+	LastAccel						float64
+	MovePercentChange				float64
+	MovementModifier				float64
+	SensorModifier					float64
 
-	SampleRateSensor	 float64
-	SampleRateMovement   float64
-	SampleRateBattery    float64
+	SampleRateSensor				float64
+	SampleRateMovement  			float64
+	SampleRateBattery   			float64
 
-	ScheduledEvent		 *Event
-	BatteryPercent		 float64
+	ScheduledEvent					*Event
+	BatteryPercent					float64
 
-	LastNSampleRates	 []float64
-	CurTree				 *Quadtree
+	LastNSampleRates	 			[]float64
+	CurTree				 			*Quadtree
+
+	StoredNodes						[]*NodeImpl
+	StoredReadings					[]*Reading
+	StoredTPs						[]bool
 }
 
 //NodeMovement controls the movement of all the normal nodes
@@ -428,17 +433,21 @@ func (node *NodeImpl) LogBatteryPower(t int){
 	//}
 }
 
-func (node *NodeImpl) SendToServer(rd Reading, tp bool){
+func (node *NodeImpl) SendToServer(rd *Reading, tp bool){
 	//int packet = num bytes in packet
 	//node.TotalBytesSent += packet
 	//node.TotalPacketsSent += 1
 
 	//code to send to server goes here
-	node.DecrementPower4G()
+	if node.P.WifiOr4G {
+		node.DecrementPowerWifi()
+	} else {
+		node.DecrementPower4G()
+	}
 	node.P.Server.Send(node, rd, tp)
 }
 
-func (node *NodeImpl) SendToClusterHead(rd Reading, tp bool){
+func (node *NodeImpl) SendToClusterHead(rd *Reading, tp bool){
 	//int packet = num bytes in packet
 	//node.TotalBytesSent += packet
 	//node.TotalPacketsSent += 1
@@ -448,39 +457,63 @@ func (node *NodeImpl) SendToClusterHead(rd Reading, tp bool){
 
 	node.DecrementPowerBT()
 	head.DecrementPowerBT()
-	head.DecrementPower4G()
-	node.P.Server.Send(node, rd, tp)
+	head.StoredNodes = append(head.StoredNodes, node)
+	head.StoredReadings = append(head.StoredReadings, rd)
+	head.StoredTPs = append(head.StoredTPs, tp)
 }
 
+func (node *NodeImpl) SendMultipleToServer(rd *Reading, tp bool){
+	//int packet = num bytes in packet
+	//node.TotalBytesSent += packet
+	//node.TotalPacketsSent += 1
+
+	//code to send to server goes here
+	if node.P.WifiOr4G {
+		node.DecrementPowerWifi()
+	} else {
+		node.DecrementPower4G()
+	}
+	for i := range node.StoredReadings {
+		node.P.Server.Send(node.StoredNodes[i], node.StoredReadings[i], node.StoredTPs[i])
+	}
+
+	node.StoredNodes = []*NodeImpl{}
+	node.StoredReadings = []*Reading{}
+	node.StoredTPs = []bool{}
+
+	if rd != nil {
+		node.P.Server.Send(node, rd, tp)
+	}
+}
 
 //decrement battery due to transmitting/receiving over BlueTooth
 func (node *NodeImpl) DecrementPowerBT(){
-	node.Battery = node.Battery - node.BatteryLossBT*node.Battery
+	node.Battery = node.Battery - node.BatteryLossBT
 }
 
 //decrement battery due to transmitting/receiving over WiFi
-func (node *NodeImpl) DecrementPowerWifi(packet int){
+func (node *NodeImpl) DecrementPowerWifi(){
 	node.Battery = node.Battery - node.BatteryLossWifi
 }
 
 //decrement battery due to transmitting/receiving over 4G
 func (node *NodeImpl) DecrementPower4G(){
-	node.Battery = node.Battery - node.BatteryLoss4G*node.Battery
+	node.Battery = node.Battery - node.BatteryLoss4G
 }
 
 //decrement battery due to sampling Accelerometer
 func (node *NodeImpl) DecrementPowerAccel(){
-	node.Battery = node.Battery - node.BatteryLossAccelerometer*node.Battery
+	node.Battery = node.Battery - node.BatteryLossAccelerometer
 }
 
 //decrement battery due to transmitting/receiving GPS
 func (node *NodeImpl) DecrementPowerGPS(){
-	node.Battery = node.Battery - node.BatteryLossGPS*node.Battery
+	node.Battery = node.Battery - node.BatteryLossGPS
 }
 
 //decrement battery due to using GPS
 func (node *NodeImpl) DecrementPowerSensor(){
-	node.Battery = node.Battery - node.BatteryLossSensor*node.Battery
+	node.Battery = node.Battery - node.BatteryLossSensor
 }
 
 
@@ -1033,10 +1066,13 @@ func (node *NodeImpl) report(rawConc float64) {
 	//Only do this if the sensor was pinged this iteration
 
 	if node.Valid {
+		if len(node.StoredReadings) > 0 {
+			node.SendMultipleToServer(&Reading{ADCRead, newX, newY, node.P.CurrentTime, node.GetID()}, tp)
+		}
 		if node.P.ClusteringOn && node.IsClusterMember && !highSensor {
-			node.SendToClusterHead(Reading{ADCRead, newX, newY, node.P.CurrentTime, node.GetID()}, tp)
+			node.SendToClusterHead(&Reading{ADCRead, newX, newY, node.P.CurrentTime, node.GetID()}, tp)
 		} else {
-			node.SendToServer(Reading{ADCRead, newX, newY, node.P.CurrentTime, node.GetID()}, tp)
+			node.SendToServer(&Reading{ADCRead, newX, newY, node.P.CurrentTime, node.GetID()}, tp)
 		}
 	}
 }

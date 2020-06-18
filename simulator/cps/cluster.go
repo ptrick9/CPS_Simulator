@@ -115,7 +115,15 @@ func (adhoc * AdHocNetwork) SendHelloMessage(curNode * NodeImpl, p *Params){
 func (adhoc *AdHocNetwork) ClusterMovement(node *NodeImpl, p *Params) {
 	adhoc.Movements++
 	if node.Valid {
-		if (!node.IsClusterHead && (node.NodeClusterParams.CurrentCluster.ClusterHead == nil || !node.IsWithinRange(node.NodeClusterParams.CurrentCluster.ClusterHead, p.NodeBTRange))) || len(node.NodeClusterParams.CurrentCluster.ClusterMembers) < 2 {
+		if node.Battery < p.ThreshHoldBatteryToHave {
+			node.Alive = false
+			node.CurTree.RemoveAndClean(node)
+			if node.IsClusterHead {
+				node.DissolveCluster()
+			} else {
+				node.ClearClusterParams()
+			}
+		} else if (!node.IsClusterHead && (node.NodeClusterParams.CurrentCluster.ClusterHead == nil || !node.IsWithinRange(node.NodeClusterParams.CurrentCluster.ClusterHead, p.NodeBTRange))) || len(node.NodeClusterParams.CurrentCluster.ClusterMembers) < 2 {
 			adhoc.NewNodeHello(node, p)
 		}
 	}
@@ -213,7 +221,6 @@ func (node * NodeImpl) PrintClusterNode(){
 }
 
 func (node * NodeImpl) ClearClusterParams(){
-	//Reset Cluster Params (all but hello->sender since that will stay the same always)
 	node.NodeClusterParams.CurrentCluster = &Cluster{}
 	node.NodeClusterParams.CurrentCluster.ClusterMembers = []*NodeImpl{}
 
@@ -224,9 +231,22 @@ func (node * NodeImpl) ClearClusterParams(){
 	node.IsClusterHead = false
 }
 
+func (node * NodeImpl) DissolveCluster(){
+	//Assume called by cluster head
+	for _, member := range node.NodeClusterParams.CurrentCluster.ClusterMembers {
+		member.ClearClusterParams()
+	}
+	node.ClearClusterParams()
+}
+
 func (adhoc * AdHocNetwork) ResetClusters(p *Params){
 	for i:=0; i<len(p.NodeList); i++{
-		p.NodeList[i].ClearClusterParams()
+		if p.NodeList[i].Alive {
+			p.NodeList[i].ClearClusterParams()
+		} else {
+			p.NodeList = append(p.NodeList[:i], p.NodeList[i+1:]...)
+			i--
+		}
 	}
 	adhoc.TotalHeads = 0
 	adhoc.ClusterHeads = []*NodeImpl{}

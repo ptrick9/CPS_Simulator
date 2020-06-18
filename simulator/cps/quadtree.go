@@ -456,7 +456,7 @@ func (qt *Quadtree) PrintHelper(grid [][]string) {
 	}
 }
 
-//Remove - removes a node (bounds) from the tree, DOES NOT reconfigure the tree
+//Remove - removes a node from the tree, DOES NOT reconfigure the tree
 func (qt *Quadtree) Remove(node *NodeImpl) bool {
 
 	//remove from Objects in Current Tree
@@ -508,7 +508,9 @@ func (qt * Quadtree) CleanUp(){
 func (qt * Quadtree) RemoveAndClean(node *NodeImpl){
 	parent := node.CurTree.ParentTree
 	qt.Remove(node)
-	parent.CleanUp()
+	if parent != nil {
+		parent.CleanUp()
+	}
 }
 
 //BringNodesUp - Brings nodes from SubTrees of qt to qt's Objects array
@@ -519,6 +521,7 @@ func (qt *Quadtree) BringNodesUp() {
 			qt.SubTrees[i].BringNodesUp()
 		}
 		for j := 0; j < len(qt.SubTrees[i].Objects); j++ {
+			qt.SubTrees[i].Objects[j].CurTree = qt
 			qt.Objects = append(qt.Objects, qt.SubTrees[i].Objects[j])
 		}
 	}

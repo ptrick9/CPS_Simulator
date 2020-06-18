@@ -461,6 +461,8 @@ func SetupCSVNodes(p *Params) {
 			newNode.Valid = false
 		}
 
+		newNode.Alive = true
+
 		p.NodeList = append(p.NodeList, newNode)
 		p.CurrentNodes += 1
 
@@ -490,8 +492,6 @@ func SetupCSVNodes(p *Params) {
 		p.Events.Push(&Event{newNode, MOVE, 0, 0})
 
 	}
-
-	p.ClusterNetwork.FullRecluster(p)
 
 }
 //SetupRandomNodes creates random nodes and appends them to the node list
@@ -865,7 +865,7 @@ func SetupParameters(p *Params, r *RegionParams) {
 	p.BatteryLossesBT = GetLinearBatteryLossConstant(len(p.NodeEntryTimes), float32(p.SamplingLossBTCM))
 	p.BatteryLossesWiFi = GetLinearBatteryLossConstant(len(p.NodeEntryTimes), float32(p.SamplingLossWifiCM))
 	p.BatteryLosses4G = GetLinearBatteryLossConstant(len(p.NodeEntryTimes), float32(p.SamplingLoss4GCM))
-	p.BatteryLossesAccelerometer = GetLinearBatteryLossConstant(len(p.NodeEntryTimes), float32((p.SamplingLossAccelCM)))
+	p.BatteryLossesAccelerometer = GetLinearBatteryLossConstant(len(p.NodeEntryTimes), float32(p.SamplingLossAccelCM))
 
 	p.Attractions = make([]*Attraction, p.NumAtt)
 
@@ -1490,26 +1490,23 @@ func GetFlags(p *Params) {
 	//flag.IntVar(&p.MaxCHReadingBufferSize, "maxCHReadingBufferSize,",100, "max readings buffer size of a cluster head. CH must send to server when buffer is this size")
 
 
-	flag.Float64Var(&p.SamplingLossSensorCM, "sensorSamplingLoss", .001,
+	flag.Float64Var(&p.SamplingLossSensorCM, "sensorSamplingLoss", .01,
 		"battery loss due to sensor sampling")
 
-	flag.Float64Var(&p.SamplingLossGPSCM, "GPSSamplingLoss", .005,
+	flag.Float64Var(&p.SamplingLossGPSCM, "GPSSamplingLoss", .05,
 		"battery loss due to GPS sampling")
 
-	flag.Float64Var(&p.SamplingLossSensorCM, "serverSamplingLoss", .01,
-		"battery loss due to server sampling")
-
-	flag.Float64Var(&p.SamplingLossBTCM, "SamplingLossBTCM", .0001,
+	flag.Float64Var(&p.SamplingLossBTCM, "SamplingLossBTCM", .001,
 		"battery loss due to BlueTooth sampling")
 
 
-	flag.Float64Var(&p.SamplingLossWifiCM, "SamplingLossWifiCM", .001,
+	flag.Float64Var(&p.SamplingLossWifiCM, "SamplingLossWifiCM", .01,
 		"battery loss due to WiFi sampling")
 
-	flag.Float64Var(&p.SamplingLoss4GCM, "SamplingLoss4GCM", .005,
+	flag.Float64Var(&p.SamplingLoss4GCM, "SamplingLoss4GCM", .05,
 		"battery loss due to 4G sampling")
 
-	flag.Float64Var(&p.SamplingLossAccelCM, "SamplingLossAccelCM", .001,
+	flag.Float64Var(&p.SamplingLossAccelCM, "SamplingLossAccelCM", .01,
 		"battery loss due to accelerometer sampling")
 
 	flag.IntVar(&p.ThresholdBatteryToHaveCM, "thresholdBatteryToHave", 30,
@@ -1696,7 +1693,6 @@ func WriteFlags(p * Params){
 	buf.WriteString(fmt.Sprintf("naturalLoss=%v\n", p.NaturalLossCM))
 	buf.WriteString(fmt.Sprintf("sensorSamplingLoss=%v\n", p.SamplingLossSensorCM))
 	buf.WriteString(fmt.Sprintf("GPSSamplingLoss=%v\n", p.SamplingLossGPSCM))
-	buf.WriteString(fmt.Sprintf("serverSamplingLoss=%v\n", p.SamplingLossSensorCM))
 	buf.WriteString(fmt.Sprintf("SamplingLossBTCM=%v\n", p.SamplingLossBTCM))
 	buf.WriteString(fmt.Sprintf("SamplingLossWifiCM=%v\n", p.SamplingLossWifiCM))
 	buf.WriteString(fmt.Sprintf("SamplingLoss4GCM=%v\n", p.SamplingLoss4GCM))
@@ -1823,7 +1819,7 @@ func DriftHist(p *Params) {
 	max := 0.0
 	count := 0.0
 	i := 0
-	for i < p.TotalNodes {
+	for i < len(p.NodeList) {
 		n := p.NodeList[i]
 		if n.Valid {
 			v := n.Sensitivity / n.InitialSensitivity
