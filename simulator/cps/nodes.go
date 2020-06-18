@@ -133,6 +133,7 @@ type NodeImpl struct {
 	TotalBytesSent		int
 	IsClusterHead		bool
 	Recalibrated 		bool
+	thresholdCounter    int
 }
 
 //NodeMovement controls the movement of all the normal nodes
@@ -829,16 +830,22 @@ func (curNode *NodeImpl) GetReadings() {
 	//Checked in half seconds measured at half meters so effectivley can be used as meters/second
 	//distanceMultiplier:= 0
 	distanceMultiplier:=0
+	densityMultiplier:=0
 	metersPerSecond:=math.Sqrt((math.Pow(float64(curNode.X-curNode.OldX),2))+(math.Pow(float64(curNode.Y-curNode.OldY),2)))
 	if metersPerSecond >=1{
-		distanceMultiplier=-1
+		distanceMultiplier=-1  //speed up by half the period
+		curNode.thresholdCounter=0
+	} else {
+		curNode.thresholdCounter+=1
 	}
-
+	if curNode.thresholdCounter>3{
+		distanceMultiplier+=1 //delay by 2x the period
+	}
 	NodesinSquare:=len(curNode.P.Server.SquarePop[Tuple{int(curNode.Y / float32(curNode.P.YDiv)),int(curNode.Y / float32(curNode.P.YDiv))}])  //Nodes in curr node square
-	densityMultiplier:= (NodesinSquare/curNode.P.DensityThreshold) //increases period based on how many times more nodes there are in a square
+	densityMultiplier= (NodesinSquare/curNode.P.DensityThreshold) //increases period based on how many times more nodes there are in a square
 	multiplier:=distanceMultiplier+densityMultiplier
 	if curNode.Id==49{
-		fmt.Println("Sense at this iteration",curNode.P.Iterations_used,"And this time", curNode.P.CurrentTime, "Nodes in square",NodesinSquare,"densityMultiplier",densityMultiplier,"distanceMultiplier",distanceMultiplier,"multiplier",multiplier)
+		fmt.Println("\nSense at this iteration",curNode.P.Iterations_used,"And this time", curNode.P.CurrentTime, "Nodes in square",NodesinSquare,"densityMultiplier",densityMultiplier,"distanceMultiplier",distanceMultiplier,"multiplier",multiplier)
 		fmt.Println("Curnode xy",curNode.X,curNode.Y, "old xy", curNode.OldX, curNode.OldY)
 	}
 	curNode.P.Events.Push(&Event{curNode, SENSE, curNode.P.CurrentTime + int(float64(curNode.P.SamplingPeriodMS)*math.Pow(2.0,float64(multiplier))), 0})
