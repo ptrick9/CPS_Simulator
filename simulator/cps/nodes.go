@@ -826,10 +826,19 @@ func (curNode *NodeImpl) GetReadings() {
 	//curNode.P.Events.Push(&Event{curNode, SENSE, curNode.P.CurrentTime + curNode.P.SamplingRateMS + curNode.P.DensityThresholdRate, 0})
 	//bsy := int(curNode.Y / float32(curNode.P.YDiv))
 	//bsx := int(curNode.X / float32(curNode.P.XDiv))
+	//Checked in half seconds measured at half meters so effectivley can be used as meters/second
+	//distanceMultiplier:= 0
+	distanceMultiplier:=0
+	metersPerSecond:=math.Sqrt((math.Pow(float64(curNode.X-curNode.OldX),2))+(math.Pow(float64(curNode.Y-curNode.OldY),2)))
+	if metersPerSecond >=1{
+		distanceMultiplier=-1
+	}
+
 	NodesinSquare:=len(curNode.P.Server.SquarePop[Tuple{int(curNode.Y / float32(curNode.P.YDiv)),int(curNode.Y / float32(curNode.P.YDiv))}])  //Nodes in curr node square
-	multiplier:= (NodesinSquare/curNode.P.DensityThreshold) //increases period based on how many times more nodes there are in a square
+	densityMultiplier:= (NodesinSquare/curNode.P.DensityThreshold) //increases period based on how many times more nodes there are in a square
+	multiplier:=distanceMultiplier+densityMultiplier
 	if curNode.Id==49{
-		fmt.Println("Sense at this iteration",curNode.P.Iterations_used,"And this time", curNode.P.CurrentTime, "Nodes in square",NodesinSquare,"multiplier",multiplier)
+		fmt.Println("Sense at this iteration",curNode.P.Iterations_used,"And this time", curNode.P.CurrentTime, "Nodes in square",NodesinSquare,"densityMultiplier",densityMultiplier,"distanceMultiplier",distanceMultiplier,"multiplier",multiplier)
 		fmt.Println("Curnode xy",curNode.X,curNode.Y, "old xy", curNode.OldX, curNode.OldY)
 	}
 	curNode.P.Events.Push(&Event{curNode, SENSE, curNode.P.CurrentTime + int(float64(curNode.P.SamplingPeriodMS)*math.Pow(2.0,float64(multiplier))), 0})
