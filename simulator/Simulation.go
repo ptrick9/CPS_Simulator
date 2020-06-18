@@ -419,7 +419,7 @@ func main() {
 
 			} else if event.Instruction == cps.MOVE {
 				if(p.CSVMovement) {
-					event.Node.MoveCSV(p)
+					//event.Node.MoveCSV(p)  //FIXES TIMING WHEN YOU TAKE THIS OUT
 				} else {
 					event.Node.MoveNormal(p)
 				}

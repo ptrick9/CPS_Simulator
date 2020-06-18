@@ -49,8 +49,8 @@ type NodeParent interface {
 type NodeImpl struct {
 	P 								*Params
 	Id                              int      //Id of node
-	OldX                            int      // for movement
-	OldY                            int      // for movement
+	OldX                            float32      // for movement
+	OldY                            float32      // for movement
 	Sitting                         int      // for movement
 	X                               float32      //x pos of node
 	Y                               float32      //y pos of node
@@ -254,8 +254,8 @@ func (c Coord) Equals(c2 Coord) bool {
 
 func (curNode *NodeImpl) Move(p *Params) {
 	if curNode.Sitting <= curNode.P.SittingStopThresholdCM {
-		curNode.OldX = int(curNode.X) / curNode.P.XDiv
-		curNode.OldY = int(curNode.Y) / curNode.P.YDiv
+		//curNode.OldX = int(curNode.X) / curNode.P.XDiv
+		//curNode.OldY = int(curNode.Y) / curNode.P.YDiv
 
 		var potentialSpots []GridSpot
 
@@ -828,8 +828,9 @@ func (curNode *NodeImpl) GetReadings() {
 	//bsx := int(curNode.X / float32(curNode.P.XDiv))
 	NodesinSquare:=len(curNode.P.Server.SquarePop[Tuple{int(curNode.Y / float32(curNode.P.YDiv)),int(curNode.Y / float32(curNode.P.YDiv))}])  //Nodes in curr node square
 	multiplier:= (NodesinSquare/curNode.P.DensityThreshold) //increases period based on how many times more nodes there are in a square
-	if curNode.Id==451{
+	if curNode.Id==49{
 		fmt.Println("Sense at this iteration",curNode.P.Iterations_used,"And this time", curNode.P.CurrentTime, "Nodes in square",NodesinSquare,"multiplier",multiplier)
+		fmt.Println("Curnode xy",curNode.X,curNode.Y, "old xy", curNode.OldX, curNode.OldY)
 	}
 	curNode.P.Events.Push(&Event{curNode, SENSE, curNode.P.CurrentTime + int(float64(curNode.P.SamplingPeriodMS)*math.Pow(2.0,float64(multiplier))), 0})
 	//Extends period by defaultperiod *2^nth power when 4x threshold extended by 16
@@ -1035,35 +1036,38 @@ func (curNode *NodeImpl) MoveCSV(p *Params) {
 	floatTemp := float32(p.CurrentTime)
 	intTime := int(floatTemp/1000)
 	portion := (floatTemp / 1000) - float32(intTime)
-
 	id := curNode.GetID()
-
 	if curNode.Valid {
-		oldX, oldY := curNode.GetLoc()
-		p.BoolGrid[int(oldX)][int(oldY)] = false //set the old spot false since the node will now move away
-
-		curNode.X = interpolate(p.NodeMovements[id][intTime-p.MovementOffset].X, p.NodeMovements[id][intTime-p.MovementOffset+1].X, portion)
-		curNode.Y = interpolate(p.NodeMovements[id][intTime-p.MovementOffset].Y, p.NodeMovements[id][intTime-p.MovementOffset+1].Y, portion)
-
-		//set the new location in the boolean field to true
-		newX, newY := curNode.GetLoc()
-		//fmt.Println(oldX, oldY,newX, newY, curNode.Id, p.CurrentTime,p.NodeMovements[id][intTime].X, p.NodeMovements[id][intTime+1].X)
-
-		if (!curNode.InBounds(p)) {
-			//fmt.Println(oldX, oldY,newX, newY, curNode.Id, p.CurrentTime,p.NodeMovements[id][intTime].X, p.NodeMovements[id][intTime+1].X)
-			curNode.Valid = false
-
-		} else {
-
-			d := curNode.Distance(*curNode.P.B)/2
-			if int(d) < p.MinDistance {
-				p.MinDistance = int(d)
-				fmt.Fprintf(p.DistanceFile, "ID: %v T: %v D: %v\n", curNode.Id, intTime, int(d))
-			}
-
-			p.BoolGrid[int(newX)][int(newY)] = true
-		}
+		curNode.OldX ,curNode.OldY = curNode.X, curNode.Y
+	} else {
+		curNode.OldX, curNode.OldY=0,0
 	}
+	if id==49 /*&& curNode.P.CurrentTime %500 == 0 */{
+		fmt.Println(curNode.X)
+		fmt.Println(curNode.P.CurrentTime)
+	}
+	p.BoolGrid[int(curNode.OldX)][int(curNode.OldY)] = false //set the old spot false since the node will now move away
+	curNode.X = interpolate(p.NodeMovements[id][intTime-p.MovementOffset].X, p.NodeMovements[id][intTime-p.MovementOffset+1].X, portion)
+	curNode.Y = interpolate(p.NodeMovements[id][intTime-p.MovementOffset].Y, p.NodeMovements[id][intTime-p.MovementOffset+1].Y, portion)
+
+	//set the new location in the boolean field to true
+	newX, newY := curNode.GetLoc()
+	//fmt.Println(oldX, oldY,newX, newY, curNode.Id, p.CurrentTime,p.NodeMovements[id][intTime].X, p.NodeMovements[id][intTime+1].X)
+	if (!curNode.InBounds(p)) {
+		//fmt.Println(oldX, oldY,newX, newY, curNode.Id, p.CurrentTime,p.NodeMovements[id][intTime].X, p.NodeMovements[id][intTime+1].X)
+		curNode.Valid = false
+	} else {
+
+		d := curNode.Distance(*curNode.P.B)/2
+		if int(d) < p.MinDistance {
+			p.MinDistance = int(d)
+			fmt.Fprintf(p.DistanceFile, "ID: %v T: %v D: %v\n", curNode.Id, intTime, int(d))
+		}
+
+		p.BoolGrid[int(newX)][int(newY)] = true
+		}
+
+
 
 
 	if !curNode.Valid {
