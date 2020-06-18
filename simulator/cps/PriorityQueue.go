@@ -27,6 +27,7 @@ const (
 	CLUSTERPRINT
 	//ScheduleSensor
 	SERVERSTATS
+	FULLRECLUSTER
 
 )
 

@@ -1085,14 +1085,13 @@ func (node *NodeImpl) MoveCSV(p *Params) {
 			//sync the QuadTree
 			if p.ClusteringOn {
 				p.NodeTree.NodeMovement(node)
-				p.ClusterNetwork.ClusterMovement(node, p.NodeBTRange)
 			}
 		}
 	}
 
 
 	if !node.Valid {
-		node.Valid = node.IsValid(p.NodeMovements[id][intTime-p.MovementOffset].X, p.NodeMovements[id][intTime-p.MovementOffset].Y, p)
+		node.Valid = node.TurnValid(p.NodeMovements[id][intTime-p.MovementOffset].X, p.NodeMovements[id][intTime-p.MovementOffset].Y, p)
 		node.X = float32(p.NodeMovements[id][intTime-p.MovementOffset].X)
 		node.Y = float32(p.NodeMovements[id][intTime-p.MovementOffset].Y)
 		if node.Valid {

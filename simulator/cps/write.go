@@ -474,7 +474,6 @@ func SetupCSVNodes(p *Params) {
 			newNode.IsClusterMember = false
 			newNode.NodeClusterParams = &ClusterMemberParams{}
 			p.NodeTree.Insert(newNode)
-			p.ClusterNetwork.NodeList = append(p.ClusterNetwork.NodeList, newNode)
 			//p.Events.Push(&Event{newNode,CLUSTERMSG,10,0})
 			//p.Events.Push(&Event{newNode,CLUSTERHEADELECT,15,0})
 			//p.Events.Push(&Event{newNode,CLUSTERFORM,20,0})
@@ -492,7 +491,7 @@ func SetupCSVNodes(p *Params) {
 
 	}
 
-	p.ClusterNetwork.FullRecluster(p.NodeBTRange)
+	p.ClusterNetwork.FullRecluster(p)
 
 }
 //SetupRandomNodes creates random nodes and appends them to the node list
@@ -1641,6 +1640,7 @@ func GetFlags(p *Params) {
 	flag.Float64Var(&p.DegreeWeight, "degreeWeight", 0.6, "The weight constant applied to the number of neighboring nodes when calculating a node's score")
 	flag.Float64Var(&p.BatteryWeight, "batteryWeight", 0.4, "The weight constant applied to a node's battery when calculating a node's score")
 	flag.Float64Var(&p.Penalty, "penalty", 0.8, "The penalty multiplied to a node's score when it is not already a cluster head")
+	flag.IntVar(&p.ReclusterPeriod, "reclusterPeriod", 30, "The period of time in seconds before the network fully reclusters")
 
 	flag.StringVar(&p.WindRegionPath, "windRegionPath", "hull_testing.txt", "File containing regions formed by wind")
 
@@ -1751,6 +1751,7 @@ func WriteFlags(p * Params){
 	buf.WriteString(fmt.Sprintf("degreeWeight=%v\n",p.DegreeWeight))
 	buf.WriteString(fmt.Sprintf("batteryWeight=%v\n",p.BatteryWeight))
 	buf.WriteString(fmt.Sprintf("penalty=%v\n",p.Penalty))
+	buf.WriteString(fmt.Sprintf("reclusterPeriod=%v\n",p.ReclusterPeriod))
 	buf.WriteString(fmt.Sprintf("wifiOr4G=%v\n",p.WifiOr4G))
 	//buf.WriteString(fmt.Sprintf("cmSensingTime=%v\n",p.CMSensingTime))
 	//buf.WriteString(fmt.Sprintf("chSensingTime=%v\n",p.CHSensingTime))

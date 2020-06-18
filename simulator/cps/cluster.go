@@ -12,7 +12,11 @@ type AdHocNetwork struct {
 	SingularCount	int
 	//Threshold		int //maximum # of nodes in a cluster
 	TotalMsgs		int //used to counts total messages sent/received in one iteration
-	NextClusterNum	int
+	NextClusterNum	int	//For testing, may remove later
+	Movements		int	//For testing, may remove later
+	NNHellos		int	//For testing, may remove later
+	Joins			int	//For testing, may remove later
+	Solos			int	//For testing, may remove later
 }
 
 type Cluster struct {
@@ -108,6 +112,49 @@ func (adhoc * AdHocNetwork) SendHelloMessage(curNode * NodeImpl, p *Params){
 	//fmt.Fprintf(curNode.P.ClusterMessages,buffer.String())
 }
 
+func (adhoc *AdHocNetwork) ClusterMovement(node *NodeImpl, p *Params) {
+	adhoc.Movements++
+	if node.Valid {
+		if (!node.IsClusterHead && (node.NodeClusterParams.CurrentCluster.ClusterHead == nil || !node.IsWithinRange(node.NodeClusterParams.CurrentCluster.ClusterHead, p.NodeBTRange))) || len(node.NodeClusterParams.CurrentCluster.ClusterMembers) < 2 {
+			adhoc.NewNodeHello(node, p)
+		}
+	}
+}
+
+func (adhoc *AdHocNetwork) NewNodeHello(node * NodeImpl, p *Params){
+	//println("New Node Hello")
+	adhoc.NNHellos++
+	withinDist := p.NodeTree.WithinRadius(p.NodeBTRange, node, []*NodeImpl{})
+	numWithinDist := len(withinDist)
+
+	node.GenerateHello(node.ComputeClusterScore(p, numWithinDist))
+
+	//var buffer bytes.Buffer
+	for j:=0; j<numWithinDist; j++ {
+		if withinDist[j].IsClusterHead && len(withinDist[j].NodeClusterParams.CurrentCluster.ClusterMembers) < p.ClusterThreshold {
+			withinDist[j].GenerateHello(withinDist[j].ComputeClusterScore(p, len(p.NodeTree.WithinRadius(p.NodeBTRange, withinDist[j], []*NodeImpl{}))))
+			node.Join(withinDist[j].NodeClusterParams.CurrentCluster)
+			adhoc.Joins++
+			return
+		}
+		//if curClusterP.RecvMsgs != nil {
+		//	if withinDist[j].Battery > withinDist[j].P.ThreshHoldBatteryToHave {
+		//if curClusterP.ThisNodeHello.Sender != nil {
+		//curClusterP.RecvMsgs = append(curClusterP.RecvMsgs, curNode.NodeClusterParams.ThisNodeHello)
+		//buffer.WriteString(fmt.Sprintf("SenderId=%v\tRecieverId=%v\tSenderCHS=%v\n",curNode.Id,withinDist[j].CurNode.Id,curNode.NodeClusterParams.ThisNodeHello.NodeCHScore))
+		//curNode.DecrementPowerBT()
+		//adhoc.TotalMsgs++
+		//}
+		//}
+		//}
+	}
+	//println("form clusters")
+	adhoc.Solos++
+	node.ClearClusterParams()
+	adhoc.ElectClusterHead(node, p)
+	//fmt.Fprintf(curNode.P.ClusterMessages,buffer.String())
+}
+
 func (node * NodeImpl) HasMaxNodeScore(p * Params)  *NodeImpl {
 	maxNode := node //&(NodeImpl{})
 	maxScore := node.NodeClusterParams.ThisNodeHello.NodeCHScore
@@ -123,7 +170,7 @@ func (node * NodeImpl) HasMaxNodeScore(p * Params)  *NodeImpl {
 		//if received a message from a node who does not have a cluster head
 		if !sender.IsClusterMember && len(sender.NodeClusterParams.CurrentCluster.ClusterMembers) < p.ClusterThreshold {
 			//if their score higher than current node score
-			if node.NodeClusterParams.RecvMsgs[i].NodeCHScore > maxScore && len(node.NodeClusterParams.RecvMsgs[i].Sender.NodeClusterParams.CurrentCluster.ClusterMembers) < threshold {
+			if node.NodeClusterParams.RecvMsgs[i].NodeCHScore > maxScore {
 				maxScore = node.NodeClusterParams.RecvMsgs[i].NodeCHScore
 				maxNode = sender
 			} else if math.Abs(node.NodeClusterParams.RecvMsgs[i].NodeCHScore - maxScore) < 0.1 {
@@ -143,6 +190,7 @@ func (node * NodeImpl) HasMaxNodeScore(p * Params)  *NodeImpl {
 
 func (node *NodeImpl) Join(cluster *Cluster) {
 	node.IsClusterMember = true
+	node.IsClusterHead = false
 	node.NodeClusterParams.CurrentCluster = cluster
 	cluster.ClusterMembers = append(cluster.ClusterMembers, node)
 }
@@ -447,13 +495,25 @@ func (node * NodeImpl) IsWithinRange(node2 * NodeImpl, searchRange float64) (inR
 	return inRange
 }
 
-func (adhoc *AdHocNetwork) FullRecluster(transmitRange float64) {
+func (adhoc *AdHocNetwork) FullRecluster(p *Params) {
 	println("Full Recluster")
-	adhoc.ResetClusters()
-	for _, node := range adhoc.NodeList {
-		adhoc.SendHelloMessage(transmitRange, node, adhoc.NodeTree)
+	print("Movements: ")
+	println(adhoc.Movements)
+	print("NNHellos: ")
+	println(adhoc.NNHellos)
+	print("Joins: ")
+	println(adhoc.Joins)
+	print("Solos: ")
+	println(adhoc.Solos)
+	adhoc.Movements = 0
+	adhoc.NNHellos = 0
+	adhoc.Joins = 0
+	adhoc.Solos = 0
+	adhoc.ResetClusters(p)
+	for _, node := range p.NodeList {
+		adhoc.SendHelloMessage(node, p)
 	}
-	for _, node := range adhoc.NodeList {
-		adhoc.ElectClusterHead(node)
+	for _, node := range p.NodeList {
+		adhoc.ElectClusterHead(node, p)
 	}
 }
