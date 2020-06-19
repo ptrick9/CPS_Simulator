@@ -479,7 +479,7 @@ func SetupCSVNodes(p *Params) {
 			//p.Events.Push(&Event{newNode,CLUSTERMSG,10,0})
 			//p.Events.Push(&Event{newNode,CLUSTERHEADELECT,15,0})
 			//p.Events.Push(&Event{newNode,CLUSTERFORM,20,0})
-			newNode.ClearClusterParams()
+			p.ClusterNetwork.ClearClusterParams(newNode)
 			newNode.TimeLastSentReadings = p.CurrentTime
 			newNode.ReadingsBuffer = []Reading{}
 		}
@@ -831,6 +831,25 @@ func SetupFiles(p *Params) {
 	}
 	p.Files = append(p.Files, p.OutputFileNameCM+"-distance.txt")
 
+	if p.ClusteringOn {
+		p.ClusterFile, err = os.Create(p.OutputFileNameCM + "-clusters.txt")
+		if err != nil {
+			log.Fatal("Cannot create file", err)
+		}
+		p.Files = append(p.Files, p.OutputFileNameCM+"-clusters.txt")
+
+		p.ClusterStatsFile, err = os.Create(p.OutputFileNameCM + "-clusterStats.txt")
+		if err != nil {
+			log.Fatal("Cannot create file", err)
+		}
+		p.Files = append(p.Files, p.OutputFileNameCM+"-clusterStats.txt")
+
+		p.ClusterDebug, err = os.Create(p.OutputFileNameCM + "-clusterDebug.txt")
+		if err != nil {
+			log.Fatal("Cannot create file", err)
+		}
+		p.Files = append(p.Files, p.OutputFileNameCM+"-clusterDebug.txt")
+	}
 
 	fmt.Println(p.Files)
 
@@ -1652,6 +1671,9 @@ func GetFlags(p *Params) {
 
 	flag.BoolVar(&p.RandomBomb, "randomBomb", false, "Toggles random bomb placement")
 	flag.BoolVar(&p.ZipFiles, "zipFiles", false, "Toggles Zipping of output files")
+
+
+
 	flag.Parse()
 	fmt.Println("Natural Loss: ", p.NaturalLossCM)
 	fmt.Println("Sensor Sampling Loss: ", p.SamplingLossSensorCM)
