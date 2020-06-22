@@ -1,8 +1,6 @@
 package main
 
-import "./cps"
-
-func main() {
+/*func main() {
 	tree := cps.Quadtree{
 		Bounds: cps.Bounds{
 			X:      0,
@@ -105,4 +103,4 @@ func main() {
 
 	network.NewNodeHello(8, &newNode, &tree)
 	tree.PrintTree()
-}
+}*/
