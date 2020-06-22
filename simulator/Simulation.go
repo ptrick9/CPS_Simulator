@@ -224,7 +224,7 @@ func main() {
 	r = &cps.RegionParams{}
 
 	p.Events = Events
-	p.Server = cps.FusionCenter{p, r, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil}
+	p.Server = cps.FusionCenter{p, r, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, 0}
 
 	p.Tau1 = 3500
 	p.Tau2 = 9000
@@ -418,6 +418,9 @@ func main() {
 					}
 				}
 
+				event.Node.DrainBatterySample()
+				event.Node.ScheduleNextSense()
+
 			} else if event.Instruction == cps.MOVE {
 				if(p.CSVMovement) {
 					event.Node.MoveCSV(p)
@@ -599,6 +602,8 @@ func main() {
 	} else {
 		fmt.Println("\nSimulation Complete")
 	}
+
+	p.Server.PrintBatteryStats()
 
 	if p.ZipFiles {
 		p.MoveReadingsFile.Close()

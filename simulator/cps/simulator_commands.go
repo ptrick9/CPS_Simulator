@@ -220,4 +220,21 @@ type Params struct {
 
 	ValidationType string
 	RecalReject 	bool
+
+	// New Battery Model Variables
+	BatteryCapacity				int
+	AverageBatteryLevel			float64
+	SampleLossPercentage		float64
+	CommunicationLossPercentage	float64
+
+}
+
+// returns the amount of battery drained when a sampling event occurs
+func (p *Params) SampleLossAmount() int {
+	return int(float64(p.BatteryCapacity) * p.SampleLossPercentage)
+}
+
+// returns the amount of battery drained when a communication event occurs
+func (p *Params) CommunicationLossAmount() int {
+	return int(float64(p.BatteryCapacity) * p.CommunicationLossPercentage)
 }

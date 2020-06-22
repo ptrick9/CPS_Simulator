@@ -133,6 +133,10 @@ type NodeImpl struct {
 	TotalBytesSent		int
 	IsClusterHead		bool
 	Recalibrated 		bool
+
+	// The following values are for the new battery model
+	InitialBatteryLevel	int
+	CurrentBatteryLevel	int
 }
 
 //NodeMovement controls the movement of all the normal nodes
@@ -664,6 +668,31 @@ func (curNode *NodeImpl) Distance(b Bomb) float32 {
 	return float32(math.Sqrt(math.Pow(float64(math.Abs(float64(curNode.X)-float64(b.X))),2) + math.Pow(float64(math.Abs(float64(curNode.Y)-float64(b.Y))),2)))
 }
 
+//calculates battery level percentage
+func (curNode *NodeImpl) GetBatteryPercentage() float64 {
+	return float64(curNode.CurrentBatteryLevel) / float64(curNode.P.BatteryCapacity)
+}
+
+// decreases battery level of a node for when a sample is taken
+func (curNode *NodeImpl) DrainBatterySample() {
+	curNode.P.Server.TotalSamplesTaken++
+	curNode.CurrentBatteryLevel -= curNode.P.SampleLossAmount()
+}
+
+// decreases battery level of a node for when communication occurs
+func (curNode *NodeImpl) DrainBatteryCommunication() {
+	// add counter for this later
+	curNode.CurrentBatteryLevel -= curNode.P.CommunicationLossAmount()
+}
+
+func (curNode *NodeImpl) ScheduleNextSense() {
+	// other checks that adjust the sampling rate based on battery level will go here
+	battery := curNode.GetBatteryPercentage()
+	if battery >= .10 {
+		curNode.P.Events.Push(&Event{curNode, SENSE, curNode.P.CurrentTime + 500, 0})
+	}
+}
+
 //Returns a float representing the detection of the bomb
 //	by the specific node depending on distance
 func RawConcentration(dist float32) float32 {
@@ -821,10 +850,7 @@ func (curNode *NodeImpl) GetReadings() {
 		} else {
 			curNode.report(RawConc)
 		}
-
 	}
-	curNode.P.Events.Push(&Event{curNode, SENSE, curNode.P.CurrentTime + 500, 0})
-
 }
 
 
@@ -864,7 +890,6 @@ func (curNode *NodeImpl) GetReadingsCSV() {
 		//curNode.report(RawConcentration)
 
 	}
-	curNode.P.Events.Push(&Event{curNode, SENSE, curNode.P.CurrentTime + 500, 0})
 }
 
 func (curNode *NodeImpl) GetSensor() {
@@ -890,7 +915,6 @@ func (curNode *NodeImpl) GetSensor() {
 		//curNode.report(RawConcentration)
 
 	}
-	curNode.P.Events.Push(&Event{curNode, SENSE, curNode.P.CurrentTime + 500, 0})
 }
 
 func (curNode *NodeImpl) report(rawConc float64) {

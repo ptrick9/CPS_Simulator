@@ -422,6 +422,10 @@ func InitializeNodeParameters(p *Params, nodeNum int) *NodeImpl{
 	curNode.InitialSensitivity = s0 + (s1)*math.Exp(-float64(curNode.NodeTime)/p.Tau1) + (s2)*math.Exp(-float64(curNode.NodeTime)/p.Tau2)
 	curNode.Sensitivity = curNode.InitialSensitivity
 
+	// Initialize New Battery Model Variables
+	curNode.CurrentBatteryLevel = p.BatteryCapacity
+	curNode.InitialBatteryLevel = curNode.CurrentBatteryLevel
+
 	return &curNode
 }
 
@@ -1593,6 +1597,13 @@ func GetFlags(p *Params) {
 
 	flag.BoolVar(&p.RandomBomb, "randomBomb", false, "Toggles random bomb placement")
 	flag.BoolVar(&p.ZipFiles, "zipFiles", false, "Toggles Zipping of output files")
+
+	// New Battery Level Flags
+	flag.IntVar(&p.BatteryCapacity, "batteryCapacity", 10000, "Max battery capacity of all nodes")
+	flag.Float64Var(&p.AverageBatteryLevel, "averageBatteryLevel", 0.70, "average initial battery level to set nodes to")
+	flag.Float64Var(&p.SampleLossPercentage, "sampleLossPercentage", 0.002, "amount of battery drained each time a node takes a sample")
+	flag.Float64Var(&p.CommunicationLossPercentage, "communicationLossPercentage", 0.002, "amount of battery drained each time a node communicates")
+
 	flag.Parse()
 	fmt.Println("Natural Loss: ", p.NaturalLossCM)
 	fmt.Println("Sensor Sampling Loss: ", p.SamplingLossSensorCM)

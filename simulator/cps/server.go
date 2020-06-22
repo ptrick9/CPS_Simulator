@@ -31,6 +31,8 @@ type FusionCenter struct {
 	Validators 		map[int]int //stores validators...id -> time  latest time for id is stored
 	NodeSquares 	map[int]Tuple  //store what square a node is in
 	SquarePop  		map[Tuple][]int //store nodes in square
+
+	TotalSamplesTaken	int // counter keeps track when a sample is taken
 }
 
 //Init initializes the values for the server
@@ -750,6 +752,30 @@ func (s FusionCenter) GetLeastDenseSquares() Squares{
 	}*/
 
 	return orderedSquares
+}
+
+func (s *FusionCenter) PrintBatteryStats() {
+
+	totalDead := 0
+	lowestBattery := s.P.NodeList[0].GetBatteryPercentage()
+	averageRemainingBattery := 0.0
+	for _, node := range s.P.NodeList {
+		battery := node.GetBatteryPercentage()
+		if battery >= .10 {
+			averageRemainingBattery += battery
+			if battery < lowestBattery {
+				lowestBattery = battery
+			}
+		} else {
+			totalDead++
+		}
+	}
+
+	fmt.Print("\nTotal Samples Taken:", s.TotalSamplesTaken)
+	fmt.Print("\nSampling Energy Consumption:", s.TotalSamplesTaken * s.P.SampleLossAmount())
+	fmt.Print("\nMinimum Remaining Battery:", lowestBattery)
+	fmt.Print("\nAverage Remaining Battery:", averageRemainingBattery / float64(s.P.TotalNodes - totalDead))
+	fmt.Print("\nTotal Dead Nodes:", totalDead, "/", s.P.TotalNodes)
 }
 
 type Squares []*Square
