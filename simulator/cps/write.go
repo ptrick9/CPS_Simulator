@@ -337,6 +337,11 @@ func HandleMovement(p *Params) {
 		newX, newY := p.NodeList[j].GetLoc()
 		p.BoolGrid[int(newX)][int(newY)] = true
 
+		//sync the QuadTree
+		if p.ClusteringOn {
+			p.NodeTree.NodeMovement(p.NodeList[j])
+		}
+
 		//writes the node information to the file
 		if p.EnergyPrint {
 			fmt.Fprintln(p.EnergyFile, p.NodeList[j])
@@ -367,6 +372,11 @@ func HandleMovementCSV(p *Params) {
 
 		//set the new location in the boolean field to true
 		newX, newY := p.NodeList[j].GetLoc()
+
+		//sync the QuadTree
+		if p.ClusteringOn {
+			p.NodeTree.NodeMovement(p.NodeList[j])
+		}
 
 		if p.NodeList[j].InBounds(p) {
 			p.NodeList[j].Valid = true
@@ -444,8 +454,33 @@ func SetupCSVNodes(p *Params) {
 			newNode.Valid = false
 		}
 
+		newNode.Alive = true
+
 		p.NodeList = append(p.NodeList, newNode)
 		p.CurrentNodes += 1
+
+		//newNode.ScheduledEvent = &Event{newNode,SENSE,0,0}
+		//p.Events.Push(&Event{newNode,MOVE,0,0})
+		//p.Events.Push(newNode.ScheduledEvent)
+		//p.Events.Push(&Event{newNode, ScheduleSensor, 0, 0})
+
+		if p.ClusteringOn {
+			newNode.IsClusterHead = false
+			newNode.IsClusterMember = false
+			newNode.NodeClusterParams = &ClusterMemberParams{}
+			p.NodeTree.Insert(newNode)
+			//p.Events.Push(&Event{newNode,CLUSTERMSG,10,0})
+			//p.Events.Push(&Event{newNode,CLUSTERHEADELECT,15,0})
+			//p.Events.Push(&Event{newNode,CLUSTERFORM,20,0})
+			p.ClusterNetwork.ClearClusterParams(newNode)
+			newNode.TimeLastSentReadings = p.CurrentTime
+			newNode.ReadingsBuffer = []Reading{}
+		}
+
+		newNode.AccelerometerSpeed = []float32{}
+		newNode.TimeLastAccel = p.CurrentTime
+		newNode.LastMoveTime = p.CurrentTime
+
 		p.Events.Push(&Event{newNode, SENSE, 0, 0})
 		p.Events.Push(&Event{newNode, MOVE, 0, 0})
 
@@ -789,6 +824,25 @@ func SetupFiles(p *Params) {
 	}
 	p.Files = append(p.Files, p.OutputFileNameCM+"-distance.txt")
 
+	if p.ClusteringOn {
+		p.ClusterFile, err = os.Create(p.OutputFileNameCM + "-clusters.txt")
+		if err != nil {
+			log.Fatal("Cannot create file", err)
+		}
+		p.Files = append(p.Files, p.OutputFileNameCM+"-clusters.txt")
+
+		p.ClusterStatsFile, err = os.Create(p.OutputFileNameCM + "-clusterStats.txt")
+		if err != nil {
+			log.Fatal("Cannot create file", err)
+		}
+		p.Files = append(p.Files, p.OutputFileNameCM+"-clusterStats.txt")
+
+		p.ClusterDebug, err = os.Create(p.OutputFileNameCM + "-clusterDebug.txt")
+		if err != nil {
+			log.Fatal("Cannot create file", err)
+		}
+		p.Files = append(p.Files, p.OutputFileNameCM+"-clusterDebug.txt")
+	}
 
 	fmt.Println(p.Files)
 
@@ -823,7 +877,7 @@ func SetupParameters(p *Params, r *RegionParams) {
 	p.BatteryLossesBT = GetLinearBatteryLossConstant(len(p.NodeEntryTimes), float32(p.SamplingLossBTCM))
 	p.BatteryLossesWiFi = GetLinearBatteryLossConstant(len(p.NodeEntryTimes), float32(p.SamplingLossWifiCM))
 	p.BatteryLosses4G = GetLinearBatteryLossConstant(len(p.NodeEntryTimes), float32(p.SamplingLoss4GCM))
-	p.BatteryLossesAccelerometer = GetLinearBatteryLossConstant(len(p.NodeEntryTimes), float32((p.SamplingLossAccelCM)))
+	p.BatteryLossesAccelerometer = GetLinearBatteryLossConstant(len(p.NodeEntryTimes), float32(p.SamplingLossAccelCM))
 
 	p.Attractions = make([]*Attraction, p.NumAtt)
 
@@ -1440,27 +1494,31 @@ func GetFlags(p *Params) {
 	flag.Float64Var(&p.NaturalLossCM, "naturalLoss", .005,
 		"battery loss due to natural causes")
 
+	flag.BoolVar(&p.WifiOr4G, "wifiOr4G", false, "True: nodes speak to server over wifi, False: nodes speak to server over 4G")
 
-	flag.Float64Var(&p.SamplingLossSensorCM, "sensorSamplingLoss", .001,
+	//flag.IntVar(&p.CMSensingTime, "cmSensingTime,",2, "seconds a cluster member will sense/record readings before sending to cluster head")
+	//flag.IntVar(&p.CHSensingTime, "chSensingTime,",4, "seconds a cluster head will sense//collect from CM/record readings before sending to server")
+	//flag.IntVar(&p.MaxCMReadingBufferSize, "maxCMReadingBufferSize,",10, "max readings buffer size of a cluster member. CM must send to CH when buffer is this size")
+	//flag.IntVar(&p.MaxCHReadingBufferSize, "maxCHReadingBufferSize,",100, "max readings buffer size of a cluster head. CH must send to server when buffer is this size")
+
+
+	flag.Float64Var(&p.SamplingLossSensorCM, "sensorSamplingLoss", .01,
 		"battery loss due to sensor sampling")
 
-	flag.Float64Var(&p.SamplingLossGPSCM, "GPSSamplingLoss", .005,
+	flag.Float64Var(&p.SamplingLossGPSCM, "GPSSamplingLoss", .05,
 		"battery loss due to GPS sampling")
 
-	flag.Float64Var(&p.SamplingLossSensorCM, "serverSamplingLoss", .01,
-		"battery loss due to server sampling")
-
-	flag.Float64Var(&p.SamplingLossBTCM, "SamplingLossBTCM", .0001,
+	flag.Float64Var(&p.SamplingLossBTCM, "SamplingLossBTCM", .001,
 		"battery loss due to BlueTooth sampling")
 
 
-	flag.Float64Var(&p.SamplingLossWifiCM, "SamplingLossWifiCM", .001,
+	flag.Float64Var(&p.SamplingLossWifiCM, "SamplingLossWifiCM", .01,
 		"battery loss due to WiFi sampling")
 
-	flag.Float64Var(&p.SamplingLoss4GCM, "SamplingLoss4GCM", .005,
+	flag.Float64Var(&p.SamplingLoss4GCM, "SamplingLoss4GCM", .05,
 		"battery loss due to 4G sampling")
 
-	flag.Float64Var(&p.SamplingLossAccelCM, "SamplingLossAccelCM", .001,
+	flag.Float64Var(&p.SamplingLossAccelCM, "SamplingLossAccelCM", .01,
 		"battery loss due to accelerometer sampling")
 
 	flag.IntVar(&p.ThresholdBatteryToHaveCM, "thresholdBatteryToHave", 30,
@@ -1584,6 +1642,15 @@ func GetFlags(p *Params) {
 
 	flag.BoolVar(&p.RegionRouting, "regionRouting", true, "True if you want to use the new routing algorithm with regions and cutting")
 
+	flag.BoolVar(&p.ClusteringOn,"clusteringOn",true,"True: nodes will form clusters, False: no clusters will form")
+	flag.BoolVar(&p.RedundantClustering,"redundantClustering",false,"If clusteringOn is set to true, True: nodes will join two clusters, False: clusters will form normally")
+	flag.IntVar(&p.ClusterMaxThreshold, "clusterThresh",8, "max size of a node cluster")
+	flag.Float64Var(&p.NodeBTRange, "nodeBTRange",20.0,"bluetooth range of each node")
+	flag.Float64Var(&p.DegreeWeight, "degreeWeight", 0.6, "The weight constant applied to the number of neighboring nodes when calculating a node's score")
+	flag.Float64Var(&p.BatteryWeight, "batteryWeight", 0.4, "The weight constant applied to a node's battery when calculating a node's score")
+	flag.Float64Var(&p.Penalty, "penalty", 0.8, "The penalty multiplied to a node's score when it is not already a cluster head")
+	flag.IntVar(&p.ReclusterPeriod, "reclusterPeriod", 30, "The period of time in seconds before the network fully reclusters")
+
 	flag.StringVar(&p.WindRegionPath, "windRegionPath", "hull_testing.txt", "File containing regions formed by wind")
 
 	flag.BoolVar(&p.DriftExplorer, "driftExplorer", false, "True if you want to JUST examine sensor drifting")
@@ -1645,7 +1712,6 @@ func WriteFlags(p * Params){
 	buf.WriteString(fmt.Sprintf("naturalLoss=%v\n", p.NaturalLossCM))
 	buf.WriteString(fmt.Sprintf("sensorSamplingLoss=%v\n", p.SamplingLossSensorCM))
 	buf.WriteString(fmt.Sprintf("GPSSamplingLoss=%v\n", p.SamplingLossGPSCM))
-	buf.WriteString(fmt.Sprintf("serverSamplingLoss=%v\n", p.SamplingLossSensorCM))
 	buf.WriteString(fmt.Sprintf("SamplingLossBTCM=%v\n", p.SamplingLossBTCM))
 	buf.WriteString(fmt.Sprintf("SamplingLossWifiCM=%v\n", p.SamplingLossWifiCM))
 	buf.WriteString(fmt.Sprintf("SamplingLoss4GCM=%v\n", p.SamplingLoss4GCM))
@@ -1694,6 +1760,18 @@ func WriteFlags(p * Params){
 	buf.WriteString(fmt.Sprintf("totalNodes=%v\n", p.TotalNodes))
 	buf.WriteString(fmt.Sprintf("validaitonType=%v\n", p.ValidationType))
 	buf.WriteString(fmt.Sprintf("recalReject=%v\n", p.RecalReject))
+	buf.WriteString(fmt.Sprintf("clusterThresh=%v\n", p.ClusterMaxThreshold))
+	buf.WriteString(fmt.Sprintf("nodeBTRange=%v\n", p.NodeBTRange))
+	buf.WriteString(fmt.Sprintf("clusteringOn=%v\n",p.ClusteringOn))
+	buf.WriteString(fmt.Sprintf("degreeWeight=%v\n",p.DegreeWeight))
+	buf.WriteString(fmt.Sprintf("batteryWeight=%v\n",p.BatteryWeight))
+	buf.WriteString(fmt.Sprintf("penalty=%v\n",p.Penalty))
+	buf.WriteString(fmt.Sprintf("reclusterPeriod=%v\n",p.ReclusterPeriod))
+	buf.WriteString(fmt.Sprintf("wifiOr4G=%v\n",p.WifiOr4G))
+	//buf.WriteString(fmt.Sprintf("cmSensingTime=%v\n",p.CMSensingTime))
+	//buf.WriteString(fmt.Sprintf("chSensingTime=%v\n",p.CHSensingTime))
+	//buf.WriteString(fmt.Sprintf("maxCMReadingBufferSize=%v\n",p.MaxCMReadingBufferSize))
+	//buf.WriteString(fmt.Sprintf("maxCHReadingBufferSize=%v\n",p.MaxCHReadingBufferSize))
 	fmt.Fprintf(p.RunParamFile,buf.String())
 }
 
@@ -1760,7 +1838,7 @@ func DriftHist(p *Params) {
 	max := 0.0
 	count := 0.0
 	i := 0
-	for i < p.TotalNodes {
+	for i < len(p.NodeList) {
 		n := p.NodeList[i]
 		if n.Valid {
 			v := n.Sensitivity / n.InitialSensitivity
