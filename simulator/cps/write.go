@@ -479,7 +479,7 @@ func SetupCSVNodes(p *Params) {
 			//p.Events.Push(&Event{newNode,CLUSTERMSG,10,0})
 			//p.Events.Push(&Event{newNode,CLUSTERHEADELECT,15,0})
 			//p.Events.Push(&Event{newNode,CLUSTERFORM,20,0})
-			p.ClusterNetwork.ClearClusterParams(newNode)
+			p.ClusterNetwork.ClearClusterParams(newNode, p)
 			newNode.TimeLastSentReadings = p.CurrentTime
 			newNode.ReadingsBuffer = []Reading{}
 		}
@@ -1651,7 +1651,7 @@ func GetFlags(p *Params) {
 
 	flag.BoolVar(&p.ClusteringOn,"clusteringOn",true,"True: nodes will form clusters, False: no clusters will form")
 	flag.BoolVar(&p.RedundantClustering,"redundantClustering",false,"If clusteringOn is set to true, True: nodes will join two clusters, False: clusters will form normally")
-	flag.IntVar(&p.ClusterThreshold, "clusterThresh,",8, "max size of a node cluster")
+	flag.IntVar(&p.ClusterThreshold, "clusterThresh",8, "max size of a node cluster")
 	flag.Float64Var(&p.NodeBTRange, "nodeBTRange",20.0,"bluetooth range of each node")
 	flag.Float64Var(&p.DegreeWeight, "degreeWeight", 0.6, "The weight constant applied to the number of neighboring nodes when calculating a node's score")
 	flag.Float64Var(&p.BatteryWeight, "batteryWeight", 0.4, "The weight constant applied to a node's battery when calculating a node's score")

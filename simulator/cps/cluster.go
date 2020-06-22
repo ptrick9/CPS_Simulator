@@ -18,14 +18,15 @@ type AdHocNetwork struct {
 }
 
 type Cluster struct {
-	ClusterHead    *NodeImpl //*NodeImpl	//id of clusterhead
+	ClusterHead    *NodeImpl
 	ClusterMembers []*NodeImpl
 	ClusterNetwork *AdHocNetwork
-	ClusterNum     int //integer identifier of node
+	ClusterNum     int //integer identifier of cluster
 }
 
 type ClusterMemberParams struct {
 	CurrentCluster  *Cluster
+	CurrentCluster2	*Cluster //Only utilized if redundant clustering is enabled and only by cluster members, not heads
 	RecvMsgs        []*HelloMsg
 	ThisNodeHello   *HelloMsg
 	AttemptedToJoin []*NodeImpl
@@ -33,7 +34,6 @@ type ClusterMemberParams struct {
 
 type HelloMsg struct {
 	Sender      *NodeImpl //pointer to Node sending the Hello Msg
-	ClusterHead *NodeImpl //pointer to of the cluster head
 	//nil if not in a cluster
 	//points to self if Node is a ClusterHead
 	NodeCHScore float64 //score for determining how suitable a node is to be a clusterhead
@@ -115,12 +115,13 @@ func (adhoc *AdHocNetwork) ClusterMovement(node *NodeImpl, p *Params) {
 		if node.Battery < p.ThreshHoldBatteryToHave {
 			node.Alive = false
 			node.CurTree.RemoveAndClean(node)
-			if node.IsClusterHead {
-				adhoc.DissolveCluster(node)
-			} else {
-				adhoc.ClearClusterParams(node)
-			}
-		} else if (!node.IsClusterHead && (node.NodeClusterParams.CurrentCluster.ClusterHead == nil || !node.IsWithinRange(node.NodeClusterParams.CurrentCluster.ClusterHead, p.NodeBTRange))) || len(node.NodeClusterParams.CurrentCluster.ClusterMembers) <= 0 {
+			adhoc.ClearClusterParams(node, p)
+		} else if (!node.IsClusterHead && (node.NodeClusterParams.CurrentCluster.ClusterHead == nil || !node.IsWithinRange(node.NodeClusterParams.CurrentCluster.ClusterHead, p.NodeBTRange))) ||
+			len(node.NodeClusterParams.CurrentCluster.ClusterMembers) <= 0 ||
+			(p.RedundantClustering &&
+			((!node.IsClusterHead && (node.NodeClusterParams.CurrentCluster2.ClusterHead == nil || !node.IsWithinRange(node.NodeClusterParams.CurrentCluster2.ClusterHead, p.NodeBTRange))) ||
+			len(node.NodeClusterParams.CurrentCluster2.ClusterMembers) <= 0)) {
+			adhoc.ClearClusterParams(node, p)
 			adhoc.NewNodeHello(node, p)
 		}
 	}
@@ -134,34 +135,23 @@ func (adhoc *AdHocNetwork) NewNodeHello(node *NodeImpl, p *Params) {
 
 	//node.GenerateHello(node.ComputeClusterScore(p, numWithinDist))
 
-	//var buffer bytes.Buffer
 	for j := 0; j < numWithinDist; j++ {
 		if withinDist[j].IsClusterHead && len(withinDist[j].NodeClusterParams.CurrentCluster.ClusterMembers) < p.ClusterThreshold {
 			//withinDist[j].GenerateHello(withinDist[j].ComputeClusterScore(p, len(p.NodeTree.WithinRadius(p.NodeBTRange, withinDist[j], []*NodeImpl{}))))
-			adhoc.ClearClusterParams(node)
+			adhoc.ClearClusterParams(node, p)
 			node.Join(withinDist[j].NodeClusterParams.CurrentCluster)
 			//adhoc.Joins++
 			return
 		}
-		//if curClusterP.RecvMsgs != nil {
-		//	if withinDist[j].Battery > withinDist[j].P.ThreshHoldBatteryToHave {
-		//if curClusterP.ThisNodeHello.Sender != nil {
-		//curClusterP.RecvMsgs = append(curClusterP.RecvMsgs, curNode.NodeClusterParams.ThisNodeHello)
-		//buffer.WriteString(fmt.Sprintf("SenderId=%v\tRecieverId=%v\tSenderCHS=%v\n",curNode.Id,withinDist[j].CurNode.Id,curNode.NodeClusterParams.ThisNodeHello.NodeCHScore))
-		//curNode.DecrementPowerBT()
-		//adhoc.TotalMsgs++
-		//}
-		//}
-		//}
 	}
 	//println("form clusters")
 	//adhoc.Solos++
-	adhoc.ClearClusterParams(node)
+	adhoc.ClearClusterParams(node, p)
 	adhoc.ElectClusterHead(node, p)
 	//fmt.Fprintf(curNode.P.ClusterMessages,buffer.String())
 }
 
-func (node *NodeImpl) HasMaxNodeScore(p *Params) *NodeImpl {
+func (node *NodeImpl) HasMaxNodeScore(p *Params, nodeToIgnore *NodeImpl) *NodeImpl {
 	maxNode := node //&(NodeImpl{})
 	maxScore := node.NodeClusterParams.ThisNodeHello.NodeCHScore
 	//print("cur node: ")
@@ -176,11 +166,11 @@ func (node *NodeImpl) HasMaxNodeScore(p *Params) *NodeImpl {
 		//if received a message from a node who does not have a cluster head
 		if !sender.IsClusterMember && len(sender.NodeClusterParams.CurrentCluster.ClusterMembers) < p.ClusterThreshold {
 			//if their score higher than current node score
-			if node.NodeClusterParams.RecvMsgs[i].NodeCHScore > maxScore {
+			if node.NodeClusterParams.RecvMsgs[i].NodeCHScore > maxScore && (!p.RedundantClustering || node.NodeClusterParams.CurrentCluster.ClusterHead != sender){
 				maxScore = node.NodeClusterParams.RecvMsgs[i].NodeCHScore
 				maxNode = sender
 			} else if math.Abs(node.NodeClusterParams.RecvMsgs[i].NodeCHScore-maxScore) < 0.1 {
-				if sender.Id < maxNode.Id {
+				if sender.Id < maxNode.Id && (!p.RedundantClustering || node.NodeClusterParams.CurrentCluster.ClusterHead != sender) {
 					maxNode = sender
 				}
 			}
@@ -218,21 +208,39 @@ func (node *NodeImpl) PrintClusterNode() {
 	fmt.Println()
 }
 
-func (adhoc *AdHocNetwork) ClearClusterParams(node *NodeImpl) {
+func (adhoc *AdHocNetwork) ClearClusterParams(node *NodeImpl, p *Params) {
 	if node.IsClusterHead {
 		node.IsClusterHead = false
-		adhoc.DissolveCluster(node)
+		adhoc.DissolveCluster(node, p)
 		return
-	} else if node.NodeClusterParams.CurrentCluster != nil {
-		for i := range node.NodeClusterParams.CurrentCluster.ClusterMembers {
-			if node == node.NodeClusterParams.CurrentCluster.ClusterMembers[i] {
-				node.NodeClusterParams.CurrentCluster.ClusterMembers = append(node.NodeClusterParams.CurrentCluster.ClusterMembers[:i], node.NodeClusterParams.CurrentCluster.ClusterMembers[i+1:]...)
-				break
+	} else {
+		if node.NodeClusterParams.CurrentCluster != nil {
+			for i := range node.NodeClusterParams.CurrentCluster.ClusterMembers {
+				if node == node.NodeClusterParams.CurrentCluster.ClusterMembers[i] {
+					node.NodeClusterParams.CurrentCluster.ClusterMembers = append(node.NodeClusterParams.CurrentCluster.ClusterMembers[:i], node.NodeClusterParams.CurrentCluster.ClusterMembers[i+1:]...)
+					break
+				}
+			}
+		}
+		if node.NodeClusterParams.CurrentCluster2 != nil {
+			for i := range node.NodeClusterParams.CurrentCluster2.ClusterMembers {
+				if node == node.NodeClusterParams.CurrentCluster2.ClusterMembers[i] {
+					node.NodeClusterParams.CurrentCluster2.ClusterMembers = append(node.NodeClusterParams.CurrentCluster2.ClusterMembers[:i], node.NodeClusterParams.CurrentCluster2.ClusterMembers[i+1:]...)
+					break
+				}
 			}
 		}
 	}
+
 	node.NodeClusterParams.CurrentCluster = &Cluster{}
 	node.NodeClusterParams.CurrentCluster.ClusterMembers = []*NodeImpl{}
+
+	if p.RedundantClustering {
+		node.NodeClusterParams.CurrentCluster2 = &Cluster{}
+		node.NodeClusterParams.CurrentCluster2.ClusterMembers = []*NodeImpl{}
+	} else {
+		node.NodeClusterParams.CurrentCluster2 = nil
+	}
 
 	node.NodeClusterParams.RecvMsgs = []*HelloMsg{}
 	node.NodeClusterParams.ThisNodeHello = &HelloMsg{}
@@ -240,7 +248,7 @@ func (adhoc *AdHocNetwork) ClearClusterParams(node *NodeImpl) {
 	node.IsClusterMember = false
 }
 
-func (adhoc *AdHocNetwork) DissolveCluster(node *NodeImpl) {
+func (adhoc *AdHocNetwork) DissolveCluster(node *NodeImpl, p *Params) {
 	//Assume node is cluster head
 	for i := range adhoc.ClusterHeads {
 		if node == adhoc.ClusterHeads[i] {
@@ -249,15 +257,15 @@ func (adhoc *AdHocNetwork) DissolveCluster(node *NodeImpl) {
 		}
 	}
 	for _, member := range node.NodeClusterParams.CurrentCluster.ClusterMembers {
-		adhoc.ClearClusterParams(member)
+		adhoc.ClearClusterParams(member, p)
 	}
-	adhoc.ClearClusterParams(node)
+	adhoc.ClearClusterParams(node, p)
 }
 
 func (adhoc *AdHocNetwork) ResetClusters(p *Params) {
 	for i := 0; i < len(p.NodeList); i++ {
 		p.NodeList[i].IsClusterHead = false
-		adhoc.ClearClusterParams(p.NodeList[i])
+		adhoc.ClearClusterParams(p.NodeList[i], p)
 		if !p.NodeList[i].Alive {
 			p.NodeList = append(p.NodeList[:i], p.NodeList[i+1:]...)
 			i--
@@ -306,7 +314,7 @@ func (node *NodeImpl) SortMessages() {
 }
 
 func (adhoc *AdHocNetwork) ElectClusterHead(curNode *NodeImpl, p *Params) {
-	maxNode := curNode.HasMaxNodeScore(p)
+	maxNode := curNode.HasMaxNodeScore(p, nil)
 
 	if !maxNode.IsClusterHead {
 		maxNode.IsClusterHead = true
@@ -321,6 +329,37 @@ func (adhoc *AdHocNetwork) ElectClusterHead(curNode *NodeImpl, p *Params) {
 		curNode.IsClusterMember = true
 	}
 }
+
+func (adhoc *AdHocNetwork) RedundantElection(curNode *NodeImpl, p *Params) {
+	maxNode := curNode.HasMaxNodeScore(p, nil)
+
+	if maxNode != curNode {
+		maxNode2 := curNode.HasMaxNodeScore(p, maxNode)
+		if !maxNode2.IsClusterHead {
+			maxNode2.IsClusterHead = true
+			maxNode2.IsClusterMember = false
+			adhoc.ClusterHeads = append(adhoc.ClusterHeads, maxNode2)
+			maxNode2.NodeClusterParams.CurrentCluster = &Cluster{maxNode2, []*NodeImpl{}, adhoc, adhoc.NextClusterNum}
+			adhoc.NextClusterNum++
+		}
+
+		if curNode != maxNode2 {
+			if !maxNode.IsClusterHead {
+				maxNode.IsClusterHead = true
+				maxNode.IsClusterMember = false
+				adhoc.ClusterHeads = append(adhoc.ClusterHeads, maxNode)
+				maxNode.NodeClusterParams.CurrentCluster = &Cluster{maxNode, []*NodeImpl{}, adhoc, adhoc.NextClusterNum}
+				adhoc.NextClusterNum++
+			}
+			maxNode.NodeClusterParams.CurrentCluster.ClusterMembers = append(maxNode.NodeClusterParams.CurrentCluster.ClusterMembers, curNode)
+			maxNode2.NodeClusterParams.CurrentCluster.ClusterMembers = append(maxNode2.NodeClusterParams.CurrentCluster.ClusterMembers, curNode)
+			curNode.NodeClusterParams.CurrentCluster = maxNode.NodeClusterParams.CurrentCluster
+			curNode.NodeClusterParams.CurrentCluster2 = maxNode2.NodeClusterParams.CurrentCluster
+			curNode.IsClusterMember = true
+		}
+	}
+}
+
 
 //Assumed to be called by cluster heads
 func (adhoc *AdHocNetwork) FormClusters(clusterHead *NodeImpl, p *Params) {
@@ -511,14 +550,12 @@ func (adhoc *AdHocNetwork) FinalizeClusters(p *Params) {
 	}
 }
 
-func (node *NodeImpl) IsWithinRange(node2 *NodeImpl, searchRange float64) (inRange bool) {
+func (node *NodeImpl) IsWithinRange(node2 *NodeImpl, searchRange float64) bool {
 	xDist := node.X - node2.X
 	yDist := node.Y - node2.Y
 	radDist := math.Sqrt(float64(xDist*xDist) + float64(yDist*yDist))
 
-	inRange = radDist <= searchRange
-
-	return inRange
+	return radDist <= searchRange
 }
 
 func (adhoc *AdHocNetwork) FullRecluster(p *Params) {

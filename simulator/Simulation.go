@@ -670,10 +670,10 @@ func main() {
 			for i := 0; i < len(p.NodeList); i++ {
 				if p.NodeList[i].IsClusterHead {
 					for j := 0; j < len(p.NodeList[i].NodeClusterParams.CurrentCluster.ClusterMembers); j++ {
-						xDist := p.NodeList[i].X - p.NodeList[i].NodeClusterParams.CurrentCluster.ClusterMembers[j].X
-						yDist := p.NodeList[i].Y - p.NodeList[i].NodeClusterParams.CurrentCluster.ClusterMembers[j].Y
-						radDist := math.Sqrt(float64(xDist*xDist) + float64(yDist*yDist))
 						if !(p.NodeList[i].IsWithinRange(p.NodeList[i].NodeClusterParams.CurrentCluster.ClusterMembers[j], p.NodeBTRange)) {
+							xDist := p.NodeList[i].X - p.NodeList[i].NodeClusterParams.CurrentCluster.ClusterMembers[j].X
+							yDist := p.NodeList[i].Y - p.NodeList[i].NodeClusterParams.CurrentCluster.ClusterMembers[j].Y
+							radDist := math.Sqrt(float64(xDist*xDist) + float64(yDist*yDist))
 							clusterDebugBuffer.WriteString(fmt.Sprintf("\tCluster Member Out of Range: Member:{ID=%v, Coord(%v,%v)} Cluster:{CH_ID=%v, Coord(%v,%v),Size=%v} Dist: %.4f\n",
 								p.NodeList[i].NodeClusterParams.CurrentCluster.ClusterMembers[j].Id, p.NodeList[i].NodeClusterParams.CurrentCluster.ClusterMembers[j].X, p.NodeList[i].NodeClusterParams.CurrentCluster.ClusterMembers[j].Y,
 								p.NodeList[i].Id, p.NodeList[i].X, p.NodeList[i].Y, len(p.NodeList[i].NodeClusterParams.CurrentCluster.ClusterMembers), radDist))

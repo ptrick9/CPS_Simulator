@@ -136,7 +136,7 @@ type NodeImpl struct {
 	IsClusterHead					bool
 	Recalibrated 					bool
 
-	NodeClusterParams *ClusterMemberParams
+	NodeClusterParams 				*ClusterMemberParams
 	ReadingsBuffer					[]Reading
 	TimeLastSentReadings			int
 	TimeLastAccel					int
