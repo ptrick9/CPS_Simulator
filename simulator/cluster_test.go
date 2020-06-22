@@ -149,7 +149,7 @@ func main() {
 		SingularNodes: []*cps.NodeImpl{},
 		TotalHeads:    0,
 		SingularCount: 0,
-		Threshold:     p.ClusterThreshold,
+		Threshold:     p.ClusterMaxThreshold,
 	}
 
 	//This is where the text file reading ends

@@ -219,16 +219,17 @@ type Params struct {
 	FineScale		int
 	Scale 			int
 
-	NodeTree				* Quadtree
-	ClusterNetwork			* AdHocNetwork
-	NodeBTRange				float64
-	ClusterThreshold		int
-	ClusteringOn			bool
-	RedundantClustering		bool
-	DegreeWeight			float64
-	BatteryWeight			float64
-	Penalty					float64
-	ReclusterPeriod			int
+	NodeTree            * Quadtree
+	ClusterNetwork      * AdHocNetwork
+	NodeBTRange         float64
+	ClusterMaxThreshold int
+	ClusterMinThreshold	int
+	ClusteringOn        bool
+	RedundantClustering bool
+	DegreeWeight        float64
+	BatteryWeight       float64
+	Penalty             float64
+	ReclusterThreshold  int
 
 	DriftExplorer 	bool
 	NumNodeMovements 	int

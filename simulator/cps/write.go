@@ -1651,7 +1651,7 @@ func GetFlags(p *Params) {
 
 	flag.BoolVar(&p.ClusteringOn,"clusteringOn",true,"True: nodes will form clusters, False: no clusters will form")
 	flag.BoolVar(&p.RedundantClustering,"redundantClustering",false,"If clusteringOn is set to true, True: nodes will join two clusters, False: clusters will form normally")
-	flag.IntVar(&p.ClusterThreshold, "clusterThresh,",8, "max size of a node cluster")
+	flag.IntVar(&p.ClusterMaxThreshold, "clusterThresh",8, "max size of a node cluster")
 	flag.Float64Var(&p.NodeBTRange, "nodeBTRange",20.0,"bluetooth range of each node")
 	flag.Float64Var(&p.DegreeWeight, "degreeWeight", 0.6, "The weight constant applied to the number of neighboring nodes when calculating a node's score")
 	flag.Float64Var(&p.BatteryWeight, "batteryWeight", 0.4, "The weight constant applied to a node's battery when calculating a node's score")
@@ -1763,7 +1763,7 @@ func WriteFlags(p * Params){
 	buf.WriteString(fmt.Sprintf("totalNodes=%v\n", p.TotalNodes))
 	buf.WriteString(fmt.Sprintf("validaitonType=%v\n", p.ValidationType))
 	buf.WriteString(fmt.Sprintf("recalReject=%v\n", p.RecalReject))
-	buf.WriteString(fmt.Sprintf("clusterThresh=%v\n", p.ClusterThreshold))
+	buf.WriteString(fmt.Sprintf("clusterThresh=%v\n", p.ClusterMaxThreshold))
 	buf.WriteString(fmt.Sprintf("nodeBTRange=%v\n", p.NodeBTRange))
 	buf.WriteString(fmt.Sprintf("clusteringOn=%v\n",p.ClusteringOn))
 	buf.WriteString(fmt.Sprintf("degreeWeight=%v\n",p.DegreeWeight))
