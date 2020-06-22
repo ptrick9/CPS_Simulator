@@ -247,7 +247,8 @@ type Params struct {
 	BatteryCapacity				int
 	AverageBatteryLevel			float64
 	SampleLossPercentage		float64
-	CommunicationLossPercentage	float64
+	BluetoothLossPercentage		float64
+	WifiLossPercentage			float64
 
 }
 
@@ -256,7 +257,11 @@ func (p *Params) SampleLossAmount() int {
 	return int(float64(p.BatteryCapacity) * p.SampleLossPercentage)
 }
 
-// returns the amount of battery drained when a communication event occurs
-func (p *Params) CommunicationLossAmount() int {
-	return int(float64(p.BatteryCapacity) * p.CommunicationLossPercentage)
+// returns the amount of battery drained when a bluetooth event occurs
+func (p *Params) BluetoothLossAmount() int {
+	return int(float64(p.BatteryCapacity) * p.BluetoothLossPercentage)
+}
+
+func (p *Params) WifiLossAmount() int {
+	return int(float64(p.BatteryCapacity) * p.WifiLossPercentage)
 }

@@ -710,18 +710,25 @@ func (curNode *NodeImpl) DrainBatterySample() {
 	curNode.CurrentBatteryLevel -= curNode.P.SampleLossAmount()
 }
 
-// decreases battery level of a node for when communication occurs
-func (curNode *NodeImpl) DrainBatteryCommunication() {
+// decreases battery level of a node for when bluetooth communication occurs
+func (curNode *NodeImpl) DrainBatteryBluetooth() {
 	// add counter for this later
-	curNode.CurrentBatteryLevel -= curNode.P.CommunicationLossAmount()
+	curNode.CurrentBatteryLevel -= curNode.P.BluetoothLossAmount()
 }
+
+// decrease battery level of a node for when wifi communication occurs
+func (curNode *NodeImpl) DrainBatteryWifi() {
+	// add counter for this later
+	curNode.CurrentBatteryLevel -= curNode.P.WifiLossAmount()
+}
+
 
 func (curNode *NodeImpl) ScheduleNextSense() {
 	// other checks that adjust the sampling rate based on battery level will go here
-	battery := curNode.GetBatteryPercentage()
-	if battery >= .10 {
+	//battery := curNode.GetBatteryPercentage()
+	//if battery >= .10 {
 		curNode.P.Events.Push(&Event{curNode, SENSE, curNode.P.CurrentTime + 500, 0})
-	}
+	//}
 }
 
 //Returns a float representing the detection of the bomb

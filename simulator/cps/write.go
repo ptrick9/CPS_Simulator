@@ -1669,7 +1669,8 @@ func GetFlags(p *Params) {
 	flag.IntVar(&p.BatteryCapacity, "batteryCapacity", 10000, "Max battery capacity of all nodes")
 	flag.Float64Var(&p.AverageBatteryLevel, "averageBatteryLevel", 0.70, "average initial battery level to set nodes to")
 	flag.Float64Var(&p.SampleLossPercentage, "sampleLossPercentage", 0.002, "amount of battery drained each time a node takes a sample")
-	flag.Float64Var(&p.CommunicationLossPercentage, "communicationLossPercentage", 0.002, "amount of battery drained each time a node communicates")
+	flag.Float64Var(&p.BluetoothLossPercentage, "bluetoothLossPercentage", 0.002, "amount of battery drained each time a node uses bluetooth")
+	flag.Float64Var(&p.WifiLossPercentage, "wifiLossPercentage", 0.002, "amount of battery drained each time a node uses wifi")
 
 	flag.Parse()
 	fmt.Println("Natural Loss: ", p.NaturalLossCM)
