@@ -444,8 +444,8 @@ func main() {
 
 				event.Node.DrainBatterySample()
 				event.Node.ScheduleNextSense()
-
-			} else if event.Instruction == cps.MOVE {
+			}
+			case cps.MOVE:
 				if(p.CSVMovement) {
 			if event.Node.Alive {
 					event.Node.MoveCSV(p)
@@ -482,7 +482,7 @@ func main() {
 			//}
 		case cps.FULLRECLUSTER:
 			p.ClusterNetwork.FullRecluster(p)
-			p.Events.Push(&cps.Event{nil, cps.FULLRECLUSTER, p.CurrentTime + p.ReclusterPeriod * 1000, 0})
+			p.Events.Push(&cps.Event{nil, cps.FULLRECLUSTER, p.CurrentTime + 60000, 0})
 		case cps.POSITION: //runs through all valid nodes and prints their location
 			//fmt.Printf("Current Time: %v \n", p.CurrentTime)
 			var avBuffer bytes.Buffer
