@@ -401,7 +401,8 @@ func main() {
 			if event.Instruction == cps.SENSE {
 				if p.CurrentTime/1000 < p.NumNodeMovements-5 {
 					if (p.CSVMovement) {
-						event.Node.MoveCSVsense(p)
+						p.IsSense = true
+						event.Node.MoveCSV(p)
 					} else {
 						event.Node.MoveNormal(p)
 					}
@@ -417,6 +418,7 @@ func main() {
 				}
 
 			} else if event.Instruction == cps.MOVE {
+				p.IsSense = false
 				if(p.CSVMovement) {
 					//event.Node.MoveCSV(p)  //FIXES TIMING WHEN YOU TAKE THIS OUT
 				} else {
@@ -427,6 +429,7 @@ func main() {
 				}
 			}
 		} else {
+			p.IsSense = false
 			if event.Instruction == cps.POSITION { //runs through all valid nodes and prints their location
 				//fmt.Printf("Current Time: %v \n", p.CurrentTime)
 

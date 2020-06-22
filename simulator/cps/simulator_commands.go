@@ -146,6 +146,7 @@ type Params struct {
 	CSVMovement   bool
 	CSVSensor     bool
 	SuperNodes     bool
+	IsSense		  bool
 
 	CurrentNodes               int
 	NumWallNodes               int
