@@ -52,7 +52,7 @@ type ClusterNode struct { //made for testing, only has parameters that the clust
 //Computes the cluster score (higher the score the better chance a node becomes a cluster head)
 func (node *NodeImpl) ComputeClusterScore(p *Params, numWithinDist int, ) float64 {
 	degree := math.Min(float64(numWithinDist), float64(p.ClusterMaxThreshold))
-	battery := float64(node.Battery) * float64(p.ClusterMaxThreshold) / 100 //Multiplying by threshold/100 ensures that battery and degree have the same maximum value
+	battery := node.GetBatteryPercentage() * float64(p.ClusterMaxThreshold) //Multiplying by threshold/100 ensures that battery and degree have the same maximum value
 
 	//degree:= float64(numWithinDist)
 	//battery := float64(node.Battery)
@@ -111,7 +111,7 @@ func (adhoc *AdHocNetwork) SendHelloMessage(curNode *NodeImpl, p *Params) {
 func (adhoc *AdHocNetwork) ClusterMovement(node *NodeImpl, p *Params) {
 	//adhoc.Movements++
 	if node.Valid {
-		if node.Battery < p.ThreshHoldBatteryToHave {
+		if node.GetBatteryPercentage() < 0.10 {
 			node.Alive = false
 			node.CurTree.RemoveAndClean(node)
 			if node.IsClusterHead {
