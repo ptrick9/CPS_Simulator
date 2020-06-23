@@ -420,6 +420,11 @@ func main() {
 		p.CurrentTime = event.Time
 		switch event.Instruction {
 		case cps.SENSE:
+			if event.Node.Alive {
+				if event.Node.GetBatteryPercentage() < 0.10 {
+					event.Node.Alive = false
+				}
+				//if p.CurrentTime/1000 < p.NumNodeMovements-5 {
 				//	if p.CSVMovement {
 				//		p.IsSense = true
 				//		event.Node.MoveCSV(p)
@@ -443,19 +448,20 @@ func main() {
 				}
 
 				event.Node.DrainBatterySample()
-			}
 				event.Node.ScheduleNextSense()
-			case cps.MOVE:
-				p.IsSense = false
-				if(p.CSVMovement) {
-			if event.Node.Alive {
-					event.Node.MoveCSV(p)
-				} else {
-					event.Node.MoveNormal(p)
+			}
 				}
-				if p.CurrentTime/1000 < p.NumNodeMovements-5 {
-					p.Events.Push(&cps.Event{event.Node, cps.MOVE, p.CurrentTime + 100, 0})
-				}
+		case cps.MOVE:
+			if p.CSVMovement {
+				event.Node.MoveCSV(p)
+			} else {
+				event.Node.MoveNormal(p)
+			}
+			if p.ClusteringOn && event.Node.Valid && event.Node.Alive {
+				p.NodeTree.NodeMovement(event.Node)
+			}
+			if p.CurrentTime/1000 < p.NumNodeMovements-5 {
+				p.Events.Push(&cps.Event{event.Node, cps.MOVE, p.CurrentTime + 100, 0})
 			}
 		case cps.CLUSTERHEADELECT:
 			if event.Node.Battery > p.ThreshHoldBatteryToHave {
@@ -482,8 +488,16 @@ func main() {
 			//	p.Events.Push(&cps.Event{event.Node, cps.ScheduleSensor, p.CurrentTime + 50, 0})
 			//}
 		case cps.FULLRECLUSTER:
-			p.ClusterNetwork.FullRecluster(p)
-			p.Events.Push(&cps.Event{nil, cps.FULLRECLUSTER, p.CurrentTime + 60000, 0})
+			empty := 0
+			for _, node := range p.NodeList {
+				if node.IsClusterHead && len(node.NodeClusterParams.CurrentCluster.ClusterMembers) <= p.ClusterMinThreshold {
+					empty++
+				}
+			}
+			if float64(empty)/float64(len(p.NodeList)) > p.ReclusterThreshold {
+				p.ClusterNetwork.FullRecluster(p)
+			}
+			p.Events.Push(&cps.Event{nil, cps.FULLRECLUSTER, p.CurrentTime + p.ReclusterPeriod * 1000, 0})
 		case cps.POSITION: //runs through all valid nodes and prints their location
 			//fmt.Printf("Current Time: %v \n", p.CurrentTime)
 			var avBuffer bytes.Buffer

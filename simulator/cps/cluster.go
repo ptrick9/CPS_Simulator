@@ -52,7 +52,7 @@ type ClusterNode struct { //made for testing, only has parameters that the clust
 //Computes the cluster score (higher the score the better chance a node becomes a cluster head)
 func (node *NodeImpl) ComputeClusterScore(p *Params, numWithinDist int, ) float64 {
 	degree := math.Min(float64(numWithinDist), float64(p.ClusterMaxThreshold))
-	battery := node.GetBatteryPercentage() * float64(p.ClusterMaxThreshold) //Multiplying by threshold/100 ensures that battery and degree have the same maximum value
+	battery := node.GetBatteryPercentage() * float64(p.ClusterMaxThreshold) //Multiplying by threshold ensures that battery and degree have the same maximum value
 
 	//degree:= float64(numWithinDist)
 	//battery := float64(node.Battery)
@@ -90,7 +90,8 @@ func (adhoc *AdHocNetwork) SendHelloMessage(curNode *NodeImpl, p *Params) {
 	numWithinDist := len(withinDist)
 
 	curNode.GenerateHello(curNode.ComputeClusterScore(p, numWithinDist))
-	curNode.DecrementPowerBT()
+	curNode.DrainBatteryBluetooth()	//Broadcasting first hello message, no score
+	curNode.DrainBatteryBluetooth()	//Broadcasting second hello message with score
 
 	//var buffer bytes.Buffer
 	for j := 0; j < numWithinDist; j++ {
@@ -99,7 +100,8 @@ func (adhoc *AdHocNetwork) SendHelloMessage(curNode *NodeImpl, p *Params) {
 		//if curClusterP.ThisNodeHello.Sender != nil {
 		withinDist[j].NodeClusterParams.RecvMsgs = append(withinDist[j].NodeClusterParams.RecvMsgs, curNode.NodeClusterParams.ThisNodeHello)
 		//buffer.WriteString(fmt.Sprintf("SenderId=%v\tRecieverId=%v\tSenderCHS=%v\n",curNode.Id,withinDist[j].CurNode.Id,curNode.NodeClusterParams.ThisNodeHello.NodeCHScore))
-		withinDist[j].DecrementPowerBT()
+		withinDist[j].DrainBatteryBluetooth()	//Every node in bluetooth range receives the first hello message, allowing them to count how many neighbors they have
+		withinDist[j].DrainBatteryBluetooth()	//Every node in bluetooth range then receives a second hello message, the one including curNode's score
 		adhoc.TotalMsgs++
 		//}
 		//}
@@ -111,8 +113,7 @@ func (adhoc *AdHocNetwork) SendHelloMessage(curNode *NodeImpl, p *Params) {
 func (adhoc *AdHocNetwork) ClusterMovement(node *NodeImpl, p *Params) {
 	//adhoc.Movements++
 	if node.Valid {
-		if node.GetBatteryPercentage() < 0.10 {
-			node.Alive = false
+		if !node.Alive {
 			node.CurTree.RemoveAndClean(node)
 			if node.IsClusterHead {
 				adhoc.DissolveCluster(node)
@@ -131,27 +132,32 @@ func (adhoc *AdHocNetwork) NewNodeHello(node *NodeImpl, p *Params) {
 	withinDist := p.NodeTree.WithinRadius(p.NodeBTRange, node, []*NodeImpl{})
 	numWithinDist := len(withinDist)
 
-	//node.GenerateHello(node.ComputeClusterScore(p, numWithinDist))
+	node.DrainBatteryBluetooth()	//Broadcasting hello message
 
-	//var buffer bytes.Buffer
-	for j := 0; j < numWithinDist; j++ {
-		if withinDist[j].IsClusterHead && len(withinDist[j].NodeClusterParams.CurrentCluster.ClusterMembers) < p.ClusterMaxThreshold {
+	for i := 0; i < numWithinDist; i++ {
+		withinDist[i].DrainBatteryBluetooth()	//Every node in bluetooth range receives the hello message
+		if withinDist[i].IsClusterHead && len(withinDist[i].NodeClusterParams.CurrentCluster.ClusterMembers) < p.ClusterMaxThreshold {
+			withinDist[i].DrainBatteryBluetooth() //Every cluster head with room for this node sends a reply
+		}
+	}
+
+	for i := 0; i < numWithinDist; i++ {
+		if withinDist[i].IsClusterHead && len(withinDist[i].NodeClusterParams.CurrentCluster.ClusterMembers) < p.ClusterMaxThreshold {
 			//withinDist[j].GenerateHello(withinDist[j].ComputeClusterScore(p, len(p.NodeTree.WithinRadius(p.NodeBTRange, withinDist[j], []*NodeImpl{}))))
 			adhoc.ClearClusterParams(node)
-			node.Join(withinDist[j].NodeClusterParams.CurrentCluster)
+			node.Join(withinDist[i].NodeClusterParams.CurrentCluster)
 			//adhoc.Joins++
 			return
 		}
 	}
-	//println("form clusters")
-	//adhoc.Solos++
+
 	adhoc.ClearClusterParams(node)
 	adhoc.ElectClusterHead(node, p)
 	//fmt.Fprintf(curNode.P.ClusterMessages,buffer.String())
 }
 
 func (node *NodeImpl) HasMaxNodeScore(p *Params) *NodeImpl {
-	maxNode := node //&(NodeImpl{})
+	maxNode := node
 	maxScore := node.NodeClusterParams.ThisNodeHello.NodeCHScore
 	//print("cur node: ")
 	//println(node.Id)
@@ -329,8 +335,8 @@ func (adhoc *AdHocNetwork) FormClusters(clusterHead *NodeImpl, p *Params) {
 			msgs[i].Sender.IsClusterMember = true
 			msgs[i].Sender.NodeClusterParams.CurrentCluster = clusterHead.NodeClusterParams.CurrentCluster
 
-			clusterHead.DecrementPowerBT()
-			clusterHead.NodeClusterParams.RecvMsgs[i].Sender.DecrementPowerBT()
+			clusterHead.DrainBatteryBluetooth()
+			clusterHead.NodeClusterParams.RecvMsgs[i].Sender.DrainBatteryBluetooth()
 
 			//}
 		}
@@ -458,8 +464,8 @@ func (adhoc *AdHocNetwork) FinalizeClusters(p *Params) {
 					adhoc.SingularNodes[i].NodeClusterParams.CurrentCluster = clusterHead.NodeClusterParams.CurrentCluster
 					joined = true
 
-					adhoc.SingularNodes[i].DecrementPowerBT()
-					clusterHead.DecrementPowerBT()
+					adhoc.SingularNodes[i].DrainBatteryBluetooth()
+					clusterHead.DrainBatteryBluetooth()
 				} else {
 					atj = append(atj, viableOptions[k])
 				}
@@ -476,7 +482,7 @@ func (adhoc *AdHocNetwork) FinalizeClusters(p *Params) {
 				adhoc.ClusterHeads = append(adhoc.ClusterHeads, adhoc.SingularNodes[i])
 				adhoc.SingularNodes[i].NodeClusterParams.AttemptedToJoin = append(adhoc.SingularNodes[i].NodeClusterParams.AttemptedToJoin, atj...)
 
-				adhoc.SingularNodes[i].DecrementPowerBT()
+				adhoc.SingularNodes[i].DrainBatteryBluetooth()
 			}
 		}
 	}
@@ -524,6 +530,7 @@ func (adhoc *AdHocNetwork) FullRecluster(p *Params) {
 	//adhoc.Solos = 0
 	adhoc.ResetClusters(p)
 	for _, node := range p.NodeList {
+		node.DrainBatteryWifi()	//Server sends message to all nodes that reclustering is happening
 		if node.Valid {
 			adhoc.SendHelloMessage(node, p)
 		}

@@ -413,44 +413,33 @@ func (node *NodeImpl) LogBatteryPower(t int){
 }
 
 func (node *NodeImpl) SendToServer(rd *Reading, tp bool){
-	//int packet = num bytes in packet
-	//node.TotalBytesSent += packet
-	//node.TotalPacketsSent += 1
-
-	//code to send to server goes here
 	if node.P.WifiOr4G {
-		node.DecrementPowerWifi()
+		node.DrainBatteryWifi() //node sends reading directly to server over wifi
 	} else {
-		node.DecrementPower4G()
+		//node.DecrementPower4G()
 	}
 	node.P.Server.Send(node, rd, tp)
 }
 
 func (node *NodeImpl) SendToClusterHead(rd *Reading, tp bool){
-	//int packet = num bytes in packet
-	//node.TotalBytesSent += packet
-	//node.TotalPacketsSent += 1
-
-	//code to send to cluster head goes here
 	head := node.NodeClusterParams.CurrentCluster.ClusterHead
 
-	node.DecrementPowerBT()
-	head.DecrementPowerBT()
+	node.DrainBatteryBluetooth()	//Node sends reading over bluetooth
+	head.DrainBatteryBluetooth()	//Node receives reading over bluetooth
 	head.StoredNodes = append(head.StoredNodes, node)
 	head.StoredReadings = append(head.StoredReadings, rd)
 	head.StoredTPs = append(head.StoredTPs, tp)
 }
 
 func (node *NodeImpl) SendMultipleToServer(rd *Reading, tp bool){
-	//int packet = num bytes in packet
-	//node.TotalBytesSent += packet
-	//node.TotalPacketsSent += 1
-
-	//code to send to server goes here
 	if node.P.WifiOr4G {
-		node.DecrementPowerWifi()
-	} else {
-		node.DecrementPower4G()
+		/*	Node sends its reading as well as any stored readings directly to server over wifi.
+			Currently the extra cost of sending multiple readings at once is simulated by
+			draining battery for wifi communication for every multiple of 8 sent.
+			It may be worth looking into making this more realistic.*/
+		for i := 0; i < len(node.StoredReadings)/8 + 1; i++ {
+			node.DrainBatteryWifi()
+		}
 	}
 	for i := range node.StoredReadings {
 		node.P.Server.Send(node.StoredNodes[i], node.StoredReadings[i], node.StoredTPs[i])
@@ -463,16 +452,6 @@ func (node *NodeImpl) SendMultipleToServer(rd *Reading, tp bool){
 	if rd != nil {
 		node.P.Server.Send(node, rd, tp)
 	}
-}
-
-//decrement battery due to transmitting/receiving over BlueTooth
-func (node *NodeImpl) DecrementPowerBT(){
-	node.Battery = node.Battery - node.BatteryLossBT
-}
-
-//decrement battery due to transmitting/receiving over WiFi
-func (node *NodeImpl) DecrementPowerWifi(){
-	node.Battery = node.Battery - node.BatteryLossWifi
 }
 
 //decrement battery due to transmitting/receiving over 4G
@@ -488,11 +467,6 @@ func (node *NodeImpl) DecrementPowerAccel(){
 //decrement battery due to transmitting/receiving GPS
 func (node *NodeImpl) DecrementPowerGPS(){
 	node.Battery = node.Battery - node.BatteryLossGPS
-}
-
-//decrement battery due to using GPS
-func (node *NodeImpl) DecrementPowerSensor(){
-	node.Battery = node.Battery - node.BatteryLossSensor
 }
 
 
@@ -1144,11 +1118,8 @@ func (node *NodeImpl) MoveCSV(p *Params) {
 				p.MinDistance = int(d)
 				fmt.Fprintf(p.DistanceFile, "ID: %v T: %v D: %v\n", node.Id, intTime, int(d))
 			}
+
 			p.BoolGrid[int(node.X)][int(node.Y)] = true
-			//sync the QuadTree
-			if p.ClusteringOn {
-				p.NodeTree.NodeMovement(node)
-			}
 		}
 	}
 	if !node.Valid {
