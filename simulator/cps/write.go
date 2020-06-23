@@ -1494,7 +1494,7 @@ func GetFlags(p *Params) {
 	flag.Float64Var(&p.NaturalLossCM, "naturalLoss", .005,
 		"battery loss due to natural causes")
 
-	flag.BoolVar(&p.WifiOr4G, "wifiOr4G", false, "True: nodes speak to server over wifi, False: nodes speak to server over 4G")
+	flag.BoolVar(&p.WifiOr4G, "wifiOr4G", true, "True: nodes speak to server over wifi, False: nodes speak to server over 4G")
 
 	//flag.IntVar(&p.CMSensingTime, "cmSensingTime,",2, "seconds a cluster member will sense/record readings before sending to cluster head")
 	//flag.IntVar(&p.CHSensingTime, "chSensingTime,",4, "seconds a cluster head will sense//collect from CM/record readings before sending to server")

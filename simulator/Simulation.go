@@ -445,16 +445,17 @@ func main() {
 				event.Node.DrainBatterySample()
 				event.Node.ScheduleNextSense()
 			}
-			case cps.MOVE:
-				if(p.CSVMovement) {
-			if event.Node.Alive {
-					event.Node.MoveCSV(p)
-				} else {
-					event.Node.MoveNormal(p)
-				}
-				if p.CurrentTime/1000 < p.NumNodeMovements-5 {
-					p.Events.Push(&cps.Event{event.Node, cps.MOVE, p.CurrentTime + 100, 0})
-				}
+		case cps.MOVE:
+			if p.CSVMovement {
+				event.Node.MoveCSV(p)
+			} else {
+				event.Node.MoveNormal(p)
+			}
+			if p.ClusteringOn && event.Node.Valid && event.Node.Alive {
+				p.NodeTree.NodeMovement(event.Node)
+			}
+			if p.CurrentTime/1000 < p.NumNodeMovements-5 {
+				p.Events.Push(&cps.Event{event.Node, cps.MOVE, p.CurrentTime + 100, 0})
 			}
 		case cps.CLUSTERHEADELECT:
 			if event.Node.Battery > p.ThreshHoldBatteryToHave {
