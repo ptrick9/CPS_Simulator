@@ -490,12 +490,12 @@ func remove(s []int, i int) []int {
 
 func (s *FusionCenter)CheckSquares(){
 	for k, v := range(s.SquareTime){     //k= key v=value
-		if s.P.CurrentTime-v.TimeSample >= 60000 && v.BeenReported==false {   //60 seconds
+		if s.P.CurrentTime-v.TimeSample >= 30000 && v.BeenReported==false {   //60 seconds
+			fmt.Fprintln(s.P.OutputLog,"Iteration: ",(s.P.CurrentTime+1)/1000," \n")
 			fmt.Fprintln(s.P.OutputLog,"Key and value: ", k , v, "Time difference: ",s.P.CurrentTime, v.TimeSample)
-			s.SquareTime[k]=TimeTrack{v.TimeSample,true}  //This line only allows reporting once
+			//s.SquareTime[k]=TimeTrack{v.TimeSample,true}  //This line only allows reporting once
 		}
 	}
-	fmt.Fprintln(s.P.OutputLog,"Next set: \n")
 }
 
 

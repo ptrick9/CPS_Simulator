@@ -830,8 +830,8 @@ func (curNode *NodeImpl) GetReadings() {
 		fmt.Println("Curnode xy",curNode.X,curNode.Y, "old xy", curNode.OldX, curNode.OldY)
 	}*/
 	multiplier:=curNode.AdaptiveSampling()
-	if multiplier>=31{ //saftey not to outwrite int
-		multiplier=31
+	if multiplier>=50{ //saftey not to outwrite int
+		multiplier=50
 	}
 	curNode.P.Events.Push(&Event{curNode, SENSE, curNode.P.CurrentTime + int(float64(curNode.P.SamplingPeriodMS)*math.Pow(2.0,float64(multiplier))), 0})
 	//Extends period by defaultperiod *2^nth power when 4x threshold extended by 16
