@@ -16,6 +16,8 @@ type Params struct {
 	InputFileNameCM                string  // This must be the name of the input text file with ".txt"
 	NaturalLossCM                  float64 // This can be any number n: 0 < n < .1
 
+	WifiOr4G					   bool	   //True: nodes speak to server over wifi, False: nodes speak to server over 4G
+
 	SamplingLossSensorCM           float64 // This can be any number n: 0 < n < .1
 	SamplingLossGPSCM              float64 // This can be any number n: 0 < n < GPSSamplingLossCM < .1
 	SamplingLossServerCM           float64 // This can be any number n: 0 < n < serverSamplingLossCM < .1
@@ -92,6 +94,14 @@ type Params struct {
 	ZipFiles 		bool
 	Files 			[]string
 	NodeDataFile   *os.File
+	ClusterFile	   *os.File
+	ClusterStatsFile *os.File
+	ClusterDebug	*os.File
+	ClusterReadings *os.File
+	ClusterMessages *os.File
+	AliveValidNodes	*os.File
+	SamplingData    *os.File
+	SampleRates     *os.File
 
 	SensorPath  string
 	FineSensorPath  string
@@ -211,6 +221,18 @@ type Params struct {
 	FineScale		int
 	Scale 			int
 
+	NodeTree            * Quadtree
+	ClusterNetwork      * AdHocNetwork
+	NodeBTRange         float64
+	ClusterMaxThreshold int
+	ClusterMinThreshold	int
+	ClusteringOn        bool
+	RedundantClustering bool
+	DegreeWeight        float64
+	BatteryWeight       float64
+	Penalty             float64
+	ReclusterThreshold  int
+
 	DriftExplorer 	bool
 	NumNodeMovements 	int
 	MovementOffset 		int
@@ -222,7 +244,25 @@ type Params struct {
 
 	ValidationType string
 	RecalReject 	bool
-
 	DensityThreshold int  // number of nodes that must be in a square for it to be considered dense and have the sampling rate decreased
 	SamplingPeriodMS	 int
+	BatteryCapacity				int
+	AverageBatteryLevel			float64
+	SampleLossPercentage		float64
+	BluetoothLossPercentage		float64
+	WifiLossPercentage			float64
+}
+
+// returns the amount of battery drained when a sampling event occurs
+func (p *Params) SampleLossAmount() int {
+	return int(float64(p.BatteryCapacity) * p.SampleLossPercentage)
+}
+
+// returns the amount of battery drained when a bluetooth event occurs
+func (p *Params) BluetoothLossAmount() int {
+	return int(float64(p.BatteryCapacity) * p.BluetoothLossPercentage)
+}
+
+func (p *Params) WifiLossAmount() int {
+	return int(float64(p.BatteryCapacity) * p.WifiLossPercentage)
 }
