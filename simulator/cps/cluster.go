@@ -113,8 +113,7 @@ func (adhoc *AdHocNetwork) SendHelloMessage(curNode *NodeImpl, p *Params) {
 func (adhoc *AdHocNetwork) ClusterMovement(node *NodeImpl, p *Params) {
 	//adhoc.Movements++
 	if node.Valid {
-		if node.GetBatteryPercentage() < 0.10 {
-			node.Alive = false
+		if !node.Alive {
 			node.CurTree.RemoveAndClean(node)
 			if node.IsClusterHead {
 				adhoc.DissolveCluster(node)

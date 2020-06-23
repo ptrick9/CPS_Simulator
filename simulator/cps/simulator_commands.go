@@ -229,7 +229,8 @@ type Params struct {
 	DegreeWeight        float64
 	BatteryWeight       float64
 	Penalty             float64
-	ReclusterThreshold  int
+	ReclusterThreshold  float64
+	ReclusterPeriod		int
 
 	DriftExplorer 	bool
 	NumNodeMovements 	int
