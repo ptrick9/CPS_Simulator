@@ -434,8 +434,6 @@ func main() {
 				//}
 				if p.ClusteringOn {
 					p.ClusterNetwork.ClusterMovement(event.Node, p)
-				//if p.CurrentTime/1000 < p.NumNodeMovements-5 {
-			if event.Node.Alive {
 				}
 				if p.DriftExplorer { //no sensor csv, just checking FP
 					event.Node.GetSensor()
@@ -449,8 +447,8 @@ func main() {
 
 				event.Node.DrainBatterySample()
 				event.Node.ScheduleNextSense()
+
 			}
-				}
 		case cps.MOVE:
 			if p.CSVMovement {
 				event.Node.MoveCSV(p)

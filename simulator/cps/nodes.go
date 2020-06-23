@@ -1100,9 +1100,10 @@ func (node *NodeImpl) MoveCSV(p *Params) {
 	intTime := int(floatTemp/1000)
 	portion := (floatTemp / 1000) - float32(intTime)
 	id := node.GetID()
+
 	if node.Valid {
-		if p.IsSense {   //Checks to see if cps instruction is sensing currently
-			node.OldX ,node.OldY = node.X, node.Y
+		if p.IsSense { //Checks to see if cps instruction is sensing currently
+			node.OldX, node.OldY = node.X, node.Y
 		}
 		p.BoolGrid[int(node.OldX)][int(node.OldY)] = false //set the old spot false since the node will now move away
 		node.X = interpolate(p.NodeMovements[id][intTime-p.MovementOffset].X, p.NodeMovements[id][intTime-p.MovementOffset+1].X, portion)
@@ -1113,20 +1114,24 @@ func (node *NodeImpl) MoveCSV(p *Params) {
 			if p.ClusteringOn {
 				p.NodeTree.RemoveAndClean(node)
 			} else {
-			d := node.Distance(*p.B)/2
-			if int(d) < p.MinDistance {
-				p.MinDistance = int(d)
-				fmt.Fprintf(p.DistanceFile, "ID: %v T: %v D: %v\n", node.Id, intTime, int(d))
-			}
+				d := node.Distance(*p.B) / 2
+				if int(d) < p.MinDistance {
+					p.MinDistance = int(d)
+					fmt.Fprintf(p.DistanceFile, "ID: %v T: %v D: %v\n", node.Id, intTime, int(d))
+				}
 
-			p.BoolGrid[int(node.X)][int(node.Y)] = true
+				p.BoolGrid[int(node.X)][int(node.Y)] = true
+			}
 		}
-	}
-	if !node.Valid {
+	} else {
+		node.Valid = node.TurnValid(p.NodeMovements[id][intTime-p.MovementOffset].X, p.NodeMovements[id][intTime-p.MovementOffset].Y, p)
+		node.X = float32(p.NodeMovements[id][intTime-p.MovementOffset].X)
+		node.Y = float32(p.NodeMovements[id][intTime-p.MovementOffset].Y)
 		if p.IsSense { //Checks to see if cps instruction is sensing currently
 			node.OldX, node.OldY = 0, 0
 		}
-		if p.DriftExplorer {
+		if node.Valid {
+			if p.DriftExplorer {
 				node.NodeTime = RandomInt(-7000, 0)
 			} else {
 				//node.NodeTime = 0
