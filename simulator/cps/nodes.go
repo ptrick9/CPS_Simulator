@@ -723,11 +723,40 @@ func (node *NodeImpl) DrainBatteryWifi() {
 
 
 func (node *NodeImpl) ScheduleNextSense() {
-	// other checks that adjust the sampling rate based on battery level will go here
-	//battery := node.GetBatteryPercentage()
-	//if battery >= .10 {
-		node.P.Events.Push(&Event{node, SENSE, node.P.CurrentTime + 500, 0})
-	//}
+	if node.GetBatteryPercentage() >=.10 {
+		multiplier:=node.AdaptiveSampling()
+		if multiplier>=50{ //saftey not to outwrite int
+			multiplier=50
+		}
+		node.P.Events.Push(&Event{node, SENSE, node.P.CurrentTime + int(float64(node.P.SamplingPeriodMS)*math.Pow(2.0, float64(multiplier))), 0})
+	}
+}
+
+func (node *NodeImpl) AdaptiveSampling() int{
+	distanceMultiplier:=0
+	densityMultiplier:=0
+	batteryMultiplier:=0
+	metersPerSecond:=math.Sqrt((math.Pow(float64(node.X-node.OldX),2))+(math.Pow(float64(node.Y-node.OldY),2)))
+	if metersPerSecond >=1{
+		distanceMultiplier=-1  //speed up by half the period
+		node.thresholdCounter=0
+	} else {
+		node.thresholdCounter+=1
+	}
+	if node.thresholdCounter>3{
+		distanceMultiplier=1 //delay by 2x the period
+	}
+	if node.GetBatteryPercentage() < .4{
+		batteryMultiplier=-1
+	} else if node.GetBatteryPercentage() < .25{
+		batteryMultiplier=-2
+	} else if node.GetBatteryPercentage() < .15 {
+		batteryMultiplier=-3
+	}
+	NodesinSquare:=len(node.P.Server.SquarePop[Tuple{int(node.Y / float32(node.P.YDiv)),int(node.Y / float32(node.P.YDiv))}])  //Nodes in curr node square
+	densityMultiplier= (NodesinSquare/node.P.DensityThreshold) //increases period based on how many times more nodes there are in a square
+	multiplier:=distanceMultiplier+densityMultiplier+batteryMultiplier
+	return multiplier
 }
 
 //Returns a float representing the detection of the bomb
@@ -888,32 +917,9 @@ func (node *NodeImpl) GetReadings() {
 			node.report(RawConc)
 		}
 	}
-	multiplier:=node.AdaptiveSampling()
-	if multiplier>=50{ //saftey not to outwrite int
-		multiplier=50
-	}
-	node.P.Events.Push(&Event{node, SENSE, node.P.CurrentTime + int(float64(node.P.SamplingPeriodMS)*math.Pow(2.0,float64(multiplier))), 0})
 	//Extends period by defaultperiod *2^nth power when 4x threshold extended by 16
 	//Checks the number of nodes in the square the node is in
 
-}
-func (node *NodeImpl) AdaptiveSampling() int{
-	distanceMultiplier:=0
-	densityMultiplier:=0
-	metersPerSecond:=math.Sqrt((math.Pow(float64(node.X-node.OldX),2))+(math.Pow(float64(node.Y-node.OldY),2)))
-	if metersPerSecond >=1{
-		distanceMultiplier=-1  //speed up by half the period
-		node.thresholdCounter=0
-	} else {
-		node.thresholdCounter+=1
-	}
-	if node.thresholdCounter>3{
-		distanceMultiplier+=1 //delay by 2x the period
-	}
-	NodesinSquare:=len(node.P.Server.SquarePop[Tuple{int(node.Y / float32(node.P.YDiv)),int(node.Y / float32(node.P.YDiv))}])  //Nodes in curr node square
-	densityMultiplier= (NodesinSquare/node.P.DensityThreshold) //increases period based on how many times more nodes there are in a square
-	multiplier:=distanceMultiplier+densityMultiplier
-	return multiplier
 }
 
 
