@@ -223,7 +223,7 @@ func main() {
 	r = &cps.RegionParams{}
 
 	p.Events = Events
-	p.Server = cps.FusionCenter{p, r, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil}
+	p.Server = cps.FusionCenter{p, r, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil}
 
 	p.Tau1 = 3500
 	p.Tau2 = 9000
@@ -496,6 +496,7 @@ func main() {
 					p.Events.Push(&cps.Event{nil, cps.GRID, p.CurrentTime + 1000, 0})
 					fmt.Fprint(p.GridFile, "----------------\n")
 					//m:= r.XYcords
+					p.Server.CheckSquares()
 
 				}
 			} else if event.Instruction == cps.GARBAGECOLLECT {

@@ -714,6 +714,13 @@ func SetupFiles(p *Params) {
 	}
 	p.Files = append(p.Files, p.OutputFileNameCM + "-grid.txt")
 
+	p.OutputLog, err = os.Create(p.OutputFileNameCM + "-OutputLog.txt")
+	if err != nil {
+		log.Fatal("Cannot create file", err)
+	}
+	p.Files = append(p.Files, p.OutputFileNameCM + "-OutputLog.txt")
+
+
 
 	//Write parameters to gridFile
 	p.GridHeight = int(math.Ceil(float64(p.MaxY)/float64(p.SquareRowCM)))

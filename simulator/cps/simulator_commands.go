@@ -88,6 +88,7 @@ type Params struct {
 	RunParamFile   *os.File
 	DriftExploreFile *os.File
 	DistanceFile 	*os.File
+	OutputLog       *os.File
 	ZipFiles 		bool
 	Files 			[]string
 	NodeDataFile   *os.File
