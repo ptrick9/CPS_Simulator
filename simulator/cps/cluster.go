@@ -9,6 +9,7 @@ type AdHocNetwork struct {
 	SingularNodes []*NodeImpl
 	TotalMsgs      int //used to counts total messages sent/received in one iteration
 	FullReclusters int //Counts the number of full reclusters that occur in a simulation
+	PotentialReclusters int //Counts the number of reclusters that would have occured if there was a check every second
 	NextClusterNum int //For testing, may remove later
 }
 

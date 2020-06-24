@@ -459,12 +459,12 @@ func main() {
 			}
 		case cps.FULLRECLUSTER:
 			empty := 0
-			for _, node := range p.NodeList {
-				if node.IsClusterHead && len(node.NodeClusterParams.CurrentCluster.ClusterMembers) <= p.ClusterMinThreshold {
+			for _, node := range p.ClusterNetwork.ClusterHeads {
+				if len(node.NodeClusterParams.CurrentCluster.ClusterMembers) <= p.ClusterMinThreshold {
 					empty++
 				}
 			}
-			if float64(empty)/float64(len(p.NodeList)) > p.ReclusterThreshold {
+			if float64(empty)/float64(len(p.ClusterNetwork.ClusterHeads)) > p.ReclusterThreshold {
 				p.ClusterNetwork.FullRecluster(p)
 			}
 			p.Events.Push(&cps.Event{nil, cps.FULLRECLUSTER, p.CurrentTime + p.ReclusterPeriod * 1000, 0})
@@ -592,17 +592,20 @@ func main() {
 			var clusterStatsBuffer bytes.Buffer
 			var clusterDebugBuffer bytes.Buffer
 
-			totalHeads := len(p.ClusterNetwork.ClusterHeads)
-			singleNodes := 0
+			clustersAboveThresh := len(p.ClusterNetwork.ClusterHeads)
+			clustersBelowThresh := 0
 			for i := 0; i < len(p.ClusterNetwork.ClusterHeads); i++ {
-				if len(p.ClusterNetwork.ClusterHeads[i].NodeClusterParams.CurrentCluster.ClusterMembers) <= 0 {
-					totalHeads--
-					singleNodes++
+				if len(p.ClusterNetwork.ClusterHeads[i].NodeClusterParams.CurrentCluster.ClusterMembers) <= p.ClusterMinThreshold {
+					clustersAboveThresh--
+					clustersBelowThresh++
 				}
 			}
+			if float64(clustersBelowThresh)/float64(len(p.ClusterNetwork.ClusterHeads)) > p.ReclusterThreshold {
+				p.ClusterNetwork.PotentialReclusters++
+			}
 			clusterBuffer.WriteString(fmt.Sprintf("Iteration: %v\n", p.CurrentTime/1000))
-			clusterBuffer.WriteString(fmt.Sprintf("Amount: %v\n", totalHeads))
-			clusterBuffer.WriteString(fmt.Sprintf("Singles: %v\n", singleNodes))
+			clusterBuffer.WriteString(fmt.Sprintf("Clusters above member threshold: %v\n", clustersAboveThresh))
+			clusterBuffer.WriteString(fmt.Sprintf("Clusters below member threshold: %v\n", clustersBelowThresh))
 			clusterBuffer.WriteString("\n")
 			for i := 0; i < len(p.ClusterNetwork.ClusterHeads); i++ {
 				//if len(p.ClusterNetwork.ClusterHeads[i].NodeClusterParams.CurrentCluster.ClusterMembers) > 0 {
@@ -731,7 +734,8 @@ func main() {
 	}
 
 	if p.ClusteringOn && p.ClusterPrint {
-		fmt.Fprintln(p.ClusterFile, "Full Reclusters: ", p.ClusterNetwork.FullReclusters)
+		fmt.Fprintln(p.ClusterFile, "Potential Reclusters: ", p.ClusterNetwork.PotentialReclusters)
+		fmt.Fprintln(p.ClusterFile, "Actual Reclusters: ", p.ClusterNetwork.FullReclusters)
 	}
 
 	p.PositionFile.Seek(0, 0)
