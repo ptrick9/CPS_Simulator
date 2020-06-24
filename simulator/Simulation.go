@@ -318,7 +318,7 @@ func main() {
 			Height: float64(p.MaxY),
 		},
 		MaxObjects: 1,
-		MaxLevels:  100,
+		MaxLevels:  12,
 		Level:      0,
 		Objects:    make([]*cps.NodeImpl, 0),
 		ParentTree: nil,
