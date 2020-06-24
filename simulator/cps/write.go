@@ -1543,13 +1543,15 @@ func GetFlags(p *Params) {
 	//Only used for super nodes of type 1
 	//flag.IntVar(&p.SuperNodeVariation, "p.SuperNodeVariation", 3, "super nodes of type 1 have different variations")
 
-	flag.BoolVar(&p.PositionPrintCM, "logPosition", false, "Whether you want to write position info to a log file")
+	flag.BoolVar(&p.PositionPrint, "logPosition", false, "Whether you want to write position info to a log file")
 
-	flag.BoolVar(&p.GridPrintCM, "logGrid", false, "Whether you want to write p.Grid info to a log file")
+	flag.BoolVar(&p.GridPrint, "logGrid", false, "Whether you want to write p.Grid info to a log file")
 
-	flag.BoolVar(&p.EnergyPrintCM, "logEnergy", false, "Whether you want to write energy into to a log file")
+	flag.BoolVar(&p.EnergyPrint, "logEnergy", false, "Whether you want to write energy into to a log file")
 
-	flag.BoolVar(&p.NodesPrintCM, "logNodes", false, "Whether you want to write node readings to a log file")
+	flag.BoolVar(&p.NodesPrint, "logNodes", false, "Whether you want to write node readings to a log file")
+
+	flag.BoolVar(&p.ClusterPrint, "logClusters", false, "Whether you want to write cluster statistics to a log file")
 
 	flag.IntVar(&p.SquareRowCM, "SquareRowCM", 50, "Number of rows of p.Grid squares, 1 through p.MaxX")
 
@@ -1637,10 +1639,11 @@ func WriteFlags(p * Params){
 	buf.WriteString(fmt.Sprintf("inputFileName=%v\n", p.InputFileNameCM))
 	buf.WriteString(fmt.Sprintf("SuperNodeSpeed=%v\n", p.SuperNodeSpeed))
 	buf.WriteString(fmt.Sprintf("doOptimize=%v\n", p.DoOptimize))
-	buf.WriteString(fmt.Sprintf("logPosition=%v\n", p.PositionPrintCM))
-	buf.WriteString(fmt.Sprintf("logGrid=%v\n", p.GridPrintCM))
-	buf.WriteString(fmt.Sprintf("logEnergy=%v\n", p.EnergyPrintCM))
-	buf.WriteString(fmt.Sprintf("logNodes=%v\n", p.NodesPrintCM))
+	buf.WriteString(fmt.Sprintf("logPosition=%v\n", p.PositionPrint))
+	buf.WriteString(fmt.Sprintf("logGrid=%v\n", p.GridPrint))
+	buf.WriteString(fmt.Sprintf("logEnergy=%v\n", p.EnergyPrint))
+	buf.WriteString(fmt.Sprintf("logNodes=%v\n", p.NodesPrint))
+	buf.WriteString(fmt.Sprintf("logClusters=%v\n", p.ClusterPrint))
 	buf.WriteString(fmt.Sprintf("SquareRowCM=%v\n", p.SquareRowCM))
 	buf.WriteString(fmt.Sprintf("SquareColCM=%v\n", p.SquareColCM))
 	buf.WriteString(fmt.Sprintf("imageFileName=%v\n", p.ImageFileNameCM))

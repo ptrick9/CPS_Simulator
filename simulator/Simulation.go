@@ -276,10 +276,6 @@ func main() {
 	p.NumStoredSamples = p.NumStoredSamplesCM
 	p.NumGridSamples = p.GridStoredSamplesCM
 	p.DetectionThreshold = p.DetectionThresholdCM
-	p.PositionPrint = p.PositionPrintCM
-	p.GridPrint = p.GridPrintCM
-	p.EnergyPrint = p.EnergyPrintCM
-	p.NodesPrint = p.NodesPrintCM
 	//p.SquareRowCM = p.SquareRowCM
 	//p.SquareColCM = p.SquareColCM
 	p.MinDistance = 1000
@@ -331,6 +327,7 @@ func main() {
 
 	p.ClusterNetwork = &cps.AdHocNetwork{
 		ClusterHeads: []*cps.NodeImpl{},
+		FullReclusters: 0,
 		TotalMsgs:    0,
 	}
 
@@ -406,7 +403,9 @@ func main() {
 	p.Events.Push(&cps.Event{nil, cps.SERVERSTATS, 1000, 0})
 	if p.ClusteringOn {
 		p.Events.Push(&cps.Event{nil, cps.FULLRECLUSTER, 5000, 0})
-		p.Events.Push(&cps.Event{nil, cps.CLUSTERPRINT, 999, 0})
+		if p.ClusterPrint {
+			p.Events.Push(&cps.Event{nil, cps.CLUSTERPRINT, 999, 0})
+		}
 	}
 
 	p.CurrentTime = 0
@@ -692,7 +691,7 @@ func main() {
 		}
 	}
 
-	if p.EnergyPrintCM {
+	if p.EnergyPrint {
 		PrintNodeBatteryOverTimeFast(p)
 	}
 	if p.GridPrint {
@@ -729,6 +728,10 @@ func main() {
 			}
 			fmt.Fprintf(p.EnergyFile, buffer.String())
 		}
+	}
+
+	if p.ClusteringOn && p.ClusterPrint {
+		fmt.Fprintln(p.ClusterFile, "Full Reclusters: ", p.ClusterNetwork.FullReclusters)
 	}
 
 	p.PositionFile.Seek(0, 0)

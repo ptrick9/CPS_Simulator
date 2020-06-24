@@ -8,6 +8,7 @@ type AdHocNetwork struct {
 	ClusterHeads  []*NodeImpl
 	SingularNodes []*NodeImpl
 	TotalMsgs      int //used to counts total messages sent/received in one iteration
+	FullReclusters int //Counts the number of full reclusters that occur in a simulation
 	NextClusterNum int //For testing, may remove later
 }
 
@@ -472,7 +473,7 @@ func (node *NodeImpl) IsWithinRange(node2 *NodeImpl, searchRange float64) bool {
 }
 
 func (adhoc *AdHocNetwork) FullRecluster(p *Params) {
-	println("Full Recluster")
+	adhoc.FullReclusters++
 	adhoc.ResetClusters(p)
 	for _, node := range p.NodeList {
 		node.DrainBatteryWifi()	//Server sends message to all nodes that reclustering is happening

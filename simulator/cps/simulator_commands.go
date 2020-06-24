@@ -19,10 +19,6 @@ type Params struct {
 	NumStoredSamplesCM             int     // This can be any int n: 5 <= n <= 25
 	GridStoredSamplesCM            int     // This can be any int n: 5 <= n <= 25
 	DetectionThresholdCM           float64 //This is whatever Value 1-1000 we determine should constitute a "detection" of a bomb
-	PositionPrintCM                bool    //This is either true or false for whether to print positions to log file
-	EnergyPrintCM                  bool    //This is either true or false for whether to print energy info to log file
-	NodesPrintCM                   bool    //This is either true or false for whether to print node readings/averages to log file
-	GridPrintCM                    bool    //This is either true or false for whether to print grid readings to log file
 	SquareRowCM                    int     //This is an int 1 through maxX representing how many rows of squares there are
 	SquareColCM                    int     //This is an int 1 through maxY representing how many columns of squares there are
 	StdDevThresholdCM			   float64 //Detection Threshold based on standard deviations from mean
@@ -49,10 +45,11 @@ type Params struct {
 
 	Center Coord
 
-	PositionPrint bool
-	EnergyPrint   bool
-	NodesPrint    bool
-	GridPrint     bool
+	PositionPrint		bool	//This is either true or false for whether to print positions to log file
+	EnergyPrint			bool	//This is either true or false for whether to print energy info to log file
+	NodesPrint			bool	//This is either true or false for whether to print node readings/averages to log file
+	GridPrint			bool	//This is either true or false for whether to print grid readings to log file
+	ClusterPrint		bool	//This is either true or false for whether to print cluster statistics to log file
 
 	GridWidth 		int
 	GridHeight 		int
