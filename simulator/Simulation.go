@@ -349,11 +349,9 @@ func main() {
 	}
 
 	rand.Seed(time.Now().UnixNano()) //sets random to work properly by tying to to clock
-	p.ThreshHoldBatteryToHave = 30.0 //This is the threshold battery to have for all phones
 
 	p.Iterations_used = 0
 	p.Iterations_of_event = p.IterationsCM
-	p.EstimatedPingsNeeded = 10200
 
 	cps.SetupFiles(p)
 	cps.SetupParameters(p, r)
@@ -409,7 +407,6 @@ func main() {
 	if p.ClusteringOn {
 		p.Events.Push(&cps.Event{nil, cps.FULLRECLUSTER, 5000, 0})
 		p.Events.Push(&cps.Event{nil, cps.CLUSTERPRINT, 999, 0})
-		//p.Events.Push(&cps.Event{nil, cps.CLUSTERLESSFORM, 25, 0})
 	}
 
 	p.CurrentTime = 0
@@ -461,30 +458,6 @@ func main() {
 			if p.CurrentTime/1000 < p.NumNodeMovements-5 {
 				p.Events.Push(&cps.Event{event.Node, cps.MOVE, p.CurrentTime + 100, 0})
 			}
-		case cps.CLUSTERHEADELECT:
-			if event.Node.Battery > p.ThreshHoldBatteryToHave {
-				if event.Node.Valid {
-					event.Node.SortMessages()
-					p.ClusterNetwork.ElectClusterHead(event.Node, p)
-				}
-				p.Events.Push(&cps.Event{event.Node, cps.CLUSTERHEADELECT, p.CurrentTime + 1000, 0})
-			}
-
-		case cps.CLUSTERFORM:
-			if event.Node.Battery > p.ThreshHoldBatteryToHave {
-				if event.Node.Valid {
-					//p.ClusterNetwork.GenerateClusters(event.Node)
-					if event.Node.IsClusterHead {
-						p.ClusterNetwork.FormClusters(event.Node, p)
-					}
-				}
-				p.Events.Push(&cps.Event{event.Node, cps.CLUSTERFORM, p.CurrentTime + 1000, 0})
-			}
-			//} else if event.Instruction == cps.ScheduleSensor {
-			//if p.AdaptiveSampling {
-			//	event.Node.ScheduleSensing()
-			//	p.Events.Push(&cps.Event{event.Node, cps.ScheduleSensor, p.CurrentTime + 50, 0})
-			//}
 		case cps.FULLRECLUSTER:
 			empty := 0
 			for _, node := range p.NodeList {
@@ -504,7 +477,7 @@ func main() {
 			for i := 0; i < len(p.NodeList); i++ {
 				if p.NodeList[i].Valid {
 					validCount++
-					if p.NodeList[i].Battery > p.ThreshHoldBatteryToHave {
+					if p.NodeList[i].GetBatteryPercentage() > 0.1 {
 						aliveCount++
 					}
 				}
@@ -704,12 +677,6 @@ func main() {
 			fmt.Fprintf(p.ClusterMessages, "%d,%d\n", p.CurrentTime/1000, p.ClusterNetwork.TotalMsgs)
 
 			p.Events.Push(&cps.Event{nil, cps.CLUSTERPRINT, p.CurrentTime + 1000, 0})
-			//p.ClusterNetwork.ResetClusters()
-		case cps.CLUSTERLESSFORM:
-			p.ClusterNetwork.FinalizeClusters(p)
-
-			//fmt.Println()
-			p.Events.Push(&cps.Event{nil, cps.CLUSTERLESSFORM, p.CurrentTime + 1000, 0})
 		}
 	}
 

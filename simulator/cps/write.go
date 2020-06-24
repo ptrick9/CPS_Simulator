@@ -124,7 +124,6 @@ func GetListedInput(p *Params) {
 	p.CurrentNodes = len(p.NodeEntryTimes)
 	p.NumWallNodes = len(p.Wpos)
 	//numPoints = len(ppos)
-	p.NumPointsOfInterestStatic = len(p.Poispos)
 	//fmt.Println(p.NumNodeNodes, p.NumWallNodes, p.NumPointsOfInterestStatic)
 }
 
@@ -405,7 +404,7 @@ func InitializeNodeParameters(p *Params, nodeNum int) *NodeImpl{
 
 	//initialize nodes to invalid starting point as starting point will be selected after initialization
 	curNode := NodeImpl{P: p, X: -1, Y: -1, Id: len(p.NodeList), SampleHistory: initHistory, Concentration: 0,
-		Cascade: nodeNum, Battery: p.BatteryCharges[nodeNum], BatteryLossScalar: p.BatteryLosses[nodeNum]}
+		Cascade: nodeNum, Battery: p.BatteryCharges[nodeNum]}
 
 	//values to determine coefficients
 	curNode.SetS0(rand.Float64()*0.005 + 0.33)
@@ -732,7 +731,6 @@ func SetupFiles(p *Params) {
 	fmt.Fprintln(p.DriftFile, "Detection Threshold:", p.DetectionThreshold)
 	fmt.Fprintln(p.DriftFile, "Input File Name:", p.InputFileNameCM)
 	fmt.Fprintln(p.DriftFile, "Output File Name:", p.OutputFileNameCM)
-	fmt.Fprintln(p.DriftFile, "Battery Natural Loss:", p.NaturalLossCM)
 	fmt.Fprintln(p.DriftFile, "Printing Position:", p.PositionPrint, "\nPrinting Energy:", p.EnergyPrint, "\nPrinting Nodes:", p.NodesPrint)
 	fmt.Fprintln(p.DriftFile, "Super Nodes:", p.NumSuperNodes, "\nSuper Node Type:", p.SuperNodeType, "\nSuper Node Speed:", p.SuperNodeSpeed, "\nSuper Node Radius:", p.SuperNodeRadius)
 	fmt.Fprintln(p.DriftFile, "Error Multiplier:", p.ErrorModifierCM)
@@ -861,12 +859,9 @@ func SetupParameters(p *Params, r *RegionParams) {
 	p.Center.X = p.MaxX / 2
 	p.Center.Y = p.MaxY / 2
 
-	p.TotalPercentBatteryToUse = float32(p.ThresholdBatteryToUseCM)
 	//p.BatteryCharges = GetLinearBatteryValues(len(p.NodeEntryTimes))
 	p.BatteryCharges = GetNormDistro(p.TotalNodes, 70.0, 15) //battery values come from normal distribution
 																		//mean = 70%, std = 15%
-	p.BatteryLosses = GetLinearBatteryLossConstant(len(p.NodeEntryTimes), float32(p.NaturalLossCM))
-
 
 	p.Attractions = make([]*Attraction, p.NumAtt)
 
@@ -1455,14 +1450,8 @@ func GetFlags(p *Params) {
 	flag.IntVar(&p.BombYCM, "bombY", 0, "Y location of bomb")
 	flag.BoolVar(&p.CommBomb, "commandBomb", false, "Whether to use command line for bomb coords")
 
-	flag.IntVar(&p.NegativeSittingStopThresholdCM, "negativeSittingStopThreshold", -10,
-		"Negative number sitting is set to when board map is reset")
-
 	flag.IntVar(&p.SittingStopThresholdCM, "sittingStopThreshold", 5,
 		"How long it takes for a node to stay seated")
-
-	flag.Float64Var(&p.GridCapacityPercentageCM, "GridCapacityPercentage", .9,
-		"Percent the sub-Grid can be filled")
 
 	flag.StringVar(&p.InputFileNameCM, "inputFileName", "Log1_in.txt",
 		"Name of the input text file")
@@ -1480,46 +1469,14 @@ func GetFlags(p *Params) {
 	flag.StringVar(&p.OutputFileNameCM, "OutputFileName", "Log",
 		"Name of the output text file prefix")
 
-	flag.Float64Var(&p.NaturalLossCM, "naturalLoss", .005,
-		"battery loss due to natural causes")
-
 	flag.BoolVar(&p.WifiOr4G, "wifiOr4G", true, "True: nodes speak to server over wifi, False: nodes speak to server over 4G")
 
 	//flag.IntVar(&p.CMSensingTime, "cmSensingTime,",2, "seconds a cluster member will sense/record readings before sending to cluster head")
 	//flag.IntVar(&p.CHSensingTime, "chSensingTime,",4, "seconds a cluster head will sense//collect from CM/record readings before sending to server")
 	//flag.IntVar(&p.MaxCMReadingBufferSize, "maxCMReadingBufferSize,",10, "max readings buffer size of a cluster member. CM must send to CH when buffer is this size")
 	//flag.IntVar(&p.MaxCHReadingBufferSize, "maxCHReadingBufferSize,",100, "max readings buffer size of a cluster head. CH must send to server when buffer is this size")
-
-	flag.IntVar(&p.ThresholdBatteryToHaveCM, "thresholdBatteryToHave", 30,
-		"Threshold battery phones should have")
-
-	flag.IntVar(&p.ThresholdBatteryToUseCM, "thresholdBatteryToUse", 10,
-		"Threshold of battery phones should consume from all forms of sampling")
-
-	flag.IntVar(&p.MovementSamplingSpeedCM, "movementSamplingSpeed", 20,
-		"the threshold of speed to increase sampling rate")
-
-	flag.IntVar(&p.MovementSamplingPeriodCM, "movementSamplingPeriod", 1,
-		"the threshold of speed to increase sampling rate")
-
 	flag.IntVar(&p.MaxBufferCapacityCM, "maxBufferCapacity", 25,
 		"maximum capacity for the buffer before it sends data to the server")
-
-	flag.StringVar(&p.EnergyModelCM, "energyModel", "variable",
-		"this determines the energy loss model that will be used")
-
-	flag.BoolVar(&p.NoEnergyModelCM, "noEnergy", false,
-		"Whether or not to ignore energy model for simulation")
-
-	flag.IntVar(&p.SensorSamplingPeriodCM, "sensorSamplingPeriod", 1000,
-		"rate of the sensor sampling period when custom energy model is chosen")
-
-	flag.IntVar(&p.GPSSamplingPeriodCM, "GPSSamplingPeriod", 1000,
-		"rate of the GridGPS sampling period when custom energy model is chosen")
-
-	flag.IntVar(&p.ServerSamplingPeriodCM, "serverSamplingPeriod", 1000,
-		"rate of the server sampling period when custom energy model is chosen")
-
 	flag.IntVar(&p.NumStoredSamplesCM, "nodeStoredSamples", 10,
 		"number of samples stored by individual nodes for averaging")
 
@@ -1645,16 +1602,7 @@ func GetFlags(p *Params) {
 	flag.Float64Var(&p.WifiLossPercentage, "wifiLossPercentage", 0.002, "amount of battery drained each time a node uses wifi")
 
 	flag.Parse()
-	fmt.Println("Natural Loss: ", p.NaturalLossCM)
-	fmt.Println("Threshold Battery to use: ", p.ThresholdBatteryToUseCM)
-	fmt.Println("Threshold battery to have: ", p.ThresholdBatteryToHaveCM)
-	fmt.Println("Moving speed for incresed sampling: ", p.MovementSamplingSpeedCM)
-	fmt.Println("Period of extra sampling due to high speed: ", p.MovementSamplingPeriodCM)
 	fmt.Println("Maximum size of buffer posible: ", p.MaxBufferCapacityCM)
-	fmt.Println("Energy model type:", p.EnergyModelCM)
-	fmt.Println("Sensor Sampling Period:", p.SensorSamplingPeriodCM)
-	fmt.Println("GPS Sampling Period:", p.GPSSamplingPeriodCM)
-	fmt.Println("Server Sampling Period:", p.ServerSamplingPeriodCM)
 	fmt.Println("Number of Node Stored Samples:", p.NumStoredSamplesCM)
 	fmt.Println("Number of Grid Stored Samples:", p.GridStoredSamplesCM)
 	fmt.Println("Detection Threshold:", p.DetectionThresholdCM)
@@ -1667,25 +1615,13 @@ func WriteFlags(p * Params){
 	var buf bytes.Buffer
 	buf.WriteString(fmt.Sprintf("cpuprofile=%v\n", p.CPUProfile))
 	buf.WriteString(fmt.Sprintf("memprofile=%v\n", p.MemProfile))
-	buf.WriteString(fmt.Sprintf("negativeSittingStopThreshold=%v\n", p.NegativeSittingStopThresholdCM))
 	buf.WriteString(fmt.Sprintf("sittingStopThreshold=%v\n", p.SittingStopThresholdCM))
-	buf.WriteString(fmt.Sprintf("GridCapacityPercentage=%v\n", p.GridCapacityPercentageCM))
 	buf.WriteString(fmt.Sprintf("inputFileName=%v\n", p.InputFileNameCM))
 	buf.WriteString(fmt.Sprintf("sensorPath=%v\n", p.SensorPath))
 	buf.WriteString(fmt.Sprintf("fineSensorPath=%v\n", p.FineSensorPath))
 	buf.WriteString(fmt.Sprintf("movementPath=%v\n", p.MovementPath))
 	buf.WriteString(fmt.Sprintf("OutputFileName=%v\n", p.OutputFileNameCM))
-	buf.WriteString(fmt.Sprintf("naturalLoss=%v\n", p.NaturalLossCM))
-	buf.WriteString(fmt.Sprintf("thresholdBatteryToHave=%v\n", p.ThresholdBatteryToHaveCM))
-	buf.WriteString(fmt.Sprintf("thresholdBatteryToUse=%v\n", p.ThresholdBatteryToUseCM))
-	buf.WriteString(fmt.Sprintf("movementSamplingSpeed=%v\n", p.MovementSamplingSpeedCM))
-	buf.WriteString(fmt.Sprintf("movementSamplingPeriod=%v\n", p.MovementSamplingPeriodCM))
 	buf.WriteString(fmt.Sprintf("maxBufferCapacity=%v\n", p.MaxBufferCapacityCM))
-	buf.WriteString(fmt.Sprintf("energyModel=%v\n", p.EnergyModelCM))
-	buf.WriteString(fmt.Sprintf("noEnergy=%v\n", p.NoEnergyModelCM))
-	buf.WriteString(fmt.Sprintf("sensorSamplingPeriod=%v\n", p.SensorSamplingPeriodCM))
-	buf.WriteString(fmt.Sprintf("GPSSamplingPeriod=%v\n", p.GPSSamplingPeriodCM))
-	buf.WriteString(fmt.Sprintf("serverSamplingPeriod=%v\n", p.ServerSamplingPeriodCM))
 	buf.WriteString(fmt.Sprintf("nodeStoredSamples=%v\n", p.NumStoredSamplesCM))
 	buf.WriteString(fmt.Sprintf("GridStoredSamples=%v\n", p.GridStoredSamplesCM))
 	buf.WriteString(fmt.Sprintf("detectionThreshold=%v\n", p.DetectionThresholdCM))

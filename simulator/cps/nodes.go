@@ -7,11 +7,6 @@ import (
 	"sort"
 )
 
-//Global variables used in battery loss dynamics
-var (
-	naturalLoss float32
-)
-
 //The NodeParent interface is inherited by all node types
 type NodeParent interface {
 	Distance(b Bomb) float32        //distance to bomb in the form of the node's reading
@@ -56,61 +51,21 @@ type NodeImpl struct {
 	Y                               float32      //y pos of node
 	Alive							bool
 	Battery                         float32  //battery of node
-	BatteryLossScalar               float32  //natural incremental battery loss of node
-	BatteryLossSensor				float32  //sensor based battery loss of node
-	BatteryLossGPS		            float32  //GPS based battery loss of node
-	BatteryLossServer				float32  //server communication based battery loss of node
 
-	BatteryLossBT					float32
-	BatteryLossWifi					float32
-	BatteryLoss4G					float32
-	BatteryLossAccelerometer		float32
-
-	ToggleCheckIterator             int      //node's personal iterator mostly for cascading pings
-	//HasCheckedSensor                bool     //did the node just ping the sensor?
-	TotalChecksSensor               int      //total sensor pings of node
-	//HasCheckedGPS                   bool     //did the node just ping the GPS?
-	TotalChecksGPS                  int      //total GPS pings of node
-	//HasCheckedServer                bool     //did the node just communicate with the server?
-	TotalChecksServer               int      //how many times did the node communicate with the server?
-	PingPeriod                      float32  //This is the aggregate ping period used in some ping rate determining algorithms
-	SensorPingPeriod                float32  //This is the ping period for the sensor
-	GPSPingPeriod                   float32  //This is the ping period for the GPS
-	ServerPingPeriod                float32  //This is the ping period for the server
-	Pings                           float32  //This is an aggregate pings used in some ping rate determining algorithms
-	SensorPings                     float32  //This is the total sensor pings to be made
-	GPSPings                        float32  //This is the total GPS pings to be made
-	ServerPings                     float32  //This is the total server pings to be made
 	Cascade                         int      //This cascades the pings of the nodes
 	BufferI                         int      //This is to keep track of the node's buffer size
-	XPos                            [100]float32 //x pos buffer of node
-	YPos                            [100]float32 //y pos buffer of node
-	Value                           [100]int //Value buffer of node
-	AccelerometerSpeedServer        [100]int //Accelerometer speed history of node
-	Time                            [100]int //This keeps track of when specific pings are made
-	//speedGPSPeriod int //This is a special period for speed based GPS pings but it is not used and may never be
-	AccelerometerPosition 			[2][3]int //This is the accelerometer model of node
 	AccelerometerSpeed    			[]float32 //History of accelerometer speeds recorded
-	InverseSensor         			float32   //Algorithm place holder declared here for speed
-	InverseGPS            			float32   //Algorithm place holder declared here for speed
-	InverseServer         			float32   //Algorithm place holder declared here for speed
 	SampleHistory         			[]float32 //a history of the node's readings
 	Avg                   			float32   //weighted average of the node's most recent readings
 	TotalSamples          			int       //total number of samples taken by a node
 	SpeedWeight           			float32   //weight given to averaging of node's samples, based on node's speed
 	NumResets             			int       //number of times a node has had to reset due to drifting
 	Concentration         			float64   //used to determine reading of node
-	SpeedGPSPeriod        			int
 
-	Current  						int
-	Previous 						int
 	Diffx    						int
 	Diffy    						int
-	Speed    						float32
 
 	//The following values are all various drifting parameters of the node
-	NewX               				int
-	NewY               				int
 	S0                 				float64
 	S1                 				float64
 	S2                 				float64
@@ -124,14 +79,8 @@ type NodeImpl struct {
 	InitialSensitivity 				float64
 	Valid 			   				bool
 
-	allReadings 	   				[1000]float64
-	calibrateTimes 	   				[]int
-	calibrateReading   				[]float64
-
 	BatteryOverTime	   				map[int]float32
 
-	TotalPacketsSent    int
-	TotalBytesSent		int
 	IsClusterHead		bool
 	Recalibrated 		bool
 	InitialBatteryLevel	int
@@ -453,22 +402,6 @@ func (node *NodeImpl) SendMultipleToServer(rd *Reading, tp bool){
 		node.P.Server.Send(node, rd, tp)
 	}
 }
-
-//decrement battery due to transmitting/receiving over 4G
-func (node *NodeImpl) DecrementPower4G(){
-	node.Battery = node.Battery - node.BatteryLoss4G
-}
-
-//decrement battery due to sampling Accelerometer
-func (node *NodeImpl) DecrementPowerAccel(){
-	node.Battery = node.Battery - node.BatteryLossAccelerometer
-}
-
-//decrement battery due to transmitting/receiving GPS
-func (node *NodeImpl) DecrementPowerGPS(){
-	node.Battery = node.Battery - node.BatteryLossGPS
-}
-
 
 /* updateHistory shifts all values in the sample history slice to the right and adds the Value at the beginning
 Therefore, each Time a node takes a sample in main, it also adds this sample to the beginning of the sample history.

@@ -8,26 +8,14 @@ type Params struct {
 	Events      PriorityQueue
 	CurrentTime int
 
-	NegativeSittingStopThresholdCM int     // This is a negative number for the sitting to be set to when map is reset
 	SittingStopThresholdCM         int     // This is the threshold for the longest Time a node can sit before no longer moving
-	GridCapacityPercentageCM       float64 // This is the percent of a subgrid that can be filled with nodes, between 0.0 and 1.0
 	ErrorModifierCM                float64 // Multiplier for error model
 	OutputFileNameCM               string  // This is the prefix of the output text file
 	InputFileNameCM                string  // This must be the name of the input text file with ".txt"
-	NaturalLossCM                  float64 // This can be any number n: 0 < n < .1
 
 	WifiOr4G					   bool	   //True: nodes speak to server over wifi, False: nodes speak to server over 4G
 
-	ThresholdBatteryToHaveCM       int     // This can be any number n: 0 < n < 50
-	ThresholdBatteryToUseCM        int     // This can be any number n: 0 < n < 20 < 100-thresholdBatteryToHaveCM
-	MovementSamplingSpeedCM        int     // This can be any number n: 0 < n < 100
-	MovementSamplingPeriodCM       int     // This can be any int number n: 1 <= n <= 100
 	MaxBufferCapacityCM            int     // This can be aby int number n: 10 <= n <= 100
-	EnergyModelCM                  string  // This can be "custom", "2StageServer", or other string will result in dynamic
-	NoEnergyModelCM                bool    // If set to true, all energy model values ignored
-	SensorSamplingPeriodCM         int     // This can be any int n: 1 <= n <= 100
-	GPSSamplingPeriodCM            int     // This can be any int n: 1 <= n < sensorSamplingPeriodCM <=  100
-	ServerSamplingPeriodCM         int     // This can be any int n: 1 <= n < GPSSamplingPeriodCM <= 100
 	NumStoredSamplesCM             int     // This can be any int n: 5 <= n <= 25
 	GridStoredSamplesCM            int     // This can be any int n: 5 <= n <= 25
 	DetectionThresholdCM           float64 //This is whatever Value 1-1000 we determine should constitute a "detection" of a bomb
@@ -129,12 +117,9 @@ type Params struct {
 	BombYCM int
 	CommBomb bool
 
-	ThreshHoldBatteryToHave  float32
-	TotalPercentBatteryToUse float32
 	IterationsCM		     int
 	Iterations_used          int
 	Iterations_of_event      int
-	EstimatedPingsNeeded     int
 
 	B *Bomb
 
@@ -145,7 +130,6 @@ type Params struct {
 	FileName string
 
 	RegionRouting bool
-	AStarRouting  bool
 	CSVMovement   bool
 	CSVSensor     bool
 	SuperNodes     bool
@@ -153,9 +137,6 @@ type Params struct {
 
 	CurrentNodes               int
 	NumWallNodes               int
-	NumPoints                  int
-	NumPointsOfInterestKinetic int
-	NumPointsOfInterestStatic  int
 
 	NodeEntryTimes [][]int // node positions
 	Wpos           [][]int // wall positions
@@ -176,7 +157,6 @@ type Params struct {
 	NodeList     []*NodeImpl
 
 	BatteryCharges []float32
-	BatteryLosses  []float32
 
 	BatteryLossesSensor				  []float32
 	BatteryLossesGPS 			      []float32

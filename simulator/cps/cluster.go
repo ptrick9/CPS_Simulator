@@ -1,20 +1,14 @@
 package cps
 
 import (
-	"fmt"
 	"math"
 )
 
 type AdHocNetwork struct {
 	ClusterHeads  []*NodeImpl
 	SingularNodes []*NodeImpl
-	//Threshold		int //maximum # of nodes in a cluster
 	TotalMsgs      int //used to counts total messages sent/received in one iteration
 	NextClusterNum int //For testing, may remove later
-	//Movements		int	//For testing, may remove later
-	//NNHellos		int	//For testing, may remove later
-	//Joins			int	//For testing, may remove later
-	//Solos			int	//For testing, may remove later
 }
 
 type Cluster struct {
@@ -33,11 +27,7 @@ type ClusterMemberParams struct {
 
 type HelloMsg struct {
 	Sender      *NodeImpl //pointer to Node sending the Hello Msg
-	//nil if not in a cluster
-	//points to self if Node is a ClusterHead
 	NodeCHScore float64 //score for determining how suitable a node is to be a clusterhead
-	Option      int     //0 for regular node, if a cluster head this is the # of nodes in the cluster
-	BrodPeriod  float64 //broadcast period of the Sender
 }
 
 type ClusterNode struct { //made for testing, only has parameters that the cluster needs to know from a NodeImpl
@@ -54,9 +44,6 @@ func (node *NodeImpl) ComputeClusterScore(p *Params, numWithinDist int, ) float6
 	degree := math.Min(float64(numWithinDist), float64(p.ClusterMaxThreshold))
 	battery := node.GetBatteryPercentage() * float64(p.ClusterMaxThreshold) //Multiplying by threshold ensures that battery and degree have the same maximum value
 
-	//degree:= float64(numWithinDist)
-	//battery := float64(node.Battery)
-
 	//weighted sum, 60% from degree (# of nodes within distance), 40% from its battery life
 	// penalty used to increase a nodes chance at staying a clusterhead
 	score := p.DegreeWeight*degree + p.BatteryWeight*battery
@@ -69,19 +56,7 @@ func (node *NodeImpl) ComputeClusterScore(p *Params, numWithinDist int, ) float6
 
 //Generates Hello Message for node to form/maintain clusters. Returns message as a string
 func (node *NodeImpl) GenerateHello(score float64) {
-	var option int
-
-	//if(curNode.IsClusterHead){
-	//	option = curNode.NodeClusterParams.CurrentCluster.Total
-	//} else{
-	option = 0
-	//}
-
-	message := &HelloMsg{
-		Sender:      node,
-		NodeCHScore: score,
-		Option:      option,
-		BrodPeriod:  0.2}
+	message := &HelloMsg{ Sender: node, NodeCHScore: score}
 	node.NodeClusterParams.ThisNodeHello = message
 }
 
@@ -95,23 +70,16 @@ func (adhoc *AdHocNetwork) SendHelloMessage(curNode *NodeImpl, p *Params) {
 
 	//var buffer bytes.Buffer
 	for j := 0; j < numWithinDist; j++ {
-		//if curClusterP.RecvMsgs != nil {
-		//	if withinDist[j].Battery > withinDist[j].P.ThreshHoldBatteryToHave {
-		//if curClusterP.ThisNodeHello.Sender != nil {
 		withinDist[j].NodeClusterParams.RecvMsgs = append(withinDist[j].NodeClusterParams.RecvMsgs, curNode.NodeClusterParams.ThisNodeHello)
 		//buffer.WriteString(fmt.Sprintf("SenderId=%v\tRecieverId=%v\tSenderCHS=%v\n",curNode.Id,withinDist[j].CurNode.Id,curNode.NodeClusterParams.ThisNodeHello.NodeCHScore))
 		withinDist[j].DrainBatteryBluetooth()	//Every node in bluetooth range receives the first hello message, allowing them to count how many neighbors they have
 		withinDist[j].DrainBatteryBluetooth()	//Every node in bluetooth range then receives a second hello message, the one including curNode's score
 		adhoc.TotalMsgs++
-		//}
-		//}
-		//}
 	}
 	//fmt.Fprintf(curNode.P.ClusterMessages,buffer.String())
 }
 
 func (adhoc *AdHocNetwork) ClusterMovement(node *NodeImpl, p *Params) {
-	//adhoc.Movements++
 	if node.Valid {
 		if !node.Alive {
 			node.CurTree.RemoveAndClean(node)
@@ -127,8 +95,6 @@ func (adhoc *AdHocNetwork) ClusterMovement(node *NodeImpl, p *Params) {
 }
 
 func (adhoc *AdHocNetwork) NewNodeHello(node *NodeImpl, p *Params) {
-	//println("New Node Hello")
-	//adhoc.NNHellos++
 	withinDist := p.NodeTree.WithinRadius(p.NodeBTRange, node, []*NodeImpl{})
 	numWithinDist := len(withinDist)
 
@@ -159,14 +125,8 @@ func (adhoc *AdHocNetwork) NewNodeHello(node *NodeImpl, p *Params) {
 func (node *NodeImpl) HasMaxNodeScore(p *Params) *NodeImpl {
 	maxNode := node
 	maxScore := node.NodeClusterParams.ThisNodeHello.NodeCHScore
-	//print("cur node: ")
-	//println(node.Id)
 	for i := 0; i < len(node.NodeClusterParams.RecvMsgs); i++ {
 		sender := node.NodeClusterParams.RecvMsgs[i].Sender
-		//print("within: ")
-		//print(node.NodeClusterParams.RecvMsgs[i].Sender.Id)
-		//print("   score: ")
-		//println(node.NodeClusterParams.RecvMsgs[i].Sender.NodeClusterParams.ThisNodeHello.NodeCHScore)
 		//do not consider nodes already with a clusterhead
 		//if received a message from a node who does not have a cluster head
 		if !sender.IsClusterMember && len(sender.NodeClusterParams.CurrentCluster.ClusterMembers) < p.ClusterMaxThreshold {
@@ -182,10 +142,6 @@ func (node *NodeImpl) HasMaxNodeScore(p *Params) *NodeImpl {
 		}
 	}
 
-	//print("max node: ")
-	//println(maxNode.Id)
-	//println()
-
 	return maxNode
 }
 
@@ -196,7 +152,8 @@ func (node *NodeImpl) Join(cluster *Cluster) {
 	cluster.ClusterMembers = append(cluster.ClusterMembers, node)
 }
 
-func (node *NodeImpl) PrintClusterNode() {
+//Prints a representation of a node
+/*func (node *NodeImpl) PrintClusterNode() {
 	fmt.Print("{")
 	fmt.Print(node.X)
 	fmt.Print(",")
@@ -211,7 +168,7 @@ func (node *NodeImpl) PrintClusterNode() {
 	fmt.Print(node.IsClusterHead)
 	fmt.Print("}")
 	fmt.Println()
-}
+}*/
 
 func (adhoc *AdHocNetwork) ClearClusterParams(node *NodeImpl) {
 	if node.IsClusterHead {
@@ -264,7 +221,7 @@ func (adhoc *AdHocNetwork) ResetClusters(p *Params) {
 }
 
 //sorts messages by distance to the node: 0th = closest, nth = farthest
-func (node *NodeImpl) SortMessages() {
+/*func (node *NodeImpl) SortMessages() {
 
 	distances := []float64{}
 
@@ -298,7 +255,7 @@ func (node *NodeImpl) SortMessages() {
 	if k < len(distances) {
 		node.NodeClusterParams.RecvMsgs = node.NodeClusterParams.RecvMsgs[:k]
 	}
-}
+}*/
 
 func (adhoc *AdHocNetwork) ElectClusterHead(curNode *NodeImpl, p *Params) {
 	maxNode := curNode.HasMaxNodeScore(p)
@@ -318,7 +275,7 @@ func (adhoc *AdHocNetwork) ElectClusterHead(curNode *NodeImpl, p *Params) {
 }
 
 //Assumed to be called by cluster heads
-func (adhoc *AdHocNetwork) FormClusters(clusterHead *NodeImpl, p *Params) {
+/*func (adhoc *AdHocNetwork) FormClusters(clusterHead *NodeImpl, p *Params) {
 
 	msgs := clusterHead.NodeClusterParams.RecvMsgs
 	if clusterHead.NodeClusterParams.CurrentCluster == nil {
@@ -371,10 +328,10 @@ func (adhoc *AdHocNetwork) FormClusters(clusterHead *NodeImpl, p *Params) {
 			//}
 		}
 	}
-}
+}*/
 
 //sorts clusterheads by distance to the current node
-func (adhoc *AdHocNetwork) SortClusterHeads(curNode *NodeImpl) (viableOptions []*NodeImpl) {
+/*func (adhoc *AdHocNetwork) SortClusterHeads(curNode *NodeImpl) (viableOptions []*NodeImpl) {
 
 	distances := []float64{}
 	viableOptions = []*NodeImpl{}
@@ -410,9 +367,9 @@ func (adhoc *AdHocNetwork) SortClusterHeads(curNode *NodeImpl) (viableOptions []
 
 	//fmt.Println(distances)
 	return viableOptions
-}
+}*/
 
-func (adhoc *AdHocNetwork) FinalizeClusters(p *Params) {
+/*func (adhoc *AdHocNetwork) FinalizeClusters(p *Params) {
 	//TODO clean this up. This code block should not be needed
 	for i := 0; i < len(p.NodeList); i++ {
 		//Nodes marked as members but not in a cluster added to SingularNodes
@@ -504,7 +461,7 @@ func (adhoc *AdHocNetwork) FinalizeClusters(p *Params) {
 			}
 		}
 	}
-}
+}*/
 
 func (node *NodeImpl) IsWithinRange(node2 *NodeImpl, searchRange float64) bool {
 	xDist := node.X - node2.X
@@ -516,18 +473,6 @@ func (node *NodeImpl) IsWithinRange(node2 *NodeImpl, searchRange float64) bool {
 
 func (adhoc *AdHocNetwork) FullRecluster(p *Params) {
 	println("Full Recluster")
-	//print("Movements: ")
-	//println(adhoc.Movements)
-	//print("NNHellos: ")
-	//println(adhoc.NNHellos)
-	//print("Joins: ")
-	//println(adhoc.Joins)
-	//print("Solos: ")
-	//println(adhoc.Solos)
-	//adhoc.Movements = 0
-	//adhoc.NNHellos = 0
-	//adhoc.Joins = 0
-	//adhoc.Solos = 0
 	adhoc.ResetClusters(p)
 	for _, node := range p.NodeList {
 		node.DrainBatteryWifi()	//Server sends message to all nodes that reclustering is happening
