@@ -18,14 +18,6 @@ type Params struct {
 
 	WifiOr4G					   bool	   //True: nodes speak to server over wifi, False: nodes speak to server over 4G
 
-	SamplingLossSensorCM           float64 // This can be any number n: 0 < n < .1
-	SamplingLossGPSCM              float64 // This can be any number n: 0 < n < GPSSamplingLossCM < .1
-	SamplingLossServerCM           float64 // This can be any number n: 0 < n < serverSamplingLossCM < .1
-	SamplingLossBTCM			   float64
-	SamplingLossWifiCM			   float64
-	SamplingLoss4GCM			   float64
-	SamplingLossAccelCM			   float64
-
 	ThresholdBatteryToHaveCM       int     // This can be any number n: 0 < n < 50
 	ThresholdBatteryToUseCM        int     // This can be any number n: 0 < n < 20 < 100-thresholdBatteryToHaveCM
 	MovementSamplingSpeedCM        int     // This can be any number n: 0 < n < 100

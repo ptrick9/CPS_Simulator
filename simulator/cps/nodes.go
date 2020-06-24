@@ -697,13 +697,13 @@ func (node *NodeImpl) DrainBatteryWifi() {
 
 
 func (node *NodeImpl) ScheduleNextSense() {
-	if node.GetBatteryPercentage() >=.10 {
+	//if node.GetBatteryPercentage() >=.10 {
 		multiplier:=node.AdaptiveSampling()
 		if multiplier>=50{ //saftey not to outwrite int
 			multiplier=50
 		}
 		node.P.Events.Push(&Event{node, SENSE, node.P.CurrentTime + int(float64(node.P.SamplingPeriodMS)*math.Pow(2.0, float64(multiplier))), 0})
-	}
+	//}
 }
 
 func (node *NodeImpl) AdaptiveSampling() int{
@@ -721,11 +721,11 @@ func (node *NodeImpl) AdaptiveSampling() int{
 		distanceMultiplier=1 //delay by 2x the period
 	}
 	if node.GetBatteryPercentage() < .4{
-		batteryMultiplier=-1
+		batteryMultiplier = 1
 	} else if node.GetBatteryPercentage() < .25{
-		batteryMultiplier=-2
+		batteryMultiplier = 2
 	} else if node.GetBatteryPercentage() < .15 {
-		batteryMultiplier=-3
+		batteryMultiplier = 3
 	}
 	NodesinSquare:=len(node.P.Server.SquarePop[Tuple{int(node.Y / float32(node.P.YDiv)),int(node.Y / float32(node.P.YDiv))}])  //Nodes in curr node square
 	densityMultiplier= (NodesinSquare/node.P.DensityThreshold) //increases period based on how many times more nodes there are in a square

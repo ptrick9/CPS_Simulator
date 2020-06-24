@@ -405,14 +405,7 @@ func InitializeNodeParameters(p *Params, nodeNum int) *NodeImpl{
 
 	//initialize nodes to invalid starting point as starting point will be selected after initialization
 	curNode := NodeImpl{P: p, X: -1, Y: -1, Id: len(p.NodeList), SampleHistory: initHistory, Concentration: 0,
-		Cascade: nodeNum, Battery: p.BatteryCharges[nodeNum], BatteryLossScalar: p.BatteryLosses[nodeNum],
-		BatteryLossSensor:        p.BatteryLossesSensor[nodeNum],
-		BatteryLossGPS:           p.BatteryLossesGPS[nodeNum],
-		BatteryLossServer:        p.BatteryLossesServer[nodeNum],
-		BatteryLoss4G:            p.BatteryLosses4G[nodeNum],
-		BatteryLossAccelerometer: p.BatteryLossesAccelerometer[nodeNum],
-		BatteryLossWifi:		  p.BatteryLossesWiFi[nodeNum],
-		BatteryLossBT:			  p.BatteryLossesBT[nodeNum]}
+		Cascade: nodeNum, Battery: p.BatteryCharges[nodeNum], BatteryLossScalar: p.BatteryLosses[nodeNum]}
 
 	//values to determine coefficients
 	curNode.SetS0(rand.Float64()*0.005 + 0.33)
@@ -740,8 +733,6 @@ func SetupFiles(p *Params) {
 	fmt.Fprintln(p.DriftFile, "Input File Name:", p.InputFileNameCM)
 	fmt.Fprintln(p.DriftFile, "Output File Name:", p.OutputFileNameCM)
 	fmt.Fprintln(p.DriftFile, "Battery Natural Loss:", p.NaturalLossCM)
-	fmt.Fprintln(p.DriftFile, "Sensor Loss:", p.SamplingLossServerCM, "\nGPS Loss:", p.SamplingLossGPSCM, "\nServer Loss:", p.SamplingLossServerCM)
-	fmt.Fprintln(p.DriftFile, "BlueTooth Loss:", p.SamplingLossBTCM, "\nWiFi Loss:", p.SamplingLossWifiCM, "\n4G Loss:", p.SamplingLoss4GCM, "\nAccelerometer Loss:", p.SamplingLossAccelCM)
 	fmt.Fprintln(p.DriftFile, "Printing Position:", p.PositionPrint, "\nPrinting Energy:", p.EnergyPrint, "\nPrinting Nodes:", p.NodesPrint)
 	fmt.Fprintln(p.DriftFile, "Super Nodes:", p.NumSuperNodes, "\nSuper Node Type:", p.SuperNodeType, "\nSuper Node Speed:", p.SuperNodeSpeed, "\nSuper Node Radius:", p.SuperNodeRadius)
 	fmt.Fprintln(p.DriftFile, "Error Multiplier:", p.ErrorModifierCM)
@@ -876,15 +867,6 @@ func SetupParameters(p *Params, r *RegionParams) {
 																		//mean = 70%, std = 15%
 	p.BatteryLosses = GetLinearBatteryLossConstant(len(p.NodeEntryTimes), float32(p.NaturalLossCM))
 
-	//updated because of the variable renaming to BatteryLosses__ and SamplingLoss__CM
-	p.BatteryLossesSensor = GetLinearBatteryLossConstant(len(p.NodeEntryTimes), float32(p.SamplingLossSensorCM))
-	p.BatteryLossesGPS = GetLinearBatteryLossConstant(len(p.NodeEntryTimes), float32(p.SamplingLossGPSCM))
-	p.BatteryLossesServer = GetLinearBatteryLossConstant(len(p.NodeEntryTimes), float32(p.SamplingLossServerCM))
-	//newly added for BlueTooth, Wifi, 4G, and Accelerometer battery usage
-	p.BatteryLossesBT = GetLinearBatteryLossConstant(len(p.NodeEntryTimes), float32(p.SamplingLossBTCM))
-	p.BatteryLossesWiFi = GetLinearBatteryLossConstant(len(p.NodeEntryTimes), float32(p.SamplingLossWifiCM))
-	p.BatteryLosses4G = GetLinearBatteryLossConstant(len(p.NodeEntryTimes), float32(p.SamplingLoss4GCM))
-	p.BatteryLossesAccelerometer = GetLinearBatteryLossConstant(len(p.NodeEntryTimes), float32(p.SamplingLossAccelCM))
 
 	p.Attractions = make([]*Attraction, p.NumAtt)
 
@@ -1508,26 +1490,6 @@ func GetFlags(p *Params) {
 	//flag.IntVar(&p.MaxCMReadingBufferSize, "maxCMReadingBufferSize,",10, "max readings buffer size of a cluster member. CM must send to CH when buffer is this size")
 	//flag.IntVar(&p.MaxCHReadingBufferSize, "maxCHReadingBufferSize,",100, "max readings buffer size of a cluster head. CH must send to server when buffer is this size")
 
-
-	flag.Float64Var(&p.SamplingLossSensorCM, "sensorSamplingLoss", .01,
-		"battery loss due to sensor sampling")
-
-	flag.Float64Var(&p.SamplingLossGPSCM, "GPSSamplingLoss", .05,
-		"battery loss due to GPS sampling")
-
-	flag.Float64Var(&p.SamplingLossBTCM, "SamplingLossBTCM", .001,
-		"battery loss due to BlueTooth sampling")
-
-
-	flag.Float64Var(&p.SamplingLossWifiCM, "SamplingLossWifiCM", .01,
-		"battery loss due to WiFi sampling")
-
-	flag.Float64Var(&p.SamplingLoss4GCM, "SamplingLoss4GCM", .05,
-		"battery loss due to 4G sampling")
-
-	flag.Float64Var(&p.SamplingLossAccelCM, "SamplingLossAccelCM", .01,
-		"battery loss due to accelerometer sampling")
-
 	flag.IntVar(&p.ThresholdBatteryToHaveCM, "thresholdBatteryToHave", 30,
 		"Threshold battery phones should have")
 
@@ -1684,13 +1646,6 @@ func GetFlags(p *Params) {
 
 	flag.Parse()
 	fmt.Println("Natural Loss: ", p.NaturalLossCM)
-	fmt.Println("Sensor Sampling Loss: ", p.SamplingLossSensorCM)
-	fmt.Println("GPS sampling loss: ", p.SamplingLossGPSCM)
-	fmt.Println("Server sampling loss", p.SamplingLossServerCM)
-	fmt.Println("BlueTooth sampling loss", p.SamplingLossBTCM)
-	fmt.Println("WiFi Sampling Loss", p.SamplingLossWifiCM)
-	fmt.Println("4G Sampling Loss", p.SamplingLossWifiCM)
-	fmt.Println("Accelerometer Sampling Loss", p.SamplingLossAccelCM)
 	fmt.Println("Threshold Battery to use: ", p.ThresholdBatteryToUseCM)
 	fmt.Println("Threshold battery to have: ", p.ThresholdBatteryToHaveCM)
 	fmt.Println("Moving speed for incresed sampling: ", p.MovementSamplingSpeedCM)
@@ -1721,12 +1676,6 @@ func WriteFlags(p * Params){
 	buf.WriteString(fmt.Sprintf("movementPath=%v\n", p.MovementPath))
 	buf.WriteString(fmt.Sprintf("OutputFileName=%v\n", p.OutputFileNameCM))
 	buf.WriteString(fmt.Sprintf("naturalLoss=%v\n", p.NaturalLossCM))
-	buf.WriteString(fmt.Sprintf("sensorSamplingLoss=%v\n", p.SamplingLossSensorCM))
-	buf.WriteString(fmt.Sprintf("GPSSamplingLoss=%v\n", p.SamplingLossGPSCM))
-	buf.WriteString(fmt.Sprintf("SamplingLossBTCM=%v\n", p.SamplingLossBTCM))
-	buf.WriteString(fmt.Sprintf("SamplingLossWifiCM=%v\n", p.SamplingLossWifiCM))
-	buf.WriteString(fmt.Sprintf("SamplingLoss4GCM=%v\n", p.SamplingLoss4GCM))
-	buf.WriteString(fmt.Sprintf("SamplingLossAccelCM=%v\n", p.SamplingLossAccelCM))
 	buf.WriteString(fmt.Sprintf("thresholdBatteryToHave=%v\n", p.ThresholdBatteryToHaveCM))
 	buf.WriteString(fmt.Sprintf("thresholdBatteryToUse=%v\n", p.ThresholdBatteryToUseCM))
 	buf.WriteString(fmt.Sprintf("movementSamplingSpeed=%v\n", p.MovementSamplingSpeedCM))
