@@ -16,7 +16,6 @@ type AdHocNetwork struct {
 type Cluster struct {
 	ClusterHead    *NodeImpl
 	ClusterMembers []*NodeImpl
-	ClusterNetwork *AdHocNetwork
 	ClusterNum     int //integer identifier of cluster
 }
 
@@ -56,7 +55,7 @@ func (node *NodeImpl) ComputeClusterScore(p *Params, numWithinDist int, ) float6
 	}
 }
 
-//Generates Hello Message for node to form/maintain clusters. Returns message as a string
+//Generates Hello Message for node to form/maintain clusters
 func (node *NodeImpl) GenerateHello(score float64) {
 	message := &HelloMsg{ Sender: node, NodeCHScore: score}
 	node.NodeClusterParams.ThisNodeHello = message
@@ -85,12 +84,18 @@ func (adhoc *AdHocNetwork) ClusterMovement(node *NodeImpl, p *Params) {
 	if node.Valid {
 		if !node.Alive {
 			node.CurTree.RemoveAndClean(node)
-			if node.IsClusterHead {
-				adhoc.DissolveCluster(node)
-			} else {
-				adhoc.ClearClusterParams(node)
+			adhoc.ClearClusterParams(node)
+		} else if !node.IsClusterHead {
+			if node.NodeClusterParams.CurrentCluster.ClusterHead == nil {
+				adhoc.NewNodeHello(node, p)
+			} else if !node.IsWithinRange(node.NodeClusterParams.CurrentCluster.ClusterHead, p.NodeBTRange) {
+				/*	Node knows it is within range of its cluster head if it receives confirmation after sending its
+					reading. This is the cost of sending the reading to the out-of-range cluster head. The cost is
+					normally handled in node.go's SendToClusterHead, when the head is in range. */
+				node.DrainBatteryBluetooth()
+				adhoc.NewNodeHello(node, p)
 			}
-		} else if (!node.IsClusterHead && (node.NodeClusterParams.CurrentCluster.ClusterHead == nil || !node.IsWithinRange(node.NodeClusterParams.CurrentCluster.ClusterHead, p.NodeBTRange))) || len(node.NodeClusterParams.CurrentCluster.ClusterMembers) <= 0 {
+		} else if len(node.NodeClusterParams.CurrentCluster.ClusterMembers) <= 0 {
 			adhoc.NewNodeHello(node, p)
 		}
 	}
@@ -114,7 +119,6 @@ func (adhoc *AdHocNetwork) NewNodeHello(node *NodeImpl, p *Params) {
 			//withinDist[j].GenerateHello(withinDist[j].ComputeClusterScore(p, len(p.NodeTree.WithinRadius(p.NodeBTRange, withinDist[j], []*NodeImpl{}))))
 			adhoc.ClearClusterParams(node)
 			node.Join(withinDist[i].NodeClusterParams.CurrentCluster)
-			//adhoc.Joins++
 			return
 		}
 	}
@@ -202,8 +206,11 @@ func (adhoc *AdHocNetwork) DissolveCluster(node *NodeImpl) {
 			break
 		}
 	}
-	for _, member := range node.NodeClusterParams.CurrentCluster.ClusterMembers {
-		adhoc.ClearClusterParams(member)
+	for i := 0; len(node.NodeClusterParams.CurrentCluster.ClusterMembers) > 0; {
+		/*	The members only know that this cluster has dissolved because they will later try to send their reading to the
+			cluster head over bluetooth and will receive no confirmation. That bluetooth cost has to be simulated now. */
+		node.NodeClusterParams.CurrentCluster.ClusterMembers[i].DrainBatteryBluetooth()
+		adhoc.ClearClusterParams(node.NodeClusterParams.CurrentCluster.ClusterMembers[i])
 	}
 	adhoc.ClearClusterParams(node)
 }
@@ -211,11 +218,7 @@ func (adhoc *AdHocNetwork) DissolveCluster(node *NodeImpl) {
 func (adhoc *AdHocNetwork) ResetClusters(p *Params) {
 	for i := 0; i < len(p.AliveList); i++ {
 		p.AliveList[i].IsClusterHead = false
-		adhoc.ClearClusterParams(p.AliveList[i])
-		if !p.AliveList[i].Alive {
-			p.AliveList = append(p.AliveList[:i], p.AliveList[i+1:]...)
-			i--
-		}
+		p.ClusterNetwork.ClearClusterParams(p.AliveList[i])
 	}
 	adhoc.ClusterHeads = []*NodeImpl{}
 	adhoc.SingularNodes = []*NodeImpl{}
@@ -266,7 +269,7 @@ func (adhoc *AdHocNetwork) ElectClusterHead(curNode *NodeImpl, p *Params) {
 		maxNode.IsClusterHead = true
 		maxNode.IsClusterMember = false
 		adhoc.ClusterHeads = append(adhoc.ClusterHeads, maxNode)
-		maxNode.NodeClusterParams.CurrentCluster = &Cluster{maxNode, []*NodeImpl{}, adhoc, adhoc.NextClusterNum}
+		maxNode.NodeClusterParams.CurrentCluster = &Cluster{maxNode, []*NodeImpl{}, adhoc.NextClusterNum}
 		adhoc.NextClusterNum++
 	}
 	if curNode != maxNode {

@@ -375,6 +375,8 @@ func (node *NodeImpl) SendToClusterHead(rd *Reading, tp bool){
 
 	node.DrainBatteryBluetooth()	//Node sends reading over bluetooth
 	head.DrainBatteryBluetooth()	//Node receives reading over bluetooth
+	head.DrainBatteryBluetooth()	//Head sends confirmation over bluetooth
+	node.DrainBatteryBluetooth()	//Node receives confirmation over bluetooth
 	head.StoredNodes = append(head.StoredNodes, node)
 	head.StoredReadings = append(head.StoredReadings, rd)
 	head.StoredTPs = append(head.StoredTPs, tp)
