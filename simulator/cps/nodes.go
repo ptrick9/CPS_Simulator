@@ -660,7 +660,7 @@ func (node *NodeImpl) AdaptiveSampling() int{
 	} else if node.GetBatteryPercentage() < .15 {
 		batteryMultiplier = 3
 	}
-	NodesinSquare:=len(node.P.Server.SquarePop[Tuple{int(node.Y / float32(node.P.YDiv)),int(node.Y / float32(node.P.YDiv))}])  //Nodes in curr node square
+	NodesinSquare:=len(node.P.Server.SquarePop[Tuple{int(node.X / float32(node.P.XDiv)), int(node.Y / float32(node.P.YDiv))}])  //Nodes in curr node square
 	densityMultiplier= (NodesinSquare/node.P.DensityThreshold) //increases period based on how many times more nodes there are in a square
 	multiplier:=distanceMultiplier+densityMultiplier+batteryMultiplier
 	return multiplier
