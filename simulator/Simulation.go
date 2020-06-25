@@ -416,34 +416,27 @@ func main() {
 		p.CurrentTime = event.Time
 		switch event.Instruction {
 		case cps.SENSE:
-			if event.Node.Alive {
-				if event.Node.GetBatteryPercentage() < 0.10 {
-					event.Node.Alive = false
-				}
-				//if p.CurrentTime/1000 < p.NumNodeMovements-5 {
-				//	if p.CSVMovement {
-				//		p.IsSense = true
-				//		event.Node.MoveCSV(p)
-				//	} else {
-				//		event.Node.MoveNormal(p)
-				//	}
-				//}
-				if p.ClusteringOn {
-					p.ClusterNetwork.ClusterMovement(event.Node, p)
-				}
-				if p.DriftExplorer { //no sensor csv, just checking FP
-					event.Node.GetSensor()
+			//if p.CurrentTime/1000 < p.NumNodeMovements-5 {
+			//	if p.CSVMovement {
+			//		p.IsSense = true
+			//		event.Node.MoveCSV(p)
+			//	} else {
+			//		event.Node.MoveNormal(p)
+			//	}
+			//}
+			event.Node.DrainBatterySample()
+			event.Node.ScheduleNextSense()
+			if p.ClusteringOn {
+				p.ClusterNetwork.ClusterMovement(event.Node, p)
+			}
+			if p.DriftExplorer { //no sensor csv, just checking FP
+				event.Node.GetSensor()
+			} else {
+				if p.CSVSensor { //if we have a big CSV file of the entire event
+					event.Node.GetReadingsCSV()
 				} else {
-					if p.CSVSensor { //if we have a big CSV file of the entire event
-						event.Node.GetReadingsCSV()
-					} else {
-						event.Node.GetReadings() //if we have no big file, just the small 'FINE' csv file
-					}
+					event.Node.GetReadings() //if we have no big file, just the small 'FINE' csv file
 				}
-
-				event.Node.DrainBatterySample()
-				event.Node.ScheduleNextSense()
-
 			}
 		case cps.MOVE:
             p.IsSense = false

@@ -626,6 +626,8 @@ func (node *NodeImpl) ScheduleNextSense() {
 		multiplier:= min(node.AdaptiveSampling(), 50)
 		delay := int(float64(node.P.SamplingPeriodMS)*math.Pow(2.0, float64(multiplier)))
 		node.P.Events.Push(&Event{node, SENSE, node.P.CurrentTime + delay, 0})
+	} else {
+		node.Alive = false
 	}
 }
 
