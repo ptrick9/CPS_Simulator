@@ -379,7 +379,6 @@ func main() {
 	fmt.Println("Dimensions: ", p.MaxX, "x", p.MaxY)
 	fmt.Printf("Running Simulator iteration %d\\%v", 0, p.Iterations_of_event)
 
-	iters := 0
 	p.TimeStep = 0
 
 	cps.WriteFlags(p)
@@ -758,7 +757,7 @@ func main() {
 	fmt.Fprintln(p.PositionFile, "Height:", p.MaxY)
 	fmt.Fprintf(p.PositionFile, "Amount: %-8v\n", int(p.CurrentTime/1000)+1)
 
-	if iters < p.Iterations_of_event-1 {
+	if p.Iterations_used < p.Iterations_of_event-1 {
 		fmt.Printf("\nFound bomb at iteration: %v \nSimulation Complete\n", int(p.CurrentTime/1000))
 	} else {
 		fmt.Println("\nSimulation Complete")
