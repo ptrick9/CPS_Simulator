@@ -776,10 +776,11 @@ func (s *FusionCenter) PrintBatteryStats() {
 
 	totalDead := 0
 	lowestBattery := s.P.NodeList[0].GetBatteryPercentage()
+
 	averageRemainingBattery := 0.0
 	for _, node := range s.P.NodeList {
 		battery := node.GetBatteryPercentage()
-		if battery >= .10 {
+		if battery >= s.P.BatteryDeadThreshold {
 			averageRemainingBattery += battery
 			if battery < lowestBattery {
 				lowestBattery = battery

@@ -17,9 +17,6 @@ type NodeParent interface {
 	Distance(b Bomb) float32        //distance to bomb in the form of the node's reading
 	Row(div int) int                //Row of node
 	Col(div int) int                //Column of node
-	GetSpeed() []float32            //History of accelerometer based speeds of node
-	//BatteryLossDynamic()   //Battery loss based of ratios of battery usage
-	//BatteryLossDynamic1()  //2 stage buffer battery loss
 	UpdateHistory(newValue float32) //updates history of node's samples
 	IncrementTotalSamples()         //increments total number of samples node has taken
 	GetAvg() float32                //returns average of node's past samples
@@ -55,16 +52,6 @@ type NodeImpl struct {
 	X                               float32      //x pos of node
 	Y                               float32      //y pos of node
 	Alive							bool
-	Battery                         float32  //battery of node
-	BatteryLossScalar               float32  //natural incremental battery loss of node
-	BatteryLossSensor				float32  //sensor based battery loss of node
-	BatteryLossGPS		            float32  //GPS based battery loss of node
-	BatteryLossServer				float32  //server communication based battery loss of node
-
-	BatteryLossBT					float32
-	BatteryLossWifi					float32
-	BatteryLoss4G					float32
-	BatteryLossAccelerometer		float32
 
 	ToggleCheckIterator             int      //node's personal iterator mostly for cascading pings
 	//HasCheckedSensor                bool     //did the node just ping the sensor?
@@ -134,8 +121,10 @@ type NodeImpl struct {
 	TotalBytesSent		int
 	IsClusterHead		bool
 	Recalibrated 		bool
+
 	InitialBatteryLevel	int
 	CurrentBatteryLevel	int
+
 	IsClusterMember					bool
 	NodeClusterParams *ClusterMemberParams
 	CurTree				 			*Quadtree
@@ -219,8 +208,6 @@ func (node *NodeImpl) TurnValid(x, y int, p *Params) bool {
 	return x < p.Width && x >= 0 && y < p.Height && y >= 0
 }
 
-
-
 func (node *NodeImpl) ADCReading(raw float32) int {
 
 	level := (raw - node.P.ADCOffset)/ node.P.ADCWidth
@@ -238,7 +225,7 @@ func (node NodeImpl) String() string {
 	//return fmt.Sprintf("x: %v y: %v Id: %v battery: %v sensor checked: %v sensor checks: %v GPS checked: %v GPS checks: %v server checked: %v server checks: %v buffer: %v ", int(node.X), node.Y, node.Id, node.Battery, node.HasCheckedSensor, node.TotalChecksSensor, node.HasCheckedGPS, node.TotalChecksGPS, node.HasCheckedServer, node.TotalChecksServer,node.BufferI)
 	//return fmt.Sprintf("x: %v y: %v valid: %v", int(node.X), int(node.Y), node.Valid)
 	//return fmt.Sprintf("battery: %v sensor checked: %v GPS checked: %v ", int(node.Battery), node.HasCheckedSensor, node.HasCheckedGPS)
-	return fmt.Sprintf("battery: %v sensor checked: %v GPS checked: %v ", int(node.Battery), true, true)
+	return fmt.Sprintf("battery: %v sensor checked: %v GPS checked: %v ", int(node.GetBatteryPercentage() * 100), true, true)
 
 }
 
@@ -401,7 +388,7 @@ func (node *NodeImpl) LogBatteryPower(t int){
 	if(node.BatteryOverTime == nil){
 		node.BatteryOverTime = map[int]float32{}
 	}
-	node.BatteryOverTime[t] = node.Battery;
+	node.BatteryOverTime[t] = float32(node.GetBatteryPercentage())
 	//used to test the log file writing and the python processing code
 	//if(node.Id%4==0){
 	//	node.DecrementPowerSensor()
@@ -418,11 +405,7 @@ func (node *NodeImpl) SendToServer(rd *Reading, tp bool){
 	//node.TotalPacketsSent += 1
 
 	//code to send to server goes here
-	if node.P.WifiOr4G {
-		node.DecrementPowerWifi()
-	} else {
-		node.DecrementPower4G()
-	}
+	node.DrainBatteryWifi()
 	node.P.Server.Send(node, rd, tp)
 }
 
@@ -434,8 +417,8 @@ func (node *NodeImpl) SendToClusterHead(rd *Reading, tp bool){
 	//code to send to cluster head goes here
 	head := node.NodeClusterParams.CurrentCluster.ClusterHead
 
-	node.DecrementPowerBT()
-	head.DecrementPowerBT()
+	node.DrainBatteryBluetooth()
+	head.DrainBatteryBluetooth()
 	head.StoredNodes = append(head.StoredNodes, node)
 	head.StoredReadings = append(head.StoredReadings, rd)
 	head.StoredTPs = append(head.StoredTPs, tp)
@@ -446,12 +429,7 @@ func (node *NodeImpl) SendMultipleToServer(rd *Reading, tp bool){
 	//node.TotalBytesSent += packet
 	//node.TotalPacketsSent += 1
 
-	//code to send to server goes here
-	if node.P.WifiOr4G {
-		node.DecrementPowerWifi()
-	} else {
-		node.DecrementPower4G()
-	}
+	node.DrainBatteryWifi()
 	for i := range node.StoredReadings {
 		node.P.Server.Send(node.StoredNodes[i], node.StoredReadings[i], node.StoredTPs[i])
 	}
@@ -464,37 +442,6 @@ func (node *NodeImpl) SendMultipleToServer(rd *Reading, tp bool){
 		node.P.Server.Send(node, rd, tp)
 	}
 }
-
-//decrement battery due to transmitting/receiving over BlueTooth
-func (node *NodeImpl) DecrementPowerBT(){
-	node.Battery = node.Battery - node.BatteryLossBT
-}
-
-//decrement battery due to transmitting/receiving over WiFi
-func (node *NodeImpl) DecrementPowerWifi(){
-	node.Battery = node.Battery - node.BatteryLossWifi
-}
-
-//decrement battery due to transmitting/receiving over 4G
-func (node *NodeImpl) DecrementPower4G(){
-	node.Battery = node.Battery - node.BatteryLoss4G
-}
-
-//decrement battery due to sampling Accelerometer
-func (node *NodeImpl) DecrementPowerAccel(){
-	node.Battery = node.Battery - node.BatteryLossAccelerometer
-}
-
-//decrement battery due to transmitting/receiving GPS
-func (node *NodeImpl) DecrementPowerGPS(){
-	node.Battery = node.Battery - node.BatteryLossGPS
-}
-
-//decrement battery due to using GPS
-func (node *NodeImpl) DecrementPowerSensor(){
-	node.Battery = node.Battery - node.BatteryLossSensor
-}
-
 
 /* updateHistory shifts all values in the sample history slice to the right and adds the Value at the beginning
 Therefore, each Time a node takes a sample in main, it also adds this sample to the beginning of the sample history.
@@ -723,12 +670,10 @@ func (node *NodeImpl) DrainBatteryWifi() {
 
 
 func (node *NodeImpl) ScheduleNextSense() {
-	if node.GetBatteryPercentage() >=.10 {
-		multiplier:=node.AdaptiveSampling()
-		if multiplier>=50{ //saftey not to outwrite int
-			multiplier=50
-		}
-		node.P.Events.Push(&Event{node, SENSE, node.P.CurrentTime + int(float64(node.P.SamplingPeriodMS)*math.Pow(2.0, float64(multiplier))), 0})
+	if node.GetBatteryPercentage() > node.P.BatteryDeadThreshold {
+		multiplier:= min(node.AdaptiveSampling(), 50)
+		delay := int(float64(node.P.SamplingPeriodMS)*math.Pow(2.0, float64(multiplier)))
+		node.P.Events.Push(&Event{node, SENSE, node.P.CurrentTime + delay, 0})
 	}
 }
 
@@ -746,13 +691,17 @@ func (node *NodeImpl) AdaptiveSampling() int{
 	if node.thresholdCounter>3{
 		distanceMultiplier=1 //delay by 2x the period
 	}
-	if node.GetBatteryPercentage() < .4{
-		batteryMultiplier=-1
-	} else if node.GetBatteryPercentage() < .25{
-		batteryMultiplier=-2
-	} else if node.GetBatteryPercentage() < .15 {
-		batteryMultiplier=-3
+
+	if node.GetBatteryPercentage() >= node.P.BatteryHighThreshold {
+		batteryMultiplier = 0
+	} else if node.GetBatteryPercentage() >= node.P.BatteryMediumThreshold {
+		batteryMultiplier = 1
+	} else if node.GetBatteryPercentage() >= node.P.BatteryLowThreshold {
+		batteryMultiplier = 2
+	} else if node.GetBatteryPercentage() >= node.P.BatteryDeadThreshold {
+		batteryMultiplier = 3
 	}
+
 	NodesinSquare:=len(node.P.Server.SquarePop[Tuple{int(node.Y / float32(node.P.YDiv)),int(node.Y / float32(node.P.YDiv))}])  //Nodes in curr node square
 	densityMultiplier= (NodesinSquare/node.P.DensityThreshold) //increases period based on how many times more nodes there are in a square
 	multiplier:=distanceMultiplier+densityMultiplier+batteryMultiplier

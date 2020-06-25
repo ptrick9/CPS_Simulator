@@ -90,7 +90,7 @@ func (adhoc *AdHocNetwork) SendHelloMessage(curNode *NodeImpl, p *Params) {
 	numWithinDist := len(withinDist)
 
 	curNode.GenerateHello(curNode.ComputeClusterScore(p, numWithinDist))
-	curNode.DecrementPowerBT()
+	curNode.DrainBatteryBluetooth()
 
 	//var buffer bytes.Buffer
 	for j := 0; j < numWithinDist; j++ {
@@ -99,7 +99,7 @@ func (adhoc *AdHocNetwork) SendHelloMessage(curNode *NodeImpl, p *Params) {
 		//if curClusterP.ThisNodeHello.Sender != nil {
 		withinDist[j].NodeClusterParams.RecvMsgs = append(withinDist[j].NodeClusterParams.RecvMsgs, curNode.NodeClusterParams.ThisNodeHello)
 		//buffer.WriteString(fmt.Sprintf("SenderId=%v\tRecieverId=%v\tSenderCHS=%v\n",curNode.Id,withinDist[j].CurNode.Id,curNode.NodeClusterParams.ThisNodeHello.NodeCHScore))
-		withinDist[j].DecrementPowerBT()
+		withinDist[j].DrainBatteryBluetooth()
 		adhoc.TotalMsgs++
 		//}
 		//}
@@ -111,7 +111,7 @@ func (adhoc *AdHocNetwork) SendHelloMessage(curNode *NodeImpl, p *Params) {
 func (adhoc *AdHocNetwork) ClusterMovement(node *NodeImpl, p *Params) {
 	//adhoc.Movements++
 	if node.Valid {
-		if node.GetBatteryPercentage() < 0.10 {
+		if node.GetBatteryPercentage() < p.BatteryDeadThreshold {
 			node.Alive = false
 			node.CurTree.RemoveAndClean(node)
 			if node.IsClusterHead {
@@ -196,7 +196,7 @@ func (node *NodeImpl) PrintClusterNode() {
 	fmt.Print(",")
 	fmt.Print(node.Y)
 	fmt.Print(" ")
-	fmt.Print(node.Battery)
+	fmt.Print(node.GetBatteryPercentage())
 	fmt.Print(" ")
 	//fmt.Print(curNode.ClusterHead)
 	//fmt.Print(" ")
@@ -329,8 +329,8 @@ func (adhoc *AdHocNetwork) FormClusters(clusterHead *NodeImpl, p *Params) {
 			msgs[i].Sender.IsClusterMember = true
 			msgs[i].Sender.NodeClusterParams.CurrentCluster = clusterHead.NodeClusterParams.CurrentCluster
 
-			clusterHead.DecrementPowerBT()
-			clusterHead.NodeClusterParams.RecvMsgs[i].Sender.DecrementPowerBT()
+			clusterHead.DrainBatteryBluetooth()
+			clusterHead.NodeClusterParams.RecvMsgs[i].Sender.DrainBatteryBluetooth()
 
 			//}
 		}
@@ -458,8 +458,8 @@ func (adhoc *AdHocNetwork) FinalizeClusters(p *Params) {
 					adhoc.SingularNodes[i].NodeClusterParams.CurrentCluster = clusterHead.NodeClusterParams.CurrentCluster
 					joined = true
 
-					adhoc.SingularNodes[i].DecrementPowerBT()
-					clusterHead.DecrementPowerBT()
+					adhoc.SingularNodes[i].DrainBatteryBluetooth()
+					clusterHead.DrainBatteryBluetooth()
 				} else {
 					atj = append(atj, viableOptions[k])
 				}
@@ -476,7 +476,7 @@ func (adhoc *AdHocNetwork) FinalizeClusters(p *Params) {
 				adhoc.ClusterHeads = append(adhoc.ClusterHeads, adhoc.SingularNodes[i])
 				adhoc.SingularNodes[i].NodeClusterParams.AttemptedToJoin = append(adhoc.SingularNodes[i].NodeClusterParams.AttemptedToJoin, atj...)
 
-				adhoc.SingularNodes[i].DecrementPowerBT()
+				adhoc.SingularNodes[i].DrainBatteryBluetooth()
 			}
 		}
 	}

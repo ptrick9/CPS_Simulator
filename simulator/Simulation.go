@@ -443,8 +443,8 @@ func main() {
 				}
 
 				event.Node.DrainBatterySample()
-			}
 				event.Node.ScheduleNextSense()
+			}
 			case cps.MOVE:
 				p.IsSense = false
 				if(p.CSVMovement) {
@@ -458,7 +458,7 @@ func main() {
 				}
 			}
 		case cps.CLUSTERHEADELECT:
-			if event.Node.Battery > p.ThreshHoldBatteryToHave {
+			if event.Node.GetBatteryPercentage() > p.BatteryDeadThreshold {
 				if event.Node.Valid {
 					event.Node.SortMessages()
 					p.ClusterNetwork.ElectClusterHead(event.Node, p)
@@ -467,7 +467,7 @@ func main() {
 			}
 
 		case cps.CLUSTERFORM:
-			if event.Node.Battery > p.ThreshHoldBatteryToHave {
+			if event.Node.GetBatteryPercentage() > p.BatteryDeadThreshold {
 				if event.Node.Valid {
 					//p.ClusterNetwork.GenerateClusters(event.Node)
 					if event.Node.IsClusterHead {
@@ -492,7 +492,7 @@ func main() {
 			for i := 0; i < len(p.NodeList); i++ {
 				if p.NodeList[i].Valid {
 					validCount++
-					if p.NodeList[i].Battery > p.ThreshHoldBatteryToHave {
+					if p.NodeList[i].GetBatteryPercentage() > p.BatteryDeadThreshold {
 						aliveCount++
 					}
 				}

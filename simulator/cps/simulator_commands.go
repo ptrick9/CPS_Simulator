@@ -16,18 +16,6 @@ type Params struct {
 	InputFileNameCM                string  // This must be the name of the input text file with ".txt"
 	NaturalLossCM                  float64 // This can be any number n: 0 < n < .1
 
-	WifiOr4G					   bool	   //True: nodes speak to server over wifi, False: nodes speak to server over 4G
-
-	SamplingLossSensorCM           float64 // This can be any number n: 0 < n < .1
-	SamplingLossGPSCM              float64 // This can be any number n: 0 < n < GPSSamplingLossCM < .1
-	SamplingLossServerCM           float64 // This can be any number n: 0 < n < serverSamplingLossCM < .1
-	SamplingLossBTCM			   float64
-	SamplingLossWifiCM			   float64
-	SamplingLoss4GCM			   float64
-	SamplingLossAccelCM			   float64
-
-	ThresholdBatteryToHaveCM       int     // This can be any number n: 0 < n < 50
-	ThresholdBatteryToUseCM        int     // This can be any number n: 0 < n < 20 < 100-thresholdBatteryToHaveCM
 	MovementSamplingSpeedCM        int     // This can be any number n: 0 < n < 100
 	MovementSamplingPeriodCM       int     // This can be any int number n: 1 <= n <= 100
 	MaxBufferCapacityCM            int     // This can be aby int number n: 10 <= n <= 100
@@ -183,17 +171,6 @@ type Params struct {
 	WallNodeList []WallNodes
 	NodeList     []*NodeImpl
 
-	BatteryCharges []float32
-	BatteryLosses  []float32
-
-	BatteryLossesSensor				  []float32
-	BatteryLossesGPS 			      []float32
-	BatteryLossesServer 			  []float32
-	BatteryLossesBT					  []float32
-	BatteryLossesWiFi				  []float32
-	BatteryLosses4G					  []float32
-	BatteryLossesAccelerometer		  []float32
-
 	NumAtt      int
 	Attractions []*Attraction
 	BombSquare  *Square
@@ -246,8 +223,13 @@ type Params struct {
 	RecalReject 	bool
 	DensityThreshold int  // number of nodes that must be in a square for it to be considered dense and have the sampling rate decreased
 	SamplingPeriodMS	 int
+
 	BatteryCapacity				int
 	AverageBatteryLevel			float64
+	BatteryDeadThreshold		float64
+	BatteryLowThreshold			float64
+	BatteryMediumThreshold		float64
+	BatteryHighThreshold		float64
 	SampleLossPercentage		float64
 	BluetoothLossPercentage		float64
 	WifiLossPercentage			float64
