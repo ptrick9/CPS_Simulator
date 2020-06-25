@@ -209,11 +209,11 @@ func (adhoc *AdHocNetwork) DissolveCluster(node *NodeImpl) {
 }
 
 func (adhoc *AdHocNetwork) ResetClusters(p *Params) {
-	for i := 0; i < len(p.NodeList); i++ {
-		p.NodeList[i].IsClusterHead = false
-		adhoc.ClearClusterParams(p.NodeList[i])
-		if !p.NodeList[i].Alive {
-			p.NodeList = append(p.NodeList[:i], p.NodeList[i+1:]...)
+	for i := 0; i < len(p.AliveList); i++ {
+		p.AliveList[i].IsClusterHead = false
+		adhoc.ClearClusterParams(p.AliveList[i])
+		if !p.AliveList[i].Alive {
+			p.AliveList = append(p.AliveList[:i], p.AliveList[i+1:]...)
 			i--
 		}
 	}
@@ -476,13 +476,13 @@ func (node *NodeImpl) IsWithinRange(node2 *NodeImpl, searchRange float64) bool {
 func (adhoc *AdHocNetwork) FullRecluster(p *Params) {
 	adhoc.FullReclusters++
 	adhoc.ResetClusters(p)
-	for _, node := range p.NodeList {
+	for _, node := range p.AliveList {
 		node.DrainBatteryWifi()	//Server sends message to all nodes that reclustering is happening
 		if node.Valid {
 			adhoc.SendHelloMessage(node, p)
 		}
 	}
-	for _, node := range p.NodeList {
+	for _, node := range p.AliveList {
 		if !node.IsClusterHead && node.Valid {
 			adhoc.ElectClusterHead(node, p)
 		}

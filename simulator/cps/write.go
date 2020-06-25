@@ -451,19 +451,12 @@ func SetupCSVNodes(p *Params) {
 		p.NodeList = append(p.NodeList, newNode)
 		p.CurrentNodes += 1
 
-		//newNode.ScheduledEvent = &Event{newNode,SENSE,0,0}
-		//p.Events.Push(&Event{newNode,MOVE,0,0})
-		//p.Events.Push(newNode.ScheduledEvent)
-		//p.Events.Push(&Event{newNode, ScheduleSensor, 0, 0})
-
 		if p.ClusteringOn {
+			p.AliveList = append(p.AliveList, newNode)
 			newNode.IsClusterHead = false
 			newNode.IsClusterMember = false
 			newNode.NodeClusterParams = &ClusterMemberParams{}
 			p.NodeTree.Insert(newNode)
-			//p.Events.Push(&Event{newNode,CLUSTERMSG,10,0})
-			//p.Events.Push(&Event{newNode,CLUSTERHEADELECT,15,0})
-			//p.Events.Push(&Event{newNode,CLUSTERFORM,20,0})
 			p.ClusterNetwork.ClearClusterParams(newNode)
 			//newNode.TimeLastSentReadings = p.CurrentTime
 			//newNode.ReadingsBuffer = []Reading{}

@@ -629,46 +629,46 @@ func main() {
 			clusterHeadCount := 0
 			clusterMemberCount := 0
 			clusterDebugBuffer.WriteString(fmt.Sprint(""))
-			for i := 0; i < len(p.NodeList); i++ {
-				if p.NodeList[i].IsClusterHead {
+			for i := 0; i < len(p.AliveList); i++ {
+				if p.AliveList[i].IsClusterHead {
 					clusterHeadCount++
-				} else if p.NodeList[i].IsClusterMember {
+				} else if p.AliveList[i].IsClusterMember {
 					clusterMemberCount++
 				}
 			}
 			clusterDebugBuffer.WriteString(fmt.Sprintf("Iteration: %v\tlen(p.ClusterNetwork.ClusterHeads): %v\tClusterHeads: %v\tClusterMembers: %v\n", p.CurrentTime/1000, len(p.ClusterNetwork.ClusterHeads), clusterHeadCount, clusterMemberCount))
 
-			for i := 0; i < len(p.NodeList); i++ {
-				if p.NodeList[i].IsClusterHead {
-					for j := 0; j < len(p.NodeList[i].NodeClusterParams.CurrentCluster.ClusterMembers); j++ {
-						if !(p.NodeList[i].IsWithinRange(p.NodeList[i].NodeClusterParams.CurrentCluster.ClusterMembers[j], p.NodeBTRange)) {
-							xDist := p.NodeList[i].X - p.NodeList[i].NodeClusterParams.CurrentCluster.ClusterMembers[j].X
-							yDist := p.NodeList[i].Y - p.NodeList[i].NodeClusterParams.CurrentCluster.ClusterMembers[j].Y
+			for i := 0; i < len(p.AliveList); i++ {
+				if p.AliveList[i].IsClusterHead {
+					for j := 0; j < len(p.AliveList[i].NodeClusterParams.CurrentCluster.ClusterMembers); j++ {
+						if !(p.AliveList[i].IsWithinRange(p.AliveList[i].NodeClusterParams.CurrentCluster.ClusterMembers[j], p.NodeBTRange)) {
+							xDist := p.AliveList[i].X - p.AliveList[i].NodeClusterParams.CurrentCluster.ClusterMembers[j].X
+							yDist := p.AliveList[i].Y - p.AliveList[i].NodeClusterParams.CurrentCluster.ClusterMembers[j].Y
 							radDist := math.Sqrt(float64(xDist*xDist) + float64(yDist*yDist))
 							clusterDebugBuffer.WriteString(fmt.Sprintf("\tCluster Member Out of Range: Member:{ID=%v, Coord(%v,%v)} Cluster:{CH_ID=%v, Coord(%v,%v),Size=%v} Dist: %.4f\n",
-								p.NodeList[i].NodeClusterParams.CurrentCluster.ClusterMembers[j].Id, p.NodeList[i].NodeClusterParams.CurrentCluster.ClusterMembers[j].X, p.NodeList[i].NodeClusterParams.CurrentCluster.ClusterMembers[j].Y,
-								p.NodeList[i].Id, p.NodeList[i].X, p.NodeList[i].Y, len(p.NodeList[i].NodeClusterParams.CurrentCluster.ClusterMembers), radDist))
+								p.AliveList[i].NodeClusterParams.CurrentCluster.ClusterMembers[j].Id, p.AliveList[i].NodeClusterParams.CurrentCluster.ClusterMembers[j].X, p.AliveList[i].NodeClusterParams.CurrentCluster.ClusterMembers[j].Y,
+								p.AliveList[i].Id, p.AliveList[i].X, p.AliveList[i].Y, len(p.AliveList[i].NodeClusterParams.CurrentCluster.ClusterMembers), radDist))
 						}
 					}
 
 					for j := 0; j < len(p.ClusterNetwork.ClusterHeads); j++ {
 						for k := 0; k < len(p.ClusterNetwork.ClusterHeads[j].NodeClusterParams.CurrentCluster.ClusterMembers); k++ {
-							if p.NodeList[i] == p.ClusterNetwork.ClusterHeads[j].NodeClusterParams.CurrentCluster.ClusterMembers[k] {
-								clusterDebugBuffer.WriteString(fmt.Sprintf("\tCluster Head {CH_ID: %v, Size=%v} is cluster member of {CH_ID: %v, Size=%v}\n", p.NodeList[i].Id, len(p.NodeList[i].NodeClusterParams.CurrentCluster.ClusterMembers), p.ClusterNetwork.ClusterHeads[j].Id, len(p.ClusterNetwork.ClusterHeads[j].NodeClusterParams.CurrentCluster.ClusterMembers)))
+							if p.AliveList[i] == p.ClusterNetwork.ClusterHeads[j].NodeClusterParams.CurrentCluster.ClusterMembers[k] {
+								clusterDebugBuffer.WriteString(fmt.Sprintf("\tCluster Head {CH_ID: %v, Size=%v} is cluster member of {CH_ID: %v, Size=%v}\n", p.AliveList[i].Id, len(p.AliveList[i].NodeClusterParams.CurrentCluster.ClusterMembers), p.ClusterNetwork.ClusterHeads[j].Id, len(p.ClusterNetwork.ClusterHeads[j].NodeClusterParams.CurrentCluster.ClusterMembers)))
 							}
 						}
 					}
-				} else if p.NodeList[i].IsClusterMember {
+				} else if p.AliveList[i].IsClusterMember {
 					clusterCount := 0
 					for j := 0; j < len(p.ClusterNetwork.ClusterHeads); j++ {
 						for k := 0; k < len(p.ClusterNetwork.ClusterHeads[j].NodeClusterParams.CurrentCluster.ClusterMembers); k++ {
-							if p.NodeList[i] == p.ClusterNetwork.ClusterHeads[j].NodeClusterParams.CurrentCluster.ClusterMembers[k] {
+							if p.AliveList[i] == p.ClusterNetwork.ClusterHeads[j].NodeClusterParams.CurrentCluster.ClusterMembers[k] {
 								clusterCount++
 							}
 						}
 					}
 					if clusterCount > 1 {
-						clusterDebugBuffer.WriteString(fmt.Sprintf("\tNode ID=%v is cluster member of %v clusters\n", p.NodeList[i].Id, clusterCount))
+						clusterDebugBuffer.WriteString(fmt.Sprintf("\tNode ID=%v is cluster member of %v clusters\n", p.AliveList[i].Id, clusterCount))
 					}
 				}
 			}

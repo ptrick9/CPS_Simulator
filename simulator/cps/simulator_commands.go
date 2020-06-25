@@ -152,6 +152,7 @@ type Params struct {
 
 	WallNodeList []WallNodes
 	NodeList     []*NodeImpl
+	AliveList	 []*NodeImpl
 
 	BatteryCharges []float32
 
