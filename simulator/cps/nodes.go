@@ -7,11 +7,6 @@ import (
 	"sort"
 )
 
-//Global variables used in battery loss dynamics
-var (
-	naturalLoss float32
-)
-
 //The NodeParent interface is inherited by all node types
 type NodeParent interface {
 	Distance(b Bomb) float32        //distance to bomb in the form of the node's reading
@@ -53,51 +48,20 @@ type NodeImpl struct {
 	Y                               float32      //y pos of node
 	Alive							bool
 
-	ToggleCheckIterator             int      //node's personal iterator mostly for cascading pings
-	//HasCheckedSensor                bool     //did the node just ping the sensor?
-	TotalChecksSensor               int      //total sensor pings of node
-	//HasCheckedGPS                   bool     //did the node just ping the GPS?
-	TotalChecksGPS                  int      //total GPS pings of node
-	//HasCheckedServer                bool     //did the node just communicate with the server?
-	TotalChecksServer               int      //how many times did the node communicate with the server?
-	PingPeriod                      float32  //This is the aggregate ping period used in some ping rate determining algorithms
-	SensorPingPeriod                float32  //This is the ping period for the sensor
-	GPSPingPeriod                   float32  //This is the ping period for the GPS
-	ServerPingPeriod                float32  //This is the ping period for the server
-	Pings                           float32  //This is an aggregate pings used in some ping rate determining algorithms
-	SensorPings                     float32  //This is the total sensor pings to be made
-	GPSPings                        float32  //This is the total GPS pings to be made
-	ServerPings                     float32  //This is the total server pings to be made
 	Cascade                         int      //This cascades the pings of the nodes
 	BufferI                         int      //This is to keep track of the node's buffer size
-	XPos                            [100]float32 //x pos buffer of node
-	YPos                            [100]float32 //y pos buffer of node
-	Value                           [100]int //Value buffer of node
-	AccelerometerSpeedServer        [100]int //Accelerometer speed history of node
-	Time                            [100]int //This keeps track of when specific pings are made
-	//speedGPSPeriod int //This is a special period for speed based GPS pings but it is not used and may never be
-	AccelerometerPosition 			[2][3]int //This is the accelerometer model of node
 	AccelerometerSpeed    			[]float32 //History of accelerometer speeds recorded
-	InverseSensor         			float32   //Algorithm place holder declared here for speed
-	InverseGPS            			float32   //Algorithm place holder declared here for speed
-	InverseServer         			float32   //Algorithm place holder declared here for speed
 	SampleHistory         			[]float32 //a history of the node's readings
 	Avg                   			float32   //weighted average of the node's most recent readings
 	TotalSamples          			int       //total number of samples taken by a node
 	SpeedWeight           			float32   //weight given to averaging of node's samples, based on node's speed
 	NumResets             			int       //number of times a node has had to reset due to drifting
 	Concentration         			float64   //used to determine reading of node
-	SpeedGPSPeriod        			int
 
-	Current  						int
-	Previous 						int
 	Diffx    						int
 	Diffy    						int
-	Speed    						float32
 
 	//The following values are all various drifting parameters of the node
-	NewX               				int
-	NewY               				int
 	S0                 				float64
 	S1                 				float64
 	S2                 				float64
@@ -111,14 +75,8 @@ type NodeImpl struct {
 	InitialSensitivity 				float64
 	Valid 			   				bool
 
-	allReadings 	   				[1000]float64
-	calibrateTimes 	   				[]int
-	calibrateReading   				[]float64
-
 	BatteryOverTime	   				map[int]float32
 
-	TotalPacketsSent    int
-	TotalBytesSent		int
 	IsClusterHead		bool
 	Recalibrated 		bool
 
@@ -400,36 +358,30 @@ func (node *NodeImpl) LogBatteryPower(t int){
 }
 
 func (node *NodeImpl) SendToServer(rd *Reading, tp bool){
-	//int packet = num bytes in packet
-	//node.TotalBytesSent += packet
-	//node.TotalPacketsSent += 1
-
-	//code to send to server goes here
-	node.DrainBatteryWifi()
+    node.DrainBatteryWifi() //node sends reading directly to server over wifi
 	node.P.Server.Send(node, rd, tp)
 }
 
 func (node *NodeImpl) SendToClusterHead(rd *Reading, tp bool){
-	//int packet = num bytes in packet
-	//node.TotalBytesSent += packet
-	//node.TotalPacketsSent += 1
-
-	//code to send to cluster head goes here
 	head := node.NodeClusterParams.CurrentCluster.ClusterHead
 
-	node.DrainBatteryBluetooth()
-	head.DrainBatteryBluetooth()
+	node.DrainBatteryBluetooth()	//Node sends reading over bluetooth
+	head.DrainBatteryBluetooth()	//Node receives reading over bluetooth
+	head.DrainBatteryBluetooth()	//Head sends confirmation over bluetooth
+	node.DrainBatteryBluetooth()	//Node receives confirmation over bluetooth
 	head.StoredNodes = append(head.StoredNodes, node)
 	head.StoredReadings = append(head.StoredReadings, rd)
 	head.StoredTPs = append(head.StoredTPs, tp)
 }
 
 func (node *NodeImpl) SendMultipleToServer(rd *Reading, tp bool){
-	//int packet = num bytes in packet
-	//node.TotalBytesSent += packet
-	//node.TotalPacketsSent += 1
-
-	node.DrainBatteryWifi()
+	/*	Node sends its reading as well as any stored readings directly to server over wifi.
+		Currently the extra cost of sending multiple readings at once is simulated by
+		draining battery for wifi communication for every multiple of 8 sent.
+	    It may be worth looking into making this more realistic. */
+    for i := 0; i < len(node.StoredReadings)/8 + 1; i++ {
+        node.DrainBatteryWifi()
+    }
 	for i := range node.StoredReadings {
 		node.P.Server.Send(node.StoredNodes[i], node.StoredReadings[i], node.StoredTPs[i])
 	}
@@ -1075,9 +1027,10 @@ func (node *NodeImpl) MoveCSV(p *Params) {
 	intTime := int(floatTemp/1000)
 	portion := (floatTemp / 1000) - float32(intTime)
 	id := node.GetID()
+
 	if node.Valid {
-		if p.IsSense {   //Checks to see if cps instruction is sensing currently
-			node.OldX ,node.OldY = node.X, node.Y
+		if p.IsSense { //Checks to see if cps instruction is sensing currently
+			node.OldX, node.OldY = node.X, node.Y
 		}
 		p.BoolGrid[int(node.OldX)][int(node.OldY)] = false //set the old spot false since the node will now move away
 		node.X = interpolate(p.NodeMovements[id][intTime-p.MovementOffset].X, p.NodeMovements[id][intTime-p.MovementOffset+1].X, portion)
@@ -1088,23 +1041,24 @@ func (node *NodeImpl) MoveCSV(p *Params) {
 			if p.ClusteringOn {
 				p.NodeTree.RemoveAndClean(node)
 			} else {
-			d := node.Distance(*p.B)/2
-			if int(d) < p.MinDistance {
-				p.MinDistance = int(d)
-				fmt.Fprintf(p.DistanceFile, "ID: %v T: %v D: %v\n", node.Id, intTime, int(d))
-			}
-			p.BoolGrid[int(node.X)][int(node.Y)] = true
-			//sync the QuadTree
-			if p.ClusteringOn {
-				p.NodeTree.NodeMovement(node)
+				d := node.Distance(*p.B) / 2
+				if int(d) < p.MinDistance {
+					p.MinDistance = int(d)
+					fmt.Fprintf(p.DistanceFile, "ID: %v T: %v D: %v\n", node.Id, intTime, int(d))
+				}
+
+				p.BoolGrid[int(node.X)][int(node.Y)] = true
 			}
 		}
-	}
-	if !node.Valid {
+	} else {
+		node.Valid = node.TurnValid(p.NodeMovements[id][intTime-p.MovementOffset].X, p.NodeMovements[id][intTime-p.MovementOffset].Y, p)
+		node.X = float32(p.NodeMovements[id][intTime-p.MovementOffset].X)
+		node.Y = float32(p.NodeMovements[id][intTime-p.MovementOffset].Y)
 		if p.IsSense { //Checks to see if cps instruction is sensing currently
 			node.OldX, node.OldY = 0, 0
 		}
-		if p.DriftExplorer {
+		if node.Valid {
+			if p.DriftExplorer {
 				node.NodeTime = RandomInt(-7000, 0)
 			} else {
 				//node.NodeTime = 0
