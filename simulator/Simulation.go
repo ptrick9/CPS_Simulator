@@ -186,7 +186,6 @@ import (
 	"bytes"
 	"container/heap"
 	"math"
-
 	//"CPS_Simulator/simulator/cps"
 	"fmt"
 	"log"
@@ -421,9 +420,8 @@ func main() {
 		p.CurrentTime = event.Time
 		switch event.Instruction {
 		case cps.SENSE:
-			if event.Node.Alive {
-				//if p.CurrentTime/1000 < p.NumNodeMovements-5 {
 				//	if p.CSVMovement {
+				//		p.IsSense = true
 				//		event.Node.MoveCSV(p)
 				//	} else {
 				//		event.Node.MoveNormal(p)
@@ -431,6 +429,8 @@ func main() {
 				//}
 				if p.ClusteringOn {
 					p.ClusterNetwork.ClusterMovement(event.Node, p)
+				//if p.CurrentTime/1000 < p.NumNodeMovements-5 {
+			if event.Node.Alive {
 				}
 				if p.DriftExplorer { //no sensor csv, just checking FP
 					event.Node.GetSensor()
@@ -443,9 +443,10 @@ func main() {
 				}
 
 				event.Node.DrainBatterySample()
-				event.Node.ScheduleNextSense()
 			}
+				event.Node.ScheduleNextSense()
 			case cps.MOVE:
+				p.IsSense = false
 				if(p.CSVMovement) {
 			if event.Node.Alive {
 					event.Node.MoveCSV(p)
@@ -566,10 +567,8 @@ func main() {
 				//x := printGrid(p.Grid)
 				printGrid(p, p.Grid)
 
-				//fmt.Fprintln(p.GridFile, x)
 				p.Events.Push(&cps.Event{nil, cps.GRID, p.CurrentTime + 1000, 0})
 				fmt.Fprint(p.GridFile, "----------------\n")
-				//fmt.Println(p.Grid)
 
 			}
 		case cps.GARBAGECOLLECT:

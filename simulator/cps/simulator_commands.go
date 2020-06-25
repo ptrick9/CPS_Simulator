@@ -5,8 +5,8 @@ import (
 )
 
 type Params struct {
-	Events 						   PriorityQueue
-	CurrentTime					   int
+	Events      PriorityQueue
+	CurrentTime int
 
 	NegativeSittingStopThresholdCM int     // This is a negative number for the sitting to be set to when map is reset
 	SittingStopThresholdCM         int     // This is the threshold for the longest Time a node can sit before no longer moving
@@ -90,6 +90,7 @@ type Params struct {
 	RunParamFile   *os.File
 	DriftExploreFile *os.File
 	DistanceFile 	*os.File
+	OutputLog       *os.File
 	ZipFiles 		bool
 	Files 			[]string
 	NodeDataFile   *os.File
@@ -156,6 +157,7 @@ type Params struct {
 	CSVMovement   bool
 	CSVSensor     bool
 	SuperNodes     bool
+	IsSense		  bool
 
 	CurrentNodes               int
 	NumWallNodes               int
@@ -242,14 +244,13 @@ type Params struct {
 
 	ValidationType string
 	RecalReject 	bool
-
-	// New Battery Model Variables
+	DensityThreshold int  // number of nodes that must be in a square for it to be considered dense and have the sampling rate decreased
+	SamplingPeriodMS	 int
 	BatteryCapacity				int
 	AverageBatteryLevel			float64
 	SampleLossPercentage		float64
 	BluetoothLossPercentage		float64
 	WifiLossPercentage			float64
-
 }
 
 // returns the amount of battery drained when a sampling event occurs

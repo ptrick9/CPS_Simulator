@@ -18,20 +18,20 @@ type FusionCenter struct {
 	P *Params
 	R *RegionParams
 
-	TimeBuckets 	[][]Reading //2D array where each sub array is made of the readings at one iteration
-	Mean 			[]float64
-	StdDev 			[]float64
-	Variance 		[]float64
-	Times 			map[int]bool
-	LastRecal		[]int
-	Sch				*Scheduler
-	Readings		map[Key][]Reading
-	CheckedIds		[]int
-	NodeDataList	[]NodeData
-	Validators 		map[int]int //stores validators...id -> time  latest time for id is stored
-	NodeSquares 	map[int]Tuple  //store what square a node is in
-	SquarePop  		map[Tuple][]int //store nodes in square
-
+	TimeBuckets  [][]Reading //2D array where each sub array is made of the readings at one iteration
+	Mean         []float64
+	StdDev       []float64
+	Variance     []float64
+	Times        map[int]bool
+	LastRecal    []int
+	Sch          *Scheduler
+	Readings     map[Key][]Reading
+	CheckedIds   []int
+	NodeDataList []NodeData
+	Validators   map[int]int     //stores validators...id -> time  latest time for id is stored
+	NodeSquares  map[int]Tuple   //store what square a node is in
+	SquarePop    map[Tuple][]int //store nodes in square
+	SquareTime   map[Tuple]TimeTrack
 	TotalSamplesTaken	int // counter keeps track when a sample is taken
 	NodeTree		*Quadtree //stores node locations in quadtree format
 	ClusterNetwork	* AdHocNetwork //stores cluster information
@@ -57,6 +57,7 @@ func (s *FusionCenter) Init(){
 	s.Validators = make(map[int]int)
 	s.NodeSquares = make(map[int]Tuple)
 	s.SquarePop = make(map[Tuple][]int)
+	s.SquareTime = make(map[Tuple]TimeTrack)
 }
 
 func (s *FusionCenter) MakeNodeData() {
@@ -81,6 +82,12 @@ type Key struct {
 	X 		int
 	Y		int
 	Time 	int
+}
+
+//Holds last time node was sampled in a square and true or false val for if it has already increased in threshold
+type TimeTrack struct {
+	TimeSample    int
+	BeenReported  bool
 }
 
 type NodeData struct {
@@ -484,16 +491,24 @@ func remove(s []int, i int) []int {
 	return s[1:]
 }
 
+func (s *FusionCenter)CheckSquares(){
+	for k, v := range(s.SquareTime){     //k= key v=value
+		if s.P.CurrentTime-v.TimeSample >= 30000 && v.BeenReported==false {   //60 seconds
+			fmt.Fprintln(s.P.OutputLog,"Iteration: ",(s.P.CurrentTime+1)/1000," \n")
+			fmt.Fprintln(s.P.OutputLog,"Key and value: ", k , v, "Time difference: ",s.P.CurrentTime, v.TimeSample)
+			//s.SquareTime[k]=TimeTrack{v.TimeSample,true}  //This line only allows reporting once
+		}
+	}
+}
+
 
 //Send is called by a node to deliver a reading to the server.
 // Statistics are calculated each Time data is received
 func (s *FusionCenter) Send(n *NodeImpl, rd *Reading, tp bool) {
 	//fmt.Printf("Sending to server:\nTime: %v, ID: %v, X: %v, Y: %v, Sensor Value: %v\n", rd.Time, rd.Id, rd.Xpos, rd.YPos, rd.SensorVal)
-
-
 	//NodeSquares 	map[int]Tuple  //store what square a node is in
 	//SquarePop  		map[Tuple][]int //store nodes in square
-
+	//SquareTime     map[Tuple][]TimeTrack stores last time a reading was taken in a square
 	v, ok := s.NodeSquares[n.Id] //check if node has been recorded before
 	newSquare := Tuple{int(rd.Xpos / float32(s.P.XDiv)), int(rd.YPos / float32(s.P.YDiv))}
 	if ok { //node has been recorded before
@@ -522,6 +537,7 @@ func (s *FusionCenter) Send(n *NodeImpl, rd *Reading, tp bool) {
 		s.NodeSquares[n.Id] = newSquare //update nodes square log
 	}
 
+	s.SquareTime[newSquare] = TimeTrack{n.P.CurrentTime, false}
 	// add node to correct square
 
 

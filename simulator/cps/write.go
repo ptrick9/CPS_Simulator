@@ -753,6 +753,13 @@ func SetupFiles(p *Params) {
 	}
 	p.Files = append(p.Files, p.OutputFileNameCM + "-grid.txt")
 
+	p.OutputLog, err = os.Create(p.OutputFileNameCM + "-OutputLog.txt")
+	if err != nil {
+		log.Fatal("Cannot create file", err)
+	}
+	p.Files = append(p.Files, p.OutputFileNameCM + "-OutputLog.txt")
+
+
 
 	//Write parameters to gridFile
 	p.GridHeight = int(math.Ceil(float64(p.MaxY)/float64(p.SquareRowCM)))
@@ -1664,12 +1671,13 @@ func GetFlags(p *Params) {
 
 	flag.BoolVar(&p.RandomBomb, "randomBomb", false, "Toggles random bomb placement")
 	flag.BoolVar(&p.ZipFiles, "zipFiles", false, "Toggles Zipping of output files")
-
+	flag.IntVar(&p.DensityThreshold, "densityThreshold", 10, "Number of nodes to make a square considered dense")
+	flag.IntVar(&p.SamplingPeriodMS,"SamplingPeriodMS",500,"period at which nodes sense")
 	// New Battery Level Flags
 	flag.IntVar(&p.BatteryCapacity, "batteryCapacity", 10000, "Max battery capacity of all nodes")
 	flag.Float64Var(&p.AverageBatteryLevel, "averageBatteryLevel", 0.70, "average initial battery level to set nodes to")
-	flag.Float64Var(&p.SampleLossPercentage, "sampleLossPercentage", 0.002, "amount of battery drained each time a node takes a sample")
 	flag.Float64Var(&p.BluetoothLossPercentage, "bluetoothLossPercentage", 0.002, "amount of battery drained each time a node uses bluetooth")
+	flag.Float64Var(&p.SampleLossPercentage, "sampleLossPercentage", 0.002, "amount of battery drained each time a node takes a sample")
 	flag.Float64Var(&p.WifiLossPercentage, "wifiLossPercentage", 0.002, "amount of battery drained each time a node uses wifi")
 
 	flag.Parse()
