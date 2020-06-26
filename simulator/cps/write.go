@@ -454,6 +454,7 @@ func SetupCSVNodes(p *Params) {
 			newNode.IsClusterHead = false
 			newNode.IsClusterMember = false
 			newNode.NodeClusterParams = &ClusterMemberParams{}
+			newNode.OutOfRange = false
 			p.NodeTree.Insert(newNode)
 			p.ClusterNetwork.ClearClusterParams(newNode)
 			//newNode.TimeLastSentReadings = p.CurrentTime

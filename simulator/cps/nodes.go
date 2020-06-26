@@ -77,19 +77,22 @@ type NodeImpl struct {
 
 	BatteryOverTime	   				map[int]float32
 
-	IsClusterHead		bool
 	Recalibrated 		bool
 
 	InitialBatteryLevel	int
 	CurrentBatteryLevel	int
 
+	IsClusterHead					bool
 	IsClusterMember					bool
-	NodeClusterParams *ClusterMemberParams
+	NodeClusterParams 				*ClusterMemberParams
 	CurTree				 			*Quadtree
+	OutOfRange						bool
+	TimeMovedOutOfRange				int
+	TimeLastSensed					int
 	StoredNodes						[]*NodeImpl
 	StoredReadings					[]*Reading
 	StoredTPs						[]bool
-	thresholdCounter    int
+	thresholdCounter    			int
 }
 
 //NodeMovement controls the movement of all the normal nodes
@@ -357,11 +360,6 @@ func (node *NodeImpl) LogBatteryPower(t int){
 	//}
 }
 
-func (node *NodeImpl) SendToServer(rd *Reading, tp bool){
-    node.DrainBatteryWifi() //node sends reading directly to server over wifi
-	node.P.Server.Send(node, rd, tp)
-}
-
 func (node *NodeImpl) SendToClusterHead(rd *Reading, tp bool){
 	head := node.NodeClusterParams.CurrentCluster.ClusterHead
 
@@ -374,17 +372,20 @@ func (node *NodeImpl) SendToClusterHead(rd *Reading, tp bool){
 	head.StoredTPs = append(head.StoredTPs, tp)
 }
 
-func (node *NodeImpl) SendMultipleToServer(rd *Reading, tp bool){
-	/*	Node sends its reading as well as any stored readings directly to server over wifi.
-		Currently the extra cost of sending multiple readings at once is simulated by
-		draining battery for wifi communication for every multiple of 8 sent.
-	    It may be worth looking into making this more realistic. */
+/*	SendToServer
+Node sends its reading as well as any stored readings directly to server over wifi. If clustering is enabled,
+its message to the server will also include information about its cluster, such as which nodes are members.
+Currently the extra cost of sending multiple readings at once is simulated by draining battery for wifi
+communication for every multiple of 8 readings sent. It may be worth looking into making this more realistic. */
+func (node *NodeImpl) SendToServer(rd *Reading, tp bool){
     for i := 0; i < len(node.StoredReadings)/8 + 1; i++ {
         node.DrainBatteryWifi()
     }
 	for i := range node.StoredReadings {
 		node.P.Server.Send(node.StoredNodes[i], node.StoredReadings[i], node.StoredTPs[i])
 	}
+	node.DrainBatteryWifi() //The node receives confirmation from the server, including how many readings it received
+							//and updates about the cluster, such as if any members have left to join other clusters.
 
 	node.StoredNodes = []*NodeImpl{}
 	node.StoredReadings = []*Reading{}
@@ -1007,13 +1008,10 @@ func (node *NodeImpl) report(rawConc float64) {
 	//Only do this if the sensor was pinged this iteration
 
 	if node.Valid {
-		if len(node.StoredReadings) > 0 {
-			node.SendMultipleToServer(&Reading{ADCRead, newX, newY, node.P.CurrentTime, node.GetID()}, tp)
-		}
-		if node.P.ClusteringOn && node.IsClusterMember && !highSensor {
-			node.SendToClusterHead(&Reading{ADCRead, newX, newY, node.P.CurrentTime, node.GetID()}, tp)
-		} else {
+		if len(node.StoredReadings) > 0 || !(node.P.ClusteringOn && node.IsClusterMember && !highSensor){
 			node.SendToServer(&Reading{ADCRead, newX, newY, node.P.CurrentTime, node.GetID()}, tp)
+		} else  {
+			node.SendToClusterHead(&Reading{ADCRead, newX, newY, node.P.CurrentTime, node.GetID()}, tp)
 		}
 	}
 }

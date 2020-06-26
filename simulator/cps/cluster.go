@@ -7,7 +7,6 @@ import (
 type AdHocNetwork struct {
 	ClusterHeads  []*NodeImpl
 	SingularNodes []*NodeImpl
-	TotalMsgs      int //used to counts total messages sent/received in one iteration
 	FullReclusters int //Counts the number of full reclusters that occur in a simulation
 	PotentialReclusters int //Counts the number of reclusters that would have occured if there was a check every second
 	NextClusterNum int //For testing, may remove later
@@ -65,8 +64,8 @@ func (adhoc *AdHocNetwork) SendHelloMessage(curNode *NodeImpl, p *Params) {
 	withinDist := p.NodeTree.WithinRadius(p.NodeBTRange, curNode, []*NodeImpl{})
 	numWithinDist := len(withinDist)
 
-	curNode.GenerateHello(curNode.ComputeClusterScore(p, numWithinDist))
 	curNode.DrainBatteryBluetooth()	//Broadcasting first hello message, no score
+	curNode.GenerateHello(curNode.ComputeClusterScore(p, numWithinDist))
 	curNode.DrainBatteryBluetooth()	//Broadcasting second hello message with score
 
 	//var buffer bytes.Buffer
@@ -75,7 +74,6 @@ func (adhoc *AdHocNetwork) SendHelloMessage(curNode *NodeImpl, p *Params) {
 		//buffer.WriteString(fmt.Sprintf("SenderId=%v\tRecieverId=%v\tSenderCHS=%v\n",curNode.Id,withinDist[j].CurNode.Id,curNode.NodeClusterParams.ThisNodeHello.NodeCHScore))
 		withinDist[j].DrainBatteryBluetooth()	//Every node in bluetooth range receives the first hello message, allowing them to count how many neighbors they have
 		withinDist[j].DrainBatteryBluetooth()	//Every node in bluetooth range then receives a second hello message, the one including curNode's score
-		adhoc.TotalMsgs++
 	}
 	//fmt.Fprintf(curNode.P.ClusterMessages,buffer.String())
 }
@@ -222,7 +220,6 @@ func (adhoc *AdHocNetwork) ResetClusters(p *Params) {
 	}
 	adhoc.ClusterHeads = []*NodeImpl{}
 	adhoc.SingularNodes = []*NodeImpl{}
-	adhoc.TotalMsgs = 0
 }
 
 //sorts messages by distance to the node: 0th = closest, nth = farthest
@@ -488,6 +485,32 @@ func (adhoc *AdHocNetwork) FullRecluster(p *Params) {
 	for _, node := range p.AliveList {
 		if !node.IsClusterHead && node.Valid {
 			adhoc.ElectClusterHead(node, p)
+		}
+	}
+}
+
+func (node *NodeImpl) UpdateOutOfRange(p *Params) {
+	if !node.IsClusterHead {
+		if node.NodeClusterParams.CurrentCluster.ClusterHead != nil {
+			if !node.IsWithinRange(node.NodeClusterParams.CurrentCluster.ClusterHead, p.NodeBTRange) {
+				if !node.OutOfRange {
+					node.OutOfRange = true
+					node.TimeMovedOutOfRange = p.CurrentTime
+				}
+			} else {
+				node.OutOfRange = false
+			}
+		}
+	} else {
+		for _, member := range node.NodeClusterParams.CurrentCluster.ClusterMembers {
+			if !node.IsWithinRange(member, p.NodeBTRange) {
+				if !member.OutOfRange {
+					member.OutOfRange = true
+					member.TimeMovedOutOfRange = p.CurrentTime
+				}
+			} else {
+				member.OutOfRange = false
+			}
 		}
 	}
 }

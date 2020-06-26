@@ -328,7 +328,6 @@ func main() {
 	p.ClusterNetwork = &cps.AdHocNetwork{
 		ClusterHeads: []*cps.NodeImpl{},
 		FullReclusters: 0,
-		TotalMsgs:    0,
 	}
 
 	//This is where the text file reading ends
@@ -424,10 +423,12 @@ func main() {
 			//		event.Node.MoveNormal(p)
 			//	}
 			//}
+			event.Node.TimeLastSensed = p.CurrentTime
 			event.Node.DrainBatterySample()
 			event.Node.ScheduleNextSense()
 			if p.ClusteringOn {
 				p.ClusterNetwork.ClusterMovement(event.Node, p)
+				event.Node.OutOfRange = false
 			}
 			if p.DriftExplorer { //no sensor csv, just checking FP
 				event.Node.GetSensor()
@@ -447,6 +448,7 @@ func main() {
 			}
 			if p.ClusteringOn && event.Node.Valid && event.Node.Alive {
 				p.NodeTree.NodeMovement(event.Node)
+				event.Node.UpdateOutOfRange(p)
 			}
 			if p.CurrentTime/1000 < p.NumNodeMovements-5 {
 				p.Events.Push(&cps.Event{event.Node, cps.MOVE, p.CurrentTime + 100, 0})
@@ -623,9 +625,8 @@ func main() {
 			if len(p.ClusterNetwork.ClusterHeads) > 0 {
 				clusterBuffer.WriteString(fmt.Sprintf("Average cluster size: %v\n", nodesInClusters/len(p.ClusterNetwork.ClusterHeads)))
 			} else {
-				clusterBuffer.WriteString(fmt.Sprintf("Average cluster size: 0"))
+				clusterBuffer.WriteString(fmt.Sprintf("Average cluster size: 0\n"))
 			}
-			clusterBuffer.WriteString("\n")
 			for i := 0; i < len(p.ClusterNetwork.ClusterHeads); i++ {
 				//if len(p.ClusterNetwork.ClusterHeads[i].NodeClusterParams.CurrentCluster.ClusterMembers) > 0 {
 				//	clusterBuffer.WriteString(fmt.Sprintf("%v: [", p.ClusterNetwork.ClusterHeads[i].Id))
@@ -657,16 +658,22 @@ func main() {
 			}
 			clusterDebugBuffer.WriteString(fmt.Sprintf("Iteration: %v\tlen(p.ClusterNetwork.ClusterHeads): %v\tClusterHeads: %v\tClusterMembers: %v\n", p.CurrentTime/1000, len(p.ClusterNetwork.ClusterHeads), clusterHeadCount, clusterMemberCount))
 
+			outOfRange := 0
+			outOfRangeAndSensed := 0
 			for i := 0; i < len(p.AliveList); i++ {
 				if p.AliveList[i].IsClusterHead {
 					for j := 0; j < len(p.AliveList[i].NodeClusterParams.CurrentCluster.ClusterMembers); j++ {
 						if !(p.AliveList[i].IsWithinRange(p.AliveList[i].NodeClusterParams.CurrentCluster.ClusterMembers[j], p.NodeBTRange)) {
-							xDist := p.AliveList[i].X - p.AliveList[i].NodeClusterParams.CurrentCluster.ClusterMembers[j].X
-							yDist := p.AliveList[i].Y - p.AliveList[i].NodeClusterParams.CurrentCluster.ClusterMembers[j].Y
-							radDist := math.Sqrt(float64(xDist*xDist) + float64(yDist*yDist))
-							clusterDebugBuffer.WriteString(fmt.Sprintf("\tCluster Member Out of Range: Member:{ID=%v, Coord(%v,%v)} Cluster:{CH_ID=%v, Coord(%v,%v),Size=%v} Dist: %.4f, Valid: %v\n",
-								p.AliveList[i].NodeClusterParams.CurrentCluster.ClusterMembers[j].Id, p.AliveList[i].NodeClusterParams.CurrentCluster.ClusterMembers[j].X, p.AliveList[i].NodeClusterParams.CurrentCluster.ClusterMembers[j].Y,
-								p.AliveList[i].Id, p.AliveList[i].X, p.AliveList[i].Y, len(p.AliveList[i].NodeClusterParams.CurrentCluster.ClusterMembers), radDist, p.AliveList[i].Valid))
+							if p.AliveList[i].NodeClusterParams.CurrentCluster.ClusterMembers[j].TimeLastSensed > p.AliveList[i].NodeClusterParams.CurrentCluster.ClusterMembers[j].TimeMovedOutOfRange {
+								xDist := p.AliveList[i].X - p.AliveList[i].NodeClusterParams.CurrentCluster.ClusterMembers[j].X
+								yDist := p.AliveList[i].Y - p.AliveList[i].NodeClusterParams.CurrentCluster.ClusterMembers[j].Y
+								radDist := math.Sqrt(float64(xDist*xDist) + float64(yDist*yDist))
+								clusterDebugBuffer.WriteString(fmt.Sprintf("\tCluster Member Out of Range: Member:{ID=%v, Coord(%v,%v)} Cluster:{CH_ID=%v, Coord(%v,%v),Size=%v} Dist: %.4f, Valid: %v\n",
+									p.AliveList[i].NodeClusterParams.CurrentCluster.ClusterMembers[j].Id, p.AliveList[i].NodeClusterParams.CurrentCluster.ClusterMembers[j].X, p.AliveList[i].NodeClusterParams.CurrentCluster.ClusterMembers[j].Y,
+									p.AliveList[i].Id, p.AliveList[i].X, p.AliveList[i].Y, len(p.AliveList[i].NodeClusterParams.CurrentCluster.ClusterMembers), radDist, p.AliveList[i].Valid))
+								outOfRangeAndSensed++
+							}
+							outOfRange++
 						}
 					}
 
@@ -700,11 +707,12 @@ func main() {
 					}
 				}
 			}
+			clusterBuffer.WriteString(fmt.Sprintf("Out of range and sensed: %v/%v\n", outOfRangeAndSensed, outOfRange))
+			clusterBuffer.WriteString("\n")
+
 			fmt.Fprintf(p.ClusterFile, clusterBuffer.String())
 			fmt.Fprintf(p.ClusterStatsFile, clusterStatsBuffer.String())
 			fmt.Fprintf(p.ClusterDebug, clusterDebugBuffer.String())
-
-			fmt.Fprintf(p.ClusterMessages, "%d,%d\n", p.CurrentTime/1000, p.ClusterNetwork.TotalMsgs)
 
 			p.Events.Push(&cps.Event{nil, cps.CLUSTERPRINT, p.CurrentTime + 1000, 0})
 		case cps.UPDATEALIVELIST:
