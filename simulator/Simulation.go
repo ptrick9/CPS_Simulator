@@ -588,8 +588,12 @@ func main() {
 			clustersAboveThresh := len(p.ClusterNetwork.ClusterHeads)
 			clustersBelowThresh := 0
 			nodesInClusters := 0
+			smallClustersNumWithinDist := 0
 			for i := 0; i < len(p.ClusterNetwork.ClusterHeads); i++ {
 				if len(p.ClusterNetwork.ClusterHeads[i].NodeClusterParams.CurrentCluster.ClusterMembers) <= p.ClusterMinThreshold {
+					if p.ReportBTAverages {
+						smallClustersNumWithinDist += len(p.NodeTree.WithinRadius(p.NodeBTRange, p.ClusterNetwork.ClusterHeads[i], []*cps.NodeImpl{}))
+					}
 					clustersAboveThresh--
 					clustersBelowThresh++
 				}
@@ -602,6 +606,7 @@ func main() {
 			countedCHs := 0
 			countedCMs := 0
 			unaccounted := 0
+			numWithinDist := 0
 			for _, node := range p.AliveList {
 				if node.Valid {
 					if node.IsClusterHead {
@@ -612,6 +617,9 @@ func main() {
 						unaccounted++
 					}
 					aliveValidNodes++
+					if p.ReportBTAverages {
+						numWithinDist += len(p.NodeTree.WithinRadius(p.NodeBTRange, node, []*cps.NodeImpl{}))
+					}
 				}
 			}
 			clusterBuffer.WriteString(fmt.Sprintf("Iteration: %v\n", p.CurrentTime/1000))
@@ -623,9 +631,23 @@ func main() {
 			clusterBuffer.WriteString(fmt.Sprintf("Counted members: %v\n", countedCMs))
 			clusterBuffer.WriteString(fmt.Sprintf("Unaccounted nodes: %v\n", unaccounted))
 			if len(p.ClusterNetwork.ClusterHeads) > 0 {
-				clusterBuffer.WriteString(fmt.Sprintf("Average cluster size: %v\n", nodesInClusters/len(p.ClusterNetwork.ClusterHeads)))
+				average := nodesInClusters/len(p.ClusterNetwork.ClusterHeads)
+				p.ClusterNetwork.AverageClusterSize += average
+				clusterBuffer.WriteString(fmt.Sprintf("Average cluster size: %v\n", average))
 			} else {
 				clusterBuffer.WriteString(fmt.Sprintf("Average cluster size: 0\n"))
+			}
+			if p.ReportBTAverages {
+				if aliveValidNodes > 0 {
+					clusterBuffer.WriteString(fmt.Sprintf("Average number of nodes in BT range: %v\n", numWithinDist/aliveValidNodes))
+				} else {
+					clusterBuffer.WriteString(fmt.Sprintf("Average number of nodes in BT range: 0\n"))
+				}
+				if clustersBelowThresh > 0 {
+					clusterBuffer.WriteString(fmt.Sprintf("Average number of nodes in BT range of small cluster heads: %v\n", smallClustersNumWithinDist/clustersBelowThresh))
+				} else {
+					clusterBuffer.WriteString(fmt.Sprintf("Average number of nodes in BT range of small cluster heads: 0\n"))
+				}
 			}
 			for i := 0; i < len(p.ClusterNetwork.ClusterHeads); i++ {
 				//if len(p.ClusterNetwork.ClusterHeads[i].NodeClusterParams.CurrentCluster.ClusterMembers) > 0 {
@@ -714,6 +736,8 @@ func main() {
 			fmt.Fprintf(p.ClusterStatsFile, clusterStatsBuffer.String())
 			fmt.Fprintf(p.ClusterDebug, clusterDebugBuffer.String())
 
+			p.ClusterNetwork.AverageNumClusters += len(p.ClusterNetwork.ClusterHeads)
+
 			p.Events.Push(&cps.Event{nil, cps.CLUSTERPRINT, p.CurrentTime + 1000, 0})
 		case cps.UPDATEALIVELIST:
 			for i := 0; i < len(p.AliveList); i++ {
@@ -778,6 +802,8 @@ func main() {
 	}
 
 	if p.ClusteringOn && p.ClusterPrint {
+		fmt.Fprintln(p.ClusterFile, "Average number of clusters: ", p.ClusterNetwork.AverageNumClusters / (p.CurrentTime / 1000))
+		fmt.Fprintln(p.ClusterFile, "Overall average cluster size: ", p.ClusterNetwork.AverageClusterSize / (p.CurrentTime / 1000))
 		fmt.Fprintln(p.ClusterFile, "Potential Reclusters: ", p.ClusterNetwork.PotentialReclusters)
 		fmt.Fprintln(p.ClusterFile, "Actual Reclusters: ", p.ClusterNetwork.FullReclusters)
 	}

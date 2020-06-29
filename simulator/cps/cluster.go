@@ -9,6 +9,8 @@ type AdHocNetwork struct {
 	SingularNodes []*NodeImpl
 	FullReclusters int //Counts the number of full reclusters that occur in a simulation
 	PotentialReclusters int //Counts the number of reclusters that would have occured if there was a check every second
+	AverageClusterSize	int //The current average cluster size is added to this every iteration (when cluster print is enabled)
+	AverageNumClusters	int //The current number of clusters is added to this every iteration
 	NextClusterNum int //For testing, may remove later
 }
 
@@ -47,11 +49,11 @@ func (node *NodeImpl) ComputeClusterScore(p *Params, numWithinDist int, ) float6
 	//weighted sum, 60% from degree (# of nodes within distance), 40% from its battery life
 	// penalty used to increase a nodes chance at staying a clusterhead
 	score := p.DegreeWeight*degree + p.BatteryWeight*battery
-	if node.IsClusterHead {
+	//if node.IsClusterHead {
 		return score
-	} else {
-		return score * p.Penalty
-	}
+	//} else {
+	//	return score * p.Penalty
+	//}
 }
 
 //Generates Hello Message for node to form/maintain clusters
@@ -93,8 +95,6 @@ func (adhoc *AdHocNetwork) ClusterMovement(node *NodeImpl, p *Params) {
 				node.DrainBatteryBluetooth()
 				adhoc.NewNodeHello(node, p)
 			}
-		} else if len(node.NodeClusterParams.CurrentCluster.ClusterMembers) <= 0 {
-			adhoc.NewNodeHello(node, p)
 		}
 	}
 }
@@ -128,17 +128,21 @@ func (adhoc *AdHocNetwork) NewNodeHello(node *NodeImpl, p *Params) {
 
 func (node *NodeImpl) HasMaxNodeScore(p *Params) *NodeImpl {
 	maxNode := node
-	maxScore := node.NodeClusterParams.ThisNodeHello.NodeCHScore
+	maxScore := node.NodeClusterParams.ThisNodeHello.NodeCHScore //* p.Penalty
 	for i := 0; i < len(node.NodeClusterParams.RecvMsgs); i++ {
 		sender := node.NodeClusterParams.RecvMsgs[i].Sender
+		score := node.NodeClusterParams.RecvMsgs[i].NodeCHScore
+		//if !sender.IsClusterHead {
+		//	score *= p.Penalty
+		//}
 		//do not consider nodes already with a clusterhead
 		//if received a message from a node who does not have a cluster head
 		if !sender.IsClusterMember && len(sender.NodeClusterParams.CurrentCluster.ClusterMembers) < p.ClusterMaxThreshold {
 			//if their score higher than current node score
-			if node.NodeClusterParams.RecvMsgs[i].NodeCHScore > maxScore {
-				maxScore = node.NodeClusterParams.RecvMsgs[i].NodeCHScore
+			if score > maxScore {
+				maxScore = score
 				maxNode = sender
-			} else if math.Abs(node.NodeClusterParams.RecvMsgs[i].NodeCHScore-maxScore) < 0.1 {
+			} else if math.Abs(score-maxScore) < 0.1 {
 				if sender.Id < maxNode.Id {
 					maxNode = sender
 				}

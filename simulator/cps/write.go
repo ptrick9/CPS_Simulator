@@ -1539,6 +1539,8 @@ func GetFlags(p *Params) {
 
 	flag.BoolVar(&p.ClusterPrint, "logClusters", false, "Whether you want to write cluster statistics to a log file")
 
+	flag.BoolVar(&p.ReportBTAverages, "reportBTAverages", false, "Whether you want to write avg number of nodes in bluetooth range to cluster log file")
+
 	flag.IntVar(&p.SquareRowCM, "SquareRowCM", 50, "Number of rows of p.Grid squares, 1 through p.MaxX")
 
 	flag.IntVar(&p.SquareColCM, "SquareColCM", 50, "Number of columns of p.Grid squares, 1 through p.MaxY")
