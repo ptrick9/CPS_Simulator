@@ -1566,6 +1566,8 @@ func GetFlags(p *Params) {
 	flag.Float64Var(&p.DegreeWeight, "degreeWeight", 0.6, "The weight constant applied to the number of neighboring nodes when calculating a node's score")
 	flag.Float64Var(&p.BatteryWeight, "batteryWeight", 0.4, "The weight constant applied to a node's battery when calculating a node's score")
 	flag.Float64Var(&p.Penalty, "penalty", 0.8, "The penalty multiplied to a node's score when it is not already a cluster head")
+	flag.BoolVar(&p.GlobalRecluster, "globalRecluster", true, "Enables or disables global reclustering")
+	flag.BoolVar(&p.LocalRecluster, "localRecluster", true, "Enables or disables local reclustering")
 	flag.Float64Var(&p.ReclusterThreshold, "reclusterThreshold", 0.1, "The maximum percent of clusters made up only of cluster heads before the network should fully recluster")
 	flag.IntVar(&p.ReclusterPeriod, "reclusterPeriod", 30, "The period of time in seconds before the network checks if it should fully reclusters")
 
@@ -1658,6 +1660,8 @@ func WriteFlags(p * Params){
 	buf.WriteString(fmt.Sprintf("degreeWeight=%v\n",p.DegreeWeight))
 	buf.WriteString(fmt.Sprintf("batteryWeight=%v\n",p.BatteryWeight))
 	buf.WriteString(fmt.Sprintf("penalty=%v\n",p.Penalty))
+	buf.WriteString(fmt.Sprintf("globalRecluster=%v\n",p.GlobalRecluster))
+	buf.WriteString(fmt.Sprintf("localRecluster=%v\n",p.LocalRecluster))
 	buf.WriteString(fmt.Sprintf("reclusterPeriod=%v\n",p.ReclusterPeriod))
 	buf.WriteString(fmt.Sprintf("reclusterThreshold=%v\n",p.ReclusterThreshold))
 	buf.WriteString(fmt.Sprintf("batteryCapacity=%v\n",p.BatteryCapacity))

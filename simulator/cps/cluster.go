@@ -5,13 +5,17 @@ import (
 )
 
 type AdHocNetwork struct {
-	ClusterHeads  []*NodeImpl
-	SingularNodes []*NodeImpl
-	FullReclusters int //Counts the number of full reclusters that occur in a simulation
-	PotentialReclusters int //Counts the number of reclusters that would have occured if there was a check every second
-	AverageClusterSize	int //The current average cluster size is added to this every iteration (when cluster print is enabled)
-	AverageNumClusters	int //The current number of clusters is added to this every iteration
-	NextClusterNum int //For testing, may remove later
+	ClusterHeads        []*NodeImpl
+	SingularNodes       []*NodeImpl
+	FullReclusters      int //Counts the number of full reclusters that occur in a simulation
+	LocalReclusters     int //Counts the number of local reclusters that occur in a simulation
+	PotentialReclusters int //Counts the number of reclusters that would have occurred if there was a check every second
+	AverageClusterSize  int //The current average cluster size is added to this every iteration (when cluster print is enabled)
+	AverageNumClusters  int //The current number of clusters is added to this every iteration
+	NNHJoins            int //Counts the number of times a new node hello leads to a node joining an existing cluster
+	NNHSolos            int //Counts the number of times a new node hello leads to the creation of a new cluster
+	LRHeads             int //Counts the number of cluster heads created by local reclusters
+	NextClusterNum      int //For testing, may remove later
 }
 
 type Cluster struct {
@@ -80,11 +84,35 @@ func (adhoc *AdHocNetwork) SendHelloMessage(curNode *NodeImpl, p *Params) {
 	//fmt.Fprintf(curNode.P.ClusterMessages,buffer.String())
 }
 
+func (adhoc *AdHocNetwork) SendLocalHello(curNode *NodeImpl, members []*NodeImpl, p *Params) {
+	withinDist := p.NodeTree.WithinRadius(p.NodeBTRange, curNode, []*NodeImpl{})
+	membersWithinDist := SimpleIntersect(withinDist, members)
+	numWithinDist := len(membersWithinDist)
+
+	curNode.DrainBatteryBluetooth()	//Broadcasting first hello message, no score
+	curNode.GenerateHello(curNode.ComputeClusterScore(p, numWithinDist))
+	curNode.DrainBatteryBluetooth()	//Broadcasting second hello message with score
+
+	//var buffer bytes.Buffer
+	for j := 0; j < numWithinDist; j++ {
+		membersWithinDist[j].NodeClusterParams.RecvMsgs = append(membersWithinDist[j].NodeClusterParams.RecvMsgs, curNode.NodeClusterParams.ThisNodeHello)
+		//buffer.WriteString(fmt.Sprintf("SenderId=%v\tRecieverId=%v\tSenderCHS=%v\n",curNode.Id,withinDist[j].CurNode.Id,curNode.NodeClusterParams.ThisNodeHello.NodeCHScore))
+		membersWithinDist[j].DrainBatteryBluetooth()	//Every node in bluetooth range receives the first hello message, allowing them to count how many neighbors they have
+		membersWithinDist[j].DrainBatteryBluetooth()	//Every node in bluetooth range then receives a second hello message, the one including curNode's score
+	}
+	//fmt.Fprintf(curNode.P.ClusterMessages,buffer.String())
+}
+
 func (adhoc *AdHocNetwork) ClusterMovement(node *NodeImpl, p *Params) {
 	if node.Valid {
 		if !node.Alive {
 			node.CurTree.RemoveAndClean(node)
-			adhoc.ClearClusterParams(node)
+			if node.IsClusterHead {
+				members := node.NodeClusterParams.CurrentCluster.ClusterMembers
+				adhoc.LocalRecluster(node, members, p)
+			} else {
+				adhoc.ClearClusterParams(node)
+			}
 		} else if !node.IsClusterHead {
 			if node.NodeClusterParams.CurrentCluster.ClusterHead == nil {
 				adhoc.NewNodeHello(node, p)
@@ -117,12 +145,14 @@ func (adhoc *AdHocNetwork) NewNodeHello(node *NodeImpl, p *Params) {
 			//withinDist[j].GenerateHello(withinDist[j].ComputeClusterScore(p, len(p.NodeTree.WithinRadius(p.NodeBTRange, withinDist[j], []*NodeImpl{}))))
 			adhoc.ClearClusterParams(node)
 			node.Join(withinDist[i].NodeClusterParams.CurrentCluster)
+			adhoc.NNHJoins++
 			return
 		}
 	}
 
 	adhoc.ClearClusterParams(node)
 	adhoc.ElectClusterHead(node, p)
+	adhoc.NNHSolos++
 	//fmt.Fprintf(curNode.P.ClusterMessages,buffer.String())
 }
 
@@ -493,6 +523,25 @@ func (adhoc *AdHocNetwork) FullRecluster(p *Params) {
 	}
 }
 
+func (adhoc *AdHocNetwork) LocalRecluster(head *NodeImpl, members []*NodeImpl, p *Params) {
+	adhoc.LocalReclusters++
+	adhoc.ClearClusterParams(head)
+	for _, node := range members {
+		adhoc.SendLocalHello(node, members, p)
+	}
+	for _, node := range members {
+		if !node.IsClusterHead {
+			adhoc.ElectClusterHead(node, p)
+		}
+	}
+	//For logging, not function
+	for _, node := range members {
+		if node.IsClusterHead {
+			adhoc.LRHeads++
+		}
+	}
+}
+
 func (node *NodeImpl) UpdateOutOfRange(p *Params) {
 	if !node.IsClusterHead {
 		if node.NodeClusterParams.CurrentCluster.ClusterHead != nil {
@@ -517,4 +566,18 @@ func (node *NodeImpl) UpdateOutOfRange(p *Params) {
 			}
 		}
 	}
+}
+
+func SimpleIntersect(a []*NodeImpl, b []*NodeImpl) []*NodeImpl {
+	set := make([]*NodeImpl, 0)
+
+	for i := 0; i < len(a); i++ {
+		for j := 0; j < len(b); j++ {
+			if a[i] == b[j] {
+				set = append(set, a[i])
+			}
+		}
+	}
+
+	return set
 }

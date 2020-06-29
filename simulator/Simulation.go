@@ -802,10 +802,14 @@ func main() {
 	}
 
 	if p.ClusteringOn && p.ClusterPrint {
-		fmt.Fprintln(p.ClusterFile, "Average number of clusters: ", p.ClusterNetwork.AverageNumClusters / (p.CurrentTime / 1000))
-		fmt.Fprintln(p.ClusterFile, "Overall average cluster size: ", p.ClusterNetwork.AverageClusterSize / (p.CurrentTime / 1000))
-		fmt.Fprintln(p.ClusterFile, "Potential Reclusters: ", p.ClusterNetwork.PotentialReclusters)
-		fmt.Fprintln(p.ClusterFile, "Actual Reclusters: ", p.ClusterNetwork.FullReclusters)
+		fmt.Fprintln(p.ClusterFile, "New nodes joining existing clusters:", p.ClusterNetwork.NNHJoins)
+		fmt.Fprintln(p.ClusterFile, "New nodes creating a new cluster:", p.ClusterNetwork.NNHSolos)
+		fmt.Fprintln(p.ClusterFile, "Average number of clusters:", p.ClusterNetwork.AverageNumClusters / (p.CurrentTime / 1000))
+		fmt.Fprintln(p.ClusterFile, "Overall average cluster size:", p.ClusterNetwork.AverageClusterSize / (p.CurrentTime / 1000))
+		fmt.Fprintln(p.ClusterFile, "Local Reclusters:", p.ClusterNetwork.LocalReclusters)
+		fmt.Fprintln(p.ClusterFile, "Cluster heads created by local reclusters:", p.ClusterNetwork.LRHeads)
+		fmt.Fprintln(p.ClusterFile, "Potential Full Reclusters:", p.ClusterNetwork.PotentialReclusters)
+		fmt.Fprintln(p.ClusterFile, "Actual Full Reclusters:", p.ClusterNetwork.FullReclusters)
 	}
 
 	p.PositionFile.Seek(0, 0)
