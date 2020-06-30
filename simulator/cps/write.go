@@ -813,19 +813,19 @@ func SetupFiles(p *Params) {
 	p.Files = append(p.Files, p.OutputFileNameCM+"-distance.txt")
 
 	if p.ClusteringOn {
-		p.ClusterFile, err = os.Create(p.OutputFileNameCM + "-clusters.txt")
-		if err != nil {
-			log.Fatal("Cannot create file", err)
-		}
-		p.Files = append(p.Files, p.OutputFileNameCM+"-clusters.txt")
-
 		p.ClusterStatsFile, err = os.Create(p.OutputFileNameCM + "-clusterStats.txt")
 		if err != nil {
 			log.Fatal("Cannot create file", err)
 		}
 		p.Files = append(p.Files, p.OutputFileNameCM+"-clusterStats.txt")
 
-		p.ClusterDebug, err = os.Create(p.OutputFileNameCM + "-clusterDebug.txt")
+		p.ClusterFile, err = os.Create(p.OutputFileNameCM + "-clusters.txt")
+		if err != nil {
+			log.Fatal("Cannot create file", err)
+		}
+		p.Files = append(p.Files, p.OutputFileNameCM+"-clusters.txt")
+
+		p.ClusterDebugFile, err = os.Create(p.OutputFileNameCM + "-clusterDebug.txt")
 		if err != nil {
 			log.Fatal("Cannot create file", err)
 		}
@@ -1538,6 +1538,8 @@ func GetFlags(p *Params) {
 	flag.BoolVar(&p.NodesPrint, "logNodes", false, "Whether you want to write node readings to a log file")
 
 	flag.BoolVar(&p.ClusterPrint, "logClusters", false, "Whether you want to write cluster statistics to a log file")
+
+	flag.BoolVar(&p.ClusterDebug, "clusterDebug", false, "Whether you want to write cluster debug information to log files")
 
 	flag.BoolVar(&p.ReportBTAverages, "reportBTAverages", false, "Whether you want to write avg number of nodes in bluetooth range to cluster log file")
 

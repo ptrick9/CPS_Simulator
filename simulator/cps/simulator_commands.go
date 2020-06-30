@@ -48,6 +48,7 @@ type Params struct {
 	NodesPrint			bool	//This is either true or false for whether to print node readings/averages to log file
 	GridPrint			bool	//This is either true or false for whether to print grid readings to log file
 	ClusterPrint		bool	//This is either true or false for whether to print cluster statistics to log file
+	ClusterDebug		bool	//This is either true or false for whether to print cluster debug info to log file
 	ReportBTAverages	bool	//No effect if ClusterPrint is false. Either true or false for whether to print average
 								//number of nodes within bluetooth range, which slows the simulation
 
@@ -61,24 +62,24 @@ type Params struct {
 	GridFile       *os.File
 	EnergyFile     *os.File
 	RoutingFile    *os.File
-	ServerFile	   *os.File
-	DetectionFile  *os.File
-	BatteryFile    *os.File
-	RunParamFile   *os.File
+	ServerFile       *os.File
+	DetectionFile    *os.File
+	BatteryFile      *os.File
+	RunParamFile     *os.File
 	DriftExploreFile *os.File
-	DistanceFile 	*os.File
-	OutputLog       *os.File
-	ZipFiles 		bool
-	Files 			[]string
-	NodeDataFile   *os.File
-	ClusterFile	   *os.File
+	DistanceFile     *os.File
+	OutputLog        *os.File
+	ZipFiles         bool
+	Files            []string
+	NodeDataFile     *os.File
 	ClusterStatsFile *os.File
-	ClusterDebug	*os.File
-	ClusterReadings *os.File
-	ClusterMessages *os.File
-	AliveValidNodes	*os.File
-	SamplingData    *os.File
-	SampleRates     *os.File
+	ClusterFile      *os.File
+	ClusterDebugFile *os.File
+	ClusterReadings  *os.File
+	ClusterMessages  *os.File
+	AliveValidNodes  *os.File
+	SamplingData     *os.File
+	SampleRates      *os.File
 
 	SensorPath  string
 	FineSensorPath  string

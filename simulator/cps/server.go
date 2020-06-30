@@ -772,7 +772,7 @@ func (s FusionCenter) GetLeastDenseSquares() Squares{
 	return orderedSquares
 }
 
-func (s *FusionCenter) PrintBatteryStats() {
+func (s *FusionCenter) PrintBatteryStats(p *Params) {
 
 	totalDead := 0
 	lowestBattery := s.P.NodeList[0].GetBatteryPercentage()
@@ -794,6 +794,12 @@ func (s *FusionCenter) PrintBatteryStats() {
 	fmt.Print("\nMinimum Remaining Battery:", lowestBattery)
 	fmt.Print("\nAverage Remaining Battery:", averageRemainingBattery / float64(s.P.TotalNodes))
 	fmt.Print("\nTotal Dead Nodes:", totalDead, "/", s.P.TotalNodes)
+
+	fmt.Fprintf(p.BatteryFile, "\nTotal Samples Taken: %v", s.TotalSamplesTaken)
+	fmt.Fprintf(p.BatteryFile, "\nSampling Energy Consumption: %v", s.TotalSamplesTaken * s.P.SampleLossAmount())
+	fmt.Fprintf(p.BatteryFile, "\nMinimum Remaining Battery: %v", lowestBattery)
+	fmt.Fprintf(p.BatteryFile, "\nAverage Remaining Battery: %v", averageRemainingBattery / float64(s.P.TotalNodes))
+	fmt.Fprintf(p.BatteryFile, "\nTotal Dead Nodes: %v/%v", totalDead, s.P.TotalNodes)
 }
 
 type Squares []*Square
