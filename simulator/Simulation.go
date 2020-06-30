@@ -287,7 +287,6 @@ func main() {
 	if p.SuperNodes {
 		p.Server.MakeSuperNodes()
 	}
-
 	//cps.GenerateRouting(p, r)
 
 	//cps.FlipSquares(p, r)
@@ -384,6 +383,11 @@ func main() {
 	}
 	p.Server.MakeNodeData()
 
+
+	p.ClusteringOn=false
+	testMove:=true
+
+
 	//p.Events.Push(&cps.Event{&p.NodeList[0], "sense", 0, 0})
 	p.Events.Push(&cps.Event{nil, cps.POSITION, 999, 0})
 	if p.EnergyPrint {
@@ -406,7 +410,6 @@ func main() {
 		}
 	}
 	p.Events.Push(&cps.Event{nil, cps.UPDATEALIVELIST, 5000, 0})
-
 	p.CurrentTime = 0
 	for len(p.Events) > 0 && p.CurrentTime < 1000*p.Iterations_of_event && !p.FoundBomb {
 		event := heap.Pop(&p.Events).(*cps.Event)
@@ -415,14 +418,19 @@ func main() {
 		p.CurrentTime = event.Time
 		switch event.Instruction {
 		case cps.SENSE:
-			//if p.CurrentTime/1000 < p.NumNodeMovements-5 {
-			//	if p.CSVMovement {
-			//		p.IsSense = true
-			//		event.Node.MoveCSV(p)
-			//	} else {
-			//		event.Node.MoveNormal(p)
-			//	}
-			//}
+			if testMove {
+				if p.CurrentTime/1000 < p.NumNodeMovements-5 {
+					if p.CSVMovement {
+						p.IsSense = true
+						event.Node.MoveCSV(p)
+						p.IsSense=false
+					} else {
+						event.Node.MoveNormal(p)
+					}
+				}
+			} else {
+				p.IsSense=false
+			}
 			event.Node.TimeLastSensed = p.CurrentTime
 			event.Node.DrainBatterySample()
 			event.Node.ScheduleNextSense()

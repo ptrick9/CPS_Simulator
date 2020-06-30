@@ -92,7 +92,8 @@ type NodeImpl struct {
 	StoredNodes						[]*NodeImpl
 	StoredReadings					[]*Reading
 	StoredTPs						[]bool
-	thresholdCounter    			int
+	LowSpeedCounter      			int
+	SamplingPeriod					int
 }
 
 //NodeMovement controls the movement of all the normal nodes
@@ -624,26 +625,63 @@ func (node *NodeImpl) DrainBatteryWifi() {
 
 func (node *NodeImpl) ScheduleNextSense() {
 	if node.GetBatteryPercentage() > node.P.BatteryDeadThreshold {
-		multiplier:= min(node.AdaptiveSampling(), 50)
-		delay := int(float64(node.P.SamplingPeriodMS)*math.Pow(2.0, float64(multiplier)))
-		node.P.Events.Push(&Event{node, SENSE, node.P.CurrentTime + delay, 0})
+		//multiplier:= min(node.AdaptiveSampling(), 50)
+		//delay := int(float64(node.P.SamplingPeriodMS)*math.Pow(2.0, float64(multiplier)))
+		node.AdaptiveSampling()
+		node.P.Events.Push(&Event{node, SENSE, node.P.CurrentTime + node.SamplingPeriod, 0})
 	} else {
 		node.Alive = false
 	}
 }
 
-func (node *NodeImpl) AdaptiveSampling() int{
+
+func (node *NodeImpl) AdaptiveSampling() {
+	if node.Valid {
+		var distance float64=0
+		if node.OldX!=0 && node.OldY!=0 {
+			distance = math.Sqrt((math.Pow(.5*float64(node.X-node.OldX), 2)) + (math.Pow(.5*float64(node.Y-node.OldY), 2)))
+		} else{
+			distance = 0
+		}
+		//Distance is in half meters so have to divide by half to get meters
+		metersPerSecond := distance / (float64(node.SamplingPeriod)/1000)
+		//Divide by sampling rate to get meters per second
+		if metersPerSecond < node.P.MaxMoveMeters/4 {
+			node.LowSpeedCounter++
+			if node.LowSpeedCounter >= node.P.CounterThreshold {
+				if node.SamplingPeriod < int(node.P.SamplingPeriodMS/2) {   //Gradual increase back to normal speed (delay)
+					node.SamplingPeriod *= 2
+				} else {
+					node.SamplingPeriod = node.P.SamplingPeriodMS
+				}
+			}
+		} else {
+			node.LowSpeedCounter = 0
+			if metersPerSecond > node.P.MaxMoveMeters {                     //Speed up sampling
+				node.SamplingPeriod /= 2
+			} else if metersPerSecond > node.P.MaxMoveMeters*.75 {
+				node.SamplingPeriod = int(float64(node.SamplingPeriod) * (2 / 3))
+			}
+		}
+		if node.Id==49{
+			fmt.Println("\nmetersPerSecond",metersPerSecond,node.X,node.Y,node.OldX,node.OldY,node.P.CurrentTime)
+		}
+	}
+}
+
+
+/*func (node *NodeImpl) AdaptiveSampling() int{
 	distanceMultiplier:=0
 	densityMultiplier:=0
 	batteryMultiplier:=0
 	metersPerSecond:=math.Sqrt((math.Pow(float64(node.X-node.OldX),2))+(math.Pow(float64(node.Y-node.OldY),2)))
 	if metersPerSecond >=1{
 		distanceMultiplier=-1  //speed up by half the period
-		node.thresholdCounter=0
+		node.LowSpeedCounter=0
 	} else {
-		node.thresholdCounter+=1
+		node.LowSpeedCounter+=1
 	}
-	if node.thresholdCounter>3{
+	if node.LowSpeedCounter>node.P.CounterThreshold{
 		distanceMultiplier=1 //delay by 2x the period
 	}
 
@@ -661,7 +699,8 @@ func (node *NodeImpl) AdaptiveSampling() int{
 	densityMultiplier= (NodesinSquare/node.P.DensityThreshold) //increases period based on how many times more nodes there are in a square
 	multiplier:=distanceMultiplier+densityMultiplier+batteryMultiplier
 	return multiplier
-}
+}*/
+
 
 //Returns a float representing the detection of the bomb
 //	by the specific node depending on distance
@@ -1027,9 +1066,8 @@ func (node *NodeImpl) MoveCSV(p *Params) {
 	intTime := int(floatTemp/1000)
 	portion := (floatTemp / 1000) - float32(intTime)
 	id := node.GetID()
-
 	if node.Valid {
-		if p.IsSense { //Checks to see if cps instruction is sensing currently
+		if p.IsSense{ //Checks to see if cps instruction is sensing currently
 			node.OldX, node.OldY = node.X, node.Y
 		}
 		p.BoolGrid[int(node.OldX)][int(node.OldY)] = false //set the old spot false since the node will now move away

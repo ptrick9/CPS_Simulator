@@ -424,8 +424,9 @@ func InitializeNodeParameters(p *Params, nodeNum int) *NodeImpl{
 	curNode.Sensitivity = curNode.InitialSensitivity
 
 	// Initialize New Battery Model Variables
-	curNode.CurrentBatteryLevel = int(float64(p.BatteryCapacity) * RandomBatteryLevel(p.AverageBatteryLevel))
+	curNode.CurrentBatteryLevel = 1000000
 	curNode.InitialBatteryLevel = curNode.CurrentBatteryLevel
+	curNode.SamplingPeriod		= p.SamplingPeriodMS
 	return &curNode
 }
 
@@ -1492,6 +1493,12 @@ func GetFlags(p *Params) {
 	flag.Float64Var(&p.StdDevThresholdCM, "StandardDeviationThreshold", 1.7, "Detection Threshold based on standard deviations from mean")
 
 	flag.Float64Var(&p.DetectionDistance, "detectionDistance", 6.0, "Detection Distance")
+
+	flag.IntVar(&p.CounterThreshold,"CounterThreshold",3,"Threshold to decrease sampling rate")
+
+	flag.Float64Var(&p.MaxMoveMeters,"MaxMoveMeters",2,"maxMoveMeters")
+
+
 
 	//Range: 0-2
 	//0: default routing algorithm, points added onto the end of the path and routed to in that order
