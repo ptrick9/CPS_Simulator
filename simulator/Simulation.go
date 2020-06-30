@@ -400,7 +400,10 @@ func main() {
 	p.Events.Push(&cps.Event{nil, cps.CLEANUPREADINGS, (p.ReadingHistorySize + 1) * 1000, 0})
 	p.Events.Push(&cps.Event{nil, cps.SERVERSTATS, 1000, 0})
 	if p.ClusteringOn {
-		if p.GlobalRecluster {
+		p.InitClusterTime *= 1000
+		if p.InitClusterTime > 0 {
+			p.Events.Push(&cps.Event{nil, cps.INITCLUSTER, p.InitClusterTime, 0})
+		} else if p.GlobalRecluster {
 			p.Events.Push(&cps.Event{nil, cps.FULLRECLUSTER, 5000, 0})
 		}
 		if p.ClusterPrint {
@@ -454,6 +457,11 @@ func main() {
 			}
 			if p.CurrentTime/1000 < p.NumNodeMovements-5 {
 				p.Events.Push(&cps.Event{event.Node, cps.MOVE, p.CurrentTime + 100, 0})
+			}
+		case cps.INITCLUSTER:
+			p.ClusterNetwork.FullRecluster(p)
+			if p.GlobalRecluster {
+				p.Events.Push(&cps.Event{nil, cps.FULLRECLUSTER, p.CurrentTime + p.ReclusterPeriod*1000, 0})
 			}
 		case cps.FULLRECLUSTER:
 			empty := 0

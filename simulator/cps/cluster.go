@@ -104,7 +104,7 @@ func (adhoc *AdHocNetwork) ClusterMovement(node *NodeImpl, p *Params) {
 	if node.Valid {
 		if !node.Alive {
 			node.CurTree.RemoveAndClean(node)
-			if node.IsClusterHead && p.LocalRecluster > 0 {
+			if node.IsClusterHead && p.LocalRecluster > 0 && p.CurrentTime >= p.InitClusterTime {
 				members := make([]*NodeImpl, len(node.NodeClusterParams.CurrentCluster.ClusterMembers))
 				copy(members, node.NodeClusterParams.CurrentCluster.ClusterMembers)
 				if p.LocalRecluster < 3 {
@@ -115,7 +115,7 @@ func (adhoc *AdHocNetwork) ClusterMovement(node *NodeImpl, p *Params) {
 			} else {
 				adhoc.ClearClusterParams(node)
 			}
-		} else if !node.IsClusterHead {
+		} else if !node.IsClusterHead && p.CurrentTime >= p.InitClusterTime {
 			if node.NodeClusterParams.CurrentCluster.ClusterHead == nil {
 				adhoc.NewNodeHello(node, p)
 			} else if !node.IsWithinRange(node.NodeClusterParams.CurrentCluster.ClusterHead, p.NodeBTRange) {

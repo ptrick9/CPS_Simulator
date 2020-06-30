@@ -196,6 +196,7 @@ type Params struct {
 	LocalRecluster		int
 	ReclusterThreshold  float64
 	ReclusterPeriod		int
+	InitClusterTime		int
 
 	DriftExplorer 	bool
 	NumNodeMovements 	int
