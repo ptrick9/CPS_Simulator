@@ -780,12 +780,11 @@ func (s *FusionCenter) PrintBatteryStats() {
 	averageRemainingBattery := 0.0
 	for _, node := range s.P.NodeList {
 		battery := node.GetBatteryPercentage()
-		if battery >= s.P.BatteryDeadThreshold {
-			averageRemainingBattery += battery
-			if battery < lowestBattery {
-				lowestBattery = battery
-			}
-		} else {
+		averageRemainingBattery += battery
+		if battery < lowestBattery {
+			lowestBattery = battery
+		}
+		if battery < s.P.BatteryDeadThreshold {
 			totalDead++
 		}
 	}
@@ -793,7 +792,7 @@ func (s *FusionCenter) PrintBatteryStats() {
 	fmt.Print("\nTotal Samples Taken:", s.TotalSamplesTaken)
 	fmt.Print("\nSampling Energy Consumption:", s.TotalSamplesTaken * s.P.SampleLossAmount())
 	fmt.Print("\nMinimum Remaining Battery:", lowestBattery)
-	fmt.Print("\nAverage Remaining Battery:", averageRemainingBattery / float64(s.P.TotalNodes - totalDead))
+	fmt.Print("\nAverage Remaining Battery:", averageRemainingBattery / float64(s.P.TotalNodes))
 	fmt.Print("\nTotal Dead Nodes:", totalDead, "/", s.P.TotalNodes)
 }
 

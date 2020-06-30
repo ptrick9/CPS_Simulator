@@ -400,7 +400,9 @@ func main() {
 	p.Events.Push(&cps.Event{nil, cps.CLEANUPREADINGS, (p.ReadingHistorySize + 1) * 1000, 0})
 	p.Events.Push(&cps.Event{nil, cps.SERVERSTATS, 1000, 0})
 	if p.ClusteringOn {
-		p.Events.Push(&cps.Event{nil, cps.FULLRECLUSTER, 5000, 0})
+		if p.GlobalRecluster {
+			p.Events.Push(&cps.Event{nil, cps.FULLRECLUSTER, 5000, 0})
+		}
 		if p.ClusterPrint {
 			p.Events.Push(&cps.Event{nil, cps.CLUSTERPRINT, 999, 0})
 		}

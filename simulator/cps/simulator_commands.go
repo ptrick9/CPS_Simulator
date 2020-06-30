@@ -192,7 +192,7 @@ type Params struct {
 	BatteryWeight       float64
 	Penalty             float64
 	GlobalRecluster		bool
-	LocalRecluster		bool
+	LocalRecluster		int
 	ReclusterThreshold  float64
 	ReclusterPeriod		int
 

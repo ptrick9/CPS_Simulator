@@ -1567,7 +1567,13 @@ func GetFlags(p *Params) {
 	flag.Float64Var(&p.BatteryWeight, "batteryWeight", 0.4, "The weight constant applied to a node's battery when calculating a node's score")
 	flag.Float64Var(&p.Penalty, "penalty", 0.8, "The penalty multiplied to a node's score when it is not already a cluster head")
 	flag.BoolVar(&p.GlobalRecluster, "globalRecluster", true, "Enables or disables global reclustering")
-	flag.BoolVar(&p.LocalRecluster, "localRecluster", true, "Enables or disables local reclustering")
+	/* Local Reclustering
+	0 - off
+	1 - minimal (nodes check for nearby head first)
+	2 - standard
+	3 - expansive (nearby clusters also recluster)
+	*/
+	flag.IntVar(&p.LocalRecluster, "localRecluster", 1, "Enables or disables local reclustering")
 	flag.Float64Var(&p.ReclusterThreshold, "reclusterThreshold", 0.1, "The maximum percent of clusters made up only of cluster heads before the network should fully recluster")
 	flag.IntVar(&p.ReclusterPeriod, "reclusterPeriod", 30, "The period of time in seconds before the network checks if it should fully reclusters")
 
