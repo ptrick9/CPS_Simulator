@@ -88,6 +88,7 @@ type Key struct {
 type TimeTrack struct {
 	TimeSample    int
 	BeenReported  bool
+	MaxDelta      int
 }
 
 type NodeData struct {
@@ -491,16 +492,6 @@ func remove(s []int, i int) []int {
 	return s[1:]
 }
 
-func (s *FusionCenter)CheckSquares(){
-	for k, v := range(s.SquareTime){     //k= key v=value
-		if s.P.CurrentTime-v.TimeSample >= 30000 && v.BeenReported==false {   //60 seconds
-			fmt.Fprintln(s.P.OutputLog,"Iteration: ",(s.P.CurrentTime+1)/1000," \n")
-			fmt.Fprintln(s.P.OutputLog,"Key and value: ", k , v, "Time difference: ",s.P.CurrentTime, v.TimeSample)
-			//s.SquareTime[k]=TimeTrack{v.TimeSample,true}  //This line only allows reporting once
-		}
-	}
-}
-
 
 //Send is called by a node to deliver a reading to the server.
 // Statistics are calculated each Time data is received
@@ -537,7 +528,8 @@ func (s *FusionCenter) Send(n *NodeImpl, rd *Reading, tp bool) {
 		s.NodeSquares[n.Id] = newSquare //update nodes square log
 	}
 
-	s.SquareTime[newSquare] = TimeTrack{n.P.CurrentTime, false}
+	s.CheckSquares(newSquare)
+	s.SquareTime[newSquare] = TimeTrack{n.P.CurrentTime, false,s.SquareTime[newSquare].MaxDelta}
 	// add node to correct square
 
 

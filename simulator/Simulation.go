@@ -828,6 +828,12 @@ func main() {
 		fmt.Println("\nSimulation Complete")
 	}
 
+	p.Server.GoThroughSquares()
+	for k, v := range p.Server.SquareTime { //k= key v=value
+		fmt.Fprintln(p.OutputLog, "Square and max", k, v.MaxDelta)
+	}
+
+
 	p.Server.PrintBatteryStats()
 
 	if p.ZipFiles {
