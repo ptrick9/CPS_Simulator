@@ -759,6 +759,7 @@ func main() {
 					i--
 				}
 			}
+			fmt.Fprintf(p.BatteryFile, "Iteration: %v, %v\n", p.CurrentTime/1000, float64(len(p.AliveList))/float64(p.TotalNodes))
 			p.Events.Push(&cps.Event{nil, cps.UPDATEALIVELIST, p.CurrentTime + 1000, 0})
 		}
 	}

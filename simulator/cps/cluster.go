@@ -125,6 +125,8 @@ func (adhoc *AdHocNetwork) ClusterMovement(node *NodeImpl, p *Params) {
 				node.DrainBatteryBluetooth()
 				adhoc.NewNodeHello(node, p)
 			}
+		} else if !p.GlobalRecluster && node.IsClusterHead && len(node.NodeClusterParams.CurrentCluster.ClusterMembers) <= p.ClusterMinThreshold {
+			adhoc.NewNodeHello(node, p)
 		}
 	}
 }

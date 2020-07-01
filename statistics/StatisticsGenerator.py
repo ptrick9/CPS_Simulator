@@ -14,13 +14,13 @@ from zipfile import *
 #basePath = "C:/Users/patrick/Downloads/fineGrainedBomb/fineGrainedBomb/"
 #basePath = "C:/Users/patrick/Downloads/driftExploreHullBombMove/"
 #basePath = "C:/Users/patrick/Downloads/driftExplorerBombADC/"
-basePath = "C:/Users/patrick/Downloads/driftExplorerBombAdaptiveADC/"
+#basePath = "C:/Users/patrick/Downloads/driftExplorerBombAdaptiveADC/"
+#basePath = "C:/Users/patrick/Downloads/driftExplorerBombFinalGridSize2/"
 
-basePath = "C:/Users/patrick/Downloads/driftExplorerBombFinalGridSize2/"
-basePath = "C:/Users/patrick/Downloads/driftExplorerNoBombFinalGridFinalRun/"
+basePath = "D:/Downloads/stadiumClusteringTests/"
 
 #basePath = "C:/Users/patrick/Downloads/driftTest/"
-figurePath = "C:/Users/patrick/Dropbox/Patrick/udel/SUMMER2018/git_simulator/CPS_Simulator/driftExploreCommBomb/"
+figurePath = "D:/Downloads/TestResults/"
 
 X_VAL = ['detectionThreshold', 'detectionDistance']
 X_VAL = ['validationThreshold', 'errorMultiplier', 'serverRecal']
@@ -31,8 +31,9 @@ ZIP = True
 data = {}
 
 
-pickleName = "driftExplorerNoBombFinalGridFinal"
+# pickleName = "driftExplorerNoBombFinalGridFinal"
 #pickleName = "driftExplorerBombADC_qTest"
+pickleName = "stadiumNoBombClusteringTests"
 
 
 def buildDetectionList(basePath, runs):
@@ -115,6 +116,9 @@ def generateData(rq, wq):
         run['# Total False Positives'] = sum([1 if x.FP() else 0 for x in det])
         run['True Positive Readings'] = [x.errorADC for x in det if x.TP() and x.time < firstDet]
         run['True Positive Findings'] = [x.errorADC for x in det if x.TPConf() and x.time == firstDet]
+        batteryStats = getBatteryStats(basePath, file)
+        run['Average Remaining Battery'] = batteryStats[0]
+        run['Percent Nodes Dead'] = batteryStats[1]
 
         #if p['validaitonType'] == 'square':
         #    run['False Positive Confirmation Timing'] = [x.time for x in det if x.FPConf()]
@@ -201,6 +205,8 @@ def dataStorage(wq, order, variation, total):
         #    pickle.dump(data, handle)# protocol=pickle.HIGHEST_PROTOCOL)
         #    handle.close()
         wq.task_done()
+        if wq.qsize() <= 0:
+            break
 
     return data
 
@@ -285,14 +291,14 @@ if __name__ == '__main__':
     for run in uniqueRuns:
         rq.put([run, order])
 
-    p = multiprocessing.Pool(3, generateData, (rq,wq,), maxtasksperchild=3)
-    p = multiprocessing.Pool(1, dataStorage, (wq,order, shiftingParameters, len(uniqueRuns),))
+    p = multiprocessing.Pool(5, generateData, (rq,wq,), maxtasksperchild=3)
 
     rq.join()
 
+    # p = multiprocessing.Pool(1, dataStorage, (wq,order, shiftingParameters, len(uniqueRuns),))
+    dataStorage(wq, order, shiftingParameters, len(uniqueRuns))
 
-
-    wq.join()
+    # wq.join()
 
     #with open('driftExplorePar.pickle', 'wb') as handle:
     #    pickle.dump(data, handle)# protocol=pickle.HIGHEST_PROTOCOL)
@@ -300,14 +306,14 @@ if __name__ == '__main__':
         #pickle.dump({data, handle)
 
     #data = generateData(uniqueRuns)
-
+'''
     with open('driftExplorePar.pickle', 'rb') as handle:
         data = pickle.load(handle)
 
     print(data)
     graphs = generateGraphs(order, xx)
 
-    y_axes = [x for x in data[list(data.keys())[0]][0].keys() if x is not 'config']
+    y_axes = [x for x in data[list(data.keys())[0]][0].keys() if x != 'config']
     print(y_axes)
 
     print(len(graphs))
@@ -317,7 +323,7 @@ if __name__ == '__main__':
         x_axis = graphSet[0]['~']
         extension = ''
         for k in graphSet[0].keys():
-            if k is not '~':
+            if k != '~':
                 extension+= str(k) + str(graphSet[0][k])
         for key in graphSet[1]:
             v = data[key][0]['config'][x_axis]
@@ -349,19 +355,24 @@ if __name__ == '__main__':
             plt.savefig('%s(%s) %s %s.png' % (figurePath, extension, x_axis, g))
             plt.clf()
             #plt.show()
-
-    
-
+'''
 
 
+def getBatteryStats(zipPath, zipName):
+    zf = ZipFile(zipPath + zipName)
+    f = zf.open("%s%s" % (zipName.split(".zip")[0], "-batteryusage.txt"))
 
+    for line in f:
+        line = line.decode("utf-8")
+        if "Average Remaining Battery" in line:
+            averageRemaining = float(line.split(":")[1].rstrip())
+        elif "Total Dead Nodes" in line:
+            fraction = line.split(":")[1].rstrip()
+            deadNodes = float(fraction.split("/")[0].rstrip())
+            totalNodes = float(fraction.split("/")[1].rstrip())
+            percentDead = deadNodes/totalNodes
 
-
-
-
-
-
-
+    return [averageRemaining, percentDead]
 
 
 

@@ -1578,7 +1578,7 @@ func GetFlags(p *Params) {
 	flag.IntVar(&p.LocalRecluster, "localRecluster", 1, "Enables or disables local reclustering")
 	flag.Float64Var(&p.ReclusterThreshold, "reclusterThreshold", 0.1, "The maximum percent of clusters made up only of cluster heads before the network should fully recluster")
 	flag.IntVar(&p.ReclusterPeriod, "reclusterPeriod", 30, "The period of time in seconds before the network checks if it should fully reclusters")
-	flag.IntVar(&p.InitClusterTime, "initClusterTime", 600, "The number of seconds to wait before clustering")
+	flag.IntVar(&p.InitClusterTime, "initClusterTime", 0, "The number of seconds to wait before clustering")
 
 	flag.StringVar(&p.WindRegionPath, "windRegionPath", "hull_testing.txt", "File containing regions formed by wind")
 
