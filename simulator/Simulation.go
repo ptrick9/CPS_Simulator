@@ -395,6 +395,7 @@ func main() {
 	if p.EnergyPrint {
 		p.Events.Push(&cps.Event{nil, cps.ENERGYPRINT, 999, 0})
 	}
+
 	p.Events.Push(&cps.Event{nil, cps.SERVER, 999, 0})
 	p.Events.Push(&cps.Event{nil, cps.GRID, 999, 0})
 	p.Events.Push(&cps.Event{nil, cps.TIME, -1, 0})
@@ -409,6 +410,10 @@ func main() {
 		p.Events.Push(&cps.Event{nil, cps.FULLRECLUSTER, 5000, 0})
 		p.Events.Push(&cps.Event{nil, cps.CLUSTERPRINT, 999, 0})
 		//p.Events.Push(&cps.Event{nil, cps.CLUSTERLESSFORM, 25, 0})
+	}
+
+	if p.EnergyPrint {
+		p.Events.Push(&cps.Event{nil, cps.ENERGYPRINT, 999, 0})
 	}
 
 	p.CurrentTime = 0
@@ -447,7 +452,6 @@ func main() {
 			case cps.MOVE:
 				p.IsSense = false
 				if(p.CSVMovement) {
-			if event.Node.Alive {
 					event.Node.MoveCSV(p)
 				} else {
 					event.Node.MoveNormal(p)
@@ -455,7 +459,6 @@ func main() {
 				if p.CurrentTime/1000 < p.NumNodeMovements-5 {
 					p.Events.Push(&cps.Event{event.Node, cps.MOVE, p.CurrentTime + 100, 0})
 				}
-			}
 		case cps.CLUSTERHEADELECT:
 			if event.Node.GetBatteryPercentage() > p.BatteryDeadThreshold {
 				if event.Node.Valid {
@@ -554,7 +557,7 @@ func main() {
 			fmt.Fprintln(p.EnergyFile, "Amount:", len(p.NodeList)) //big time waster
 			if p.EnergyPrint {
 				var buffer bytes.Buffer
-				for i := 0; i < p.CurrentNodes; i++ {
+				for i := 0; i < len(p.NodeList); i++ {
 					//p.NodeList[i].BatteryOverTime[p.CurrentTime/1000] = p.NodeList[i].Battery
 					buffer.WriteString(fmt.Sprintf("%v\n", p.NodeList[i]))
 				}
