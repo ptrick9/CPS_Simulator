@@ -206,6 +206,8 @@ type Params struct {
 	ReadingHistorySize	int
 	ServerRecal 	bool
 	MinDistance 	int
+	MaxMoveMeters   float64
+	CounterThreshold int
 
 	ValidationType string
 	RecalReject 	bool
