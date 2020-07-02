@@ -424,7 +424,7 @@ func InitializeNodeParameters(p *Params, nodeNum int) *NodeImpl{
 	curNode.Sensitivity = curNode.InitialSensitivity
 
 	// Initialize New Battery Model Variables
-	curNode.CurrentBatteryLevel = 1000000
+	curNode.CurrentBatteryLevel = int(float64(p.BatteryCapacity) * RandomBatteryLevel(p.AverageBatteryLevel))
 	curNode.InitialBatteryLevel = curNode.CurrentBatteryLevel
 	curNode.SamplingPeriod		= p.SamplingPeriodMS
 	return &curNode
@@ -444,8 +444,6 @@ func SetupCSVNodes(p *Params) {
 		} else {
 			newNode.Valid = false
 		}
-
-		newNode.Alive = true
 
 		p.NodeList = append(p.NodeList, newNode)
 		p.CurrentNodes += 1
@@ -1609,9 +1607,9 @@ func GetFlags(p *Params) {
 	flag.Float64Var(&p.BatteryMediumThreshold, "batteryMediumThreshold", .25, "battery percentage to mark a node as medium power")
 	flag.Float64Var(&p.BatteryHighThreshold, "batteryHighThreshold", .40, "battery percentage to mark a node as high power")
 	flag.Float64Var(&p.AverageBatteryLevel, "averageBatteryLevel", 0.70, "average initial battery level to set nodes to")
-	flag.Float64Var(&p.BluetoothLossPercentage, "bluetoothLossPercentage", 0.002, "amount of battery drained each time a node uses bluetooth")
-	flag.Float64Var(&p.SampleLossPercentage, "sampleLossPercentage", 0.002, "amount of battery drained each time a node takes a sample")
-	flag.Float64Var(&p.WifiLossPercentage, "wifiLossPercentage", 0.002, "amount of battery drained each time a node uses wifi")
+	flag.Float64Var(&p.BluetoothLossPercentage, "bluetoothLossPercentage", 0.00002, "amount of battery drained each time a node uses bluetooth")
+	flag.Float64Var(&p.SampleLossPercentage, "sampleLossPercentage", 0.0002, "amount of battery drained each time a node takes a sample")
+	flag.Float64Var(&p.WifiLossPercentage, "wifiLossPercentage", 0.0002, "amount of battery drained each time a node uses wifi")
 
 	flag.Parse()
 	fmt.Println("Maximum size of buffer posible: ", p.MaxBufferCapacityCM)

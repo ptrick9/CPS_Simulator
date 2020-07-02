@@ -383,10 +383,7 @@ func main() {
 	}
 	p.Server.MakeNodeData()
 
-
-	p.ClusteringOn=false
 	testMove:=true
-
 
 	//p.Events.Push(&cps.Event{&p.NodeList[0], "sense", 0, 0})
 	p.Events.Push(&cps.Event{nil, cps.POSITION, 999, 0})
@@ -414,7 +411,7 @@ func main() {
 			p.Events.Push(&cps.Event{nil, cps.CLUSTERPRINT, 999, 0})
 		}
 	}
-	p.Events.Push(&cps.Event{nil, cps.UPDATEALIVELIST, 5000, 0})
+	p.Events.Push(&cps.Event{nil, cps.BATTERYPRINT, 5000, 0})
 	p.CurrentTime = 0
 	for len(p.Events) > 0 && p.CurrentTime < 1000*p.Iterations_of_event && !p.FoundBomb {
 		event := heap.Pop(&p.Events).(*cps.Event)
@@ -459,7 +456,7 @@ func main() {
 			} else {
 				event.Node.MoveNormal(p)
 			}
-			if p.ClusteringOn && event.Node.Valid && event.Node.Alive {
+			if p.ClusteringOn && event.Node.Valid && event.Node.IsAlive() {
 				p.NodeTree.NodeMovement(event.Node)
 				event.Node.UpdateOutOfRange(p)
 			}
@@ -760,15 +757,15 @@ func main() {
 			p.ClusterNetwork.AverageNumClusters += len(p.ClusterNetwork.ClusterHeads)
 
 			p.Events.Push(&cps.Event{nil, cps.CLUSTERPRINT, p.CurrentTime + 1000, 0})
-		case cps.UPDATEALIVELIST:
-			for i := 0; i < len(p.AliveList); i++ {
-				if !p.AliveList[i].Alive {
-					p.AliveList = append(p.AliveList[:i], p.AliveList[i+1:]...)
-					i--
+		case cps.BATTERYPRINT:
+			lowBattery := p.NodeList[0].GetBatteryPercentage()
+			for i := 1; i < len(p.NodeList); i++ {
+				if p.NodeList[i].GetBatteryPercentage() < lowBattery {
+					lowBattery = p.NodeList[i].GetBatteryPercentage()
 				}
 			}
-			fmt.Fprintf(p.BatteryFile, "Iteration: %v, %v\n", p.CurrentTime/1000, float64(len(p.AliveList))/float64(p.TotalNodes))
-			p.Events.Push(&cps.Event{nil, cps.UPDATEALIVELIST, p.CurrentTime + 1000, 0})
+			fmt.Fprintf(p.BatteryFile, "Iteration: %v, %v, %v\n", p.CurrentTime/1000, float64(len(p.AliveList))/float64(p.TotalNodes), lowBattery)
+			p.Events.Push(&cps.Event{nil, cps.BATTERYPRINT, p.CurrentTime + 1000, 0})
 		}
 	}
 
@@ -832,6 +829,7 @@ func main() {
 		fmt.Fprintln(p.ClusterStatsFile, "Cluster heads created by local reclusters:", p.ClusterNetwork.LRHeads)
 		fmt.Fprintln(p.ClusterStatsFile, "Potential Full Reclusters:", p.ClusterNetwork.PotentialReclusters)
 		fmt.Fprintln(p.ClusterStatsFile, "Actual Full Reclusters:", p.ClusterNetwork.FullReclusters)
+		fmt.Fprintln(p.ClusterStatsFile, "Lost Readings:", p.ClusterNetwork.LostReadings, "/", p.Server.TotalSamplesTaken)
 	}
 
 	p.PositionFile.Seek(0, 0)
@@ -851,7 +849,7 @@ func main() {
 		fmt.Fprintln(p.OutputLog, "Square and max", k, v.MaxDelta)
 	}
 
-	p.Server.PrintBatteryStats(p)
+	p.Server.PrintBatteryStats()
 
 	if p.ZipFiles {
 		p.MoveReadingsFile.Close()
