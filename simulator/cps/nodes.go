@@ -46,6 +46,8 @@ type NodeImpl struct {
 	Sitting                         int      // for movement
 	X                               float32      //x pos of node
 	Y                               float32      //y pos of node
+	SX                              float32      //Server X
+	SY								float32		 //Server Y
 	Alive							bool
 
 	Cascade                         int      //This cascades the pings of the nodes
@@ -366,7 +368,8 @@ func (node *NodeImpl) SendToClusterHead(rd *Reading, tp bool){
 
 	node.DrainBatteryBluetooth()	//Node sends reading over bluetooth
 	head.DrainBatteryBluetooth()	//Node receives reading over bluetooth
-	head.DrainBatteryBluetooth()	//Head sends confirmation over bluetooth
+	head.DrainBatteryBluetooth()	//Head
+	// s confirmation over bluetooth
 	node.DrainBatteryBluetooth()	//Node receives confirmation over bluetooth
 	head.StoredNodes = append(head.StoredNodes, node)
 	head.StoredReadings = append(head.StoredReadings, rd)
@@ -626,8 +629,8 @@ func (node *NodeImpl) DrainBatteryWifi() {
 func (node *NodeImpl) ScheduleNextSense() {
 	if node.GetBatteryPercentage() > node.P.BatteryDeadThreshold {
 		node.AdaptiveSampling()
-		if node.SamplingPeriod!=1000{
-			fmt.Println("\n",node.Id,node.SamplingPeriod)
+		if node.SamplingPeriod==0{
+			node.SamplingPeriod=node.P.SamplingPeriodMS
 		}
 		node.P.Events.Push(&Event{node, SENSE, node.P.CurrentTime + node.SamplingPeriod, 0})
 	} else {
@@ -640,21 +643,19 @@ func (node *NodeImpl) AdaptiveSampling() {
 	if node.Valid {
 		var distance float64=0
 		if node.OldX!=0 && node.OldY!=0 {
-			distance = math.Sqrt((math.Pow(.5*float64(node.X-node.OldX), 2)) + (math.Pow(.5*float64(node.Y-node.OldY), 2)))
+			distance = math.Sqrt((math.Pow(.5*float64(node.SX-node.OldX), 2)) + (math.Pow(.5*float64(node.SY-node.OldY), 2)))
 		} else{
-			distance = 0
+			return
 		}
 		//Distance is in half meters so have to divide by half to get meters
 		metersPerSecond := distance / (float64(node.SamplingPeriod)/1000)
-		if node.Id==49{
-			fmt.Println("\nNEW/OLD CORDS DIST SAMPLE MPS",node.X,node.Y,node.OldX,node.OldY,distance,node.SamplingPeriod,metersPerSecond)
-		}
 		//Divide by sampling rate to get meters per second
 		if metersPerSecond < node.P.MaxMoveMeters/4 {
 			node.LowSpeedCounter++
 			if node.LowSpeedCounter >= node.P.CounterThreshold {
 				if node.SamplingPeriod < int(node.P.SamplingPeriodMS/2) {   //Gradual increase back to normal speed (delay)
 					node.SamplingPeriod *= 2
+					node.P.TotalAdaptations++
 				} else {
 					node.SamplingPeriod = node.P.SamplingPeriodMS
 				}
@@ -663,8 +664,10 @@ func (node *NodeImpl) AdaptiveSampling() {
 			node.LowSpeedCounter = 0
 			if metersPerSecond > node.P.MaxMoveMeters {                     //Speed up sampling
 				node.SamplingPeriod /= 2
+				node.P.TotalAdaptations++
 			} else if metersPerSecond > node.P.MaxMoveMeters*.75 {
 				node.SamplingPeriod = node.SamplingPeriod * 2 / 3
+				node.P.TotalAdaptations++
 			}
 		}
 	}
@@ -1072,12 +1075,13 @@ func (node *NodeImpl) MoveCSV(p *Params) {
 	portion := (floatTemp / 1000) - float32(intTime)
 	id := node.GetID()
 	if node.Valid {
-		if p.IsSense{ //Checks to see if cps instruction is sensing currently
-			node.OldX, node.OldY = node.X, node.Y
-		}
 		p.BoolGrid[int(node.OldX)][int(node.OldY)] = false //set the old spot false since the node will now move away
 		node.X = interpolate(p.NodeMovements[id][intTime-p.MovementOffset].X, p.NodeMovements[id][intTime-p.MovementOffset+1].X, portion)
 		node.Y = interpolate(p.NodeMovements[id][intTime-p.MovementOffset].Y, p.NodeMovements[id][intTime-p.MovementOffset+1].Y, portion)
+		if p.IsSense{ //Checks to see if cps instruction is sensing currently
+			node.OldX, node.OldY = node.SX,node.SY
+			node.SX, node.SY= node.X,node.Y
+		}
 		if !node.InBounds(p) {
 			node.Valid = false
 			//fmt.Println(oldX, oldY,newX, newY, node.Id, p.CurrentTime,p.NodeMovements[id][intTime].X, p.NodeMovements[id][intTime+1].X)

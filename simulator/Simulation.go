@@ -384,8 +384,8 @@ func main() {
 	p.Server.MakeNodeData()
 
 
-	p.ClusteringOn=false
-	testMove:=true
+	p.ClusteringOn=false    //TURNS OFF CLUSTERING
+	testMove:=true			//USES REGULAR MOVEMENT FOR ADAPTIVE SAMPLING
 
 
 	//p.Events.Push(&cps.Event{&p.NodeList[0], "sense", 0, 0})
@@ -834,7 +834,9 @@ func main() {
 	}
 
 
-	p.Server.PrintBatteryStats()
+	//p.Server.PrintBatteryStats()
+	fmt.Println("Total Samples",p.Server.TotalSamplesTaken)
+	fmt.Println("Total Adaptations",p.TotalAdaptations)
 
 	if p.ZipFiles {
 		p.MoveReadingsFile.Close()
