@@ -14,13 +14,16 @@ from zipfile import *
 #basePath = "C:/Users/patrick/Downloads/fineGrainedBomb/fineGrainedBomb/"
 #basePath = "C:/Users/patrick/Downloads/driftExploreHullBombMove/"
 #basePath = "C:/Users/patrick/Downloads/driftExplorerBombADC/"
-basePath = "C:/Users/patrick/Downloads/driftExplorerBombAdaptiveADC/"
+#basePath = "C:/Users/patrick/Downloads/driftExplorerBombAdaptiveADC/"
+#basePath = "C:/Users/patrick/Downloads/driftExplorerBombFinalGridSize2/"
 
-basePath = "C:/Users/patrick/Downloads/driftExplorerBombFinalGridSize2/"
-basePath = "C:/Users/patrick/Downloads/driftExplorerNoBombFinalGridFinalRun/"
+#basePath = "D:/Downloads/stadiumClusteringTests/"
+# pickleName = "stadiumNoBombClusteringTests"
+basePath = "D:/Downloads/BigTests/"
+pickleName = "BigTests"
 
 #basePath = "C:/Users/patrick/Downloads/driftTest/"
-figurePath = "C:/Users/patrick/Dropbox/Patrick/udel/SUMMER2018/git_simulator/CPS_Simulator/driftExploreCommBomb/"
+figurePath = "D:/Downloads/TestResults/"
 
 X_VAL = ['detectionThreshold', 'detectionDistance']
 X_VAL = ['validationThreshold', 'errorMultiplier', 'serverRecal']
@@ -31,7 +34,7 @@ ZIP = True
 data = {}
 
 
-pickleName = "driftExplorerNoBombFinalGridFinal"
+# pickleName = "driftExplorerNoBombFinalGridFinal"
 #pickleName = "driftExplorerBombADC_qTest"
 
 
@@ -53,9 +56,10 @@ def getDistance(basePath, run):
 def determineDifferences(basePath, runs):
     params = {}
     for r in runs:
+    # for i in range(500):
         p = getParameters("%s%s" % (basePath, r))
         print(r)
-        print(p['serverRecal'])
+        #print(p['serverRecal'])
         for k in p.keys():
             if 'file' not in k and 'File' not in k and k not in IGNORE:
                 if k in params:
@@ -115,6 +119,20 @@ def generateData(rq, wq):
         run['# Total False Positives'] = sum([1 if x.FP() else 0 for x in det])
         run['True Positive Readings'] = [x.errorADC for x in det if x.TP() and x.time < firstDet]
         run['True Positive Findings'] = [x.errorADC for x in det if x.TPConf() and x.time == firstDet]
+        batteryStats = getBatteryStats(basePath, file)
+        run['Average Remaining Battery'] = batteryStats[0]
+        run['Percent Nodes Dead'] = batteryStats[1]
+        run['Percent Alive Over Time'] = batteryStats[2]
+        clusterStats = getClusterStats(basePath, file)
+        run['New nodes joining existing clusters'] = clusterStats[0]
+        run['New nodes creating a new cluster'] = clusterStats[1]
+        run['Average number of clusters'] = clusterStats[2]
+        run['Overall average cluster size'] = clusterStats[3]
+        run['Local Reclusters'] = clusterStats[4]
+        run['Cluster heads created by local reclusters'] = clusterStats[5]
+        run['Potential Full Reclusters'] = clusterStats[6]
+        run['Actual Full Reclusters'] = clusterStats[7]
+        run['Lost Readings'] = clusterStats[8]
 
         #if p['validaitonType'] == 'square':
         #    run['False Positive Confirmation Timing'] = [x.time for x in det if x.FPConf()]
@@ -151,6 +169,7 @@ def generateData(rq, wq):
         return data
         '''
         rq.task_done()
+        print(rq.qsize())
 
 def dataStorage(wq, order, variation, total):
 
@@ -201,6 +220,8 @@ def dataStorage(wq, order, variation, total):
         #    pickle.dump(data, handle)# protocol=pickle.HIGHEST_PROTOCOL)
         #    handle.close()
         wq.task_done()
+        if wq.qsize() <= 0:
+            break
 
     return data
 
@@ -284,15 +305,19 @@ if __name__ == '__main__':
 
     for run in uniqueRuns:
         rq.put([run, order])
+    # for i in range(500):
+    #     rq.put([uniqueRuns[i], order])
 
     p = multiprocessing.Pool(3, generateData, (rq,wq,), maxtasksperchild=3)
-    p = multiprocessing.Pool(1, dataStorage, (wq,order, shiftingParameters, len(uniqueRuns),))
 
     rq.join()
 
+    print('here')
 
+    # p = multiprocessing.Pool(1, dataStorage, (wq,order, shiftingParameters, len(uniqueRuns),))
+    dataStorage(wq, order, shiftingParameters, len(uniqueRuns))
 
-    wq.join()
+    # wq.join()
 
     #with open('driftExplorePar.pickle', 'wb') as handle:
     #    pickle.dump(data, handle)# protocol=pickle.HIGHEST_PROTOCOL)
@@ -300,14 +325,14 @@ if __name__ == '__main__':
         #pickle.dump({data, handle)
 
     #data = generateData(uniqueRuns)
-
+'''
     with open('driftExplorePar.pickle', 'rb') as handle:
         data = pickle.load(handle)
 
     print(data)
     graphs = generateGraphs(order, xx)
 
-    y_axes = [x for x in data[list(data.keys())[0]][0].keys() if x is not 'config']
+    y_axes = [x for x in data[list(data.keys())[0]][0].keys() if x != 'config']
     print(y_axes)
 
     print(len(graphs))
@@ -317,7 +342,7 @@ if __name__ == '__main__':
         x_axis = graphSet[0]['~']
         extension = ''
         for k in graphSet[0].keys():
-            if k is not '~':
+            if k != '~':
                 extension+= str(k) + str(graphSet[0][k])
         for key in graphSet[1]:
             v = data[key][0]['config'][x_axis]
@@ -349,25 +374,44 @@ if __name__ == '__main__':
             plt.savefig('%s(%s) %s %s.png' % (figurePath, extension, x_axis, g))
             plt.clf()
             #plt.show()
-
-    
-
+'''
 
 
+def getBatteryStats(zipPath, zipName):
+    zf = ZipFile(zipPath + zipName)
+    f = zf.open("%s%s" % (zipName.split(".zip")[0], "-batteryusage.txt"))
+    percentAliveOverTime = []
+
+    for line in f:
+        line = line.decode("utf-8")
+        if "Iteration" in line:
+            line = line.split(",")[1].rstrip()
+            percentAlive = float(line)
+            percentAliveOverTime += [percentAlive]
+        elif "Average Remaining Battery" in line:
+            averageRemaining = float(line.split(":")[1].rstrip())
+        elif "Total Dead Nodes" in line:
+            fraction = line.split(":")[1].rstrip()
+            deadNodes = float(fraction.split("/")[0].rstrip())
+            totalNodes = float(fraction.split("/")[1].rstrip())
+            percentDead = deadNodes/totalNodes
+
+    return [averageRemaining, percentDead, percentAliveOverTime]
 
 
+def getClusterStats(zipPath, zipName):
+    zf = ZipFile(zipPath + zipName)
+    f = zf.open("%s%s" % (zipName.split(".zip")[0], "-clusterStats.txt"))
+    clusterStats = []
 
+    for line in f:
+        line = line.decode("utf-8")
+        if 'Lost Readings' in line:
+            fraction = line.split(':')[1].rstrip()
+            top = float(fraction.split('/')[0].rstrip())
+            bottom = float(fraction.split('/')[1].rstrip())
+            clusterStats += [top/bottom]
+        elif line.strip():
+            clusterStats += [int(line.split(':')[1].rstrip())]
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+    return clusterStats

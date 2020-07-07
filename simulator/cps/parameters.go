@@ -1,6 +1,7 @@
 package cps
 
 import (
+	"math"
 	"math/rand"
 	"time"
 )
@@ -39,24 +40,6 @@ func NormalInverse(mu float32, sigma float32) float32 {
 	return float32(rand.NormFloat64()*float64(sigma) + float64(mu))
 }
 
-//Returns linear list of battery values, very good for debugging because it is in order
-func GetLinearBatteryValues(numNodes int) (y []float32) {
-	step := 100.0 / (float32(numNodes))
-	for numNodes >= 1 {
-		y = append(y, step*(float32(numNodes)))
-		numNodes -= 1
-	}
-	return
-}
-
-//Returns a constant Value for a uniform battery loss for all the nodes
-func GetLinearBatteryLossConstant(numNodes int, lossConst float32) (y []float32) {
-	for numNodes >= 1 {
-		y = append(y, lossConst)
-		numNodes -= 1
-	}
-	return
-}
 
 //Created custom distribution
 func ProduceCustomDistribution(numb int) (y []float32) {
@@ -148,4 +131,13 @@ func Shuffle(a []float32) []float32 {
 		a[n-1], a[randIndex] = a[randIndex], a[n-1]
 	}
 	return a
+}
+
+/* mean: float64 in range of 0-1
+* return: decimal from normal distribution around the desired mean battery level
+ */
+func RandomBatteryLevel(mean float64) float64 {
+	sd := (1.0 - mean) / 3.0
+	sample := rand.NormFloat64() * sd + mean
+	return math.Min(sample, 1.0)
 }

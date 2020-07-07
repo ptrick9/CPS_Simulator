@@ -31,6 +31,8 @@ type RegionParams struct {
 	Stim_list map[int]Tuple
 
 	Checked		[]int
+
+	XYcords    Tuple
 }
 
 func Point_list_remove(point Tuple, r *RegionParams) {

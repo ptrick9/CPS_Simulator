@@ -1,8 +1,6 @@
 package main
 
-import "./cps"
-
-func main() {
+/*func main() {
 	tree := cps.Quadtree{
 		Bounds: cps.Bounds{
 			X:      0,
@@ -103,6 +101,6 @@ func main() {
 	newNode.Id = 8
 	newNode.NodeClusterParams = &cps.ClusterMemberParams{RecvMsgs: []*cps.HelloMsg{}}
 
-	network.NewNodeHello(8, &newNode, &tree)
+	network.ClusterSearch(8, &newNode, &tree)
 	tree.PrintTree()
-}
+}*/
