@@ -308,7 +308,7 @@ if __name__ == '__main__':
     # for i in range(500):
     #     rq.put([uniqueRuns[i], order])
 
-    p = multiprocessing.Pool(5, generateData, (rq,wq,), maxtasksperchild=3)
+    p = multiprocessing.Pool(3, generateData, (rq,wq,), maxtasksperchild=3)
 
     rq.join()
 

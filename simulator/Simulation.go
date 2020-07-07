@@ -383,7 +383,7 @@ func main() {
 	}
 	p.Server.MakeNodeData()
 
-	testMove:=true
+	testMove:=true			//USES REGULAR MOVEMENT FOR ADAPTIVE SAMPLING
 
 	//p.Events.Push(&cps.Event{&p.NodeList[0], "sense", 0, 0})
 	p.Events.Push(&cps.Event{nil, cps.POSITION, 999, 0})
@@ -850,6 +850,8 @@ func main() {
 	}
 
 	p.Server.PrintBatteryStats()
+	fmt.Println("Total Samples",p.Server.TotalSamplesTaken)
+	fmt.Println("Total Adaptations",p.TotalAdaptations)
 
 	if p.ZipFiles {
 		p.MoveReadingsFile.Close()
