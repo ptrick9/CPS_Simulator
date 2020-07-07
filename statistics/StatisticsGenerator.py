@@ -17,7 +17,10 @@ from zipfile import *
 #basePath = "C:/Users/patrick/Downloads/driftExplorerBombAdaptiveADC/"
 #basePath = "C:/Users/patrick/Downloads/driftExplorerBombFinalGridSize2/"
 
-basePath = "D:/Downloads/stadiumClusteringTests/"
+#basePath = "D:/Downloads/stadiumClusteringTests/"
+# pickleName = "stadiumNoBombClusteringTests"
+basePath = "D:/Downloads/BigTests/"
+pickleName = "BigTests"
 
 #basePath = "C:/Users/patrick/Downloads/driftTest/"
 figurePath = "D:/Downloads/TestResults/"
@@ -33,7 +36,6 @@ data = {}
 
 # pickleName = "driftExplorerNoBombFinalGridFinal"
 #pickleName = "driftExplorerBombADC_qTest"
-pickleName = "stadiumNoBombClusteringTests"
 
 
 def buildDetectionList(basePath, runs):
@@ -54,9 +56,10 @@ def getDistance(basePath, run):
 def determineDifferences(basePath, runs):
     params = {}
     for r in runs:
+    # for i in range(500):
         p = getParameters("%s%s" % (basePath, r))
         print(r)
-        print(p['serverRecal'])
+        #print(p['serverRecal'])
         for k in p.keys():
             if 'file' not in k and 'File' not in k and k not in IGNORE:
                 if k in params:
@@ -119,6 +122,17 @@ def generateData(rq, wq):
         batteryStats = getBatteryStats(basePath, file)
         run['Average Remaining Battery'] = batteryStats[0]
         run['Percent Nodes Dead'] = batteryStats[1]
+        run['Percent Alive Over Time'] = batteryStats[2]
+        clusterStats = getClusterStats(basePath, file)
+        run['New nodes joining existing clusters'] = clusterStats[0]
+        run['New nodes creating a new cluster'] = clusterStats[1]
+        run['Average number of clusters'] = clusterStats[2]
+        run['Overall average cluster size'] = clusterStats[3]
+        run['Local Reclusters'] = clusterStats[4]
+        run['Cluster heads created by local reclusters'] = clusterStats[5]
+        run['Potential Full Reclusters'] = clusterStats[6]
+        run['Actual Full Reclusters'] = clusterStats[7]
+        run['Lost Readings'] = clusterStats[8]
 
         #if p['validaitonType'] == 'square':
         #    run['False Positive Confirmation Timing'] = [x.time for x in det if x.FPConf()]
@@ -155,6 +169,7 @@ def generateData(rq, wq):
         return data
         '''
         rq.task_done()
+        print(rq.qsize())
 
 def dataStorage(wq, order, variation, total):
 
@@ -290,10 +305,14 @@ if __name__ == '__main__':
 
     for run in uniqueRuns:
         rq.put([run, order])
+    # for i in range(500):
+    #     rq.put([uniqueRuns[i], order])
 
     p = multiprocessing.Pool(5, generateData, (rq,wq,), maxtasksperchild=3)
 
     rq.join()
+
+    print('here')
 
     # p = multiprocessing.Pool(1, dataStorage, (wq,order, shiftingParameters, len(uniqueRuns),))
     dataStorage(wq, order, shiftingParameters, len(uniqueRuns))
@@ -361,10 +380,15 @@ if __name__ == '__main__':
 def getBatteryStats(zipPath, zipName):
     zf = ZipFile(zipPath + zipName)
     f = zf.open("%s%s" % (zipName.split(".zip")[0], "-batteryusage.txt"))
+    percentAliveOverTime = []
 
     for line in f:
         line = line.decode("utf-8")
-        if "Average Remaining Battery" in line:
+        if "Iteration" in line:
+            line = line.split(",")[1].rstrip()
+            percentAlive = float(line)
+            percentAliveOverTime += [percentAlive]
+        elif "Average Remaining Battery" in line:
             averageRemaining = float(line.split(":")[1].rstrip())
         elif "Total Dead Nodes" in line:
             fraction = line.split(":")[1].rstrip()
@@ -372,13 +396,22 @@ def getBatteryStats(zipPath, zipName):
             totalNodes = float(fraction.split("/")[1].rstrip())
             percentDead = deadNodes/totalNodes
 
-    return [averageRemaining, percentDead]
+    return [averageRemaining, percentDead, percentAliveOverTime]
 
 
+def getClusterStats(zipPath, zipName):
+    zf = ZipFile(zipPath + zipName)
+    f = zf.open("%s%s" % (zipName.split(".zip")[0], "-clusterStats.txt"))
+    clusterStats = []
 
+    for line in f:
+        line = line.decode("utf-8")
+        if 'Lost Readings' in line:
+            fraction = line.split(':')[1].rstrip()
+            top = float(fraction.split('/')[0].rstrip())
+            bottom = float(fraction.split('/')[1].rstrip())
+            clusterStats += [top/bottom]
+        elif line.strip():
+            clusterStats += [int(line.split(':')[1].rstrip())]
 
-
-
-
-
-
+    return clusterStats

@@ -153,23 +153,23 @@ func (adhoc *AdHocNetwork) ClusterMovement(node *NodeImpl, p *Params) {
 	if node.Valid && node.IsAlive() {
 		 if !node.IsClusterHead && p.CurrentTime >= p.InitClusterTime {
 			if node.NodeClusterParams.CurrentCluster.ClusterHead == nil {
-				adhoc.NewNodeHello(node, p)
+				adhoc.ClusterSearch(node, p)
 			} else if !node.IsWithinRange(node.NodeClusterParams.CurrentCluster.ClusterHead, p.NodeBTRange) {
 				/*	Node knows it is within range of its cluster head if it receives confirmation after sending its
 					reading. This is the cost of sending the reading to the out-of-range cluster head. The cost is
 					normally handled in node.go's SendToClusterHead, when the head is in range. */
 				node.DrainBatteryBluetooth()
 				if node.IsAlive() { //If the node survived sending the message to the out-of-range cluster head
-					adhoc.NewNodeHello(node, p)
+					adhoc.ClusterSearch(node, p)
 				}
 			}
 		} else if !p.GlobalRecluster && node.IsClusterHead && len(node.NodeClusterParams.CurrentCluster.ClusterMembers) <= p.ClusterMinThreshold {
-			adhoc.NewNodeHello(node, p)
+			adhoc.ClusterSearch(node, p)
 		}
 	}
 }
 
-func (adhoc *AdHocNetwork) NewNodeHello(node *NodeImpl, p *Params) {
+func (adhoc *AdHocNetwork) ClusterSearch(node *NodeImpl, p *Params) {
 	toJoin := node.FindNearbyHead(p)
 
 	if toJoin != nil {
