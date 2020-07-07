@@ -619,7 +619,7 @@ func main() {
 			}
 			average := 0
 			if len(p.ClusterNetwork.ClusterHeads) > 0 {
-				average := nodesInClusters / len(p.ClusterNetwork.ClusterHeads)
+				average = nodesInClusters / len(p.ClusterNetwork.ClusterHeads)
 				p.ClusterNetwork.AverageClusterSize += average
 			}
 			if p.ClusterDebug {
@@ -717,7 +717,7 @@ func main() {
 								}
 							}
 						}
-						if clusterCount != 1 {
+						if (!p.RedundantClustering && clusterCount != 1) || (p.RedundantClustering && clusterCount != 2) {
 							clusterDebugBuffer.WriteString(fmt.Sprintf("\tNode ID=%v is cluster member of %v clusters. Cluster head in ClusterHeads: %v. Cluster head is head: %v\n", p.AliveList[i].Id, clusterCount, clusterHeadInHeads, clusterHeadIsHead))
 						}
 					} else {
