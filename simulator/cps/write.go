@@ -446,10 +446,10 @@ func SetupCSVNodes(p *Params) {
 		}
 
 		p.NodeList = append(p.NodeList, newNode)
+		p.AliveList = append(p.AliveList, newNode)
 		p.CurrentNodes += 1
 
 		if p.ClusteringOn {
-			p.AliveList = append(p.AliveList, newNode)
 			newNode.IsClusterHead = false
 			newNode.IsClusterMember = false
 			newNode.NodeClusterParams = &ClusterMemberParams{}

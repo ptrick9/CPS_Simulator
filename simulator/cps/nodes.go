@@ -366,10 +366,10 @@ func (node *NodeImpl) LogBatteryPower(t int){
 func (node *NodeImpl) SendToClusterHead(rd *Reading, tp bool){
 	head := node.NodeClusterParams.CurrentCluster.ClusterHead
 
-	node.DrainBatteryBluetooth()	//Node sends reading over bluetooth
-	head.DrainBatteryBluetooth()	//Head receives reading over bluetooth
-	head.DrainBatteryBluetooth()	//Head sends confirmation over bluetooth
-	node.DrainBatteryBluetooth()	//Node receives confirmation over bluetooth
+	node.DrainBatteryBluetooth(&node.P.Server.ReadingBTCounter)	//Node sends reading over bluetooth
+	head.DrainBatteryBluetooth(&node.P.Server.ReadingBTCounter)	//Head receives reading over bluetooth
+	head.DrainBatteryBluetooth(&node.P.Server.ReadingBTCounter)	//Head sends confirmation over bluetooth
+	node.DrainBatteryBluetooth(&node.P.Server.ReadingBTCounter)	//Node receives confirmation over bluetooth
 	head.StoredNodes = append(head.StoredNodes, node)
 	head.StoredReadings = append(head.StoredReadings, rd)
 	head.StoredTPs = append(head.StoredTPs, tp)
@@ -621,8 +621,9 @@ func (node *NodeImpl) DrainBatterySample() {
 }
 
 // decreases battery level of a node for when bluetooth communication occurs
-func (node *NodeImpl) DrainBatteryBluetooth() {
+func (node *NodeImpl) DrainBatteryBluetooth(counter *int) {
 	// add counter for this later
+	*counter++
 	node.P.Server.BluetoothCounter++
 	node.CurrentBatteryLevel -= node.P.BluetoothLossAmount()
 	node.UpdateAliveStatus()

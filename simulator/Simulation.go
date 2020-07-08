@@ -549,13 +549,16 @@ func main() {
 				"Amount:", len(p.NodeList),
 				"Samples:", p.Server.SamplesCounter,
 				"Wifi:", p.Server.WifiCounter,
-				"Bluetooth:", p.Server.BluetoothCounter)
+				"Bluetooth:", p.Server.BluetoothCounter,
+				"Recluster:", p.Server.ReclusterBTCounter,
+				"Cluster Search:", p.Server.ClusterSearchBTCounter,
+				"Reading:", p.Server.ReadingBTCounter)
 			if p.EnergyPrint {
 				var buffer bytes.Buffer
-				for i := 0; i < len(p.NodeList); i++ {
-					//p.NodeList[i].BatteryOverTime[p.CurrentTime/1000] = p.NodeList[i].Battery
-					buffer.WriteString(fmt.Sprintf("%v\n", p.NodeList[i]))
-				}
+				//for i := 0; i < len(p.NodeList); i++ {
+				//	//p.NodeList[i].BatteryOverTime[p.CurrentTime/1000] = p.NodeList[i].Battery
+				//	buffer.WriteString(fmt.Sprintf("%v\n", p.NodeList[i]))
+				//}
 				fmt.Fprintf(p.EnergyFile, buffer.String())
 			}
 			p.Events.Push(&cps.Event{nil, cps.ENERGYPRINT, p.CurrentTime + 1000, 0})
@@ -624,7 +627,7 @@ func main() {
 			}
 			average := 0
 			if len(p.ClusterNetwork.ClusterHeads) > 0 {
-				average := nodesInClusters / len(p.ClusterNetwork.ClusterHeads)
+				average = nodesInClusters / len(p.ClusterNetwork.ClusterHeads)
 				p.ClusterNetwork.AverageClusterSize += average
 			}
 			if p.ClusterDebug {
@@ -786,9 +789,6 @@ func main() {
 		}
 	}
 
-	if p.EnergyPrint {
-		PrintNodeBatteryOverTimeFast(p)
-	}
 	if p.GridPrint {
 		printGrid(p, p.Grid)
 
@@ -816,13 +816,13 @@ func main() {
 			fmt.Fprintln(p.RoutingFile, "Amount:", p.NumSuperNodes)
 		}
 		fmt.Fprintln(p.EnergyFile, "Amount:", len(p.NodeList)) //big time waster
-		if p.EnergyPrint {
-			var buffer bytes.Buffer
-			for i := 0; i < p.CurrentNodes; i++ {
-				buffer.WriteString(fmt.Sprintf("%v\n", p.NodeList[i]))
-			}
-			fmt.Fprintf(p.EnergyFile, buffer.String())
-		}
+		//if p.EnergyPrint {
+		//	var buffer bytes.Buffer
+		//	for i := 0; i < p.CurrentNodes; i++ {
+		//		buffer.WriteString(fmt.Sprintf("%v\n", p.NodeList[i]))
+		//	}
+		//	fmt.Fprintf(p.EnergyFile, buffer.String())
+		//}
 	}
 
 	if p.ClusteringOn && p.ClusterPrint {
@@ -931,43 +931,4 @@ func printSuperStats(SNodeList []cps.SuperNodeParent) bytes.Buffer {
 		buffer.WriteString(fmt.Sprintf("AvgResponseTime: %.2f\t", i.GetAvgResponseTime()))
 	}
 	return buffer
-}
-
-func PrintNodeBatteryOverTime(p *cps.Params) {
-
-	fmt.Fprint(p.BatteryFile, "Time,")
-	for i := range p.NodeList {
-		n := p.NodeList[i]
-		fmt.Fprint(p.BatteryFile, "Node", n.GetID(), ",")
-	}
-	fmt.Fprint(p.BatteryFile, "\n")
-
-	for t := 0; t < p.Iterations_of_event; t++ {
-		fmt.Fprint(p.BatteryFile, t, ",")
-		for i := range p.NodeList {
-			n := p.NodeList[i]
-			fmt.Fprint(p.BatteryFile, n.BatteryOverTime[t], ",")
-		}
-		fmt.Fprint(p.BatteryFile, "\n")
-	}
-	p.BatteryFile.Sync()
-}
-func PrintNodeBatteryOverTimeFast(p *cps.Params) {
-	var buffer bytes.Buffer
-	buffer.WriteString("Time,")
-	for i := range p.NodeList {
-		n := p.NodeList[i]
-		buffer.WriteString(fmt.Sprintf("Node %v,", n.GetID()))
-	}
-	buffer.WriteString("\n")
-
-	for t := 0; t < p.CurrentTime/1000; t++ {
-		buffer.WriteString(fmt.Sprintf("%v,", t))
-		for i := range p.NodeList {
-			n := p.NodeList[i]
-			buffer.WriteString(fmt.Sprintf("%v,", n.BatteryOverTime[t]))
-		}
-		buffer.WriteString("\n")
-	}
-	fmt.Fprintf(p.BatteryFile, buffer.String())
 }

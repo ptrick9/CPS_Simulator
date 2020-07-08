@@ -35,6 +35,11 @@ type FusionCenter struct {
 
 	SamplesCounter		int // counter keeps track when a sample is taken
 	BluetoothCounter	int // counter keeps track when bluetooth communication occurs
+
+	ReclusterBTCounter	int
+	ReadingBTCounter	int
+	ClusterSearchBTCounter	int
+
 	WifiCounter			int // counter keeps track when wifi communication occurs
 
 
