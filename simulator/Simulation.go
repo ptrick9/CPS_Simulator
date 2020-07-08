@@ -835,7 +835,7 @@ func main() {
 
 
 	//p.Server.PrintBatteryStats()
-	fmt.Println("Total Samples",p.Server.TotalSamplesTaken)
+	fmt.Println("Total Samples",p.TotalSamples)
 	fmt.Println("Total Adaptations",p.TotalAdaptations)
 
 	if p.ZipFiles {

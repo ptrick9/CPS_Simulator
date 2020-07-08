@@ -220,6 +220,7 @@ type Params struct {
 	BluetoothLossPercentage		float64
 	WifiLossPercentage			float64
 	TotalAdaptations            int
+	TotalSamples				int
 }
 
 // returns the amount of battery drained when a sampling event occurs

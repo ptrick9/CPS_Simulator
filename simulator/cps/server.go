@@ -530,6 +530,7 @@ func (s *FusionCenter) Send(n *NodeImpl, rd *Reading, tp bool) {
 
 	s.CheckSquares(newSquare)
 	s.SquareTime[newSquare] = TimeTrack{n.P.CurrentTime, false,s.SquareTime[newSquare].MaxDelta}
+	s.P.TotalSamples++
 	// add node to correct square
 
 

@@ -639,7 +639,7 @@ func (node *NodeImpl) ScheduleNextSense() {
 }
 
 
-func (node *NodeImpl) AdaptiveSampling() {
+/*func (node *NodeImpl) AdaptiveSampling() {
 	if node.Valid {
 		var distance float64=0
 		if node.OldX!=0 && node.OldY!=0 {
@@ -671,7 +671,30 @@ func (node *NodeImpl) AdaptiveSampling() {
 			}
 		}
 	}
+}*/
+
+
+func (node *NodeImpl)AdaptiveSampling(){
+	NodesinSquare := len(node.P.Server.SquarePop[Tuple{int(node.X / float32(node.P.XDiv)), int(node.Y / float32(node.P.YDiv))}]) //Nodes in curr node square
+	multiplier:=NodesinSquare / node.P.DensityThreshold
+	if multiplier >= 4 {
+		node.SamplingPeriod =node.P.SamplingPeriodMS* 5
+		node.P.TotalAdaptations++
+	} else if multiplier >= 3 {
+		node.SamplingPeriod = node.P.SamplingPeriodMS*3
+		node.P.TotalAdaptations++
+	} else if multiplier >= 2 {
+		node.SamplingPeriod = node.P.SamplingPeriodMS*2
+		node.P.TotalAdaptations++
+	} else if multiplier >= 1 {
+		node. SamplingPeriod= node.P.SamplingPeriodMS* 3/2
+		node.P.TotalAdaptations++
+	}
+	if node.SamplingPeriod > node.P.SamplingPeriodMS*5{
+		node.SamplingPeriod=node.P.SamplingPeriodMS*5
+	}
 }
+
 
 
 func (s *FusionCenter)GoThroughSquares(){
@@ -684,7 +707,7 @@ func (s *FusionCenter)GoThroughSquares(){
 			s.SquareTime[Square] = item
 		}
 		if delta >= 30000 {
-			fmt.Fprintln(s.P.OutputLog, "Square and delta:", Square, delta)
+			fmt.Fprintln(s.P.OutputLog, "Square and delta", Square, delta)
 		}
 	}
 }
@@ -692,18 +715,11 @@ func (s *FusionCenter)GoThroughSquares(){
 
 func (s *FusionCenter)CheckSquares(Square Tuple){
 	delta :=s.P.CurrentTime-s.SquareTime[Square].TimeSample
-	//testSquare:=Tuple{13,131}
 	if delta > s.SquareTime[Square].MaxDelta {
 		item:=s.SquareTime[Square]
 		item.MaxDelta = delta
 		s.SquareTime[Square] = item
-		//if Square==testSquare {
-		//	fmt.Println("INSIDE HERE", s.SquareTime[Square].MaxDelta)
-		//}
 	}
-	//if Square == testSquare{
-	//	fmt.Println("JFNISEJF",Square,delta,s.SquareTime[Square].TimeSample,s.P.CurrentTime,s.SquareTime[Square].MaxDelta)
-	//}
 	if delta >= 30000 {
 		fmt.Fprintln(s.P.OutputLog, "Square and delta:", Square, delta)
 	}
