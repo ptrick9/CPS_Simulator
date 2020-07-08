@@ -7,11 +7,6 @@ import (
 	"sort"
 )
 
-//Global variables used in battery loss dynamics
-var (
-	naturalLoss float32
-)
-
 //The NodeParent interface is inherited by all node types
 type NodeParent interface {
 	Distance(b Bomb) float32        //distance to bomb in the form of the node's reading
@@ -51,53 +46,24 @@ type NodeImpl struct {
 	Sitting                         int      // for movement
 	X                               float32      //x pos of node
 	Y                               float32      //y pos of node
+	SX                              float32      //Server X
+	SY								float32		 //Server Y
 	Alive							bool
 
-	ToggleCheckIterator             int      //node's personal iterator mostly for cascading pings
-	//HasCheckedSensor                bool     //did the node just ping the sensor?
-	TotalChecksSensor               int      //total sensor pings of node
-	//HasCheckedGPS                   bool     //did the node just ping the GPS?
-	TotalChecksGPS                  int      //total GPS pings of node
-	//HasCheckedServer                bool     //did the node just communicate with the server?
-	TotalChecksServer               int      //how many times did the node communicate with the server?
-	PingPeriod                      float32  //This is the aggregate ping period used in some ping rate determining algorithms
-	SensorPingPeriod                float32  //This is the ping period for the sensor
-	GPSPingPeriod                   float32  //This is the ping period for the GPS
-	ServerPingPeriod                float32  //This is the ping period for the server
-	Pings                           float32  //This is an aggregate pings used in some ping rate determining algorithms
-	SensorPings                     float32  //This is the total sensor pings to be made
-	GPSPings                        float32  //This is the total GPS pings to be made
-	ServerPings                     float32  //This is the total server pings to be made
 	Cascade                         int      //This cascades the pings of the nodes
 	BufferI                         int      //This is to keep track of the node's buffer size
-	XPos                            [100]float32 //x pos buffer of node
-	YPos                            [100]float32 //y pos buffer of node
-	Value                           [100]int //Value buffer of node
-	AccelerometerSpeedServer        [100]int //Accelerometer speed history of node
-	Time                            [100]int //This keeps track of when specific pings are made
-	//speedGPSPeriod int //This is a special period for speed based GPS pings but it is not used and may never be
-	AccelerometerPosition 			[2][3]int //This is the accelerometer model of node
 	AccelerometerSpeed    			[]float32 //History of accelerometer speeds recorded
-	InverseSensor         			float32   //Algorithm place holder declared here for speed
-	InverseGPS            			float32   //Algorithm place holder declared here for speed
-	InverseServer         			float32   //Algorithm place holder declared here for speed
 	SampleHistory         			[]float32 //a history of the node's readings
 	Avg                   			float32   //weighted average of the node's most recent readings
 	TotalSamples          			int       //total number of samples taken by a node
 	SpeedWeight           			float32   //weight given to averaging of node's samples, based on node's speed
 	NumResets             			int       //number of times a node has had to reset due to drifting
 	Concentration         			float64   //used to determine reading of node
-	SpeedGPSPeriod        			int
 
-	Current  						int
-	Previous 						int
 	Diffx    						int
 	Diffy    						int
-	Speed    						float32
 
 	//The following values are all various drifting parameters of the node
-	NewX               				int
-	NewY               				int
 	S0                 				float64
 	S1                 				float64
 	S2                 				float64
@@ -111,27 +77,25 @@ type NodeImpl struct {
 	InitialSensitivity 				float64
 	Valid 			   				bool
 
-	allReadings 	   				[1000]float64
-	calibrateTimes 	   				[]int
-	calibrateReading   				[]float64
-
 	BatteryOverTime	   				map[int]float32
 
-	TotalPacketsSent    int
-	TotalBytesSent		int
-	IsClusterHead		bool
 	Recalibrated 		bool
 
 	InitialBatteryLevel	int
 	CurrentBatteryLevel	int
 
+	IsClusterHead					bool
 	IsClusterMember					bool
-	NodeClusterParams *ClusterMemberParams
+	NodeClusterParams 				*ClusterMemberParams
 	CurTree				 			*Quadtree
+	OutOfRange						bool
+	TimeMovedOutOfRange				int
+	TimeLastSensed					int
 	StoredNodes						[]*NodeImpl
 	StoredReadings					[]*Reading
 	StoredTPs						[]bool
-	thresholdCounter    int
+	LowSpeedCounter      			int
+	SamplingPeriod					int
 }
 
 //NodeMovement controls the movement of all the normal nodes
@@ -399,39 +363,38 @@ func (node *NodeImpl) LogBatteryPower(t int){
 	//}
 }
 
-func (node *NodeImpl) SendToServer(rd *Reading, tp bool){
-	//int packet = num bytes in packet
-	//node.TotalBytesSent += packet
-	//node.TotalPacketsSent += 1
-
-	//code to send to server goes here
-	node.DrainBatteryWifi()
-	node.P.Server.Send(node, rd, tp)
-}
-
 func (node *NodeImpl) SendToClusterHead(rd *Reading, tp bool){
-	//int packet = num bytes in packet
-	//node.TotalBytesSent += packet
-	//node.TotalPacketsSent += 1
-
-	//code to send to cluster head goes here
 	head := node.NodeClusterParams.CurrentCluster.ClusterHead
 
-	node.DrainBatteryBluetooth()
-	head.DrainBatteryBluetooth()
+	node.DrainBatteryBluetooth()	//Node sends reading over bluetooth
+	head.DrainBatteryBluetooth()	//Head receives reading over bluetooth
+	head.DrainBatteryBluetooth()	//Head sends confirmation over bluetooth
+	node.DrainBatteryBluetooth()	//Node receives confirmation over bluetooth
 	head.StoredNodes = append(head.StoredNodes, node)
 	head.StoredReadings = append(head.StoredReadings, rd)
 	head.StoredTPs = append(head.StoredTPs, tp)
 }
 
-func (node *NodeImpl) SendMultipleToServer(rd *Reading, tp bool){
-	//int packet = num bytes in packet
-	//node.TotalBytesSent += packet
-	//node.TotalPacketsSent += 1
-
-	node.DrainBatteryWifi()
-	for i := range node.StoredReadings {
+/*	SendToServer
+Node sends its reading as well as any stored readings directly to server over wifi. If clustering is enabled,
+its message to the server will also include information about its cluster, such as which nodes are members.
+Currently the extra cost of sending multiple readings at once is simulated by draining battery for wifi
+communication for every multiple of 8 readings sent. It may be worth looking into making this more realistic. */
+func (node *NodeImpl) SendToServer(rd *Reading, tp bool){
+	numSent := 0
+    for ; numSent < len(node.StoredReadings)/8 + 1 && node.IsAlive(); numSent++ {
+        node.DrainBatteryWifi()
+    }
+    numSent = numSent * 8 - 1
+	for i := 0; i < len(node.StoredReadings) && i < numSent; i++ { //Some readings will be lost if cluster head dies while sending
 		node.P.Server.Send(node.StoredNodes[i], node.StoredReadings[i], node.StoredTPs[i])
+	}
+	node.DrainBatteryWifi() //The node receives confirmation from the server, including how many readings it received
+							//and updates about the cluster, such as if any members have left to join other clusters.
+
+	lost := len(node.StoredReadings) - numSent
+	if lost > 0 {
+		node.P.ClusterNetwork.LostReadings += lost
 	}
 
 	node.StoredNodes = []*NodeImpl{}
@@ -654,6 +617,7 @@ func (node *NodeImpl) GetBatteryPercentage() float64 {
 func (node *NodeImpl) DrainBatterySample() {
 	node.P.Server.SamplesCounter++
 	node.CurrentBatteryLevel -= node.P.SampleLossAmount()
+	node.UpdateAliveStatus()
 }
 
 // decreases battery level of a node for when bluetooth communication occurs
@@ -661,6 +625,7 @@ func (node *NodeImpl) DrainBatteryBluetooth() {
 	// add counter for this later
 	node.P.Server.BluetoothCounter++
 	node.CurrentBatteryLevel -= node.P.BluetoothLossAmount()
+	node.UpdateAliveStatus()
 }
 
 // decrease battery level of a node for when wifi communication occurs
@@ -668,47 +633,120 @@ func (node *NodeImpl) DrainBatteryWifi() {
 	// add counter for this later
 	node.P.Server.WifiCounter++
 	node.CurrentBatteryLevel -= node.P.WifiLossAmount()
+	node.UpdateAliveStatus()
+}
+
+func (node *NodeImpl) IsAlive() bool {
+	return node.GetBatteryPercentage() > node.P.BatteryDeadThreshold
+}
+
+func (node *NodeImpl) UpdateAliveStatus() {
+	if !node.IsAlive() {
+		if node.P.ClusteringOn && node.CurTree != nil {
+			node.CurTree.RemoveAndClean(node)
+			if node.IsClusterHead && node.P.LocalRecluster > 0 && node.P.CurrentTime >= node.P.InitClusterTime {
+				members := make([]*NodeImpl, len(node.NodeClusterParams.CurrentCluster.ClusterMembers))
+				copy(members, node.NodeClusterParams.CurrentCluster.ClusterMembers)
+				if node.P.LocalRecluster < 3 {
+					node.P.ClusterNetwork.LocalRecluster(node, members, node.P)
+				} else {
+					node.P.ClusterNetwork.ExpansiveLocalRecluster(node, members, node.P)
+				}
+			} else {
+				node.P.ClusterNetwork.ClearClusterParams(node)
+			}
+		}
+		for i := 0; i < len(node.P.AliveList); i++ {
+			if !node.P.AliveList[i].IsAlive() {
+				node.P.AliveList = append(node.P.AliveList[:i], node.P.AliveList[i+1:]...)
+				i--
+			}
+		}
+	}
 }
 
 
 func (node *NodeImpl) ScheduleNextSense() {
-	if node.GetBatteryPercentage() > node.P.BatteryDeadThreshold {
-		multiplier:= min(node.AdaptiveSampling(), 50)
-		delay := int(float64(node.P.SamplingPeriodMS)*math.Pow(2.0, float64(multiplier)))
-		node.P.Events.Push(&Event{node, SENSE, node.P.CurrentTime + delay, 0})
+	if node.IsAlive() {
+		node.AdaptiveSampling()
+		if node.SamplingPeriod==0{
+			node.SamplingPeriod=node.P.SamplingPeriodMS
+		}
+		node.P.Events.Push(&Event{node, SENSE, node.P.CurrentTime + node.SamplingPeriod, 0})
 	}
 }
 
-func (node *NodeImpl) AdaptiveSampling() int{
-	distanceMultiplier:=0
-	densityMultiplier:=0
-	batteryMultiplier:=0
-	metersPerSecond:=math.Sqrt((math.Pow(float64(node.X-node.OldX),2))+(math.Pow(float64(node.Y-node.OldY),2)))
-	if metersPerSecond >=1{
-		distanceMultiplier=-1  //speed up by half the period
-		node.thresholdCounter=0
-	} else {
-		node.thresholdCounter+=1
-	}
-	if node.thresholdCounter>3{
-		distanceMultiplier=1 //delay by 2x the period
-	}
 
-	if node.GetBatteryPercentage() >= node.P.BatteryHighThreshold {
-		batteryMultiplier = 0
-	} else if node.GetBatteryPercentage() >= node.P.BatteryMediumThreshold {
-		batteryMultiplier = 1
-	} else if node.GetBatteryPercentage() >= node.P.BatteryLowThreshold {
-		batteryMultiplier = 2
-	} else if node.GetBatteryPercentage() >= node.P.BatteryDeadThreshold {
-		batteryMultiplier = 3
+func (node *NodeImpl) AdaptiveSampling() {
+	if node.Valid {
+		var distance float64=0
+		if node.OldX!=0 && node.OldY!=0 {
+			distance = math.Sqrt((math.Pow(.5*float64(node.SX-node.OldX), 2)) + (math.Pow(.5*float64(node.SY-node.OldY), 2)))
+		} else{
+			return
+		}
+		//Distance is in half meters so have to divide by half to get meters
+		metersPerSecond := distance / (float64(node.SamplingPeriod)/1000)
+		//Divide by sampling rate to get meters per second
+		if metersPerSecond < node.P.MaxMoveMeters/4 {
+			node.LowSpeedCounter++
+			if node.LowSpeedCounter >= node.P.CounterThreshold {
+				if node.SamplingPeriod < node.P.SamplingPeriodMS/2 {   //Gradual increase back to normal speed (delay)
+					node.SamplingPeriod *= 2
+					node.P.TotalAdaptations++
+				} else {
+					node.SamplingPeriod = node.P.SamplingPeriodMS
+				}
+			}
+		} else {
+			node.LowSpeedCounter = 0
+			if metersPerSecond > node.P.MaxMoveMeters {                     //Speed up sampling
+				node.SamplingPeriod /= 2
+				node.P.TotalAdaptations++
+			} else if metersPerSecond > node.P.MaxMoveMeters*.75 {
+				node.SamplingPeriod = node.SamplingPeriod * 2 / 3
+				node.P.TotalAdaptations++
+			}
+		}
 	}
-
-	NodesinSquare:=len(node.P.Server.SquarePop[Tuple{int(node.Y / float32(node.P.YDiv)),int(node.Y / float32(node.P.YDiv))}])  //Nodes in curr node square
-	densityMultiplier= (NodesinSquare/node.P.DensityThreshold) //increases period based on how many times more nodes there are in a square
-	multiplier:=distanceMultiplier+densityMultiplier+batteryMultiplier
-	return multiplier
 }
+
+
+func (s *FusionCenter)GoThroughSquares(){
+	for k, v := range s.SquareTime { //k= key v=value
+		delta:=s.P.CurrentTime-v.TimeSample
+		Square:=k
+		if delta > s.SquareTime[Square].MaxDelta {
+			item:=s.SquareTime[Square]
+			item.MaxDelta = delta
+			s.SquareTime[Square] = item
+		}
+		if delta >= 30000 {
+			fmt.Fprintln(s.P.OutputLog, "Square and delta:", Square, delta)
+		}
+	}
+}
+
+
+func (s *FusionCenter)CheckSquares(Square Tuple){
+	delta :=s.P.CurrentTime-s.SquareTime[Square].TimeSample
+	//testSquare:=Tuple{13,131}
+	if delta > s.SquareTime[Square].MaxDelta {
+		item:=s.SquareTime[Square]
+		item.MaxDelta = delta
+		s.SquareTime[Square] = item
+		//if Square==testSquare {
+		//	fmt.Println("INSIDE HERE", s.SquareTime[Square].MaxDelta)
+		//}
+	}
+	//if Square == testSquare{
+	//	fmt.Println("JFNISEJF",Square,delta,s.SquareTime[Square].TimeSample,s.P.CurrentTime,s.SquareTime[Square].MaxDelta)
+	//}
+	if delta >= 30000 {
+		fmt.Fprintln(s.P.OutputLog, "Square and delta:", Square, delta)
+	}
+}
+
 
 //Returns a float representing the detection of the bomb
 //	by the specific node depending on distance
@@ -1055,13 +1093,10 @@ func (node *NodeImpl) report(rawConc float64) {
 	//Only do this if the sensor was pinged this iteration
 
 	if node.Valid {
-		if len(node.StoredReadings) > 0 {
-			node.SendMultipleToServer(&Reading{ADCRead, newX, newY, node.P.CurrentTime, node.GetID()}, tp)
-		}
-		if node.P.ClusteringOn && node.IsClusterMember && !highSensor {
-			node.SendToClusterHead(&Reading{ADCRead, newX, newY, node.P.CurrentTime, node.GetID()}, tp)
-		} else {
+		if len(node.StoredReadings) > 0 || !(node.P.ClusteringOn && node.IsClusterMember && !highSensor){
 			node.SendToServer(&Reading{ADCRead, newX, newY, node.P.CurrentTime, node.GetID()}, tp)
+		} else  {
+			node.SendToClusterHead(&Reading{ADCRead, newX, newY, node.P.CurrentTime, node.GetID()}, tp)
 		}
 	}
 }
@@ -1079,12 +1114,13 @@ func (node *NodeImpl) MoveCSV(p *Params) {
 	id := node.GetID()
 
 	if node.Valid {
-		if p.IsSense { //Checks to see if cps instruction is sensing currently
-			node.OldX, node.OldY = node.X, node.Y
-		}
 		p.BoolGrid[int(node.OldX)][int(node.OldY)] = false //set the old spot false since the node will now move away
 		node.X = interpolate(p.NodeMovements[id][intTime-p.MovementOffset].X, p.NodeMovements[id][intTime-p.MovementOffset+1].X, portion)
 		node.Y = interpolate(p.NodeMovements[id][intTime-p.MovementOffset].Y, p.NodeMovements[id][intTime-p.MovementOffset+1].Y, portion)
+		if p.IsSense{ //Checks to see if cps instruction is sensing currently
+			node.OldX, node.OldY = node.SX,node.SY
+			node.SX, node.SY= node.X,node.Y
+		}
 		if !node.InBounds(p) {
 			node.Valid = false
 			//fmt.Println(oldX, oldY,newX, newY, node.Id, p.CurrentTime,p.NodeMovements[id][intTime].X, p.NodeMovements[id][intTime+1].X)
@@ -1096,28 +1132,24 @@ func (node *NodeImpl) MoveCSV(p *Params) {
 					p.MinDistance = int(d)
 					fmt.Fprintf(p.DistanceFile, "ID: %v T: %v D: %v\n", node.Id, intTime, int(d))
 				}
+
 				p.BoolGrid[int(node.X)][int(node.Y)] = true
-				//sync the QuadTree
-				if p.ClusteringOn {
-					p.NodeTree.NodeMovement(node)
-				}
 			}
 		}
-	}
-
-
-	if !node.Valid {
-		if p.IsSense { //Checks to see if cps instruction is sensing currently
-			node.OldX, node.OldY = 0, 0
-		}
+	} else {
 		node.Valid = node.TurnValid(p.NodeMovements[id][intTime-p.MovementOffset].X, p.NodeMovements[id][intTime-p.MovementOffset].Y, p)
 		node.X = float32(p.NodeMovements[id][intTime-p.MovementOffset].X)
 		node.Y = float32(p.NodeMovements[id][intTime-p.MovementOffset].Y)
-		if p.DriftExplorer {
-			node.NodeTime = RandomInt(-7000, 0)
-		} else {
-			//node.NodeTime = 0
-			node.NodeTime = RandomInt(-7000, 0)
+		if p.IsSense { //Checks to see if cps instruction is sensing currently
+			node.OldX, node.OldY = 0, 0
+		}
+		if node.Valid {
+			if p.DriftExplorer {
+				node.NodeTime = RandomInt(-7000, 0)
+			} else {
+				//node.NodeTime = 0
+				node.NodeTime = RandomInt(-7000, 0)
+			}
 		}
 	}
 }
