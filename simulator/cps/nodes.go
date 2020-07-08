@@ -366,6 +366,18 @@ func (node *NodeImpl) LogBatteryPower(t int){
 func (node *NodeImpl) SendToClusterHead(rd *Reading, tp bool){
 	head := node.NodeClusterParams.CurrentCluster.ClusterHead
 
+	if node.NodeClusterParams.CurrentCluster2 != nil {
+		head2 := node.NodeClusterParams.CurrentCluster2.ClusterHead
+
+		node.DrainBatteryBluetooth()	//Node sends reading over bluetooth
+		head2.DrainBatteryBluetooth()	//Head receives reading over bluetooth
+		head2.DrainBatteryBluetooth()	//Head sends confirmation over bluetooth
+		node.DrainBatteryBluetooth()	//Node receives confirmation over bluetooth
+		head2.StoredNodes = append(head.StoredNodes, node)
+		head2.StoredReadings = append(head.StoredReadings, rd)
+		head2.StoredTPs = append(head.StoredTPs, tp)
+	}
+
 	node.DrainBatteryBluetooth()	//Node sends reading over bluetooth
 	head.DrainBatteryBluetooth()	//Head receives reading over bluetooth
 	head.DrainBatteryBluetooth()	//Head sends confirmation over bluetooth
@@ -373,6 +385,8 @@ func (node *NodeImpl) SendToClusterHead(rd *Reading, tp bool){
 	head.StoredNodes = append(head.StoredNodes, node)
 	head.StoredReadings = append(head.StoredReadings, rd)
 	head.StoredTPs = append(head.StoredTPs, tp)
+
+
 }
 
 /*	SendToServer
