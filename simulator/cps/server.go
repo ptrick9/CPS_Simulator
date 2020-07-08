@@ -32,7 +32,12 @@ type FusionCenter struct {
 	NodeSquares  map[int]Tuple   //store what square a node is in
 	SquarePop    map[Tuple][]int //store nodes in square
 	SquareTime   map[Tuple]TimeTrack
-	TotalSamplesTaken	int // counter keeps track when a sample is taken
+
+	SamplesCounter		int // counter keeps track when a sample is taken
+	BluetoothCounter	int // counter keeps track when bluetooth communication occurs
+	WifiCounter			int // counter keeps track when wifi communication occurs
+
+
 	NodeTree		*Quadtree //stores node locations in quadtree format
 	ClusterNetwork	* AdHocNetwork //stores cluster information
 }
@@ -790,8 +795,8 @@ func (s *FusionCenter) PrintBatteryStats() {
 		}
 	}
 
-	fmt.Print("\nTotal Samples Taken:", s.TotalSamplesTaken)
-	fmt.Print("\nSampling Energy Consumption:", s.TotalSamplesTaken * s.P.SampleLossAmount())
+	fmt.Print("\nTotal Samples Taken:", s.SamplesCounter)
+	fmt.Print("\nSampling Energy Consumption:", s.SamplesCounter * s.P.SampleLossAmount())
 	fmt.Print("\nMinimum Remaining Battery:", lowestBattery)
 	fmt.Print("\nAverage Remaining Battery:", averageRemainingBattery / float64(s.P.TotalNodes - totalDead))
 	fmt.Print("\nTotal Dead Nodes:", totalDead, "/", s.P.TotalNodes)

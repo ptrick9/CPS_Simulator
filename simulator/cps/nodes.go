@@ -225,7 +225,7 @@ func (node NodeImpl) String() string {
 	//return fmt.Sprintf("x: %v y: %v Id: %v battery: %v sensor checked: %v sensor checks: %v GPS checked: %v GPS checks: %v server checked: %v server checks: %v buffer: %v ", int(node.X), node.Y, node.Id, node.Battery, node.HasCheckedSensor, node.TotalChecksSensor, node.HasCheckedGPS, node.TotalChecksGPS, node.HasCheckedServer, node.TotalChecksServer,node.BufferI)
 	//return fmt.Sprintf("x: %v y: %v valid: %v", int(node.X), int(node.Y), node.Valid)
 	//return fmt.Sprintf("battery: %v sensor checked: %v GPS checked: %v ", int(node.Battery), node.HasCheckedSensor, node.HasCheckedGPS)
-	return fmt.Sprintf("battery: %v sensor checked: %v GPS checked: %v ", int(node.GetBatteryPercentage() * 100), true, true)
+	return fmt.Sprintf("battery: %v", int(node.GetBatteryPercentage() * 100))
 
 }
 
@@ -652,19 +652,21 @@ func (node *NodeImpl) GetBatteryPercentage() float64 {
 
 // decreases battery level of a node for when a sample is taken
 func (node *NodeImpl) DrainBatterySample() {
-	node.P.Server.TotalSamplesTaken++
+	node.P.Server.SamplesCounter++
 	node.CurrentBatteryLevel -= node.P.SampleLossAmount()
 }
 
 // decreases battery level of a node for when bluetooth communication occurs
 func (node *NodeImpl) DrainBatteryBluetooth() {
 	// add counter for this later
+	node.P.Server.BluetoothCounter++
 	node.CurrentBatteryLevel -= node.P.BluetoothLossAmount()
 }
 
 // decrease battery level of a node for when wifi communication occurs
 func (node *NodeImpl) DrainBatteryWifi() {
 	// add counter for this later
+	node.P.Server.WifiCounter++
 	node.CurrentBatteryLevel -= node.P.WifiLossAmount()
 }
 

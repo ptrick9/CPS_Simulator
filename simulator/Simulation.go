@@ -412,10 +412,6 @@ func main() {
 		//p.Events.Push(&cps.Event{nil, cps.CLUSTERLESSFORM, 25, 0})
 	}
 
-	if p.EnergyPrint {
-		p.Events.Push(&cps.Event{nil, cps.ENERGYPRINT, 999, 0})
-	}
-
 	p.CurrentTime = 0
 	for len(p.Events) > 0 && p.CurrentTime < 1000*p.Iterations_of_event && !p.FoundBomb {
 		event := heap.Pop(&p.Events).(*cps.Event)
@@ -554,7 +550,11 @@ func main() {
 			}
 			//fmt.Printf("\nSetting timestep to %v at %v next event at %v\n", p.SensorTimes[p.TimeStep], p.CurrentTime, p.SensorTimes[p.TimeStep+1]*1000)
 		case cps.ENERGYPRINT:
-			fmt.Fprintln(p.EnergyFile, "Amount:", len(p.NodeList)) //big time waster
+			fmt.Fprintln(p.EnergyFile,
+				"Amount:", len(p.NodeList),
+				"Samples:", p.Server.SamplesCounter,
+				"Wifi:", p.Server.WifiCounter,
+				"Bluetooth:", p.Server.BluetoothCounter)
 			if p.EnergyPrint {
 				var buffer bytes.Buffer
 				for i := 0; i < len(p.NodeList); i++ {
