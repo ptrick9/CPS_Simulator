@@ -834,7 +834,7 @@ func main() {
 		fmt.Fprintln(p.ClusterStatsFile, "Cluster heads created by local reclusters:", p.ClusterNetwork.LRHeads)
 		fmt.Fprintln(p.ClusterStatsFile, "Potential Full Reclusters:", p.ClusterNetwork.PotentialReclusters)
 		fmt.Fprintln(p.ClusterStatsFile, "Actual Full Reclusters:", p.ClusterNetwork.FullReclusters)
-		fmt.Fprintln(p.ClusterStatsFile, "Lost Readings:", p.ClusterNetwork.LostReadings, "/", p.Server.TotalSamplesTaken)
+		fmt.Fprintln(p.ClusterStatsFile, "Lost Readings:", p.ClusterNetwork.LostReadings, "/", p.Server.SamplesCounter)
 	}
 
 	p.PositionFile.Seek(0, 0)
@@ -855,7 +855,7 @@ func main() {
 	}
 
 	p.Server.PrintBatteryStats()
-	fmt.Println("Total Samples",p.Server.TotalSamplesTaken)
+	fmt.Println("Total Samples",p.Server.SamplesCounter)
 	fmt.Println("Total Adaptations",p.TotalAdaptations)
 
 	if p.ZipFiles {

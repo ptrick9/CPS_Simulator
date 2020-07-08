@@ -788,8 +788,8 @@ func (s *FusionCenter) PrintBatteryStats() {
 	fmt.Print("\nAverage Remaining Battery:", averageRemainingBattery / float64(s.P.TotalNodes))
 	fmt.Print("\nTotal Dead Nodes:", s.P.TotalNodes - len(s.P.AliveList), "/", s.P.TotalNodes)
 
-	fmt.Fprintf(s.P.BatteryFile, "\nTotal Samples Taken: %v", s.TotalSamplesTaken)
-	fmt.Fprintf(s.P.BatteryFile, "\nSampling Energy Consumption: %v", s.TotalSamplesTaken * s.P.SampleLossAmount())
+	fmt.Fprintf(s.P.BatteryFile, "\nTotal Samples Taken: %v", s.SamplesCounter)
+	fmt.Fprintf(s.P.BatteryFile, "\nSampling Energy Consumption: %v", s.SamplesCounter * s.P.SampleLossAmount())
 	fmt.Fprintf(s.P.BatteryFile, "\nMinimum Remaining Battery: %v", lowestBattery)
 	fmt.Fprintf(s.P.BatteryFile, "\nAverage Remaining Battery: %v", averageRemainingBattery / float64(s.P.TotalNodes))
 	fmt.Fprintf(s.P.BatteryFile, "\nTotal Dead Nodes: %v/%v", s.P.TotalNodes - len(s.P.AliveList), s.P.TotalNodes)
