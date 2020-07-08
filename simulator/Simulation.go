@@ -389,6 +389,11 @@ func main() {
 	p.Events.Push(&cps.Event{nil, cps.POSITION, 999, 0})
 	if p.EnergyPrint {
 		p.Events.Push(&cps.Event{nil, cps.ENERGYPRINT, 999, 0})
+		fmt.Fprintln(p.EnergyFile,
+			"Capacity:", p.BatteryCapacity,
+			"SamplesLoss:", p.SampleLossAmount(),
+			"WifiLoss:", p.WifiLossAmount(),
+			"BluetoothLoss:", p.BluetoothLossAmount())
 	}
 
 	p.Events.Push(&cps.Event{nil, cps.SERVER, 999, 0})
