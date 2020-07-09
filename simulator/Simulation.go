@@ -409,7 +409,7 @@ func main() {
 			p.Events.Push(&cps.Event{nil, cps.FULLRECLUSTER, 5000, 0})
 		}
 		if p.ClusterPrint {
-			fmt.Fprintf(p.ClusterFile, "Number of clusters, average cluster size, global reclusters, potential global reclusters, local reclusters, clusters above member threshold, clusters below member threshold, aliveValidNodes\n")
+			fmt.Fprintf(p.ClusterFile, "Number of clusters, average cluster size, global reclusters, potential global reclusters, local reclusters, clusters above member threshold, clusters below member threshold, aliveValidNodes, Cluster Searches, CSJoins, CSSolos, Waits, Lost Readings\n")
 			p.Events.Push(&cps.Event{nil, cps.CLUSTERPRINT, 999, 0})
 		}
 	}
@@ -768,8 +768,8 @@ func main() {
 			//	}
 			//}
 
-			//Number of clusters, average cluster size, global reclusters, potential global reclusters, local reclusters, clusters above member threshold, clusters below member threshold, aliveValidNodes
-			fmt.Fprintf(p.ClusterFile, "%v,%v,%v,%v,%v,%v,%v,%v\n", len(p.ClusterNetwork.ClusterHeads), average, p.ClusterNetwork.FullReclusters, p.ClusterNetwork.PotentialReclusters, p.ClusterNetwork.LocalReclusters, clustersAboveThresh, clustersBelowThresh, aliveValidNodes)
+			//Number of clusters, average cluster size, global reclusters, potential global reclusters, local reclusters, clusters above member threshold, clusters below member threshold, aliveValidNodes, Cluster Searches, CSJoins, CSSolos, Waits, Lost Readings
+			fmt.Fprintf(p.ClusterFile, "%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v\n", len(p.ClusterNetwork.ClusterHeads), average, p.ClusterNetwork.FullReclusters, p.ClusterNetwork.PotentialReclusters, p.ClusterNetwork.LocalReclusters, clustersAboveThresh, clustersBelowThresh, aliveValidNodes, p.ClusterNetwork.CSJoins + p.ClusterNetwork.CSSolos, p.ClusterNetwork.CSJoins, p.ClusterNetwork.CSSolos, p.ClusterNetwork.TotalWaits, p.ClusterNetwork.LostReadings)
 
 			p.ClusterNetwork.AverageNumClusters += len(p.ClusterNetwork.ClusterHeads)
 
@@ -842,8 +842,8 @@ func main() {
 	}
 
 	if p.ClusteringOn && p.ClusterPrint {
-		fmt.Fprintln(p.ClusterStatsFile, "New nodes joining existing clusters:", p.ClusterNetwork.NNHJoins)
-		fmt.Fprintln(p.ClusterStatsFile, "New nodes creating a new cluster:", p.ClusterNetwork.NNHSolos)
+		fmt.Fprintln(p.ClusterStatsFile, "New nodes joining existing clusters:", p.ClusterNetwork.CSJoins)
+		fmt.Fprintln(p.ClusterStatsFile, "New nodes creating a new cluster:", p.ClusterNetwork.CSSolos)
 		fmt.Fprintln(p.ClusterStatsFile, "Average number of clusters:", p.ClusterNetwork.AverageNumClusters / (p.CurrentTime / 1000))
 		fmt.Fprintln(p.ClusterStatsFile, "Overall average cluster size:", p.ClusterNetwork.AverageClusterSize / (p.CurrentTime / 1000))
 		fmt.Fprintln(p.ClusterStatsFile, "Local Reclusters:", p.ClusterNetwork.LocalReclusters)
@@ -866,8 +866,10 @@ func main() {
 	}
 
 	p.Server.GoThroughSquares()
-	for k, v := range p.Server.SquareTime { //k= key v=value
-		fmt.Fprintln(p.OutputLog, "Square and max", k, v.MaxDelta)
+	if p.OutputPrint {
+		for k, v := range p.Server.SquareTime { //k= key v=value
+			fmt.Fprintln(p.OutputLog, "Square and max", k, v.MaxDelta)
+		}
 	}
 
 	p.Server.PrintBatteryStats()

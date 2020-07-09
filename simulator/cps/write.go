@@ -1534,6 +1534,8 @@ func GetFlags(p *Params) {
 	//Only used for super nodes of type 1
 	//flag.IntVar(&p.SuperNodeVariation, "p.SuperNodeVariation", 3, "super nodes of type 1 have different variations")
 
+	flag.BoolVar(&p.OutputPrint, "logOutput", true, "Whether you want to write OutputLog file")
+
 	flag.BoolVar(&p.PositionPrint, "logPosition", false, "Whether you want to write position info to a log file")
 
 	flag.BoolVar(&p.GridPrint, "logGrid", false, "Whether you want to write p.Grid info to a log file")
@@ -1586,6 +1588,7 @@ func GetFlags(p *Params) {
 	flag.Float64Var(&p.ReclusterThreshold, "reclusterThreshold", 0.1, "The maximum percent of clusters made up only of cluster heads before the network should fully recluster")
 	flag.IntVar(&p.ReclusterPeriod, "reclusterPeriod", 30, "The period of time in seconds before the network checks if it should fully reclusters")
 	flag.IntVar(&p.InitClusterTime, "initClusterTime", 0, "The number of seconds to wait before clustering")
+	flag.IntVar(&p.ClusterSearchThreshold, "clusterSearchThresh", 0, "The number of senses in a row required to trigger cluster search that a node either has no cluster head or is out of range of its cluster head.")
 
 	flag.StringVar(&p.WindRegionPath, "windRegionPath", "hull_testing.txt", "File containing regions formed by wind")
 
@@ -1649,6 +1652,7 @@ func WriteFlags(p * Params){
 	buf.WriteString(fmt.Sprintf("inputFileName=%v\n", p.InputFileNameCM))
 	buf.WriteString(fmt.Sprintf("SuperNodeSpeed=%v\n", p.SuperNodeSpeed))
 	buf.WriteString(fmt.Sprintf("doOptimize=%v\n", p.DoOptimize))
+	buf.WriteString(fmt.Sprintf("logOutput=%v\n", p.OutputPrint))
 	buf.WriteString(fmt.Sprintf("logPosition=%v\n", p.PositionPrint))
 	buf.WriteString(fmt.Sprintf("logGrid=%v\n", p.GridPrint))
 	buf.WriteString(fmt.Sprintf("logEnergy=%v\n", p.EnergyPrint))
@@ -1682,6 +1686,7 @@ func WriteFlags(p * Params){
 	buf.WriteString(fmt.Sprintf("reclusterPeriod=%v\n",p.ReclusterPeriod))
 	buf.WriteString(fmt.Sprintf("reclusterThreshold=%v\n",p.ReclusterThreshold))
 	buf.WriteString(fmt.Sprintf("initClusterTime=%v\n",p.InitClusterTime))
+	buf.WriteString(fmt.Sprintf("clusterSearchThresh=%v\n",p.ClusterSearchThreshold))
 	buf.WriteString(fmt.Sprintf("batteryCapacity=%v\n",p.BatteryCapacity))
 	buf.WriteString(fmt.Sprintf("bluetoothLossPercentage=%v\n",p.BluetoothLossPercentage))
 	buf.WriteString(fmt.Sprintf("sampleLossPercentage=%v\n",p.SampleLossPercentage))

@@ -96,6 +96,7 @@ type NodeImpl struct {
 	StoredTPs						[]bool
 	LowSpeedCounter      			int
 	SamplingPeriod					int
+	Wait							int
 }
 
 //NodeMovement controls the movement of all the normal nodes
@@ -722,8 +723,10 @@ func (s *FusionCenter)GoThroughSquares(){
 			item.MaxDelta = delta
 			s.SquareTime[Square] = item
 		}
-		if delta >= 30000 {
-			fmt.Fprintln(s.P.OutputLog, "Square and delta:", Square, delta)
+		if s.P.OutputPrint {
+			if delta >= 30000 {
+				fmt.Fprintln(s.P.OutputLog, "Square and delta:", Square, delta)
+			}
 		}
 	}
 }
@@ -743,8 +746,10 @@ func (s *FusionCenter)CheckSquares(Square Tuple){
 	//if Square == testSquare{
 	//	fmt.Println("JFNISEJF",Square,delta,s.SquareTime[Square].TimeSample,s.P.CurrentTime,s.SquareTime[Square].MaxDelta)
 	//}
-	if delta >= 30000 {
-		fmt.Fprintln(s.P.OutputLog, "Square and delta:", Square, delta)
+	if s.P.OutputPrint {
+		if delta >= 30000 {
+			fmt.Fprintln(s.P.OutputLog, "Square and delta:", Square, delta)
+		}
 	}
 }
 

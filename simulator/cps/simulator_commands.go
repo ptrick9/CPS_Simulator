@@ -43,6 +43,7 @@ type Params struct {
 
 	Center Coord
 
+	OutputPrint			bool	//This is either true or false for whether to print OutputLog
 	PositionPrint		bool	//This is either true or false for whether to print positions to log file
 	EnergyPrint			bool	//This is either true or false for whether to print energy info to log file
 	BatteryPrint		bool	//Similar to EnergyPrint. Log files have less words.
@@ -198,6 +199,7 @@ type Params struct {
 	ReclusterThreshold  float64
 	ReclusterPeriod		int
 	InitClusterTime		int
+	ClusterSearchThreshold	int
 
 	DriftExplorer 	bool
 	NumNodeMovements 	int

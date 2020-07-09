@@ -12,11 +12,12 @@ type AdHocNetwork struct {
 	PotentialReclusters int //Counts the number of reclusters that would have occurred if there was a check every second
 	AverageClusterSize  int //The current average cluster size is added to this every iteration (when cluster print is enabled)
 	AverageNumClusters  int //The current number of clusters is added to this every iteration
-	NNHJoins            int //Counts the number of times a new node hello leads to a node joining an existing cluster
-	NNHSolos            int //Counts the number of times a new node hello leads to the creation of a new cluster
+	CSJoins             int //Counts the number of times a new node hello leads to a node joining an existing cluster
+	CSSolos             int //Counts the number of times a new node hello leads to the creation of a new cluster
 	LRHeads             int //Counts the number of cluster heads created by local reclusters
-	LostReadings		int //Counts the number of readings that were lost because the cluster head died before sending
+	LostReadings        int //Counts the number of readings that were lost because the cluster head died before sending
 	NextClusterNum      int //For testing, may remove later
+	TotalWaits          int //Counts the number of times a node waited instead of initiating a cluster search
 }
 
 type Cluster struct {
@@ -162,24 +163,34 @@ func (adhoc *AdHocNetwork) ClusterMovement(node *NodeImpl, p *Params) {
 				if node.IsAlive() { //If the node survived sending the message to the out-of-range cluster head
 					adhoc.ClusterSearch(node, p)
 				}
+			} else {
+				node.Wait = 0
 			}
 		} else if !p.GlobalRecluster && node.IsClusterHead && len(node.NodeClusterParams.CurrentCluster.ClusterMembers) <= p.ClusterMinThreshold {
 			adhoc.ClusterSearch(node, p)
+		} else {
+			node.Wait = 0
 		}
 	}
 }
 
 func (adhoc *AdHocNetwork) ClusterSearch(node *NodeImpl, p *Params) {
-	toJoin := node.FindNearbyHead(p, &p.Server.ClusterSearchBTCounter)
-
-	if toJoin != nil {
-		adhoc.ClearClusterParams(node)
-		node.Join(toJoin.NodeClusterParams.CurrentCluster)
-		adhoc.NNHJoins++
+	if node.Wait < p.ClusterSearchThreshold {
+		node.Wait++
+		adhoc.TotalWaits++
 	} else {
-		adhoc.ClearClusterParams(node)
-		adhoc.ElectClusterHead(node, p)
-		adhoc.NNHSolos++
+		node.Wait = 0
+		toJoin := node.FindNearbyHead(p, &p.Server.ClusterSearchBTCounter)
+
+		if toJoin != nil {
+			adhoc.ClearClusterParams(node)
+			node.Join(toJoin.NodeClusterParams.CurrentCluster)
+			adhoc.CSJoins++
+		} else {
+			adhoc.ClearClusterParams(node)
+			adhoc.ElectClusterHead(node, p)
+			adhoc.CSSolos++
+		}
 	}
 }
 
@@ -570,7 +581,7 @@ func (adhoc *AdHocNetwork) LocalRecluster(head *NodeImpl, members []*NodeImpl, p
 					members[i].Join(toJoin.NodeClusterParams.CurrentCluster)
 					members = append(members[:i], members[i+1:]...)
 					i--
-					adhoc.NNHJoins++
+					adhoc.CSJoins++
 					continue
 				}
 			}
