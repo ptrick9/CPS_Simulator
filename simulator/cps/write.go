@@ -1540,6 +1540,8 @@ func GetFlags(p *Params) {
 
 	flag.BoolVar(&p.EnergyPrint, "logEnergy", false, "Whether you want to write energy into to a log file")
 
+	flag.BoolVar(&p.BatteryPrint, "logBattery", false, "Whether you want to write battery info to a log file")
+
 	flag.BoolVar(&p.NodesPrint, "logNodes", false, "Whether you want to write node readings to a log file")
 
 	flag.BoolVar(&p.ClusterPrint, "logClusters", false, "Whether you want to write cluster statistics to a log file")
@@ -1650,6 +1652,7 @@ func WriteFlags(p * Params){
 	buf.WriteString(fmt.Sprintf("logPosition=%v\n", p.PositionPrint))
 	buf.WriteString(fmt.Sprintf("logGrid=%v\n", p.GridPrint))
 	buf.WriteString(fmt.Sprintf("logEnergy=%v\n", p.EnergyPrint))
+	buf.WriteString(fmt.Sprintf("logBattery=%v\n", p.BatteryPrint))
 	buf.WriteString(fmt.Sprintf("logNodes=%v\n", p.NodesPrint))
 	buf.WriteString(fmt.Sprintf("logClusters=%v\n", p.ClusterPrint))
 	buf.WriteString(fmt.Sprintf("SquareRowCM=%v\n", p.SquareRowCM))

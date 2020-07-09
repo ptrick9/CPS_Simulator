@@ -45,6 +45,7 @@ type Params struct {
 
 	PositionPrint		bool	//This is either true or false for whether to print positions to log file
 	EnergyPrint			bool	//This is either true or false for whether to print energy info to log file
+	BatteryPrint		bool	//Similar to EnergyPrint. Log files have less words.
 	NodesPrint			bool	//This is either true or false for whether to print node readings/averages to log file
 	GridPrint			bool	//This is either true or false for whether to print grid readings to log file
 	ClusterPrint		bool	//This is either true or false for whether to print cluster statistics to log file
