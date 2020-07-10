@@ -652,19 +652,24 @@ func (node *NodeImpl) IsAlive() bool {
 }
 
 func (node *NodeImpl) UpdateAliveStatus() {
-	if !node.IsAlive() {
+	if !node.IsAlive() && node.P.AliveNodes[node] {
 		if node.P.ClusteringOn && node.CurTree != nil {
 			node.CurTree.RemoveAndClean(node)
-			if node.IsClusterHead && node.P.LocalRecluster > 0 && node.P.CurrentTime >= node.P.InitClusterTime {
-				node.InitLocalRecluster()
-			} else {
+			if !node.IsClusterHead {
 				node.P.ClusterNetwork.ClearClusterParams(node)
 			}
 		}
 		delete(node.P.AliveNodes, node)
 		delete(node.P.Server.AloneNodes, node)
-	} else if node.IsClusterHead && node.ShouldLocalRecluster() {
-		node.InitLocalRecluster()
+		node.DrainBatteryWifi() // Node informs the server it is dying.
+	}
+
+	if node.P.ClusteringOn && node.P.CurrentTime >= node.P.InitClusterTime && node.IsClusterHead && node.ShouldLocalRecluster() {
+		if node.P.LocalRecluster > 0 {
+			node.InitLocalRecluster()
+		} else {
+			node.P.ClusterNetwork.ClearClusterParams(node)
+		}
 	}
 }
 

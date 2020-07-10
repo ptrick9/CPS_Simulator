@@ -2,6 +2,7 @@ package cps
 
 import (
 	"math"
+	"sort"
 )
 
 type AdHocNetwork struct {
@@ -167,7 +168,7 @@ func (adhoc *AdHocNetwork) ClusterMovement(node *NodeImpl, p *Params) {
 			} else {
 				node.Wait = 0
 			}
-		} else if !p.GlobalRecluster && node.IsClusterHead && len(node.NodeClusterParams.CurrentCluster.ClusterMembers) <= p.ClusterMinThreshold {
+		} else if p.GlobalRecluster > 0 && node.IsClusterHead && len(node.NodeClusterParams.CurrentCluster.ClusterMembers) <= p.ClusterMinThreshold {
 			adhoc.ClusterSearch(node, p)
 		} else {
 			node.Wait = 0
@@ -181,21 +182,23 @@ func (adhoc *AdHocNetwork) ClusterSearch(node *NodeImpl, p *Params) {
 		adhoc.TotalWaits++
 	} else {
 		node.Wait = 0
-		toJoin := node.FindNearbyHead(p, &p.Server.ClusterSearchBTCounter)
+		toJoin := node.FindNearbyHeads(p, &p.Server.ClusterSearchBTCounter)
 
-		if toJoin != nil {
+		if len(toJoin) > 0 {
 			adhoc.ClearClusterParams(node)
-			node.Join(toJoin.NodeClusterParams.CurrentCluster)
+			node.DrainBatteryBluetooth(&p.Server.ClusterSearchBTCounter) //node informs head it is joining
+			toJoin[0].DrainBatteryBluetooth(&p.Server.ClusterSearchBTCounter) //head receives message
+			node.Join(toJoin[0].NodeClusterParams.CurrentCluster)
 			adhoc.CSJoins++
 		} else {
 			adhoc.ClearClusterParams(node)
-			adhoc.ElectClusterHead(node, p)
+			adhoc.FormCluster(node)
 			adhoc.CSSolos++
 		}
 	}
 }
 
-func (node *NodeImpl) HasMaxNodeScore(p *Params) *NodeImpl {
+/*func (node *NodeImpl) HasMaxNodeScore(p *Params) *NodeImpl {
 	maxNode := node
 	maxScore := node.NodeClusterParams.ThisNodeHello.NodeCHScore //* p.Penalty
 	for i := 0; i < len(node.NodeClusterParams.RecvMsgs); i++ {
@@ -204,7 +207,7 @@ func (node *NodeImpl) HasMaxNodeScore(p *Params) *NodeImpl {
 		//if !sender.IsClusterHead {
 		//	score *= p.Penalty
 		//}
-		//do not consider nodes already with a clusterhead
+		//do not consider nodes already with a cluster head
 		//if received a message from a node who does not have a cluster head
 		if sender != nil && !sender.IsClusterMember && len(sender.NodeClusterParams.CurrentCluster.ClusterMembers) < p.ClusterMaxThreshold {
 			//if their score higher than current node score
@@ -220,7 +223,7 @@ func (node *NodeImpl) HasMaxNodeScore(p *Params) *NodeImpl {
 	}
 
 	return maxNode
-}
+}*/
 
 func (node *NodeImpl) Join(cluster *Cluster) {
 	node.IsClusterMember = true
@@ -341,22 +344,59 @@ func (adhoc *AdHocNetwork) ResetClusters(p *Params) {
 }*/
 
 func (adhoc *AdHocNetwork) ElectClusterHead(curNode *NodeImpl, p *Params) {
-	maxNode := curNode.HasMaxNodeScore(p)
+	//maxNode := curNode.HasMaxNodeScore(p)
+
+	messages := append(curNode.NodeClusterParams.RecvMsgs, curNode.NodeClusterParams.ThisNodeHello)
+	//Sort the messages by Id. Lowest Id first
+	sort.Slice(messages, func(i int, j int) bool {
+		return messages[i].Sender.Id < messages[j].Sender.Id
+	})
+	//Sort the messages by score. Highest score first
+	sort.Slice(messages, func(i int, j int) bool {
+		return messages[i].NodeCHScore > messages[j].NodeCHScore
+	})
+
+	for i := range messages {
+		if messages[i].Sender == nil {
+			messages = append(messages[:i], messages[i+1:]...)
+		}
+	}
+
+	i := 0
+	maxNode := messages[i].Sender
+
+	if curNode != maxNode {
+		curNode.DrainBatteryBluetooth(&p.Server.ReclusterBTCounter) //node informs maxNode that it has been chosen
+		maxNode.DrainBatteryBluetooth(&p.Server.ReclusterBTCounter) //maxNode receives message
+		for maxNode.IsClusterMember || len(maxNode.NodeClusterParams.CurrentCluster.ClusterMembers) > p.ClusterMaxThreshold {
+			maxNode.DrainBatteryBluetooth(&p.Server.ReclusterBTCounter) //maxNode informs node that it cannot be its cluster head
+			curNode.DrainBatteryBluetooth(&p.Server.ReclusterBTCounter) //node receives message
+			i += 1
+			maxNode = messages[i].Sender
+			if curNode != maxNode {
+				curNode.DrainBatteryBluetooth(&p.Server.ReclusterBTCounter) //node informs maxNode that it has been chosen
+				maxNode.DrainBatteryBluetooth(&p.Server.ReclusterBTCounter) //maxNode receives message
+			}
+		}
+	}
 
 	if !maxNode.IsClusterHead {
-		maxNode.IsClusterHead = true
-		maxNode.TimeBecameClusterHead = p.CurrentTime
-		maxNode.BatteryBecameClusterHead = maxNode.GetBatteryPercentage()
-		maxNode.IsClusterMember = false
-		adhoc.ClusterHeads = append(adhoc.ClusterHeads, maxNode)
-		maxNode.NodeClusterParams.CurrentCluster = &Cluster{maxNode, []*NodeImpl{}, adhoc.NextClusterNum}
-		adhoc.NextClusterNum++
+		adhoc.FormCluster(maxNode)
 	}
+
 	if curNode != maxNode {
-		maxNode.NodeClusterParams.CurrentCluster.ClusterMembers = append(maxNode.NodeClusterParams.CurrentCluster.ClusterMembers, curNode)
-		curNode.NodeClusterParams.CurrentCluster = maxNode.NodeClusterParams.CurrentCluster
-		curNode.IsClusterMember = true
+		curNode.Join(maxNode.NodeClusterParams.CurrentCluster)
 	}
+}
+
+func (adhoc *AdHocNetwork) FormCluster(node *NodeImpl) {
+	node.IsClusterHead = true
+	node.TimeBecameClusterHead = node.P.CurrentTime
+	node.BatteryBecameClusterHead = node.GetBatteryPercentage()
+	node.IsClusterMember = false
+	adhoc.ClusterHeads = append(adhoc.ClusterHeads, node)
+	node.NodeClusterParams.CurrentCluster = &Cluster{node, []*NodeImpl{}, adhoc.NextClusterNum}
+	adhoc.NextClusterNum++
 }
 
 //Assumed to be called by cluster heads
@@ -574,14 +614,16 @@ func (adhoc *AdHocNetwork) FullRecluster(p *Params) {
 
 func (adhoc *AdHocNetwork) LocalRecluster(head *NodeImpl, members []*NodeImpl, p *Params) {
 	adhoc.LocalReclusters++
+	head.DrainBatteryWifi() //Head informs the server it is initiating local recluster
+	//members =
 	adhoc.ClearClusterParams(head)
-	head.DrainBatteryWifi() //Head informs the server it is dying
 	for i := 0; i < len(members); i++ {
+		adhoc.ClearClusterParams(members[i])
 		if members[i].IsAlive() {
 			if p.LocalRecluster == 1 {
-				toJoin := members[i].FindNearbyHead(p, &p.Server.ReclusterBTCounter)
-				if toJoin != nil {
-					members[i].Join(toJoin.NodeClusterParams.CurrentCluster)
+				toJoin := members[i].FindNearbyHeads(p, &p.Server.ReclusterBTCounter)
+				if len(toJoin) > 0 {
+					members[i].Join(toJoin[0].NodeClusterParams.CurrentCluster)
 					members = append(members[:i], members[i+1:]...)
 					i--
 					adhoc.CSJoins++
@@ -606,7 +648,6 @@ func (adhoc *AdHocNetwork) LocalRecluster(head *NodeImpl, members []*NodeImpl, p
 
 func (adhoc *AdHocNetwork) ExpansiveLocalRecluster(head *NodeImpl, members []*NodeImpl, p *Params) {
 	withinDist := p.NodeTree.WithinRadius(p.NodeBTRange, head, []*NodeImpl{})
-	head.IsClusterHead = false
 	head.DrainBatteryBluetooth(&p.Server.ReclusterBTCounter) //Sends message to all in bluetooth range
 	for i := 0; i < len(withinDist); i++ {
 		withinDist[i].DrainBatteryBluetooth(&p.Server.ReclusterBTCounter) //All nodes in range receive message
@@ -662,34 +703,36 @@ func SimpleIntersect(a []*NodeImpl, b []*NodeImpl) []*NodeImpl {
 	return result
 }
 
-func (node *NodeImpl) FindNearbyHead(p *Params, counter *int) *NodeImpl {
+func (node *NodeImpl) FindNearbyHeads(p *Params, counter *int) []*NodeImpl {
 	node.DrainBatteryBluetooth(counter)	//Broadcasting hello message
 
 	withinDist := p.NodeTree.WithinRadius(p.NodeBTRange, node, []*NodeImpl{})
+	headsInDist := []*NodeImpl{}
 
-	var toJoin *NodeImpl = nil
-	highestBattery := p.BatteryDeadThreshold
 	for i := 0; i < len(withinDist); i++ {
 		withinDist[i].DrainBatteryBluetooth(counter)	//Every node in bluetooth range receives the hello message
 		if withinDist[i].IsClusterHead && len(withinDist[i].NodeClusterParams.CurrentCluster.ClusterMembers) < p.ClusterMaxThreshold && withinDist[i].IsAlive() {
+			headsInDist = append(headsInDist, withinDist[i])
 			withinDist[i].DrainBatteryBluetooth(counter) //Every cluster head with room for this node sends a reply
 			if node.IsAlive() {
 				node.DrainBatteryBluetooth(counter) //The node receives messages from every cluster head with room (unless it died)
 			}
-			if withinDist[i].GetBatteryPercentage() > highestBattery {
-				toJoin = withinDist[i]
-			}
 		}
 	}
-	return toJoin
+	sort.Slice(headsInDist, func(i, j int) bool {
+		return headsInDist[i].GetBatteryPercentage() > headsInDist[j].GetBatteryPercentage()
+	})
+	return headsInDist
 }
 
 func (node *NodeImpl) ShouldLocalRecluster() bool {
 	return node.P.CurrentTime - node.TimeBecameClusterHead > node.P.ClusterHeadTimeThreshold ||
-		node.BatteryBecameClusterHead - node.GetBatteryPercentage() > node.P.ClusterHeadBatteryDropThreshold
+		node.BatteryBecameClusterHead - node.GetBatteryPercentage() > node.P.ClusterHeadBatteryDropThreshold ||
+		node.GetBatteryPercentage() < node.P.BatteryLowThreshold
 }
 
 func (node *NodeImpl) InitLocalRecluster() {
+	node.IsClusterHead = false
 	members := make([]*NodeImpl, len(node.NodeClusterParams.CurrentCluster.ClusterMembers))
 	copy(members, node.NodeClusterParams.CurrentCluster.ClusterMembers)
 	if node.P.LocalRecluster < 3 {

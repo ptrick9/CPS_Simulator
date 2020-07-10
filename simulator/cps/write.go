@@ -1577,7 +1577,12 @@ func GetFlags(p *Params) {
 	flag.Float64Var(&p.DegreeWeight, "degreeWeight", 0.6, "The weight constant applied to the number of neighboring nodes when calculating a node's score")
 	flag.Float64Var(&p.BatteryWeight, "batteryWeight", 0.4, "The weight constant applied to a node's battery when calculating a node's score")
 	flag.Float64Var(&p.Penalty, "penalty", 0.8, "The penalty multiplied to a node's score when it is not already a cluster head")
-	flag.BoolVar(&p.GlobalRecluster, "globalRecluster", true, "Enables or disables global reclustering")
+	/* Global Reclustering
+	0 - off
+	1 - threshold-based
+	2 - time-based
+	*/
+	flag.IntVar(&p.GlobalRecluster, "globalRecluster", 1, "Enables or disables global reclustering")
 	/* Local Reclustering
 	0 - off
 	1 - minimal (nodes check for nearby head first)
@@ -1589,10 +1594,15 @@ func GetFlags(p *Params) {
 	flag.IntVar(&p.LocalRecluster, "localRecluster", 1, "Enables or disables local reclustering")
 	flag.Float64Var(&p.ReclusterThreshold, "reclusterThreshold", 0.1, "The maximum percent of clusters made up only of cluster heads before the network should fully recluster")
 	flag.IntVar(&p.ReclusterPeriod, "reclusterPeriod", 30, "The period of time in seconds before the network checks if it should fully reclusters")
+	flag.Float64Var(&p.SmallImprovement, "smallImprovement", 0.2, "The threshold improvement in alone nodes after a global recluster that will lead to an increased recluster threshold or period")
+	flag.Float64Var(&p.LargeImprovement, "largeImprovement", 0.6, "The threshold improvement in alone nodes after a global recluster that will lead to a decreased recluster threshold or period")
+	flag.Float64Var(&p.GlobalReclusterIncrement, "GRIncrement", 1.3, "The number that the recluster threshold or period will be multiplied by when it needs to be increased.")
+	flag.Float64Var(&p.GlobalReclusterDecrement, "GRDecrement", 0.8, "The number that the recluster threshold or period will be multiplied by when it needs to be decreased.")
+	flag.Float64Var(&p.ServerReadyThreshold, "ServerReadyThresh", 0.98, "The ratio of accounted nodes to alive nodes at which point a recluster is possible and at which point after a recluster the improvement will be calculated.")
 	flag.IntVar(&p.InitClusterTime, "initClusterTime", 0, "The number of seconds to wait before clustering")
 	flag.IntVar(&p.ClusterSearchThreshold, "clusterSearchThresh", 0, "The number of senses in a row required to trigger cluster search that a node either has no cluster head or is out of range of its cluster head.")
-	flag.IntVar(&p.ClusterHeadTimeThreshold, "CHTimeThresh", 600, "The maximum time a can be cluster head without triggering local recluster.")
-	flag.Float64Var(&p.ClusterHeadBatteryDropThreshold, "CHBatteryDropThresh", 0.2, "The maximum percent a cluster head's battery can drop before triggering a local recluster.")
+	flag.IntVar(&p.ClusterHeadTimeThreshold, "CHTimeThresh", 300, "The maximum time a can be cluster head without triggering local recluster.")
+	flag.Float64Var(&p.ClusterHeadBatteryDropThreshold, "CHBatteryDropThresh", 0.3, "The maximum percent a cluster head's battery can drop before triggering a local recluster.")
 
 	flag.StringVar(&p.WindRegionPath, "windRegionPath", "hull_testing.txt", "File containing regions formed by wind")
 

@@ -194,10 +194,15 @@ type Params struct {
 	DegreeWeight                    float64
 	BatteryWeight                   float64
 	Penalty                         float64
-	GlobalRecluster                 bool
+	GlobalRecluster                 int
 	LocalRecluster                  int
 	ReclusterThreshold              float64
 	ReclusterPeriod                 int
+	SmallImprovement				float64
+	LargeImprovement				float64
+	GlobalReclusterIncrement		float64
+	GlobalReclusterDecrement		float64
+	ServerReadyThreshold			float64
 	InitClusterTime                 int
 	ClusterSearchThreshold          int
 	ClusterHeadTimeThreshold        int
