@@ -606,6 +606,7 @@ func (adhoc *AdHocNetwork) LocalRecluster(head *NodeImpl, members []*NodeImpl, p
 
 func (adhoc *AdHocNetwork) ExpansiveLocalRecluster(head *NodeImpl, members []*NodeImpl, p *Params) {
 	withinDist := p.NodeTree.WithinRadius(p.NodeBTRange, head, []*NodeImpl{})
+	head.IsClusterHead = false
 	head.DrainBatteryBluetooth(&p.Server.ReclusterBTCounter) //Sends message to all in bluetooth range
 	for i := 0; i < len(withinDist); i++ {
 		withinDist[i].DrainBatteryBluetooth(&p.Server.ReclusterBTCounter) //All nodes in range receive message
