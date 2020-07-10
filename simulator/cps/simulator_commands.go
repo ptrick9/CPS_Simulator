@@ -155,7 +155,7 @@ type Params struct {
 
 	WallNodeList []WallNodes
 	NodeList     []*NodeImpl
-	AliveList	 []*NodeImpl
+	AliveNodes   map[*NodeImpl]bool
 
 	NumAtt      int
 	Attractions []*Attraction
@@ -191,15 +191,18 @@ type Params struct {
 	ClusterMinThreshold	int
 	ClusteringOn        bool
 	RedundantClustering bool
-	DegreeWeight        float64
-	BatteryWeight       float64
-	Penalty             float64
-	GlobalRecluster		bool
-	LocalRecluster		int
-	ReclusterThreshold  float64
-	ReclusterPeriod		int
-	InitClusterTime		int
-	ClusterSearchThreshold	int
+	DegreeWeight                    float64
+	BatteryWeight                   float64
+	Penalty                         float64
+	GlobalRecluster                 bool
+	LocalRecluster                  int
+	ReclusterThreshold              float64
+	ReclusterPeriod                 int
+	InitClusterTime                 int
+	ClusterSearchThreshold          int
+	ClusterHeadTimeThreshold        int
+	ClusterHeadBatteryDropThreshold float64
+
 
 	DriftExplorer 	bool
 	NumNodeMovements 	int

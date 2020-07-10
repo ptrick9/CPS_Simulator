@@ -50,13 +50,14 @@ type ClusterNode struct { //made for testing, only has parameters that the clust
 //Computes the cluster score (higher the score the better chance a node becomes a cluster head)
 func (node *NodeImpl) ComputeClusterScore(p *Params, numWithinDist int, ) float64 {
 	degree := math.Min(float64(numWithinDist), float64(p.ClusterMaxThreshold))
-	battery := node.GetBatteryPercentage() * float64(p.ClusterMaxThreshold) //Multiplying by threshold ensures that battery and degree have the same maximum value
+	//battery := node.GetBatteryPercentage() * float64(p.ClusterMaxThreshold) //Multiplying by threshold ensures that battery and degree have the same maximum value
 
 	//weighted sum, 60% from degree (# of nodes within distance), 40% from its battery life
 	// penalty used to increase a nodes chance at staying a clusterhead
-	score := p.DegreeWeight*degree + p.BatteryWeight*battery
+	//score := p.DegreeWeight*degree + p.BatteryWeight*battery
+	score := degree * node.GetBatteryPercentage()
 	//if node.IsClusterHead {
-		return score
+	return score
 	//} else {
 	//	return score * p.Penalty
 	//}
@@ -294,9 +295,9 @@ func (adhoc *AdHocNetwork) DissolveCluster(node *NodeImpl) {
 }
 
 func (adhoc *AdHocNetwork) ResetClusters(p *Params) {
-	for i := 0; i < len(p.AliveList); i++ {
-		p.AliveList[i].IsClusterHead = false
-		p.ClusterNetwork.ClearClusterParams(p.AliveList[i])
+	for node := range p.AliveNodes {
+		node.IsClusterHead = false
+		p.ClusterNetwork.ClearClusterParams(node)
 	}
 	adhoc.ClusterHeads = []*NodeImpl{}
 	adhoc.SingularNodes = []*NodeImpl{}
@@ -344,6 +345,8 @@ func (adhoc *AdHocNetwork) ElectClusterHead(curNode *NodeImpl, p *Params) {
 
 	if !maxNode.IsClusterHead {
 		maxNode.IsClusterHead = true
+		maxNode.TimeBecameClusterHead = p.CurrentTime
+		maxNode.BatteryBecameClusterHead = maxNode.GetBatteryPercentage()
 		maxNode.IsClusterMember = false
 		adhoc.ClusterHeads = append(adhoc.ClusterHeads, maxNode)
 		maxNode.NodeClusterParams.CurrentCluster = &Cluster{maxNode, []*NodeImpl{}, adhoc.NextClusterNum}
@@ -556,13 +559,13 @@ func (node *NodeImpl) IsWithinRange(node2 *NodeImpl, searchRange float64) bool {
 func (adhoc *AdHocNetwork) FullRecluster(p *Params) {
 	adhoc.FullReclusters++
 	adhoc.ResetClusters(p)
-	for _, node := range p.AliveList {
+	for node := range p.AliveNodes {
 		node.DrainBatteryWifi()	//Server sends message to all nodes that reclustering is happening
 		if node.Valid {
 			adhoc.SendHello(node, nil, p)
 		}
 	}
-	for _, node := range p.AliveList {
+	for node := range p.AliveNodes {
 		if !node.IsClusterHead && node.Valid {
 			adhoc.ElectClusterHead(node, p)
 		}
@@ -606,7 +609,7 @@ func (adhoc *AdHocNetwork) ExpansiveLocalRecluster(head *NodeImpl, members []*No
 	head.DrainBatteryBluetooth(&p.Server.ReclusterBTCounter) //Sends message to all in bluetooth range
 	for i := 0; i < len(withinDist); i++ {
 		withinDist[i].DrainBatteryBluetooth(&p.Server.ReclusterBTCounter) //All nodes in range receive message
-		if withinDist[i].IsClusterHead {
+		if withinDist[i].IsClusterHead && (p.CurrentTime - withinDist[i].TimeBecameClusterHead) / 1000 > (p.LocalRecluster-3) {
 			withinDist[i].DrainBatteryWifi() //This cluster head informs the server that it is within range of the dying cluster head
 			adhoc.ClearClusterParams(withinDist[i])
 			members = append(members, withinDist[i].NodeClusterParams.CurrentCluster.ClusterMembers...)
@@ -645,17 +648,17 @@ func (node *NodeImpl) UpdateOutOfRange(p *Params) {
 }
 
 func SimpleIntersect(a []*NodeImpl, b []*NodeImpl) []*NodeImpl {
-	set := make([]*NodeImpl, 0)
+	result := make([]*NodeImpl, 0)
 
 	for i := 0; i < len(a); i++ {
 		for j := 0; j < len(b); j++ {
 			if a[i] == b[j] {
-				set = append(set, a[i])
+				result = append(result, a[i])
 			}
 		}
 	}
 
-	return set
+	return result
 }
 
 func (node *NodeImpl) FindNearbyHead(p *Params, counter *int) *NodeImpl {
@@ -678,4 +681,19 @@ func (node *NodeImpl) FindNearbyHead(p *Params, counter *int) *NodeImpl {
 		}
 	}
 	return toJoin
+}
+
+func (node *NodeImpl) ShouldLocalRecluster() bool {
+	return node.P.CurrentTime - node.TimeBecameClusterHead > node.P.ClusterHeadTimeThreshold ||
+		node.BatteryBecameClusterHead - node.GetBatteryPercentage() > node.P.ClusterHeadBatteryDropThreshold
+}
+
+func (node *NodeImpl) InitLocalRecluster() {
+	members := make([]*NodeImpl, len(node.NodeClusterParams.CurrentCluster.ClusterMembers))
+	copy(members, node.NodeClusterParams.CurrentCluster.ClusterMembers)
+	if node.P.LocalRecluster < 3 {
+		node.P.ClusterNetwork.LocalRecluster(node, members, node.P)
+	} else {
+		node.P.ClusterNetwork.ExpansiveLocalRecluster(node, members, node.P)
+	}
 }

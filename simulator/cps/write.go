@@ -446,7 +446,7 @@ func SetupCSVNodes(p *Params) {
 		}
 
 		p.NodeList = append(p.NodeList, newNode)
-		p.AliveList = append(p.AliveList, newNode)
+		p.AliveNodes[newNode] = true
 		p.CurrentNodes += 1
 
 		if p.ClusteringOn {
@@ -1572,7 +1572,7 @@ func GetFlags(p *Params) {
 	flag.BoolVar(&p.ClusteringOn,"clusteringOn",true,"True: nodes will form clusters, False: no clusters will form")
 	flag.BoolVar(&p.RedundantClustering,"redundantClustering",false,"If clusteringOn is set to true, True: nodes will join two clusters, False: clusters will form normally")
 	flag.IntVar(&p.ClusterMaxThreshold, "clusterMaxThresh",8, "max number of members in a node cluster")
-	flag.IntVar(&p.ClusterMinThreshold, "clusterMinThresh", 2, "max number of members in a node cluster for it to be considered 'empty'")
+	flag.IntVar(&p.ClusterMinThreshold, "clusterMinThresh", 0, "max number of members in a node cluster for it to be considered 'empty'")
 	flag.Float64Var(&p.NodeBTRange, "nodeBTRange",20.0,"bluetooth range of each node")
 	flag.Float64Var(&p.DegreeWeight, "degreeWeight", 0.6, "The weight constant applied to the number of neighboring nodes when calculating a node's score")
 	flag.Float64Var(&p.BatteryWeight, "batteryWeight", 0.4, "The weight constant applied to a node's battery when calculating a node's score")
@@ -1582,13 +1582,17 @@ func GetFlags(p *Params) {
 	0 - off
 	1 - minimal (nodes check for nearby head first)
 	2 - standard
-	3 - expansive (nearby clusters also recluster)
+	3 or higher - expansive (nearby clusters also recluster)
+	When expansive is chosen, (p.LocalRecluster - 3) will be the time in seconds that a node has been a cluster head for its cluster to join the expansive recluster
+	For example, if p.LocalRecluster is set to 63, only nodes that have been cluster head for over 60 seconds will join the expansive recluster
 	*/
 	flag.IntVar(&p.LocalRecluster, "localRecluster", 1, "Enables or disables local reclustering")
 	flag.Float64Var(&p.ReclusterThreshold, "reclusterThreshold", 0.1, "The maximum percent of clusters made up only of cluster heads before the network should fully recluster")
 	flag.IntVar(&p.ReclusterPeriod, "reclusterPeriod", 30, "The period of time in seconds before the network checks if it should fully reclusters")
 	flag.IntVar(&p.InitClusterTime, "initClusterTime", 0, "The number of seconds to wait before clustering")
 	flag.IntVar(&p.ClusterSearchThreshold, "clusterSearchThresh", 0, "The number of senses in a row required to trigger cluster search that a node either has no cluster head or is out of range of its cluster head.")
+	flag.IntVar(&p.ClusterHeadTimeThreshold, "CHTimeThresh", 600, "The maximum time a can be cluster head without triggering local recluster.")
+	flag.Float64Var(&p.ClusterHeadBatteryDropThreshold, "CHBatteryDropThresh", 0.2, "The maximum percent a cluster head's battery can drop before triggering a local recluster.")
 
 	flag.StringVar(&p.WindRegionPath, "windRegionPath", "hull_testing.txt", "File containing regions formed by wind")
 
@@ -1687,6 +1691,8 @@ func WriteFlags(p * Params){
 	buf.WriteString(fmt.Sprintf("reclusterThreshold=%v\n",p.ReclusterThreshold))
 	buf.WriteString(fmt.Sprintf("initClusterTime=%v\n",p.InitClusterTime))
 	buf.WriteString(fmt.Sprintf("clusterSearchThresh=%v\n",p.ClusterSearchThreshold))
+	buf.WriteString(fmt.Sprintf("CHTimeThresh=%v\n", p.ClusterHeadTimeThreshold))
+	buf.WriteString(fmt.Sprintf("CHBatteryDropThresh=%v\n", p.ClusterHeadBatteryDropThreshold))
 	buf.WriteString(fmt.Sprintf("batteryCapacity=%v\n",p.BatteryCapacity))
 	buf.WriteString(fmt.Sprintf("bluetoothLossPercentage=%v\n",p.BluetoothLossPercentage))
 	buf.WriteString(fmt.Sprintf("sampleLossPercentage=%v\n",p.SampleLossPercentage))

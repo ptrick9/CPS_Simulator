@@ -86,6 +86,9 @@ type NodeImpl struct {
 
 	IsClusterHead					bool
 	IsClusterMember					bool
+	TimeBecameClusterHead			int
+	BatteryBecameClusterHead		float64
+	ClusterAverageBattery			float64
 	NodeClusterParams 				*ClusterMemberParams
 	CurTree				 			*Quadtree
 	OutOfRange						bool
@@ -389,6 +392,7 @@ func (node *NodeImpl) SendToServer(rd *Reading, tp bool){
     numSent = numSent * 8 - 1
 	for i := 0; i < len(node.StoredReadings) && i < numSent; i++ { //Some readings will be lost if cluster head dies while sending
 		node.P.Server.Send(node.StoredNodes[i], node.StoredReadings[i], node.StoredTPs[i])
+		delete(node.P.Server.AloneNodes, node.StoredNodes[i])
 	}
 	node.DrainBatteryWifi() //The node receives confirmation from the server, including how many readings it received
 							//and updates about the cluster, such as if any members have left to join other clusters.
@@ -398,9 +402,14 @@ func (node *NodeImpl) SendToServer(rd *Reading, tp bool){
 		node.P.ClusterNetwork.LostReadings += lost
 	}
 
-	node.StoredNodes = []*NodeImpl{}
-	node.StoredReadings = []*Reading{}
-	node.StoredTPs = []bool{}
+	if len(node.StoredReadings) > 0 {
+		node.StoredNodes = []*NodeImpl{}
+		node.StoredReadings = []*Reading{}
+		node.StoredTPs = []bool{}
+		delete(node.P.Server.AloneNodes, node)
+	} else {
+		node.P.Server.AloneNodes[node] = true
+	}
 
 	if rd != nil {
 		node.P.Server.Send(node, rd, tp)
@@ -647,23 +656,15 @@ func (node *NodeImpl) UpdateAliveStatus() {
 		if node.P.ClusteringOn && node.CurTree != nil {
 			node.CurTree.RemoveAndClean(node)
 			if node.IsClusterHead && node.P.LocalRecluster > 0 && node.P.CurrentTime >= node.P.InitClusterTime {
-				members := make([]*NodeImpl, len(node.NodeClusterParams.CurrentCluster.ClusterMembers))
-				copy(members, node.NodeClusterParams.CurrentCluster.ClusterMembers)
-				if node.P.LocalRecluster < 3 {
-					node.P.ClusterNetwork.LocalRecluster(node, members, node.P)
-				} else {
-					node.P.ClusterNetwork.ExpansiveLocalRecluster(node, members, node.P)
-				}
+				node.InitLocalRecluster()
 			} else {
 				node.P.ClusterNetwork.ClearClusterParams(node)
 			}
 		}
-		for i := 0; i < len(node.P.AliveList); i++ {
-			if !node.P.AliveList[i].IsAlive() {
-				node.P.AliveList = append(node.P.AliveList[:i], node.P.AliveList[i+1:]...)
-				i--
-			}
-		}
+		delete(node.P.AliveNodes, node)
+		delete(node.P.Server.AloneNodes, node)
+	} else if node.IsClusterHead && node.ShouldLocalRecluster() {
+		node.InitLocalRecluster()
 	}
 }
 
