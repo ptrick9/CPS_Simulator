@@ -639,7 +639,7 @@ func (node *NodeImpl) ScheduleNextSense() {
 }
 
 
-/*func (node *NodeImpl) AdaptiveSampling() {
+func (node *NodeImpl) AdaptiveSampling() {
 	if node.Valid {
 		var distance float64=0
 		if node.OldX!=0 && node.OldY!=0 {
@@ -671,10 +671,10 @@ func (node *NodeImpl) ScheduleNextSense() {
 			}
 		}
 	}
-}*/
+}
 
 
-func (node *NodeImpl)AdaptiveSampling(){
+/*func (node *NodeImpl)AdaptiveSampling(){
 	NodesinSquare := len(node.P.Server.SquarePop[Tuple{int(node.X / float32(node.P.XDiv)), int(node.Y / float32(node.P.YDiv))}]) //Nodes in curr node square
 	multiplier:=NodesinSquare / node.P.DensityThreshold
 	if multiplier >= 4 {
@@ -693,37 +693,9 @@ func (node *NodeImpl)AdaptiveSampling(){
 	if node.SamplingPeriod > node.P.SamplingPeriodMS*5{
 		node.SamplingPeriod=node.P.SamplingPeriodMS*5
 	}
-}
+}*/
 
 
-
-func (s *FusionCenter)GoThroughSquares(){
-	for k, v := range s.SquareTime { //k= key v=value
-		delta:=s.P.CurrentTime-v.TimeSample
-		Square:=k
-		if delta > s.SquareTime[Square].MaxDelta {
-			item:=s.SquareTime[Square]
-			item.MaxDelta = delta
-			s.SquareTime[Square] = item
-		}
-		if delta >= 30000 {
-			fmt.Fprintln(s.P.OutputLog, "Square and delta", Square, delta)
-		}
-	}
-}
-
-
-func (s *FusionCenter)CheckSquares(Square Tuple){
-	delta :=s.P.CurrentTime-s.SquareTime[Square].TimeSample
-	if delta > s.SquareTime[Square].MaxDelta {
-		item:=s.SquareTime[Square]
-		item.MaxDelta = delta
-		s.SquareTime[Square] = item
-	}
-	if delta >= 30000 {
-		fmt.Fprintln(s.P.OutputLog, "Square and delta:", Square, delta)
-	}
-}
 
 
 //Returns a float representing the detection of the bomb

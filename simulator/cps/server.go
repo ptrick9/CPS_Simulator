@@ -238,7 +238,7 @@ func (srv FusionCenter) Tick() {
 			bdist := float32(math.Pow(float64(math.Pow(float64(math.Abs(float64(s.GetX())-float64(srv.P.B.X))), 2)+math.Pow(float64(math.Abs(float64(s.GetY())-float64(srv.P.B.Y))), 2)), .5))
 
 			if bombSquare == sSquare || bdist < 8.0 {
-				srv.P.FoundBomb = true
+				srv.P.FoundBomb = false
 			} else {
 				sSquare.Reset()
 			}
@@ -595,7 +595,7 @@ func (s *FusionCenter) Send(n *NodeImpl, rd *Reading, tp bool) {
 						//do nothing here
 					} else {
 						if !s.P.DriftExplorer && tp {
-							s.P.FoundBomb = true
+							s.P.FoundBomb = false
 						}
 					}
 					fmt.Fprintln(s.P.DetectionFile, fmt.Sprintf("Confirmation T: %v ID: %v %v/%v %v", rd.Time, rd.Id, tile.NumEntry, len(s.SquarePop[newSquare]), s.CheckedIds))
@@ -651,7 +651,7 @@ func (s *FusionCenter) Send(n *NodeImpl, rd *Reading, tp bool) {
 					if FloatDist(Tuple32{rd.Xpos, rd.YPos}, Tuple32{float32(s.P.B.X), float32(s.P.B.Y)}) > s.P.DetectionDistance {
 					} else {
 						if !s.P.DriftExplorer && tp {
-							s.P.FoundBomb = true
+							s.P.FoundBomb = false
 						}
 					}
 					fmt.Fprintln(s.P.DetectionFile, fmt.Sprintf("Confirmation T: %v ID: %v %v/%v %v", rd.Time, rd.Id, validations, neededValidators, s.CheckedIds))
@@ -667,6 +667,35 @@ func (s *FusionCenter) Send(n *NodeImpl, rd *Reading, tp bool) {
 		}
 	}
 }
+
+func (s *FusionCenter)GoThroughSquares(){
+	for k, v := range s.SquareTime { //k= key v=value
+		delta:=s.P.CurrentTime-v.TimeSample
+		Square:=k
+		if delta > s.SquareTime[Square].MaxDelta {
+			item:=s.SquareTime[Square]
+			item.MaxDelta = delta
+			s.SquareTime[Square] = item
+		}
+		if delta >= 40000 {
+			fmt.Fprintln(s.P.OutputLog, "Square and delta", Square, delta)
+		}
+	}
+}
+
+
+func (s *FusionCenter)CheckSquares(Square Tuple){
+	delta :=s.P.CurrentTime-s.SquareTime[Square].TimeSample
+	if delta > s.SquareTime[Square].MaxDelta {
+		item:=s.SquareTime[Square]
+		item.MaxDelta = delta
+		s.SquareTime[Square] = item
+	}
+	if delta >= 40000 {
+		fmt.Fprintln(s.P.OutputLog, "Square and delta:", Square, delta)
+	}
+}
+
 
 //CalcStats calculates the mean, standard deviation and variance of the entire area at one Time
 func (s *FusionCenter) CalcStats() ([]float64, []float64, []float64) {

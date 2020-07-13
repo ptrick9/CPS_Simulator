@@ -832,6 +832,7 @@ func main() {
 	for k, v := range p.Server.SquareTime { //k= key v=value
 		fmt.Fprintln(p.OutputLog, "Square and max", k, v.MaxDelta)
 	}
+	//PrintAllGridSpaceMaxDeltas()
 
 
 	//p.Server.PrintBatteryStats()
@@ -950,4 +951,19 @@ func PrintNodeBatteryOverTimeFast(p *cps.Params) {
 		buffer.WriteString("\n")
 	}
 	fmt.Fprintf(p.BatteryFile, buffer.String())
+}
+
+func PrintAllGridSpaceMaxDeltas(){
+	for i:=0; i<p.MaxX/p.SquareColCM; i++{
+		for j:=0; j<p.MaxY/p.SquareRowCM;j++{
+			v:=p.TestHere
+			v.X=i
+			v.Y=j
+			if val,ok := p.Server.SquareTime[v]; ok{
+				val.BeenReported=true
+			} else {
+				fmt.Fprintln(p.OutputLog, "Square and max", v, p.CurrentTime)
+			}
+		}
+	}
 }

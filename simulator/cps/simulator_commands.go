@@ -163,6 +163,7 @@ type Params struct {
 	Width 			int
 	Height 			int
 	Server 			FusionCenter //Server object
+	TestHere		Tuple
 
 	MaxRaw 			float32
 	EdgeRaw 		float32
