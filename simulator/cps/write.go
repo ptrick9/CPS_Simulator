@@ -452,7 +452,8 @@ func SetupCSVNodes(p *Params) {
 		if p.ClusteringOn {
 			newNode.IsClusterHead = false
 			newNode.IsClusterMember = false
-			newNode.NodeClusterParams = &ClusterMemberParams{}
+			newNode.RecvMsgs = []*HelloMsg{}
+			newNode.ThisNodeHello = &HelloMsg{Sender: newNode}
 			newNode.OutOfRange = false
 			p.NodeTree.Insert(newNode)
 			p.ClusterNetwork.ClearClusterParams(newNode)

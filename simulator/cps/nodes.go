@@ -48,7 +48,6 @@ type NodeImpl struct {
 	Y                               float32      //y pos of node
 	SX                              float32      //Server X
 	SY								float32		 //Server Y
-	Alive							bool
 
 	Cascade                         int      //This cascades the pings of the nodes
 	BufferI                         int      //This is to keep track of the node's buffer size
@@ -89,7 +88,10 @@ type NodeImpl struct {
 	TimeBecameClusterHead			int
 	BatteryBecameClusterHead		float64
 	ClusterAverageBattery			float64
-	NodeClusterParams 				*ClusterMemberParams
+	ClusterHead    					*NodeImpl
+	ClusterMembers 					[]*NodeImpl
+	RecvMsgs        				[]*HelloMsg
+	ThisNodeHello   				*HelloMsg
 	CurTree				 			*Quadtree
 	OutOfRange						bool
 	TimeMovedOutOfRange				int
@@ -368,7 +370,7 @@ func (node *NodeImpl) LogBatteryPower(t int){
 }
 
 func (node *NodeImpl) SendToClusterHead(rd *Reading, tp bool){
-	head := node.NodeClusterParams.CurrentCluster.ClusterHead
+	head := node.ClusterHead
 
 	node.DrainBatteryBluetooth(&node.P.Server.ReadingBTCounter)	//Node sends reading over bluetooth
 	head.DrainBatteryBluetooth(&node.P.Server.ReadingBTCounter)	//Head receives reading over bluetooth
@@ -1104,8 +1106,12 @@ func (node *NodeImpl) report(rawConc float64) {
 	//for that square
 	//Only do this if the sensor was pinged this iteration
 
-	if node.Valid {
-		if len(node.StoredReadings) > 0 || !(node.P.ClusteringOn && node.IsClusterMember && !highSensor){
+	if node.Valid && node.IsAlive() {
+		if node.P.ClusteringOn && !highSensor {
+			node.P.ClusterNetwork.UpdateClusterStatus(node, node.P)
+			node.OutOfRange = false
+		}
+		if !node.P.ClusteringOn || len(node.StoredReadings) > 0 || node.IsClusterHead || node.ClusterHead == nil || highSensor {
 			node.SendToServer(&Reading{ADCRead, newX, newY, node.P.CurrentTime, node.GetID()}, tp)
 		} else  {
 			node.SendToClusterHead(&Reading{ADCRead, newX, newY, node.P.CurrentTime, node.GetID()}, tp)

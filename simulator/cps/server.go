@@ -44,9 +44,12 @@ type FusionCenter struct {
 
 
 	NodeTree		*Quadtree //stores node locations in quadtree format
-	ClusterNetwork	* AdHocNetwork //stores cluster information
 
+	Clusters	map[*NodeImpl][]*NodeImpl
+	TimesNodesLastJoined	map[*NodeImpl]int
+	ClusterHeadOf	map[*NodeImpl]*NodeImpl
 	AloneNodes		map[*NodeImpl]bool
+	RatioBeforeRecluster	float64
 }
 
 //Init initializes the values for the server

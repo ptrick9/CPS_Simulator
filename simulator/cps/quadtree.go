@@ -1,10 +1,5 @@
 package cps
 
-import (
-	"fmt"
-	"strconv"
-)
-
 // Quadtree - The quadtree data structure
 //based off https://github.com/JamesMilnerUK/quadtree-go/blob/master/quadtree.go
 
@@ -363,7 +358,7 @@ func (qt *Quadtree) Clear() {
 //}
 
 //PrintTree - Prints a visualization of the tree in the console
-func (qt *Quadtree) PrintTree() {
+/*func (qt *Quadtree) PrintTree() {
 	fmt.Println()
 
 	grid := [][]string{}
@@ -409,10 +404,10 @@ func (qt *Quadtree) PrintTree() {
 		}
 		fmt.Println()
 	}
-}
+}*/
 
 //PrintHelper - Helps PrintTree create the visualization by dealing with SubTrees
-func (qt *Quadtree) PrintHelper(grid [][]string) {
+/*func (qt *Quadtree) PrintHelper(grid [][]string) {
 	xStart := int(qt.Bounds.X)
 	xMid := int(qt.Bounds.X + qt.Bounds.Width/2)
 	xEnd := int(qt.Bounds.X + qt.Bounds.Width)
@@ -454,7 +449,7 @@ func (qt *Quadtree) PrintHelper(grid [][]string) {
 			}
 		}
 	}
-}
+}*/
 
 //Remove - removes a node from the tree, DOES NOT reconfigure the tree
 func (qt *Quadtree) Remove(node *NodeImpl) bool {

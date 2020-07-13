@@ -21,19 +21,6 @@ type AdHocNetwork struct {
 	TotalWaits          int //Counts the number of times a node waited instead of initiating a cluster search
 }
 
-type Cluster struct {
-	ClusterHead    *NodeImpl
-	ClusterMembers []*NodeImpl
-	ClusterNum     int //integer identifier of cluster
-}
-
-type ClusterMemberParams struct {
-	CurrentCluster  *Cluster
-	RecvMsgs        []*HelloMsg
-	ThisNodeHello   *HelloMsg
-	AttemptedToJoin []*NodeImpl
-}
-
 type HelloMsg struct {
 	Sender      *NodeImpl //pointer to Node sending the Hello Msg
 	NodeCHScore float64 //score for determining how suitable a node is to be a clusterhead
@@ -43,7 +30,6 @@ type ClusterNode struct { //made for testing, only has parameters that the clust
 	NodeBounds        *Bounds
 	Battery           float32
 	ClusterHead       *NodeImpl
-	NodeClusterParams *ClusterMemberParams
 	IsClusterHead     bool
 	IsClusterMember   bool
 }
@@ -67,7 +53,7 @@ func (node *NodeImpl) ComputeClusterScore(p *Params, numWithinDist int, ) float6
 //Generates Hello Message for node to form/maintain clusters
 func (node *NodeImpl) GenerateHello(score float64) {
 	message := &HelloMsg{ Sender: node, NodeCHScore: score}
-	node.NodeClusterParams.ThisNodeHello = message
+	node.ThisNodeHello = message
 }
 
 /*func (adhoc *AdHocNetwork) SendHelloMessage(curNode *NodeImpl, p *Params) {
@@ -146,18 +132,18 @@ func (adhoc *AdHocNetwork) SendHello(curNode *NodeImpl, members []*NodeImpl, p *
 		for j := 0; j < len(membersWithinDist); j++ {
 			if withinDist[j].IsAlive() { //If the node survived receiving the first message
 				//Of nodes in bluetooth range, only members add the hello message to their received messages
-				membersWithinDist[j].NodeClusterParams.RecvMsgs = append(membersWithinDist[j].NodeClusterParams.RecvMsgs, curNode.NodeClusterParams.ThisNodeHello)
+				membersWithinDist[j].RecvMsgs = append(membersWithinDist[j].RecvMsgs, curNode.ThisNodeHello)
 			}
 		}
 	}
 }
 
-func (adhoc *AdHocNetwork) ClusterMovement(node *NodeImpl, p *Params) {
-	if node.Valid && node.IsAlive() {
+func (adhoc *AdHocNetwork) UpdateClusterStatus(node *NodeImpl, p *Params) {
+	//if node.Valid && node.IsAlive() {
 		 if !node.IsClusterHead && p.CurrentTime >= p.InitClusterTime {
-			if node.NodeClusterParams.CurrentCluster.ClusterHead == nil {
+			if node.ClusterHead == nil {
 				adhoc.ClusterSearch(node, p)
-			} else if !node.IsWithinRange(node.NodeClusterParams.CurrentCluster.ClusterHead, p.NodeBTRange) {
+			} else if !node.IsWithinRange(node.ClusterHead, p.NodeBTRange) {
 				/*	Node knows it is within range of its cluster head if it receives confirmation after sending its
 					reading. This is the cost of sending the reading to the out-of-range cluster head. The cost is
 					normally handled in node.go's SendToClusterHead, when the head is in range. */
@@ -168,12 +154,12 @@ func (adhoc *AdHocNetwork) ClusterMovement(node *NodeImpl, p *Params) {
 			} else {
 				node.Wait = 0
 			}
-		} else if p.GlobalRecluster > 0 && node.IsClusterHead && len(node.NodeClusterParams.CurrentCluster.ClusterMembers) <= p.ClusterMinThreshold {
+		} else if p.GlobalRecluster <= 0 && node.IsClusterHead && len(node.ClusterMembers) <= p.ClusterMinThreshold {
 			adhoc.ClusterSearch(node, p)
 		} else {
 			node.Wait = 0
 		}
-	}
+	//}
 }
 
 func (adhoc *AdHocNetwork) ClusterSearch(node *NodeImpl, p *Params) {
@@ -188,7 +174,7 @@ func (adhoc *AdHocNetwork) ClusterSearch(node *NodeImpl, p *Params) {
 			adhoc.ClearClusterParams(node)
 			node.DrainBatteryBluetooth(&p.Server.ClusterSearchBTCounter) //node informs head it is joining
 			toJoin[0].DrainBatteryBluetooth(&p.Server.ClusterSearchBTCounter) //head receives message
-			node.Join(toJoin[0].NodeClusterParams.CurrentCluster)
+			node.Join(toJoin[0])
 			adhoc.CSJoins++
 		} else {
 			adhoc.ClearClusterParams(node)
@@ -225,11 +211,11 @@ func (adhoc *AdHocNetwork) ClusterSearch(node *NodeImpl, p *Params) {
 	return maxNode
 }*/
 
-func (node *NodeImpl) Join(cluster *Cluster) {
+func (node *NodeImpl) Join(head *NodeImpl) {
 	node.IsClusterMember = true
 	node.IsClusterHead = false
-	node.NodeClusterParams.CurrentCluster = cluster
-	cluster.ClusterMembers = append(cluster.ClusterMembers, node)
+	node.ClusterHead = head
+	head.ClusterMembers = append(head.ClusterMembers, node)
 }
 
 //Prints a representation of a node
@@ -255,19 +241,20 @@ func (adhoc *AdHocNetwork) ClearClusterParams(node *NodeImpl) {
 		node.IsClusterHead = false
 		adhoc.DissolveCluster(node)
 		return
-	} else if node.NodeClusterParams.CurrentCluster != nil {
-		for i := range node.NodeClusterParams.CurrentCluster.ClusterMembers {
-			if node == node.NodeClusterParams.CurrentCluster.ClusterMembers[i] {
-				node.NodeClusterParams.CurrentCluster.ClusterMembers = append(node.NodeClusterParams.CurrentCluster.ClusterMembers[:i], node.NodeClusterParams.CurrentCluster.ClusterMembers[i+1:]...)
+	} else if node.ClusterHead != nil {
+		for i := range node.ClusterHead.ClusterMembers {
+			if node == node.ClusterHead.ClusterMembers[i] {
+				node.ClusterHead.ClusterMembers = append(node.ClusterHead.ClusterMembers[:i], node.ClusterHead.ClusterMembers[i+1:]...)
 				break
 			}
 		}
 	}
-	node.NodeClusterParams.CurrentCluster = &Cluster{}
-	node.NodeClusterParams.CurrentCluster.ClusterMembers = []*NodeImpl{}
 
-	node.NodeClusterParams.RecvMsgs = []*HelloMsg{}
-	node.NodeClusterParams.ThisNodeHello = &HelloMsg{}
+	node.ClusterHead = nil
+	node.ClusterMembers = nil
+
+	node.RecvMsgs = []*HelloMsg{}
+	node.ThisNodeHello = &HelloMsg{Sender: node}
 
 	node.IsClusterMember = false
 }
@@ -280,8 +267,8 @@ func (adhoc *AdHocNetwork) DissolveCluster(node *NodeImpl) {
 			break
 		}
 	}
-	for i := 0; len(node.NodeClusterParams.CurrentCluster.ClusterMembers) > 0; {
-		member := node.NodeClusterParams.CurrentCluster.ClusterMembers[i]
+	for i := 0; len(node.ClusterMembers) > 0; {
+		member := node.ClusterMembers[i]
 		adhoc.ClearClusterParams(member)
 		if node.P.LocalRecluster <= 0 {
 			/*	Assuming local reclustering is disabled, the members only know that this cluster has dissolved because
@@ -346,7 +333,7 @@ func (adhoc *AdHocNetwork) ResetClusters(p *Params) {
 func (adhoc *AdHocNetwork) ElectClusterHead(curNode *NodeImpl, p *Params) {
 	//maxNode := curNode.HasMaxNodeScore(p)
 
-	messages := append(curNode.NodeClusterParams.RecvMsgs, curNode.NodeClusterParams.ThisNodeHello)
+	messages := append(curNode.RecvMsgs, curNode.ThisNodeHello)
 	//Sort the messages by Id. Lowest Id first
 	sort.Slice(messages, func(i int, j int) bool {
 		return messages[i].Sender.Id < messages[j].Sender.Id
@@ -356,19 +343,13 @@ func (adhoc *AdHocNetwork) ElectClusterHead(curNode *NodeImpl, p *Params) {
 		return messages[i].NodeCHScore > messages[j].NodeCHScore
 	})
 
-	for i := range messages {
-		if messages[i].Sender == nil {
-			messages = append(messages[:i], messages[i+1:]...)
-		}
-	}
-
 	i := 0
 	maxNode := messages[i].Sender
 
 	if curNode != maxNode {
 		curNode.DrainBatteryBluetooth(&p.Server.ReclusterBTCounter) //node informs maxNode that it has been chosen
 		maxNode.DrainBatteryBluetooth(&p.Server.ReclusterBTCounter) //maxNode receives message
-		for maxNode.IsClusterMember || len(maxNode.NodeClusterParams.CurrentCluster.ClusterMembers) > p.ClusterMaxThreshold {
+		for maxNode.IsClusterMember || len(maxNode.ClusterMembers) > p.ClusterMaxThreshold || !maxNode.IsAlive() {
 			maxNode.DrainBatteryBluetooth(&p.Server.ReclusterBTCounter) //maxNode informs node that it cannot be its cluster head
 			curNode.DrainBatteryBluetooth(&p.Server.ReclusterBTCounter) //node receives message
 			i += 1
@@ -385,7 +366,7 @@ func (adhoc *AdHocNetwork) ElectClusterHead(curNode *NodeImpl, p *Params) {
 	}
 
 	if curNode != maxNode {
-		curNode.Join(maxNode.NodeClusterParams.CurrentCluster)
+		curNode.Join(maxNode)
 	}
 }
 
@@ -395,7 +376,8 @@ func (adhoc *AdHocNetwork) FormCluster(node *NodeImpl) {
 	node.BatteryBecameClusterHead = node.GetBatteryPercentage()
 	node.IsClusterMember = false
 	adhoc.ClusterHeads = append(adhoc.ClusterHeads, node)
-	node.NodeClusterParams.CurrentCluster = &Cluster{node, []*NodeImpl{}, adhoc.NextClusterNum}
+	node.ClusterHead = nil
+	node.ClusterMembers = []*NodeImpl{}
 	adhoc.NextClusterNum++
 }
 
@@ -616,14 +598,13 @@ func (adhoc *AdHocNetwork) LocalRecluster(head *NodeImpl, members []*NodeImpl, p
 	adhoc.LocalReclusters++
 	head.DrainBatteryWifi() //Head informs the server it is initiating local recluster
 	//members =
-	adhoc.ClearClusterParams(head)
 	for i := 0; i < len(members); i++ {
 		adhoc.ClearClusterParams(members[i])
 		if members[i].IsAlive() {
 			if p.LocalRecluster == 1 {
 				toJoin := members[i].FindNearbyHeads(p, &p.Server.ReclusterBTCounter)
 				if len(toJoin) > 0 {
-					members[i].Join(toJoin[0].NodeClusterParams.CurrentCluster)
+					members[i].Join(toJoin[0])
 					members = append(members[:i], members[i+1:]...)
 					i--
 					adhoc.CSJoins++
@@ -654,7 +635,7 @@ func (adhoc *AdHocNetwork) ExpansiveLocalRecluster(head *NodeImpl, members []*No
 		if withinDist[i].IsClusterHead && (p.CurrentTime - withinDist[i].TimeBecameClusterHead) / 1000 > (p.LocalRecluster-3) {
 			withinDist[i].DrainBatteryWifi() //This cluster head informs the server that it is within range of the dying cluster head
 			adhoc.ClearClusterParams(withinDist[i])
-			members = append(members, withinDist[i].NodeClusterParams.CurrentCluster.ClusterMembers...)
+			members = append(members, withinDist[i].ClusterMembers...)
 			if withinDist[i].IsAlive() {
 				members = append(members, withinDist[i])
 			}
@@ -665,8 +646,8 @@ func (adhoc *AdHocNetwork) ExpansiveLocalRecluster(head *NodeImpl, members []*No
 
 func (node *NodeImpl) UpdateOutOfRange(p *Params) {
 	if !node.IsClusterHead {
-		if node.NodeClusterParams.CurrentCluster.ClusterHead != nil {
-			if !node.IsWithinRange(node.NodeClusterParams.CurrentCluster.ClusterHead, p.NodeBTRange) {
+		if node.ClusterHead != nil {
+			if !node.IsWithinRange(node.ClusterHead, p.NodeBTRange) {
 				if !node.OutOfRange {
 					node.OutOfRange = true
 					node.TimeMovedOutOfRange = p.CurrentTime
@@ -676,7 +657,7 @@ func (node *NodeImpl) UpdateOutOfRange(p *Params) {
 			}
 		}
 	} else {
-		for _, member := range node.NodeClusterParams.CurrentCluster.ClusterMembers {
+		for _, member := range node.ClusterMembers {
 			if !node.IsWithinRange(member, p.NodeBTRange) {
 				if !member.OutOfRange {
 					member.OutOfRange = true
@@ -711,7 +692,7 @@ func (node *NodeImpl) FindNearbyHeads(p *Params, counter *int) []*NodeImpl {
 
 	for i := 0; i < len(withinDist); i++ {
 		withinDist[i].DrainBatteryBluetooth(counter)	//Every node in bluetooth range receives the hello message
-		if withinDist[i].IsClusterHead && len(withinDist[i].NodeClusterParams.CurrentCluster.ClusterMembers) < p.ClusterMaxThreshold && withinDist[i].IsAlive() {
+		if withinDist[i].IsClusterHead && len(withinDist[i].ClusterMembers) < p.ClusterMaxThreshold && withinDist[i].IsAlive() {
 			headsInDist = append(headsInDist, withinDist[i])
 			withinDist[i].DrainBatteryBluetooth(counter) //Every cluster head with room for this node sends a reply
 			if node.IsAlive() {
@@ -726,15 +707,16 @@ func (node *NodeImpl) FindNearbyHeads(p *Params, counter *int) []*NodeImpl {
 }
 
 func (node *NodeImpl) ShouldLocalRecluster() bool {
-	return node.P.CurrentTime - node.TimeBecameClusterHead > node.P.ClusterHeadTimeThreshold ||
+	return (node.P.CurrentTime - node.TimeBecameClusterHead)/1000 > node.P.ClusterHeadTimeThreshold ||
 		node.BatteryBecameClusterHead - node.GetBatteryPercentage() > node.P.ClusterHeadBatteryDropThreshold ||
 		node.GetBatteryPercentage() < node.P.BatteryLowThreshold
 }
 
 func (node *NodeImpl) InitLocalRecluster() {
-	node.IsClusterHead = false
-	members := make([]*NodeImpl, len(node.NodeClusterParams.CurrentCluster.ClusterMembers))
-	copy(members, node.NodeClusterParams.CurrentCluster.ClusterMembers)
+	//node.IsClusterHead = false
+	members := make([]*NodeImpl, len(node.ClusterMembers))
+	copy(members, node.ClusterMembers)
+	node.P.ClusterNetwork.ClearClusterParams(node)
 	if node.P.LocalRecluster < 3 {
 		node.P.ClusterNetwork.LocalRecluster(node, members, node.P)
 	} else {
