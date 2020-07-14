@@ -45,11 +45,15 @@ type FusionCenter struct {
 
 	NodeTree		*Quadtree //stores node locations in quadtree format
 
-	Clusters	map[*NodeImpl][]*NodeImpl
-	TimesNodesLastJoined	map[*NodeImpl]int
-	ClusterHeadOf	map[*NodeImpl]*NodeImpl
-	AloneNodes		map[*NodeImpl]bool
+	Clusters	map[*NodeImpl]*Cluster
+	ClusterHeadsOf	map[*NodeImpl][]*NodeImpl
+	AloneNodes		map[*NodeImpl]int
 	RatioBeforeRecluster	float64
+}
+
+type Cluster struct {
+	Members		map[*NodeImpl]int
+	TimeFormed	int
 }
 
 //Init initializes the values for the server
@@ -956,4 +960,18 @@ func (s *FusionCenter) CheckFalsePosWind(n *NodeImpl) int {
 		return 1
 	}
 	return 0
+}
+
+func (s *FusionCenter) ClearServerClusterInfo(node *NodeImpl) {
+	for _, head := range s.ClusterHeadsOf[node] {
+		delete(s.Clusters[head].Members, node)
+	}
+	if _, ok := s.Clusters[node]; ok {
+		for mem := range s.Clusters[node].Members {
+			s.ClusterHeadsOf[mem], _ = SearchRemove(s.ClusterHeadsOf[mem], node)
+		}
+	}
+	delete(s.AloneNodes, node)
+	delete(s.ClusterHeadsOf, node)
+	delete(s.Clusters, node)
 }

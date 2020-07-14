@@ -377,7 +377,9 @@ func main() {
 	cps.WriteFlags(p)
 
 	p.AliveNodes = make(map[*cps.NodeImpl]bool)
-	p.Server.AloneNodes = make(map[*cps.NodeImpl]bool)
+	p.Server.Clusters = make(map[*cps.NodeImpl]*cps.Cluster)
+	p.Server.ClusterHeadsOf = make(map[*cps.NodeImpl][]*cps.NodeImpl)
+	p.Server.AloneNodes = make(map[*cps.NodeImpl]int)
 
 	if p.CSVMovement {
 		cps.SetupCSVNodes(p)
@@ -620,14 +622,14 @@ func main() {
 				outOfRangeAndSensed := 0
 				for node := range p.AliveNodes {
 					if node.IsClusterHead {
-						for j := 0; j < len(node.ClusterMembers); j++ {
-							if !(node.IsWithinRange(node.ClusterMembers[j], p.NodeBTRange)) {
-								if node.ClusterMembers[j].TimeLastSensed > node.ClusterMembers[j].TimeMovedOutOfRange {
-									xDist := node.X - node.ClusterMembers[j].X
-									yDist := node.Y - node.ClusterMembers[j].Y
+						for mem := range node.ClusterMembers {
+							if !(node.IsWithinRange(mem, p.NodeBTRange)) {
+								if mem.TimeLastSensed > mem.TimeMovedOutOfRange {
+									xDist := node.X - mem.X
+									yDist := node.Y - mem.Y
 									radDist := math.Sqrt(float64(xDist*xDist) + float64(yDist*yDist))
 									clusterDebugBuffer.WriteString(fmt.Sprintf("\tCluster Member Out of Range: Member:{ID=%v, Coord(%v,%v)} Cluster:{CH_ID=%v, Coord(%v,%v),Size=%v} Dist: %.4f, Valid: %v\n",
-										node.ClusterMembers[j].Id, node.ClusterMembers[j].X, node.ClusterMembers[j].Y,
+										mem.Id, mem.X, mem.Y,
 										node.Id, node.X, node.Y, len(node.ClusterMembers), radDist, node.Valid))
 									outOfRangeAndSensed++
 								}
@@ -636,8 +638,8 @@ func main() {
 						}
 
 						for j := 0; j < len(p.ClusterNetwork.ClusterHeads); j++ {
-							for k := 0; k < len(p.ClusterNetwork.ClusterHeads[j].ClusterMembers); k++ {
-								if node == p.ClusterNetwork.ClusterHeads[j].ClusterMembers[k] {
+							for mem := range p.ClusterNetwork.ClusterHeads[j].ClusterMembers {
+								if node == mem {
 									clusterDebugBuffer.WriteString(fmt.Sprintf("\tCluster Head {CH_ID: %v, Size=%v} is cluster member of {CH_ID: %v, Size=%v}\n", node.Id, len(node.ClusterMembers), p.ClusterNetwork.ClusterHeads[j].Id, len(p.ClusterNetwork.ClusterHeads[j].ClusterMembers)))
 								}
 							}
@@ -650,8 +652,8 @@ func main() {
 							if p.ClusterNetwork.ClusterHeads[j] == node.ClusterHead {
 								clusterHeadInHeads = true
 							}
-							for k := 0; k < len(p.ClusterNetwork.ClusterHeads[j].ClusterMembers); k++ {
-								if node == p.ClusterNetwork.ClusterHeads[j].ClusterMembers[k] {
+							for mem := range p.ClusterNetwork.ClusterHeads[j].ClusterMembers {
+								if node == mem {
 									clusterCount++
 								}
 							}
@@ -668,27 +670,29 @@ func main() {
 				//clusterStatsBuffer.WriteString(fmt.Sprintf("Out of range and sensed: %v/%v\n", outOfRangeAndSensed, outOfRange))
 				//clusterStatsBuffer.WriteString("\n")
 
-				for i := 0; i < len(p.ClusterNetwork.ClusterHeads); i++ {
-					//if len(p.ClusterNetwork.ClusterHeads[i].ClusterMembers) > 0 {
-					//	clusterStatsBuffer.WriteString(fmt.Sprintf("%v: [", p.ClusterNetwork.ClusterHeads[i].Id))
-					//	for j := 0; j < len(p.ClusterNetwork.ClusterHeads[i].ClusterMembers); j++ {
-					//		clusterStatsBuffer.WriteString(fmt.Sprintf("%v", p.ClusterNetwork.ClusterHeads[i].ClusterMembers[j].Id))
-					//		if j+1 != len(p.ClusterNetwork.ClusterHeads[i].ClusterMembers) {
-					//			clusterStatsBuffer.WriteString(fmt.Sprintf(", "))
-					//		}
-					//	}
-					//	clusterStatsBuffer.WriteString(fmt.Sprintf("]\n"))
-					//}
 
-					clusterStatsBuffer.WriteString(fmt.Sprintf("%v", len(p.ClusterNetwork.ClusterHeads[i].ClusterMembers)))
-					if i+1 != len(p.ClusterNetwork.ClusterHeads) {
-						clusterStatsBuffer.WriteString(fmt.Sprintf(","))
-					}
-				}
-				clusterStatsBuffer.WriteString(fmt.Sprintln(""))
 
 				//fmt.Fprintf(p.ClusterFile, clusterStatsBuffer.String())
 			}
+
+			for i := 0; i < len(p.ClusterNetwork.ClusterHeads); i++ {
+				//if len(p.ClusterNetwork.ClusterHeads[i].ClusterMembers) > 0 {
+				//	clusterStatsBuffer.WriteString(fmt.Sprintf("%v: [", p.ClusterNetwork.ClusterHeads[i].Id))
+				//	for j := 0; j < len(p.ClusterNetwork.ClusterHeads[i].ClusterMembers); j++ {
+				//		clusterStatsBuffer.WriteString(fmt.Sprintf("%v", p.ClusterNetwork.ClusterHeads[i].ClusterMembers[j].Id))
+				//		if j+1 != len(p.ClusterNetwork.ClusterHeads[i].ClusterMembers) {
+				//			clusterStatsBuffer.WriteString(fmt.Sprintf(", "))
+				//		}
+				//	}
+				//	clusterStatsBuffer.WriteString(fmt.Sprintf("]\n"))
+				//}
+
+				clusterStatsBuffer.WriteString(fmt.Sprintf("%v", len(p.ClusterNetwork.ClusterHeads[i].ClusterMembers)))
+				if i+1 != len(p.ClusterNetwork.ClusterHeads) {
+					clusterStatsBuffer.WriteString(fmt.Sprintf(","))
+				}
+			}
+			clusterStatsBuffer.WriteString(fmt.Sprintln(""))
 
 			fmt.Fprintf(p.ClusterStatsFile, clusterStatsBuffer.String())
 			fmt.Fprintf(p.ClusterDebugFile, clusterDebugBuffer.String())

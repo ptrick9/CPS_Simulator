@@ -89,7 +89,7 @@ type NodeImpl struct {
 	BatteryBecameClusterHead		float64
 	ClusterAverageBattery			float64
 	ClusterHead    					*NodeImpl
-	ClusterMembers 					[]*NodeImpl
+	ClusterMembers 					map[*NodeImpl]int	//Tracks a cluster heads members as keys in the map. Tracks the times members joined as values in the map.
 	RecvMsgs        				[]*HelloMsg
 	ThisNodeHello   				*HelloMsg
 	CurTree				 			*Quadtree
@@ -369,13 +369,24 @@ func (node *NodeImpl) LogBatteryPower(t int){
 	//}
 }
 
-func (node *NodeImpl) SendToClusterHead(rd *Reading, tp bool){
-	head := node.ClusterHead
+func (node *NodeImpl) SendToClusterHead(rd *Reading, tp bool, head *NodeImpl){
 
-	node.DrainBatteryBluetooth(&node.P.Server.ReadingBTCounter)	//Node sends reading over bluetooth
 	head.DrainBatteryBluetooth(&node.P.Server.ReadingBTCounter)	//Head receives reading over bluetooth
+
+	if _, ok := head.ClusterMembers[node]; !ok {
+		if head.IsClusterMember || len(head.ClusterMembers) >= node.P.ClusterMaxThreshold {
+			node.P.ClusterNetwork.ClusterSearch(node, node.P)
+			return
+		} else {
+			head.IsClusterHead = true
+			head.ClusterMembers[node] = node.P.CurrentTime
+		}
+	}
+
 	head.DrainBatteryBluetooth(&node.P.Server.ReadingBTCounter)	//Head sends confirmation over bluetooth
 	node.DrainBatteryBluetooth(&node.P.Server.ReadingBTCounter)	//Node receives confirmation over bluetooth
+	node.IsClusterMember = true
+	node.Wait = 0
 	head.StoredNodes = append(head.StoredNodes, node)
 	head.StoredReadings = append(head.StoredReadings, rd)
 	head.StoredTPs = append(head.StoredTPs, tp)
@@ -387,14 +398,15 @@ its message to the server will also include information about its cluster, such 
 Currently the extra cost of sending multiple readings at once is simulated by draining battery for wifi
 communication for every multiple of 8 readings sent. It may be worth looking into making this more realistic. */
 func (node *NodeImpl) SendToServer(rd *Reading, tp bool){
+	server := node.P.Server
 	numSent := 0
     for ; numSent < len(node.StoredReadings)/8 + 1 && node.IsAlive(); numSent++ {
         node.DrainBatteryWifi()
     }
     numSent = numSent * 8 - 1
 	for i := 0; i < len(node.StoredReadings) && i < numSent; i++ { //Some readings will be lost if cluster head dies while sending
-		node.P.Server.Send(node.StoredNodes[i], node.StoredReadings[i], node.StoredTPs[i])
-		delete(node.P.Server.AloneNodes, node.StoredNodes[i])
+		server.Send(node.StoredNodes[i], node.StoredReadings[i], node.StoredTPs[i])
+		delete(server.AloneNodes, node.StoredNodes[i])
 	}
 	node.DrainBatteryWifi() //The node receives confirmation from the server, including how many readings it received
 							//and updates about the cluster, such as if any members have left to join other clusters.
@@ -404,18 +416,62 @@ func (node *NodeImpl) SendToServer(rd *Reading, tp bool){
 		node.P.ClusterNetwork.LostReadings += lost
 	}
 
-	if len(node.StoredReadings) > 0 {
-		node.StoredNodes = []*NodeImpl{}
-		node.StoredReadings = []*Reading{}
-		node.StoredTPs = []bool{}
-		delete(node.P.Server.AloneNodes, node)
-	} else {
-		node.P.Server.AloneNodes[node] = true
-	}
+	//server.UpdateClusterInfo(node, node.ClusterMembers)
 
 	if rd != nil {
-		node.P.Server.Send(node, rd, tp)
+		server.Send(node, rd, tp)
 	}
+
+	if node.IsClusterHead {
+		if len(node.StoredReadings) > 0 {
+			if _, ok := server.Clusters[node]; !ok {
+				server.ClearServerClusterInfo(node)
+				server.Clusters[node] = &Cluster{Members: make(map[*NodeImpl]int), TimeFormed: rd.Time}
+			}
+			for _, reading := range node.StoredReadings {
+				member := node.P.NodeList[reading.Id]
+				if _, ok := server.Clusters[node].Members[member]; !ok {
+					time, ok1 := server.AloneNodes[member]
+					_, ok2 := server.Clusters[member]
+					if (!ok1 || time < reading.Time) && (!ok2 || server.Clusters[member].TimeFormed < reading.Time) {
+						delete(server.AloneNodes, member)
+						if ok2 {
+							for mem := range server.ClusterHeadsOf {
+								server.ClusterHeadsOf[mem], _ = SearchRemove(server.ClusterHeadsOf[mem], member)
+							}
+							delete(server.Clusters, member)
+						}
+						server.Clusters[node].Members[member] = reading.Time
+						server.ClusterHeadsOf[member] = append(server.ClusterHeadsOf[member], node)
+						if len(server.ClusterHeadsOf[member]) > node.P.MaxClusterHeads {
+							//Sort heads by oldest reading first
+							sort.Slice(server.ClusterHeadsOf[member], func(i, j int) bool {
+								head1 := server.ClusterHeadsOf[member][i]
+								head2 := server.ClusterHeadsOf[member][j]
+								mems1 := server.Clusters[head1].Members
+								mems2 := server.Clusters[head2].Members
+								time1 := mems1[member]
+								time2 := mems2[member]
+								return time1 < time2
+							})
+							oldestHead := server.ClusterHeadsOf[member][0]
+							delete(server.Clusters[oldestHead].Members, member)
+							server.ClusterHeadsOf[member] = server.ClusterHeadsOf[member][1:]
+						}
+					}
+				} else if reading.Time > server.Clusters[node].Members[member] {
+					server.Clusters[node].Members[member] = reading.Time
+				}
+			}
+		} else {
+			server.ClearServerClusterInfo(node)
+			server.AloneNodes[node] = rd.Time
+		}
+	}
+
+	node.StoredNodes = []*NodeImpl{}
+	node.StoredReadings = []*Reading{}
+	node.StoredTPs = []bool{}
 }
 
 /* updateHistory shifts all values in the sample history slice to the right and adds the Value at the beginning
@@ -1106,15 +1162,15 @@ func (node *NodeImpl) report(rawConc float64) {
 	//for that square
 	//Only do this if the sensor was pinged this iteration
 
+	rd := &Reading{ADCRead, newX, newY, node.P.CurrentTime, node.GetID()}
+
 	if node.Valid && node.IsAlive() {
 		if node.P.ClusteringOn && !highSensor {
-			node.P.ClusterNetwork.UpdateClusterStatus(node, node.P)
+			node.P.ClusterNetwork.UpdateClusterStatus(node, rd, tp, node.P)
 			node.OutOfRange = false
 		}
 		if !node.P.ClusteringOn || len(node.StoredReadings) > 0 || node.IsClusterHead || node.ClusterHead == nil || highSensor {
-			node.SendToServer(&Reading{ADCRead, newX, newY, node.P.CurrentTime, node.GetID()}, tp)
-		} else  {
-			node.SendToClusterHead(&Reading{ADCRead, newX, newY, node.P.CurrentTime, node.GetID()}, tp)
+			node.SendToServer(rd, tp)
 		}
 	}
 }
@@ -1195,4 +1251,13 @@ func (node *NodeImpl) MoveNormal(p *Params) {
 
 func rangeInt(min, max int) int { //returns a random number between max and min
 	return rand.Intn(max-min) + min
+}
+
+func SearchRemove(arr []*NodeImpl, node *NodeImpl) ([]*NodeImpl, bool) {
+	for i := range arr {
+		if arr[i] == node {
+			return append(arr[:i], arr[i+1:]...), true
+		}
+	}
+	return arr, false
 }

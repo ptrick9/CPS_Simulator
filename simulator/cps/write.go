@@ -403,7 +403,7 @@ func InitializeNodeParameters(p *Params, nodeNum int) *NodeImpl{
 	var initHistory = make([]float32, p.NumStoredSamples)
 
 	//initialize nodes to invalid starting point as starting point will be selected after initialization
-	curNode := NodeImpl{P: p, X: -1, Y: -1, Id: len(p.NodeList), SampleHistory: initHistory, Concentration: 0, Cascade: nodeNum}
+	curNode := NodeImpl{P: p, X: -1, Y: -1, Id: nodeNum, SampleHistory: initHistory, Concentration: 0, Cascade: nodeNum}
 
 	//values to determine coefficients
 	curNode.SetS0(rand.Float64()*0.005 + 0.33)
@@ -454,6 +454,7 @@ func SetupCSVNodes(p *Params) {
 			newNode.IsClusterMember = false
 			newNode.RecvMsgs = []*HelloMsg{}
 			newNode.ThisNodeHello = &HelloMsg{Sender: newNode}
+			newNode.ClusterMembers = make(map[*NodeImpl]int)
 			newNode.OutOfRange = false
 			p.NodeTree.Insert(newNode)
 			p.ClusterNetwork.ClearClusterParams(newNode)
@@ -1574,6 +1575,7 @@ func GetFlags(p *Params) {
 	flag.BoolVar(&p.RedundantClustering,"redundantClustering",false,"If clusteringOn is set to true, True: nodes will join two clusters, False: clusters will form normally")
 	flag.IntVar(&p.ClusterMaxThreshold, "clusterMaxThresh",8, "max number of members in a node cluster")
 	flag.IntVar(&p.ClusterMinThreshold, "clusterMinThresh", 0, "max number of members in a node cluster for it to be considered 'empty'")
+	flag.IntVar(&p.MaxClusterHeads, "maxClusterHeads", 1, "max number of cluster heads a cluster member can have. Must be > 0.")
 	flag.Float64Var(&p.NodeBTRange, "nodeBTRange",20.0,"bluetooth range of each node")
 	flag.Float64Var(&p.DegreeWeight, "degreeWeight", 0.6, "The weight constant applied to the number of neighboring nodes when calculating a node's score")
 	flag.Float64Var(&p.BatteryWeight, "batteryWeight", 0.4, "The weight constant applied to a node's battery when calculating a node's score")
@@ -1691,6 +1693,7 @@ func WriteFlags(p * Params){
 	buf.WriteString(fmt.Sprintf("recalReject=%v\n", p.RecalReject))
 	buf.WriteString(fmt.Sprintf("clusterMaxThresh=%v\n", p.ClusterMaxThreshold))
 	buf.WriteString(fmt.Sprintf("clusterMinThresh=%v\n", p.ClusterMinThreshold))
+	buf.WriteString(fmt.Sprintf("maxClusterHeads=%v\n", &p.MaxClusterHeads))
 	buf.WriteString(fmt.Sprintf("nodeBTRange=%v\n", p.NodeBTRange))
 	buf.WriteString(fmt.Sprintf("clusteringOn=%v\n",p.ClusteringOn))
 	buf.WriteString(fmt.Sprintf("degreeWeight=%v\n",p.DegreeWeight))

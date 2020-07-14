@@ -189,6 +189,7 @@ type Params struct {
 	NodeBTRange         float64
 	ClusterMaxThreshold int
 	ClusterMinThreshold	int
+	MaxClusterHeads		int
 	ClusteringOn        bool
 	RedundantClustering bool
 	DegreeWeight                    float64

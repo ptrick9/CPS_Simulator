@@ -453,16 +453,9 @@ func (qt *Quadtree) Clear() {
 
 //Remove - removes a node from the tree, DOES NOT reconfigure the tree
 func (qt *Quadtree) Remove(node *NodeImpl) bool {
-
-	//remove from Objects in Current Tree
-	for i := 0; i < len(node.CurTree.Objects); i++ {
-		if node.CurTree.Objects[i] == node {
-			node.CurTree.Objects = append(node.CurTree.Objects[:i], node.CurTree.Objects[i+1:]...) //remove from objects
-			node.CurTree = nil
-			return true
-		}
-	}
-	return false
+	var removed bool
+	node.CurTree.Objects, removed = SearchRemove(node.CurTree.Objects, node)
+	return removed
 }
 
 //CleanEntireTree - cleans tree from top to bottom, touching every subtree
