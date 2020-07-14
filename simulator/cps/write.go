@@ -1596,7 +1596,7 @@ func GetFlags(p *Params) {
 	*/
 	flag.IntVar(&p.LocalRecluster, "localRecluster", 1, "Enables or disables local reclustering")
 	flag.Float64Var(&p.ReclusterThreshold, "reclusterThreshold", 0.1, "The maximum percent of clusters made up only of cluster heads before the network should fully recluster")
-	flag.IntVar(&p.ReclusterPeriod, "reclusterPeriod", 30, "The period of time in seconds before the network checks if it should fully reclusters")
+	flag.Float64Var(&p.ReclusterPeriod, "reclusterPeriod", 30.0, "The period of time in seconds before the network checks if it should fully reclusters")
 	flag.Float64Var(&p.SmallImprovement, "smallImprovement", 0.2, "The threshold improvement in alone nodes after a global recluster that will lead to an increased recluster threshold or period")
 	flag.Float64Var(&p.LargeImprovement, "largeImprovement", 0.6, "The threshold improvement in alone nodes after a global recluster that will lead to a decreased recluster threshold or period")
 	flag.Float64Var(&p.GlobalReclusterIncrement, "GRIncrement", 1.3, "The number that the recluster threshold or period will be multiplied by when it needs to be increased.")

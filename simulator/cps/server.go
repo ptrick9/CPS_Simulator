@@ -49,6 +49,9 @@ type FusionCenter struct {
 	ClusterHeadsOf	map[*NodeImpl][]*NodeImpl
 	AloneNodes		map[*NodeImpl]int
 	RatioBeforeRecluster	float64
+
+	Waiting		bool	//true after a global recluster until nodes accounted for is greater than server ready threshold
+	NextReclusterTime	int //The next time a global recluster is scheduled
 }
 
 type Cluster struct {
@@ -962,6 +965,55 @@ func (s *FusionCenter) CheckFalsePosWind(n *NodeImpl) int {
 	return 0
 }
 
+func (s *FusionCenter) UpdateClusterInfo(node *NodeImpl, rd *Reading) {
+	if node.IsClusterHead {
+		if len(node.StoredReadings) > 0 {
+			if _, ok := s.Clusters[node]; !ok {
+				s.ClearServerClusterInfo(node)
+				s.Clusters[node] = &Cluster{Members: make(map[*NodeImpl]int), TimeFormed: rd.Time}
+			}
+			for _, reading := range node.StoredReadings {
+				member := node.P.NodeList[reading.Id]
+				if _, ok := s.Clusters[node].Members[member]; !ok {
+					time, ok1 := s.AloneNodes[member]
+					_, ok2 := s.Clusters[member]
+					if (!ok1 || time < reading.Time) && (!ok2 || s.Clusters[member].TimeFormed < reading.Time) {
+						delete(s.AloneNodes, member)
+						if ok2 {
+							for mem := range s.ClusterHeadsOf {
+								s.ClusterHeadsOf[mem], _ = SearchRemove(s.ClusterHeadsOf[mem], member)
+							}
+							delete(s.Clusters, member)
+						}
+						s.Clusters[node].Members[member] = reading.Time
+						s.ClusterHeadsOf[member] = append(s.ClusterHeadsOf[member], node)
+						if len(s.ClusterHeadsOf[member]) > node.P.MaxClusterHeads {
+							//Sort heads by oldest reading first
+							sort.Slice(s.ClusterHeadsOf[member], func(i, j int) bool {
+								head1 := s.ClusterHeadsOf[member][i]
+								head2 := s.ClusterHeadsOf[member][j]
+								mems1 := s.Clusters[head1].Members
+								mems2 := s.Clusters[head2].Members
+								time1 := mems1[member]
+								time2 := mems2[member]
+								return time1 < time2
+							})
+							oldestHead := s.ClusterHeadsOf[member][0]
+							delete(s.Clusters[oldestHead].Members, member)
+							s.ClusterHeadsOf[member] = s.ClusterHeadsOf[member][1:]
+						}
+					}
+				} else if reading.Time > s.Clusters[node].Members[member] {
+					s.Clusters[node].Members[member] = reading.Time
+				}
+			}
+		} else {
+			s.ClearServerClusterInfo(node)
+			s.AloneNodes[node] = rd.Time
+		}
+	}
+}
+
 func (s *FusionCenter) ClearServerClusterInfo(node *NodeImpl) {
 	for _, head := range s.ClusterHeadsOf[node] {
 		delete(s.Clusters[head].Members, node)
@@ -974,4 +1026,34 @@ func (s *FusionCenter) ClearServerClusterInfo(node *NodeImpl) {
 	delete(s.AloneNodes, node)
 	delete(s.ClusterHeadsOf, node)
 	delete(s.Clusters, node)
+}
+
+func (s *FusionCenter) CheckGlobalRecluster() {
+	nodesAccountedFor := len(s.Clusters) + len(s.ClusterHeadsOf) + len(s.AloneNodes)
+	if float64(nodesAccountedFor) / float64(len(s.P.AliveNodes)) > s.P.ServerReadyThreshold {
+		aloneRatio := float64(len(s.AloneNodes)) / float64(len(s.P.AliveNodes))
+		if (s.P.GlobalRecluster == 1 && aloneRatio > s.P.ReclusterThreshold) || (s.P.GlobalRecluster == 2 && s.P.CurrentTime > s.NextReclusterTime) {
+			s.RatioBeforeRecluster = aloneRatio
+			s.P.ClusterNetwork.FullRecluster(s.P)
+		}
+	}
+}
+
+func (s *FusionCenter) UpdateReclusterThresholds() {
+	aloneRatio := float64(len(s.AloneNodes))/float64(len(s.P.AliveNodes))
+	if (s.RatioBeforeRecluster - aloneRatio) / s.RatioBeforeRecluster < s.P.SmallImprovement {
+		if s.P.GlobalRecluster == 1 {
+			s.P.ReclusterThreshold *= s.P.GlobalReclusterIncrement
+		} else {
+			s.P.ReclusterPeriod *= s.P.GlobalReclusterIncrement
+			s.NextReclusterTime += int(s.P.ReclusterPeriod)
+		}
+	} else if (s.RatioBeforeRecluster - aloneRatio) / s.RatioBeforeRecluster > s.P.LargeImprovement {
+		if s.P.GlobalRecluster == 1 {
+			s.P.ReclusterThreshold *= s.P.GlobalReclusterDecrement
+		} else {
+			s.P.ReclusterPeriod *= s.P.GlobalReclusterDecrement
+			s.NextReclusterTime += int(s.P.ReclusterPeriod)
+		}
+	}
 }

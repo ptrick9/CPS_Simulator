@@ -469,14 +469,14 @@ func main() {
 			if p.CurrentTime/1000 < p.NumNodeMovements-5 {
 				p.Events.Push(&cps.Event{event.Node, cps.MOVE, p.CurrentTime + 100, 0})
 			}
-		case cps.INITCLUSTER:
-			p.ClusterNetwork.FullRecluster(p)
-			if p.GlobalRecluster > 0 {
-				p.Events.Push(&cps.Event{nil, cps.FULLRECLUSTER, p.CurrentTime + p.ReclusterPeriod*1000, 0})
-			}
-		case cps.FULLRECLUSTER:
-			p.ClusterNetwork.FullRecluster(p)
-			p.Events.Push(&cps.Event{nil, cps.FULLRECLUSTER, p.CurrentTime + p.ReclusterPeriod * 1000, 0})
+		//case cps.INITCLUSTER:
+		//	p.ClusterNetwork.FullRecluster(p)
+		//	if p.GlobalRecluster > 0 {
+		//		p.Events.Push(&cps.Event{nil, cps.FULLRECLUSTER, p.CurrentTime + p.ReclusterPeriod*1000, 0})
+		//	}
+		//case cps.FULLRECLUSTER:
+		//	p.ClusterNetwork.FullRecluster(p)
+		//	p.Events.Push(&cps.Event{nil, cps.FULLRECLUSTER, p.CurrentTime + p.ReclusterPeriod * 1000, 0})
 		case cps.POSITION: //runs through all valid nodes and prints their location
 			//fmt.Printf("Current Time: %v \n", p.CurrentTime)
 			var avBuffer bytes.Buffer

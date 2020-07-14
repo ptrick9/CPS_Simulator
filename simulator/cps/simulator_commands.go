@@ -198,7 +198,7 @@ type Params struct {
 	GlobalRecluster                 int
 	LocalRecluster                  int
 	ReclusterThreshold              float64
-	ReclusterPeriod                 int
+	ReclusterPeriod                 float64
 	SmallImprovement				float64
 	LargeImprovement				float64
 	GlobalReclusterIncrement		float64

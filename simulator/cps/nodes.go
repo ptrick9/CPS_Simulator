@@ -416,57 +416,20 @@ func (node *NodeImpl) SendToServer(rd *Reading, tp bool){
 		node.P.ClusterNetwork.LostReadings += lost
 	}
 
-	//server.UpdateClusterInfo(node, node.ClusterMembers)
-
 	if rd != nil {
 		server.Send(node, rd, tp)
 	}
 
-	if node.IsClusterHead {
-		if len(node.StoredReadings) > 0 {
-			if _, ok := server.Clusters[node]; !ok {
-				server.ClearServerClusterInfo(node)
-				server.Clusters[node] = &Cluster{Members: make(map[*NodeImpl]int), TimeFormed: rd.Time}
-			}
-			for _, reading := range node.StoredReadings {
-				member := node.P.NodeList[reading.Id]
-				if _, ok := server.Clusters[node].Members[member]; !ok {
-					time, ok1 := server.AloneNodes[member]
-					_, ok2 := server.Clusters[member]
-					if (!ok1 || time < reading.Time) && (!ok2 || server.Clusters[member].TimeFormed < reading.Time) {
-						delete(server.AloneNodes, member)
-						if ok2 {
-							for mem := range server.ClusterHeadsOf {
-								server.ClusterHeadsOf[mem], _ = SearchRemove(server.ClusterHeadsOf[mem], member)
-							}
-							delete(server.Clusters, member)
-						}
-						server.Clusters[node].Members[member] = reading.Time
-						server.ClusterHeadsOf[member] = append(server.ClusterHeadsOf[member], node)
-						if len(server.ClusterHeadsOf[member]) > node.P.MaxClusterHeads {
-							//Sort heads by oldest reading first
-							sort.Slice(server.ClusterHeadsOf[member], func(i, j int) bool {
-								head1 := server.ClusterHeadsOf[member][i]
-								head2 := server.ClusterHeadsOf[member][j]
-								mems1 := server.Clusters[head1].Members
-								mems2 := server.Clusters[head2].Members
-								time1 := mems1[member]
-								time2 := mems2[member]
-								return time1 < time2
-							})
-							oldestHead := server.ClusterHeadsOf[member][0]
-							delete(server.Clusters[oldestHead].Members, member)
-							server.ClusterHeadsOf[member] = server.ClusterHeadsOf[member][1:]
-						}
-					}
-				} else if reading.Time > server.Clusters[node].Members[member] {
-					server.Clusters[node].Members[member] = reading.Time
-				}
-			}
-		} else {
-			server.ClearServerClusterInfo(node)
-			server.AloneNodes[node] = rd.Time
+	server.UpdateClusterInfo(node, rd)
+
+	if server.Waiting {
+		nodesAccountedFor := len(server.Clusters) + len(server.ClusterHeadsOf) + len(server.AloneNodes)
+		if float64(nodesAccountedFor) / float64(len(server.P.AliveNodes)) > server.P.ServerReadyThreshold {
+			server.Waiting = false
+			server.UpdateReclusterThresholds()
 		}
+	} else {
+		server.CheckGlobalRecluster()
 	}
 
 	node.StoredNodes = []*NodeImpl{}
