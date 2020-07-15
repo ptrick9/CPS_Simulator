@@ -223,7 +223,7 @@ func main() {
 	r = &cps.RegionParams{}
 
 	p.Events = Events
-	p.Server = cps.FusionCenter{P: p, R: r}
+	p.Server = &cps.FusionCenter{P: p, R: r}
 
 	p.Tau1 = 3500
 	p.Tau2 = 9000
@@ -414,7 +414,7 @@ func main() {
 			p.Events.Push(&cps.Event{nil, cps.FULLRECLUSTER, 5000, 0})
 		}
 		if p.ClusterPrint {
-			fmt.Fprintf(p.ClusterFile, "Number of clusters, average cluster size, global reclusters, potential global reclusters, local reclusters, clusters above member threshold, clusters below member threshold, aliveValidNodes, Cluster Searches, CSJoins, CSSolos, Waits, Lost Readings\n")
+			fmt.Fprintf(p.ClusterFile, "Number of clusters, average cluster size, global reclusters, potential global reclusters, local reclusters, clusters above member threshold, clusters below member threshold, aliveValidNodes, Cluster Searches, CSJoins, CSSolos, Waits, Lost Readings, global recluster threshold, global recluster period\n")
 			p.Events.Push(&cps.Event{nil, cps.CLUSTERPRINT, 999, 0})
 		}
 	}
@@ -765,8 +765,8 @@ func main() {
 			//	}
 			//}
 
-			//Number of clusters, average cluster size, global reclusters, potential global reclusters, local reclusters, clusters above member threshold, clusters below member threshold, aliveValidNodes, Cluster Searches, CSJoins, CSSolos, Waits, Lost Readings
-			fmt.Fprintf(p.ClusterFile, "%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v\n", len(p.ClusterNetwork.ClusterHeads), average, p.ClusterNetwork.FullReclusters, p.ClusterNetwork.PotentialReclusters, p.ClusterNetwork.LocalReclusters, clustersAboveThresh, clustersBelowThresh, aliveValidNodes, p.ClusterNetwork.CSJoins + p.ClusterNetwork.CSSolos, p.ClusterNetwork.CSJoins, p.ClusterNetwork.CSSolos, p.ClusterNetwork.TotalWaits, p.ClusterNetwork.LostReadings)
+			//Number of clusters, average cluster size, global reclusters, potential global reclusters, local reclusters, clusters above member threshold, clusters below member threshold, aliveValidNodes, Cluster Searches, CSJoins, CSSolos, Waits, Lost Readings, global recluster threshold, global recluster period
+			fmt.Fprintf(p.ClusterFile, "%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v\n", len(p.ClusterNetwork.ClusterHeads), average, p.ClusterNetwork.FullReclusters, p.ClusterNetwork.PotentialReclusters, p.ClusterNetwork.LocalReclusters, clustersAboveThresh, clustersBelowThresh, aliveValidNodes, p.ClusterNetwork.CSJoins + p.ClusterNetwork.CSSolos, p.ClusterNetwork.CSJoins, p.ClusterNetwork.CSSolos, p.ClusterNetwork.TotalWaits, p.ClusterNetwork.LostReadings, p.ReclusterThreshold, p.ReclusterPeriod)
 
 			p.ClusterNetwork.AverageNumClusters += len(p.ClusterNetwork.ClusterHeads)
 

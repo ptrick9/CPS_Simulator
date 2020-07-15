@@ -165,7 +165,7 @@ type Params struct {
 
 	Width 			int
 	Height 			int
-	Server 			FusionCenter //Server object
+	Server 			*FusionCenter //Server object
 
 	MaxRaw 			float32
 	EdgeRaw 		float32

@@ -1031,16 +1031,20 @@ func (s *FusionCenter) ClearServerClusterInfo(node *NodeImpl) {
 func (s *FusionCenter) CheckGlobalRecluster() {
 	nodesAccountedFor := len(s.Clusters) + len(s.ClusterHeadsOf) + len(s.AloneNodes)
 	if float64(nodesAccountedFor) / float64(len(s.P.AliveNodes)) > s.P.ServerReadyThreshold {
-		aloneRatio := float64(len(s.AloneNodes)) / float64(len(s.P.AliveNodes))
+		aloneRatio := float64(len(s.AloneNodes)) / float64(nodesAccountedFor)
 		if (s.P.GlobalRecluster == 1 && aloneRatio > s.P.ReclusterThreshold) || (s.P.GlobalRecluster == 2 && s.P.CurrentTime > s.NextReclusterTime) {
 			s.RatioBeforeRecluster = aloneRatio
+			s.AloneNodes = make(map[*NodeImpl]int)
+			s.Clusters = make(map[*NodeImpl]*Cluster)
+			s.ClusterHeadsOf = make(map[*NodeImpl][]*NodeImpl)
+			s.Waiting = true
 			s.P.ClusterNetwork.FullRecluster(s.P)
 		}
 	}
 }
 
-func (s *FusionCenter) UpdateReclusterThresholds() {
-	aloneRatio := float64(len(s.AloneNodes))/float64(len(s.P.AliveNodes))
+func (s *FusionCenter) UpdateReclusterThresholds(nodesAccountedFor int) {
+	aloneRatio := float64(len(s.AloneNodes))/float64(nodesAccountedFor)
 	if (s.RatioBeforeRecluster - aloneRatio) / s.RatioBeforeRecluster < s.P.SmallImprovement {
 		if s.P.GlobalRecluster == 1 {
 			s.P.ReclusterThreshold *= s.P.GlobalReclusterIncrement

@@ -426,7 +426,7 @@ func (node *NodeImpl) SendToServer(rd *Reading, tp bool){
 		nodesAccountedFor := len(server.Clusters) + len(server.ClusterHeadsOf) + len(server.AloneNodes)
 		if float64(nodesAccountedFor) / float64(len(server.P.AliveNodes)) > server.P.ServerReadyThreshold {
 			server.Waiting = false
-			server.UpdateReclusterThresholds()
+			server.UpdateReclusterThresholds(nodesAccountedFor)
 		}
 	} else {
 		server.CheckGlobalRecluster()
@@ -681,7 +681,7 @@ func (node *NodeImpl) UpdateAliveStatus() {
 			}
 		}
 		delete(node.P.AliveNodes, node)
-		delete(node.P.Server.AloneNodes, node)
+		node.P.Server.ClearServerClusterInfo(node)
 		node.DrainBatteryWifi() // Node informs the server it is dying.
 	}
 
@@ -690,6 +690,7 @@ func (node *NodeImpl) UpdateAliveStatus() {
 			node.InitLocalRecluster()
 		} else {
 			node.P.ClusterNetwork.ClearClusterParams(node)
+			node.IsClusterMember = true
 		}
 	}
 }
