@@ -18,17 +18,16 @@ from zipfile import *
 #basePath = "C:/Users/patrick/Downloads/driftExplorerBombFinalGridSize2/"
 
 #basePath = "D:/Downloads/stadiumClusteringTests/"
-# pickleName = "stadiumNoBombClusteringTests"
-basePath = "D:/Downloads/BigTests/"
-pickleName = "BigTests"
+basePath = "/home/simulator/git-simulator/CPS_Simulator/simData/clusteringTest2020-7-8/"
+pickleName = "NewLRTests"
 
 #basePath = "C:/Users/patrick/Downloads/driftTest/"
-figurePath = "D:/Downloads/TestResults/"
+#figurePath = "D:/Downloads/TestResults/"
 
 X_VAL = ['detectionThreshold', 'detectionDistance']
 X_VAL = ['validationThreshold', 'errorMultiplier', 'serverRecal']
 
-IGNORE = ['movementPath', 'bombX', 'bombY']
+IGNORE = ['movementPath', 'bombX', 'bombY', 'clusterMaxThresh', 'reclusterPeriod']
 ZIP = True
 
 data = {}
@@ -55,10 +54,12 @@ def getDistance(basePath, run):
 
 def determineDifferences(basePath, runs):
     params = {}
+    i = 0
     for r in runs:
     # for i in range(500):
         p = getParameters("%s%s" % (basePath, r))
-        print(r)
+        print(i)
+        i += 1
         #print(p['serverRecal'])
         for k in p.keys():
             if 'file' not in k and 'File' not in k and k not in IGNORE:
@@ -96,7 +97,6 @@ def generateData(rq, wq):
     #allData = {}
         #for i,file in enumerate(uniqueRuns):
         run = {}
-        print(job)
         p = getParameters("%s%s" % (basePath, file))
         det = getDetections(basePath, file, p)
         firstDet = 10000
@@ -120,19 +120,31 @@ def generateData(rq, wq):
         run['True Positive Readings'] = [x.errorADC for x in det if x.TP() and x.time < firstDet]
         run['True Positive Findings'] = [x.errorADC for x in det if x.TPConf() and x.time == firstDet]
         batteryStats = getBatteryStats(basePath, file)
-        run['Average Remaining Battery'] = batteryStats[0]
-        run['Percent Nodes Dead'] = batteryStats[1]
-        run['Percent Alive Over Time'] = batteryStats[2]
-        clusterStats = getClusterStats(basePath, file)
-        run['New nodes joining existing clusters'] = clusterStats[0]
-        run['New nodes creating a new cluster'] = clusterStats[1]
-        run['Average number of clusters'] = clusterStats[2]
-        run['Overall average cluster size'] = clusterStats[3]
-        run['Local Reclusters'] = clusterStats[4]
-        run['Cluster heads created by local reclusters'] = clusterStats[5]
-        run['Potential Full Reclusters'] = clusterStats[6]
-        run['Actual Full Reclusters'] = clusterStats[7]
-        run['Lost Readings'] = clusterStats[8]
+        run['Percent Alive'] = batteryStats[0]
+        run['Average Battery'] = batteryStats[1]
+        run['Min Battery'] = batteryStats[2]
+        run['Max Battery'] = batteryStats[3]
+        run['Samples'] = batteryStats[4]
+        run['Wifi'] = batteryStats[5]
+        run['Bluetooth'] = batteryStats[6]
+        run['BTRecluster'] = batteryStats[7]
+        run['BTClusterSearch'] = batteryStats[8]
+        run['BTReadings'] = batteryStats[9]
+        if p['clusteringOn'] == 'true':
+            clusterStats = getClusterStats(basePath, file)
+            run['Number of clusters'] = clusterStats[0]
+            run['Avg cluster size'] = clusterStats[1]
+            run['Global reclusters'] = clusterStats[2]
+            run['Potential global reclusters'] = clusterStats[3]
+            run['Local Reclusters'] = clusterStats[4]
+            run['Clusters above thresh'] = clusterStats[5]
+            run['Clusters below thresh'] = clusterStats[6]
+            run['Alive valid nodes'] = clusterStats[7]
+            run['Cluster searches'] = clusterStats[8]
+            run['CS Joins'] = clusterStats[9]
+            run['CS Solos'] = clusterStats[10]
+            run['Waits'] = clusterStats[11]
+            run['Lost readings'] = clusterStats[12]
 
         #if p['validaitonType'] == 'square':
         #    run['False Positive Confirmation Timing'] = [x.time for x in det if x.FPConf()]
@@ -148,7 +160,7 @@ def generateData(rq, wq):
 
         k = tuple(p[x] for x in order)
 
-        wq.put([run, det, k])
+        wq.put([run, det, k, job[2]])
 
         '''
         #k = p[X_VAL]
@@ -169,7 +181,7 @@ def generateData(rq, wq):
         return data
         '''
         rq.task_done()
-        print(rq.qsize())
+        print("rq:", rq.qsize())
 
 def dataStorage(wq, order, variation, total):
 
@@ -212,19 +224,51 @@ def dataStorage(wq, order, variation, total):
             except:
                 failed += 1
                 pass
-        else:
-            print(waiting, wq.qsize())
+        print("wq:", waiting, wq.qsize())
         i += 1
-        print("Total %d/%d Failed %d/%d" % (i, total, failed, i))
+        #print("Total %d/%d Failed %d/%d" % (job[3], total, failed, i))
         #with open('driftExploreBomb.pickle', 'wb') as handle:
         #    pickle.dump(data, handle)# protocol=pickle.HIGHEST_PROTOCOL)
         #    handle.close()
         wq.task_done()
-        if wq.qsize() <= 0:
-            break
 
     return data
 
+def multiPickleDataStorage(wq, order, variation, total):
+
+    i = 0
+    failed = 0
+    data = {}
+    waiting = 0
+    while True:
+        job = wq.get()
+
+        run = job[0]
+        det = job[1]
+        k = job[2]
+
+        waiting += 1
+
+        try:
+            f = open('%s%d.pickle' % (pickleName, job[3]), 'wb')
+            pickle.dump({'run': run, 'key': k, 'order':order, 'var': variation}, f)
+            f.close()
+            waiting = 0
+            pickleOpen = False
+            #fail = False
+        except:
+            failed += 1
+            pass
+
+        print("wq:", waiting, wq.qsize())
+        i += 1
+        #print("Total %d/%d Failed %d/%d" % (job[3], total, failed, i))
+        #with open('driftExploreBomb.pickle', 'wb') as handle:
+        #    pickle.dump(data, handle)# protocol=pickle.HIGHEST_PROTOCOL)
+        #    handle.close()
+        wq.task_done()
+
+    return data
 
 def generateGraphs(order, xx):
     grouped = {}
@@ -277,6 +321,76 @@ def generateGraphs(order, xx):
     return graphs
 
 
+def getBatteryStats(zipPath, zipName):
+    zf = ZipFile(zipPath + zipName)
+    f = zf.open("%s%s" % (zipName.split(".zip")[0], "-batteryusage.txt"))
+    alive = []
+    avg = []
+    minimum = []
+    maximum = []
+    samples = []
+    wifi = []
+    BT = []
+    BTRecluster = []
+    BTClusterSearch = []
+    BTReadings = []
+
+    batteryStats = [alive, avg, minimum, maximum, samples, wifi, BT, BTRecluster, BTClusterSearch, BTReadings]
+
+    success = 0
+    failed = 0
+
+    next(f) #skip header line
+    for line in f:
+        try:
+            line = line.decode("utf-8").rstrip()
+            l = line.split(",")
+            i = 0
+            for stat in l:
+                batteryStats[i] += [float(stat)]
+                i += 1
+            success += 1
+        except:
+            failed += 1
+    if success < 9950:
+        print('\n\n\nsuccess ' + str(success))
+        print(zipName)
+    if failed > 10:
+        print('\n\n\nfailed ' + str(failed))
+
+
+    return batteryStats
+
+
+def getClusterStats(zipPath, zipName):
+    zf = ZipFile(zipPath + zipName)
+    f = zf.open("%s%s" % (zipName.split(".zip")[0], "-clusters.txt"))
+    clusterStats = [[], [], [], [], [], [], [], [], [] ,[], [], [], []]
+
+    success = 0
+    failed = 0
+
+    next(f) #skip header line
+    for line in f:
+        try:
+            line = line.decode("utf-8").rstrip()
+            l = line.split(",")
+            i = 0
+            for stat in l:
+                clusterStats[i] += [int(stat)]
+                i += 1
+            success += 1
+        except:
+            failed += 1
+    if success < 9950:
+        print('\n\n\nsuccess ' + str(success))
+        print(zipName)
+    if failed > 10:
+        print('\n\n\nfailed ' + str(failed))
+
+    return clusterStats
+
+
 
 if __name__ == '__main__':
     #'''
@@ -303,21 +417,19 @@ if __name__ == '__main__':
     rq = m.JoinableQueue()
     wq = m.JoinableQueue()
 
+    i = 0
     for run in uniqueRuns:
-        rq.put([run, order])
+        i += 1
+        rq.put([run, order, i])
     # for i in range(500):
     #     rq.put([uniqueRuns[i], order])
 
-    p = multiprocessing.Pool(3, generateData, (rq,wq,), maxtasksperchild=3)
+    p = multiprocessing.Pool(12, generateData, (rq,wq,))
+    p = multiprocessing.Pool(8, multiPickleDataStorage, (wq,order, shiftingParameters, len(uniqueRuns),))
 
     rq.join()
-
-    print('here')
-
-    # p = multiprocessing.Pool(1, dataStorage, (wq,order, shiftingParameters, len(uniqueRuns),))
-    dataStorage(wq, order, shiftingParameters, len(uniqueRuns))
-
-    # wq.join()
+    #print('here')
+    wq.join()
 
     #with open('driftExplorePar.pickle', 'wb') as handle:
     #    pickle.dump(data, handle)# protocol=pickle.HIGHEST_PROTOCOL)
@@ -377,41 +489,3 @@ if __name__ == '__main__':
 '''
 
 
-def getBatteryStats(zipPath, zipName):
-    zf = ZipFile(zipPath + zipName)
-    f = zf.open("%s%s" % (zipName.split(".zip")[0], "-batteryusage.txt"))
-    percentAliveOverTime = []
-
-    for line in f:
-        line = line.decode("utf-8")
-        if "Iteration" in line:
-            line = line.split(",")[1].rstrip()
-            percentAlive = float(line)
-            percentAliveOverTime += [percentAlive]
-        elif "Average Remaining Battery" in line:
-            averageRemaining = float(line.split(":")[1].rstrip())
-        elif "Total Dead Nodes" in line:
-            fraction = line.split(":")[1].rstrip()
-            deadNodes = float(fraction.split("/")[0].rstrip())
-            totalNodes = float(fraction.split("/")[1].rstrip())
-            percentDead = deadNodes/totalNodes
-
-    return [averageRemaining, percentDead, percentAliveOverTime]
-
-
-def getClusterStats(zipPath, zipName):
-    zf = ZipFile(zipPath + zipName)
-    f = zf.open("%s%s" % (zipName.split(".zip")[0], "-clusterStats.txt"))
-    clusterStats = []
-
-    for line in f:
-        line = line.decode("utf-8")
-        if 'Lost Readings' in line:
-            fraction = line.split(':')[1].rstrip()
-            top = float(fraction.split('/')[0].rstrip())
-            bottom = float(fraction.split('/')[1].rstrip())
-            clusterStats += [top/bottom]
-        elif line.strip():
-            clusterStats += [int(line.split(':')[1].rstrip())]
-
-    return clusterStats
