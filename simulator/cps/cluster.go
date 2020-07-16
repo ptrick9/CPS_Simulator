@@ -10,7 +10,6 @@ type AdHocNetwork struct {
 	SingularNodes       []*NodeImpl
 	FullReclusters      int //Counts the number of full reclusters that occur in a simulation
 	LocalReclusters     int //Counts the number of local reclusters that occur in a simulation
-	PotentialReclusters int //Counts the number of reclusters that would have occurred if there was a check every second
 	AverageClusterSize  int //The current average cluster size is added to this every iteration (when cluster print is enabled)
 	AverageNumClusters  int //The current number of clusters is added to this every iteration
 	CSJoins             int //Counts the number of times a new node hello leads to a node joining an existing cluster
@@ -107,25 +106,25 @@ curNode - The node sending the hello message
 members - The nodes participating in the recluster. nil if global
 p		- The parameters of the simulation
 */
-func (adhoc *AdHocNetwork) SendHello(curNode *NodeImpl, members []*NodeImpl, p *Params) {
+func (adhoc *AdHocNetwork) SendHello(curNode *NodeImpl, members []*NodeImpl, counter *int, p *Params) {
 	withinDist := p.NodeTree.WithinRadius(p.NodeBTRange, curNode, []*NodeImpl{})
 	membersWithinDist := withinDist
 	if members != nil {
 		membersWithinDist = SimpleIntersect(withinDist, members)
 	}
 
-	curNode.DrainBatteryBluetooth(&curNode.P.Server.ReclusterBTCounter) //Broadcasting first hello message, no score
+	curNode.DrainBatteryBluetooth(counter) //Broadcasting first hello message, no score
 
 	for j := 0; j < len(withinDist); j++ {
-		withinDist[j].DrainBatteryBluetooth(&curNode.P.Server.ReclusterBTCounter) //Every node in bluetooth range receives the first hello message, allowing them to count how many neighbors they have
+		withinDist[j].DrainBatteryBluetooth(counter) //Every node in bluetooth range receives the first hello message, allowing them to count how many neighbors they have
 	}
 
 	if curNode.IsAlive() { //If the node survived sending the first message
 		curNode.GenerateHello(curNode.ComputeClusterScore(p, len(membersWithinDist))) //Score is computed using members in range because only members respond to the initial hello
-		curNode.DrainBatteryBluetooth(&curNode.P.Server.ReclusterBTCounter)                                               //Broadcasting second hello message with score
+		curNode.DrainBatteryBluetooth(counter)                                               //Broadcasting second hello message with score
 		for j := 0; j < len(withinDist); j++ {
 			if withinDist[j].IsAlive() { //If the node survived receiving the first message
-				withinDist[j].DrainBatteryBluetooth(&curNode.P.Server.ReclusterBTCounter) //Every node in bluetooth range then receives a second hello message, the one including curNode's score
+				withinDist[j].DrainBatteryBluetooth(counter) //Every node in bluetooth range then receives a second hello message, the one including curNode's score
 			}
 		}
 
@@ -173,8 +172,10 @@ func (adhoc *AdHocNetwork) ClusterSearch(node *NodeImpl, rd *Reading, tp bool, p
 			adhoc.ClearClusterParams(node)
 			node.Join(toJoin[0])
 			adhoc.CSJoins++
-			node.DrainBatteryBluetooth(&node.P.Server.ReadingBTCounter) //node sends reading to new head
-			node.SendToClusterHead(rd, tp , toJoin[0])
+			if rd != nil {
+				node.DrainBatteryBluetooth(&node.P.Server.ReadingBTCounter) //node sends reading to new head
+				node.SendToClusterHead(rd, tp, toJoin[0])
+			}
 		} else {
 			adhoc.ClearClusterParams(node)
 			adhoc.FormCluster(node)
@@ -565,7 +566,7 @@ func (adhoc *AdHocNetwork) FullRecluster(p *Params) {
 	for node := range p.AliveNodes {
 		node.DrainBatteryWifi()	//Server sends message to all nodes that reclustering is happening
 		if node.Valid {
-			adhoc.SendHello(node, nil, p)
+			adhoc.SendHello(node, nil, &p.Server.GlobalReclusterBTCounter, p)
 		}
 	}
 	for node := range p.AliveNodes {
@@ -583,7 +584,7 @@ func (adhoc *AdHocNetwork) LocalRecluster(head *NodeImpl, members []*NodeImpl, p
 		adhoc.ClearClusterParams(members[i])
 		if members[i].IsAlive() {
 			if p.LocalRecluster == 1 {
-				toJoin := members[i].FindNearbyHeads(p, &p.Server.ReclusterBTCounter)
+				toJoin := members[i].FindNearbyHeads(p, &p.Server.LocalReclusterBTCounter)
 				if len(toJoin) > 0 {
 					members[i].Join(toJoin[0])
 					members = append(members[:i], members[i+1:]...)
@@ -592,7 +593,7 @@ func (adhoc *AdHocNetwork) LocalRecluster(head *NodeImpl, members []*NodeImpl, p
 					continue
 				}
 			}
-			adhoc.SendHello(members[i], members, p)
+			adhoc.SendHello(members[i], members, &p.Server.LocalReclusterBTCounter, p)
 		}
 	}
 	for _, node := range members {
@@ -610,9 +611,9 @@ func (adhoc *AdHocNetwork) LocalRecluster(head *NodeImpl, members []*NodeImpl, p
 
 func (adhoc *AdHocNetwork) ExpansiveLocalRecluster(head *NodeImpl, members []*NodeImpl, p *Params) {
 	withinDist := p.NodeTree.WithinRadius(p.NodeBTRange, head, []*NodeImpl{})
-	head.DrainBatteryBluetooth(&p.Server.ReclusterBTCounter) //Sends message to all in bluetooth range
+	head.DrainBatteryBluetooth(&p.Server.LocalReclusterBTCounter) //Sends message to all in bluetooth range
 	for i := 0; i < len(withinDist); i++ {
-		withinDist[i].DrainBatteryBluetooth(&p.Server.ReclusterBTCounter) //All nodes in range receive message
+		withinDist[i].DrainBatteryBluetooth(&p.Server.LocalReclusterBTCounter) //All nodes in range receive message
 		if withinDist[i].IsClusterHead && (p.CurrentTime - withinDist[i].TimeBecameClusterHead) / 1000 > (p.LocalRecluster-3) {
 			withinDist[i].DrainBatteryWifi() //This cluster head informs the server that it is within range of the dying cluster head
 			adhoc.ClearClusterParams(withinDist[i])

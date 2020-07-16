@@ -414,12 +414,12 @@ func main() {
 			p.Events.Push(&cps.Event{nil, cps.FULLRECLUSTER, 5000, 0})
 		}
 		if p.ClusterPrint {
-			fmt.Fprintf(p.ClusterFile, "Number of clusters, average cluster size, global reclusters, potential global reclusters, local reclusters, clusters above member threshold, clusters below member threshold, aliveValidNodes, Cluster Searches, CSJoins, CSSolos, Waits, Lost Readings, global recluster threshold, global recluster period\n")
+			fmt.Fprintf(p.ClusterFile, "Number of clusters, average cluster size, global reclusters, local reclusters, clusters above member threshold, clusters below member threshold, aliveValidNodes, aloneNodes, Cluster Searches, CSJoins, CSSolos, Waits, Lost Readings, global recluster threshold, global recluster period\n")
 			p.Events.Push(&cps.Event{nil, cps.CLUSTERPRINT, 999, 0})
 		}
 	}
 	if p.BatteryPrint {
-		fmt.Fprintf(p.BatteryFile, "percent alive, average battery level, min, max, samples, wifi, bluetooth, BTRecluster, BTClusterSearch, BTReadings\n")
+		fmt.Fprintf(p.BatteryFile, "percent alive, average battery level, min, max, samples, wifi, bluetooth, BTGlobalRecluster, BTLocalRecluster, BTClusterSearch, BTReadings\n")
 		p.Events.Push(&cps.Event{nil, cps.BATTERYPRINT, 1000, 0})
 	}
 	p.CurrentTime = 0
@@ -548,7 +548,8 @@ func main() {
 					"Samples:", p.Server.SamplesCounter,
 					"Wifi:", p.Server.WifiCounter,
 					"Bluetooth:", p.Server.BluetoothCounter,
-					"Recluster:", p.Server.ReclusterBTCounter,
+					"Global Recluster:", p.Server.GlobalReclusterBTCounter,
+					"Local Recluster:", p.Server.LocalReclusterBTCounter,
 					"Cluster Search:", p.Server.ClusterSearchBTCounter,
 					"Reading:", p.Server.ReadingBTCounter)
 				var buffer bytes.Buffer
@@ -718,9 +719,6 @@ func main() {
 				}
 				nodesInClusters += len(p.ClusterNetwork.ClusterHeads[i].ClusterMembers) + 1 //Plus one for the cluster head
 			}
-			if float64(nodesBelowThresh)/float64(len(p.AliveNodes)) > p.ReclusterThreshold {
-				p.ClusterNetwork.PotentialReclusters++
-			}
 
 			average := 0
 			if len(p.ClusterNetwork.ClusterHeads) > 0 {
@@ -770,8 +768,8 @@ func main() {
 			//	}
 			//}
 
-			//Number of clusters, average cluster size, global reclusters, potential global reclusters, local reclusters, clusters above member threshold, clusters below member threshold, aliveValidNodes, Cluster Searches, CSJoins, CSSolos, Waits, Lost Readings, global recluster threshold, global recluster period
-			fmt.Fprintf(p.ClusterFile, "%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v\n", len(p.ClusterNetwork.ClusterHeads), average, p.ClusterNetwork.FullReclusters, p.ClusterNetwork.PotentialReclusters, p.ClusterNetwork.LocalReclusters, clustersAboveThresh, clustersBelowThresh, aliveValidNodes, p.ClusterNetwork.CSJoins + p.ClusterNetwork.CSSolos, p.ClusterNetwork.CSJoins, p.ClusterNetwork.CSSolos, p.ClusterNetwork.TotalWaits, p.ClusterNetwork.LostReadings, p.ReclusterThreshold, p.ReclusterPeriod)
+			//Number of clusters, average cluster size, global reclusters, local reclusters, clusters above member threshold, clusters below member threshold, aliveValidNodes, aloneNodes, Cluster Searches, CSJoins, CSSolos, Waits, Lost Readings, global recluster threshold, global recluster period
+			fmt.Fprintf(p.ClusterFile, "%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v\n", len(p.ClusterNetwork.ClusterHeads), average, p.ClusterNetwork.FullReclusters, p.ClusterNetwork.LocalReclusters, clustersAboveThresh, clustersBelowThresh, aliveValidNodes, len(p.Server.AloneNodes), p.ClusterNetwork.CSJoins + p.ClusterNetwork.CSSolos, p.ClusterNetwork.CSJoins, p.ClusterNetwork.CSSolos, p.ClusterNetwork.TotalWaits, p.ClusterNetwork.LostReadings, p.ReclusterThreshold, p.ReclusterPeriod)
 
 			p.ClusterNetwork.AverageNumClusters += len(p.ClusterNetwork.ClusterHeads)
 
@@ -807,8 +805,8 @@ func main() {
 				}
 			}
 			averageBattery = averageBattery / float64(len(p.NodeList))
-			//percent alive, average battery level, min, max, samples, wifi, bluetooth, BTRecluster, BTClusterSearch, BTReadings
-			fmt.Fprintf(p.BatteryFile, "%v,%v,%v,%v,%v,%v,%v,%v,%v,%v\n", float64(len(p.AliveNodes))/float64(p.TotalNodes), averageBattery, lowBattery, highBattery, p.Server.SamplesCounter, p.Server.WifiCounter, p.Server.BluetoothCounter, p.Server.ReclusterBTCounter, p.Server.ClusterSearchBTCounter, p.Server.ReadingBTCounter)
+			//percent alive, average battery level, min, max, samples, wifi, bluetooth, BTGlobalRecluster, BTLocalRecluster, BTClusterSearch, BTReadings
+			fmt.Fprintf(p.BatteryFile, "%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v\n", float64(len(p.AliveNodes))/float64(p.TotalNodes), averageBattery, lowBattery, highBattery, p.Server.SamplesCounter, p.Server.WifiCounter, p.Server.BluetoothCounter, p.Server.GlobalReclusterBTCounter, p.Server.LocalReclusterBTCounter, p.Server.ClusterSearchBTCounter, p.Server.ReadingBTCounter)
 			p.Events.Push(&cps.Event{nil, cps.BATTERYPRINT, p.CurrentTime + 1000, 0})
 		}
 	}
@@ -868,7 +866,6 @@ func main() {
 		fmt.Fprintln(p.ClusterStatsFile, "Overall average cluster size:", p.ClusterNetwork.AverageClusterSize / (p.CurrentTime / 1000))
 		fmt.Fprintln(p.ClusterStatsFile, "Local Reclusters:", p.ClusterNetwork.LocalReclusters)
 		fmt.Fprintln(p.ClusterStatsFile, "Cluster heads created by local reclusters:", p.ClusterNetwork.LRHeads)
-		fmt.Fprintln(p.ClusterStatsFile, "Potential Full Reclusters:", p.ClusterNetwork.PotentialReclusters)
 		fmt.Fprintln(p.ClusterStatsFile, "Actual Full Reclusters:", p.ClusterNetwork.FullReclusters)
 		fmt.Fprintln(p.ClusterStatsFile, "Lost Readings:", p.ClusterNetwork.LostReadings, "/", p.Server.SamplesCounter)
 	}

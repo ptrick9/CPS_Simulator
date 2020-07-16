@@ -423,14 +423,16 @@ func (node *NodeImpl) SendToServer(rd *Reading, tp bool){
 	//and updates about the cluster, such as if any members have left to join other clusters.
 	node.UpdateClusterInfo(server)
 
-	if server.Waiting {
-		nodesAccountedFor := len(server.Clusters) + len(server.ClusterHeadsOf) + len(server.AloneNodes)
-		if float64(nodesAccountedFor) / float64(len(server.P.AliveNodes)) > server.P.ServerReadyThreshold {
-			server.Waiting = false
-			server.UpdateReclusterThresholds(nodesAccountedFor)
+	if server.P.GlobalRecluster > 0 {
+		if server.Waiting {
+			nodesAccountedFor := len(server.Clusters) + len(server.ClusterHeadsOf) + len(server.AloneNodes)
+			if float64(nodesAccountedFor)/float64(len(server.P.AliveNodes)) > server.P.ServerReadyThreshold {
+				server.Waiting = false
+				server.UpdateReclusterThresholds(nodesAccountedFor)
+			}
+		} else {
+			server.CheckGlobalRecluster()
 		}
-	} else {
-		server.CheckGlobalRecluster()
 	}
 
 	node.StoredNodes = []*NodeImpl{}

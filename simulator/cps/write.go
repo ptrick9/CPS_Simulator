@@ -1583,20 +1583,20 @@ func GetFlags(p *Params) {
 	flag.Float64Var(&p.DegreeWeight, "degreeWeight", 0.6, "The weight constant applied to the number of neighboring nodes when calculating a node's score")
 	flag.Float64Var(&p.BatteryWeight, "batteryWeight", 0.4, "The weight constant applied to a node's battery when calculating a node's score")
 	flag.Float64Var(&p.Penalty, "penalty", 0.8, "The penalty multiplied to a node's score when it is not already a cluster head")
+
 	/* Global Reclustering
 	0 - off
 	1 - threshold-based
-	2 - time-based
-	*/
+	2 - time-based */
 	flag.IntVar(&p.GlobalRecluster, "globalRecluster", 1, "Enables or disables global reclustering")
+
 	/* Local Reclustering
 	0 - off
 	1 - minimal (nodes check for nearby head first)
 	2 - standard
 	3 or higher - expansive (nearby clusters also recluster)
 	When expansive is chosen, (p.LocalRecluster - 3) will be the time in seconds that a node has been a cluster head for its cluster to join the expansive recluster
-	For example, if p.LocalRecluster is set to 63, only nodes that have been cluster head for over 60 seconds will join the expansive recluster
-	*/
+	For example, if p.LocalRecluster is set to 63, only nodes that have been cluster head for over 60 seconds will join the expansive recluster */
 	flag.IntVar(&p.LocalRecluster, "localRecluster", 1, "Enables or disables local reclustering")
 	flag.Float64Var(&p.ReclusterThreshold, "reclusterThreshold", 0.1, "The maximum percent of clusters made up only of cluster heads before the network should fully recluster")
 	flag.Float64Var(&p.ReclusterPeriod, "reclusterPeriod", 300.0, "The period of time in seconds between global reclusters when tome-based global reclusters are enabled")
@@ -1696,7 +1696,7 @@ func WriteFlags(p * Params){
 	buf.WriteString(fmt.Sprintf("recalReject=%v\n", p.RecalReject))
 	buf.WriteString(fmt.Sprintf("clusterMaxThresh=%v\n", p.ClusterMaxThreshold))
 	buf.WriteString(fmt.Sprintf("clusterMinThresh=%v\n", p.ClusterMinThreshold))
-	buf.WriteString(fmt.Sprintf("maxClusterHeads=%v\n", &p.MaxClusterHeads))
+	buf.WriteString(fmt.Sprintf("maxClusterHeads=%v\n", p.MaxClusterHeads))
 	buf.WriteString(fmt.Sprintf("nodeBTRange=%v\n", p.NodeBTRange))
 	buf.WriteString(fmt.Sprintf("clusteringOn=%v\n",p.ClusteringOn))
 	buf.WriteString(fmt.Sprintf("degreeWeight=%v\n",p.DegreeWeight))
