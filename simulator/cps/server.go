@@ -992,10 +992,8 @@ func (s *FusionCenter) UpdateClusterInfo(node *NodeImpl, rd *Reading) {
 							sort.Slice(s.ClusterHeadsOf[member], func(i, j int) bool {
 								head1 := s.ClusterHeadsOf[member][i]
 								head2 := s.ClusterHeadsOf[member][j]
-								mems1 := s.Clusters[head1].Members
-								mems2 := s.Clusters[head2].Members
-								time1 := mems1[member]
-								time2 := mems2[member]
+								time1 := s.Clusters[head1].Members[member]
+								time2 := s.Clusters[head2].Members[member]
 								return time1 < time2
 							})
 							oldestHead := s.ClusterHeadsOf[member][0]

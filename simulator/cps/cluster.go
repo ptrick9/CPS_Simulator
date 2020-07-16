@@ -142,7 +142,7 @@ func (adhoc *AdHocNetwork) UpdateClusterStatus(node *NodeImpl, rd *Reading, tp b
 	//if node.Valid && node.IsAlive() {
 		 if !node.IsClusterHead && p.CurrentTime >= p.InitClusterTime {
 			if node.ClusterHead == nil {
-				adhoc.ClusterSearch(node, p)
+				adhoc.ClusterSearch(node, rd, tp, p)
 			} else {
 				head := node.ClusterHead
 				node.DrainBatteryBluetooth(&node.P.Server.ReadingBTCounter) //node sends reading to node, whether or not the head is in range
@@ -150,18 +150,18 @@ func (adhoc *AdHocNetwork) UpdateClusterStatus(node *NodeImpl, rd *Reading, tp b
 					node.SendToClusterHead(rd, tp , head)
 				} else if node.IsAlive()  {//If the node survived sending the message to the out-of-range cluster head
 					node.IsClusterMember = false
-					adhoc.ClusterSearch(node, p)
+					adhoc.ClusterSearch(node, rd, tp, p)
 				}
 			}
 		} else if p.GlobalRecluster <= 0 && node.IsClusterHead && len(node.ClusterMembers) <= p.ClusterMinThreshold {
-			adhoc.ClusterSearch(node, p)
+			adhoc.ClusterSearch(node, rd, tp, p)
 		} else {
 			node.Wait = 0
 		}
 	//}
 }
 
-func (adhoc *AdHocNetwork) ClusterSearch(node *NodeImpl, p *Params) {
+func (adhoc *AdHocNetwork) ClusterSearch(node *NodeImpl, rd *Reading, tp bool, p *Params) {
 	if node.Wait < p.ClusterSearchThreshold {
 		node.Wait++
 		adhoc.TotalWaits++
@@ -173,6 +173,8 @@ func (adhoc *AdHocNetwork) ClusterSearch(node *NodeImpl, p *Params) {
 			adhoc.ClearClusterParams(node)
 			node.Join(toJoin[0])
 			adhoc.CSJoins++
+			node.DrainBatteryBluetooth(&node.P.Server.ReadingBTCounter) //node sends reading to new head
+			node.SendToClusterHead(rd, tp , toJoin[0])
 		} else {
 			adhoc.ClearClusterParams(node)
 			adhoc.FormCluster(node)
@@ -716,5 +718,14 @@ func (node *NodeImpl) InitLocalRecluster() {
 		node.P.ClusterNetwork.LocalRecluster(node, members, node.P)
 	} else {
 		node.P.ClusterNetwork.ExpansiveLocalRecluster(node, members, node.P)
+	}
+}
+
+func (node *NodeImpl) UpdateClusterInfo(server *FusionCenter) {
+	node.ClusterMembers = make(map[*NodeImpl]int)
+	if _, ok := server.Clusters[node]; ok {
+		for k, v := range server.Clusters[node].Members {
+			node.ClusterMembers[k] = v
+		}
 	}
 }

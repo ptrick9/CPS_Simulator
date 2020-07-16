@@ -450,11 +450,6 @@ func SetupCSVNodes(p *Params) {
 		p.CurrentNodes += 1
 
 		if p.ClusteringOn {
-			newNode.IsClusterHead = false
-			newNode.IsClusterMember = false
-			newNode.RecvMsgs = []*HelloMsg{}
-			newNode.ThisNodeHello = &HelloMsg{Sender: newNode}
-			newNode.ClusterMembers = make(map[*NodeImpl]int)
 			newNode.OutOfRange = false
 			p.NodeTree.Insert(newNode)
 			p.ClusterNetwork.ClearClusterParams(newNode)
@@ -831,6 +826,12 @@ func SetupFiles(p *Params) {
 			log.Fatal("Cannot create file", err)
 		}
 		p.Files = append(p.Files, p.OutputFileNameCM+"-clusterDebug.txt")
+
+		p.ServerClusterDebugFile, err = os.Create(p.OutputFileNameCM + "-serverClusterDebug.txt")
+		if err != nil {
+			log.Fatal("Cannot create file", err)
+		}
+		p.Files = append(p.Files, p.OutputFileNameCM+"-serverClusterDebug.txt")
 	}
 
 	fmt.Println(p.Files)
@@ -1551,6 +1552,8 @@ func GetFlags(p *Params) {
 	flag.BoolVar(&p.ClusterPrint, "logClusters", false, "Whether you want to write cluster statistics to a log file")
 
 	flag.BoolVar(&p.ClusterDebug, "clusterDebug", false, "Whether you want to write cluster debug information to log files")
+
+	flag.BoolVar(&p.ServerClusterDebug, "serverClusterDebug", false, "Whether you want to write serve cluster debug information to log files")
 
 	flag.BoolVar(&p.ReportBTAverages, "reportBTAverages", false, "Whether you want to write avg number of nodes in bluetooth range to cluster log file")
 

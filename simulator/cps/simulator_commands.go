@@ -51,6 +51,7 @@ type Params struct {
 	GridPrint			bool	//This is either true or false for whether to print grid readings to log file
 	ClusterPrint		bool	//This is either true or false for whether to print cluster statistics to log file
 	ClusterDebug		bool	//This is either true or false for whether to print cluster debug info to log file
+	ServerClusterDebug	bool
 	ReportBTAverages	bool	//No effect if ClusterPrint is false. Either true or false for whether to print average
 								//number of nodes within bluetooth range, which slows the simulation
 
@@ -77,6 +78,7 @@ type Params struct {
 	ClusterStatsFile *os.File
 	ClusterFile      *os.File
 	ClusterDebugFile *os.File
+	ServerClusterDebugFile	*os.File
 	ClusterReadings  *os.File
 	ClusterMessages  *os.File
 	AliveValidNodes  *os.File

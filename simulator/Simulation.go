@@ -603,6 +603,7 @@ func main() {
 		case cps.CLUSTERPRINT:
 			var clusterStatsBuffer bytes.Buffer
 			var clusterDebugBuffer bytes.Buffer
+			var serverDebugBuffer bytes.Buffer
 
 			if p.ClusterDebug {
 
@@ -646,26 +647,30 @@ func main() {
 						}
 					} else if node.IsClusterMember {
 						clusterCount := 0
-						clusterHeadIsHead := node.ClusterHead.IsClusterHead
-						clusterHeadInHeads := false
-						for j := 0; j < len(p.ClusterNetwork.ClusterHeads); j++ {
-							if p.ClusterNetwork.ClusterHeads[j] == node.ClusterHead {
-								clusterHeadInHeads = true
-							}
-							for mem := range p.ClusterNetwork.ClusterHeads[j].ClusterMembers {
-								if node == mem {
-									clusterCount++
+						if node.ClusterHead == nil {
+							clusterDebugBuffer.WriteString(fmt.Sprintf("\tNode ID=%v is cluster member without a cluster head.\n", node.Id))
+						} else {
+							clusterHeadIsHead := node.ClusterHead.IsClusterHead
+							clusterHeadInHeads := false
+							for j := 0; j < len(p.ClusterNetwork.ClusterHeads); j++ {
+								if p.ClusterNetwork.ClusterHeads[j] == node.ClusterHead {
+									clusterHeadInHeads = true
+								}
+								for mem := range p.ClusterNetwork.ClusterHeads[j].ClusterMembers {
+									if node == mem {
+										clusterCount++
+									}
 								}
 							}
+							if clusterCount != 1 {
+								clusterDebugBuffer.WriteString(fmt.Sprintf("\tNode ID=%v is cluster member of %v clusters. Cluster head in ClusterHeads: %v. Cluster head is head: %v\n", node.Id, clusterCount, clusterHeadInHeads, clusterHeadIsHead))
+							}
 						}
-						if clusterCount != 1 {
-							clusterDebugBuffer.WriteString(fmt.Sprintf("\tNode ID=%v is cluster member of %v clusters. Cluster head in ClusterHeads: %v. Cluster head is head: %v\n", node.Id, clusterCount, clusterHeadInHeads, clusterHeadIsHead))
-						}
-					} else {
+					} /*else {
 						if node.Valid {
 							clusterDebugBuffer.WriteString(fmt.Sprintf("\tNode ID=%v is niether member nor head.\n", node.Id))
 						}
-					}
+					}*/
 				}
 				//clusterStatsBuffer.WriteString(fmt.Sprintf("Out of range and sensed: %v/%v\n", outOfRangeAndSensed, outOfRange))
 				//clusterStatsBuffer.WriteString("\n")
@@ -769,6 +774,24 @@ func main() {
 			fmt.Fprintf(p.ClusterFile, "%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v\n", len(p.ClusterNetwork.ClusterHeads), average, p.ClusterNetwork.FullReclusters, p.ClusterNetwork.PotentialReclusters, p.ClusterNetwork.LocalReclusters, clustersAboveThresh, clustersBelowThresh, aliveValidNodes, p.ClusterNetwork.CSJoins + p.ClusterNetwork.CSSolos, p.ClusterNetwork.CSJoins, p.ClusterNetwork.CSSolos, p.ClusterNetwork.TotalWaits, p.ClusterNetwork.LostReadings, p.ReclusterThreshold, p.ReclusterPeriod)
 
 			p.ClusterNetwork.AverageNumClusters += len(p.ClusterNetwork.ClusterHeads)
+
+			if p.ServerClusterDebug {
+				serverDebugBuffer.WriteString(fmt.Sprintf("Iteration: %v\n", p.CurrentTime/1000))
+				for member := range p.Server.ClusterHeadsOf {
+					if len(p.Server.ClusterHeadsOf[member]) > 0 {
+						clusterCount := 0
+						for head := range p.Server.Clusters {
+							if _, ok := p.Server.Clusters[head].Members[member]; ok {
+								clusterCount++
+							}
+						}
+						if clusterCount != 1 {
+							serverDebugBuffer.WriteString(fmt.Sprintf("\tNode ID=%v is cluster member of %v clusters.\n", member.Id, clusterCount))
+						}
+					}
+				}
+				fmt.Fprintf(p.ServerClusterDebugFile, serverDebugBuffer.String())
+			}
 
 			p.Events.Push(&cps.Event{nil, cps.CLUSTERPRINT, p.CurrentTime + 1000, 0})
 		case cps.BATTERYPRINT:

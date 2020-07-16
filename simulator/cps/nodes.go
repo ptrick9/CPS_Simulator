@@ -375,17 +375,17 @@ func (node *NodeImpl) SendToClusterHead(rd *Reading, tp bool, head *NodeImpl){
 
 	if _, ok := head.ClusterMembers[node]; !ok {
 		if head.IsClusterMember || len(head.ClusterMembers) >= node.P.ClusterMaxThreshold {
-			node.P.ClusterNetwork.ClusterSearch(node, node.P)
+			node.P.ClusterNetwork.ClusterSearch(node, rd, tp, node.P)
 			return
-		} else {
-			head.IsClusterHead = true
-			head.ClusterMembers[node] = node.P.CurrentTime
+		} else if !head.IsClusterHead {
+			node.P.ClusterNetwork.FormCluster(head)
 		}
 	}
 
 	head.DrainBatteryBluetooth(&node.P.Server.ReadingBTCounter)	//Head sends confirmation over bluetooth
 	node.DrainBatteryBluetooth(&node.P.Server.ReadingBTCounter)	//Node receives confirmation over bluetooth
 	node.IsClusterMember = true
+	head.ClusterMembers[node] = node.P.CurrentTime
 	node.Wait = 0
 	head.StoredNodes = append(head.StoredNodes, node)
 	head.StoredReadings = append(head.StoredReadings, rd)
@@ -408,8 +408,6 @@ func (node *NodeImpl) SendToServer(rd *Reading, tp bool){
 		server.Send(node.StoredNodes[i], node.StoredReadings[i], node.StoredTPs[i])
 		delete(server.AloneNodes, node.StoredNodes[i])
 	}
-	node.DrainBatteryWifi() //The node receives confirmation from the server, including how many readings it received
-							//and updates about the cluster, such as if any members have left to join other clusters.
 
 	lost := len(node.StoredReadings) - numSent
 	if lost > 0 {
@@ -421,6 +419,9 @@ func (node *NodeImpl) SendToServer(rd *Reading, tp bool){
 	}
 
 	server.UpdateClusterInfo(node, rd)
+	node.DrainBatteryWifi() //The node receives confirmation from the server, including how many readings it received
+	//and updates about the cluster, such as if any members have left to join other clusters.
+	node.UpdateClusterInfo(server)
 
 	if server.Waiting {
 		nodesAccountedFor := len(server.Clusters) + len(server.ClusterHeadsOf) + len(server.AloneNodes)
