@@ -1030,9 +1030,9 @@ func (s *FusionCenter) ClearServerClusterInfo(node *NodeImpl) {
 func (s *FusionCenter) CheckGlobalRecluster() {
 	nodesAccountedFor := len(s.Clusters) + len(s.ClusterHeadsOf) + len(s.AloneNodes)
 	if float64(nodesAccountedFor) / float64(len(s.P.AliveNodes)) > s.P.ServerReadyThreshold {
-		aloneRatio := float64(len(s.AloneNodes)) / float64(nodesAccountedFor)
-		if (s.P.GlobalRecluster == 1 && aloneRatio > s.P.ReclusterThreshold) || (s.P.GlobalRecluster == 2 && s.P.CurrentTime > s.NextReclusterTime) {
-			s.RatioBeforeRecluster = aloneRatio
+		ratio := float64(len(s.AloneNodes) + len(s.Clusters)) / float64(nodesAccountedFor)
+		if (s.P.GlobalRecluster < 3 && ratio > s.P.ReclusterThreshold) || (s.P.GlobalRecluster >= 3 && s.P.CurrentTime > s.NextReclusterTime) {
+			s.RatioBeforeRecluster = ratio
 			s.AloneNodes = make(map[*NodeImpl]int)
 			s.Clusters = make(map[*NodeImpl]*Cluster)
 			s.ClusterHeadsOf = make(map[*NodeImpl][]*NodeImpl)
@@ -1043,16 +1043,16 @@ func (s *FusionCenter) CheckGlobalRecluster() {
 }
 
 func (s *FusionCenter) UpdateReclusterThresholds(nodesAccountedFor int) {
-	aloneRatio := float64(len(s.AloneNodes))/float64(nodesAccountedFor)
-	if (s.RatioBeforeRecluster - aloneRatio) / s.RatioBeforeRecluster < s.P.SmallImprovement {
-		if s.P.GlobalRecluster == 1 {
+	ratio := float64(len(s.AloneNodes) + len(s.Clusters))/float64(nodesAccountedFor)
+	if (s.RatioBeforeRecluster - ratio) / s.RatioBeforeRecluster < s.P.SmallImprovement {
+		if s.P.GlobalRecluster < 3 {
 			s.P.ReclusterThreshold *= s.P.GlobalReclusterIncrement
 		} else {
 			s.P.ReclusterPeriod *= s.P.GlobalReclusterIncrement
 			s.NextReclusterTime += int(s.P.ReclusterPeriod)
 		}
-	} else if (s.RatioBeforeRecluster - aloneRatio) / s.RatioBeforeRecluster > s.P.LargeImprovement {
-		if s.P.GlobalRecluster == 1 {
+	} else if (s.RatioBeforeRecluster - ratio) / s.RatioBeforeRecluster > s.P.LargeImprovement {
+		if s.P.GlobalRecluster < 3 {
 			s.P.ReclusterThreshold *= s.P.GlobalReclusterDecrement
 		} else {
 			s.P.ReclusterPeriod *= s.P.GlobalReclusterDecrement

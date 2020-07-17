@@ -152,7 +152,7 @@ func (adhoc *AdHocNetwork) UpdateClusterStatus(node *NodeImpl, rd *Reading, tp b
 					adhoc.ClusterSearch(node, rd, tp, p)
 				}
 			}
-		} else if p.GlobalRecluster <= 0 && node.IsClusterHead && len(node.ClusterMembers) <= p.ClusterMinThreshold {
+		} else if (p.GlobalRecluster == 0 || p.GlobalRecluster == 2) && node.IsClusterHead && len(node.ClusterMembers) <= p.ClusterMinThreshold {
 			adhoc.ClusterSearch(node, rd, tp, p)
 		} else {
 			node.Wait = 0
