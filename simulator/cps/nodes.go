@@ -1144,6 +1144,7 @@ func (node *NodeImpl) MoveCSV(p *Params) {
 			node.OldX, node.OldY = 0, 0
 		}
 		if node.Valid {
+			node.P.Events.Push(&Event{node, SENSE, node.P.CurrentTime, 0})
 			if p.DriftExplorer {
 				node.NodeTime = RandomInt(-7000, 0)
 			} else {

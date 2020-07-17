@@ -464,9 +464,7 @@ func SetupCSVNodes(p *Params) {
 		//newNode.TimeLastAccel = p.CurrentTime
 		//newNode.LastMoveTime = p.CurrentTime
 
-		p.Events.Push(&Event{newNode, SENSE, 0, 0})
 		p.Events.Push(&Event{newNode, MOVE, 0, 0})
-
 	}
 
 }
