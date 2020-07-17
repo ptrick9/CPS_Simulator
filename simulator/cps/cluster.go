@@ -730,3 +730,10 @@ func (node *NodeImpl) UpdateClusterInfo(server *FusionCenter) {
 		}
 	}
 }
+
+func (adhoc *AdHocNetwork) GlobalClusterSearch(server *FusionCenter) {
+	adhoc.FullReclusters++
+	for node := range server.AloneNodes {
+		adhoc.ClusterSearch(node, nil, false, node.P)
+	}
+}

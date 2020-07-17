@@ -1587,7 +1587,8 @@ func GetFlags(p *Params) {
 	/* Global Reclustering
 	0 - off
 	1 - threshold-based
-	2 - time-based */
+	2 - global cluster search
+	3 - time-based */
 	flag.IntVar(&p.GlobalRecluster, "globalRecluster", 1, "Enables or disables global reclustering")
 
 	/* Local Reclustering
