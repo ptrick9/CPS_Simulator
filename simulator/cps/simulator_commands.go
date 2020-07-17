@@ -205,6 +205,8 @@ type Params struct {
 	LargeImprovement				float64
 	GlobalReclusterIncrement		float64
 	GlobalReclusterDecrement		float64
+	DisableGRThreshold				float64
+	DisableCSThreshold				float64
 	ServerReadyThreshold			float64
 	InitClusterTime                 int
 	ClusterSearchThreshold          int
