@@ -96,6 +96,7 @@ type NodeImpl struct {
 	StoredTPs						[]bool
 	LowSpeedCounter      			int
 	SamplingPeriod					int
+	HighDensityCounter				int
 }
 
 //NodeMovement controls the movement of all the normal nodes
@@ -639,7 +640,7 @@ func (node *NodeImpl) ScheduleNextSense() {
 }
 
 
-func (node *NodeImpl) AdaptiveSampling() {
+/*func (node *NodeImpl) AdaptiveSampling() {
 	if node.Valid {
 		var distance float64=0
 		if node.OldX!=0 && node.OldY!=0 {
@@ -671,29 +672,25 @@ func (node *NodeImpl) AdaptiveSampling() {
 			}
 		}
 	}
-}
-
-
-/*func (node *NodeImpl)AdaptiveSampling(){
-	NodesinSquare := len(node.P.Server.SquarePop[Tuple{int(node.X / float32(node.P.XDiv)), int(node.Y / float32(node.P.YDiv))}]) //Nodes in curr node square
-	multiplier:=NodesinSquare / node.P.DensityThreshold
-	if multiplier >= 4 {
-		node.SamplingPeriod =node.P.SamplingPeriodMS* 5
-		node.P.TotalAdaptations++
-	} else if multiplier >= 3 {
-		node.SamplingPeriod = node.P.SamplingPeriodMS*3
-		node.P.TotalAdaptations++
-	} else if multiplier >= 2 {
-		node.SamplingPeriod = node.P.SamplingPeriodMS*2
-		node.P.TotalAdaptations++
-	} else if multiplier >= 1 {
-		node. SamplingPeriod= node.P.SamplingPeriodMS* 3/2
-		node.P.TotalAdaptations++
-	}
-	if node.SamplingPeriod > node.P.SamplingPeriodMS*5{
-		node.SamplingPeriod=node.P.SamplingPeriodMS*5
-	}
 }*/
+
+
+func (node *NodeImpl)AdaptiveSampling(){
+	NodesinSquare := len(node.P.Server.SquarePop[Tuple{int(node.X / float32(node.P.XDiv)), int(node.Y / float32(node.P.YDiv))}]) //Nodes in curr node square
+	TargetSamplingPeriod:= NodesinSquare/node.P.DensityThreshold*node.P.SamplingPeriodMS
+	if TargetSamplingPeriod < node.SamplingPeriod{  //increase sampling rate
+		node.SamplingPeriod=TargetSamplingPeriod
+		node.HighDensityCounter=0
+	} else if TargetSamplingPeriod > node.SamplingPeriod {  //decrease sampling rate
+		node.HighDensityCounter++
+	} else {
+		node.HighDensityCounter=0
+	}
+	if node.HighDensityCounter > node.P.CounterThreshold{
+		node.SamplingPeriod=TargetSamplingPeriod
+		node.P.TotalAdaptations++
+	}
+}
 
 
 

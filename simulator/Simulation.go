@@ -387,7 +387,6 @@ func main() {
 	p.ClusteringOn=false    //TURNS OFF CLUSTERING
 	testMove:=true			//USES REGULAR MOVEMENT FOR ADAPTIVE SAMPLING
 
-
 	//p.Events.Push(&cps.Event{&p.NodeList[0], "sense", 0, 0})
 	p.Events.Push(&cps.Event{nil, cps.POSITION, 999, 0})
 	if p.EnergyPrint {
@@ -449,6 +448,7 @@ func main() {
 			}
 		case cps.MOVE:
             p.IsSense = false
+
 			if p.CSVMovement {
 				event.Node.MoveCSV(p)
 			} else {
