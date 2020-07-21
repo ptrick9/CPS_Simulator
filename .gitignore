@@ -202,3 +202,4 @@ statistics/driftExplorePar\.pickle
 test
 
 !tutorial_output/*.pickle
+venv/

@@ -101,6 +101,6 @@ package main
 	newNode.Id = 8
 	newNode.NodeClusterParams = &cps.ClusterMemberParams{RecvMsgs: []*cps.HelloMsg{}}
 
-	network.NewNodeHello(8, &newNode, &tree)
+	network.ClusterSearch(8, &newNode, &tree)
 	tree.PrintTree()
 }*/

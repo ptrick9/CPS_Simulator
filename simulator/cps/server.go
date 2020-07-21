@@ -32,7 +32,12 @@ type FusionCenter struct {
 	NodeSquares  map[int]Tuple   //store what square a node is in
 	SquarePop    map[Tuple][]int //store nodes in square
 	SquareTime   map[Tuple]TimeTrack
-	TotalSamplesTaken	int // counter keeps track when a sample is taken
+
+	SamplesCounter		int // counter keeps track when a sample is taken
+	BluetoothCounter	int // counter keeps track when bluetooth communication occurs
+	WifiCounter			int // counter keeps track when wifi communication occurs
+
+
 	NodeTree		*Quadtree //stores node locations in quadtree format
 	ClusterNetwork	* AdHocNetwork //stores cluster information
 }
@@ -796,27 +801,28 @@ func (s FusionCenter) GetLeastDenseSquares() Squares{
 
 func (s *FusionCenter) PrintBatteryStats() {
 
-	totalDead := 0
 	lowestBattery := s.P.NodeList[0].GetBatteryPercentage()
 
 	averageRemainingBattery := 0.0
 	for _, node := range s.P.NodeList {
 		battery := node.GetBatteryPercentage()
-		if battery >= s.P.BatteryDeadThreshold {
-			averageRemainingBattery += battery
-			if battery < lowestBattery {
-				lowestBattery = battery
-			}
-		} else {
-			totalDead++
+		averageRemainingBattery += battery
+		if battery < lowestBattery {
+			lowestBattery = battery
 		}
 	}
 
-	fmt.Print("\nTotal Samples Taken:", s.TotalSamplesTaken)
-	fmt.Print("\nSampling Energy Consumption:", s.TotalSamplesTaken * s.P.SampleLossAmount())
+	fmt.Print("\nTotal Samples Taken:", s.SamplesCounter)
+	fmt.Print("\nSampling Energy Consumption:", s.SamplesCounter * s.P.SampleLossAmount())
 	fmt.Print("\nMinimum Remaining Battery:", lowestBattery)
-	fmt.Print("\nAverage Remaining Battery:", averageRemainingBattery / float64(s.P.TotalNodes - totalDead))
-	fmt.Print("\nTotal Dead Nodes:", totalDead, "/", s.P.TotalNodes)
+	fmt.Print("\nAverage Remaining Battery:", averageRemainingBattery / float64(s.P.TotalNodes))
+	fmt.Print("\nTotal Dead Nodes:", s.P.TotalNodes - len(s.P.AliveList), "/", s.P.TotalNodes)
+
+	fmt.Fprintf(s.P.BatteryFile, "\nTotal Samples Taken: %v", s.SamplesCounter)
+	fmt.Fprintf(s.P.BatteryFile, "\nSampling Energy Consumption: %v", s.SamplesCounter * s.P.SampleLossAmount())
+	fmt.Fprintf(s.P.BatteryFile, "\nMinimum Remaining Battery: %v", lowestBattery)
+	fmt.Fprintf(s.P.BatteryFile, "\nAverage Remaining Battery: %v", averageRemainingBattery / float64(s.P.TotalNodes))
+	fmt.Fprintf(s.P.BatteryFile, "\nTotal Dead Nodes: %v/%v", s.P.TotalNodes - len(s.P.AliveList), s.P.TotalNodes)
 }
 
 type Squares []*Square

@@ -190,7 +190,7 @@ func (node NodeImpl) String() string {
 	//return fmt.Sprintf("x: %v y: %v Id: %v battery: %v sensor checked: %v sensor checks: %v GPS checked: %v GPS checks: %v server checked: %v server checks: %v buffer: %v ", int(node.X), node.Y, node.Id, node.Battery, node.HasCheckedSensor, node.TotalChecksSensor, node.HasCheckedGPS, node.TotalChecksGPS, node.HasCheckedServer, node.TotalChecksServer,node.BufferI)
 	//return fmt.Sprintf("x: %v y: %v valid: %v", int(node.X), int(node.Y), node.Valid)
 	//return fmt.Sprintf("battery: %v sensor checked: %v GPS checked: %v ", int(node.Battery), node.HasCheckedSensor, node.HasCheckedGPS)
-	return fmt.Sprintf("battery: %v sensor checked: %v GPS checked: %v ", int(node.GetBatteryPercentage() * 100), true, true)
+	return fmt.Sprintf("battery: %v", int(node.GetBatteryPercentage() * 100))
 
 }
 
@@ -368,9 +368,8 @@ func (node *NodeImpl) SendToClusterHead(rd *Reading, tp bool){
 	head := node.NodeClusterParams.CurrentCluster.ClusterHead
 
 	node.DrainBatteryBluetooth()	//Node sends reading over bluetooth
-	head.DrainBatteryBluetooth()	//Node receives reading over bluetooth
-	head.DrainBatteryBluetooth()	//Head
-	// s confirmation over bluetooth
+	head.DrainBatteryBluetooth()	//Head receives reading over bluetooth
+	head.DrainBatteryBluetooth()	//Head sends confirmation over bluetooth
 	node.DrainBatteryBluetooth()	//Node receives confirmation over bluetooth
 	head.StoredNodes = append(head.StoredNodes, node)
 	head.StoredReadings = append(head.StoredReadings, rd)
@@ -383,14 +382,21 @@ its message to the server will also include information about its cluster, such 
 Currently the extra cost of sending multiple readings at once is simulated by draining battery for wifi
 communication for every multiple of 8 readings sent. It may be worth looking into making this more realistic. */
 func (node *NodeImpl) SendToServer(rd *Reading, tp bool){
-    for i := 0; i < len(node.StoredReadings)/8 + 1; i++ {
+	numSent := 0
+    for ; numSent < len(node.StoredReadings)/8 + 1 && node.IsAlive(); numSent++ {
         node.DrainBatteryWifi()
     }
-	for i := range node.StoredReadings {
+    numSent = numSent * 8 - 1
+	for i := 0; i < len(node.StoredReadings) && i < numSent; i++ { //Some readings will be lost if cluster head dies while sending
 		node.P.Server.Send(node.StoredNodes[i], node.StoredReadings[i], node.StoredTPs[i])
 	}
 	node.DrainBatteryWifi() //The node receives confirmation from the server, including how many readings it received
 							//and updates about the cluster, such as if any members have left to join other clusters.
+
+	lost := len(node.StoredReadings) - numSent
+	if lost > 0 {
+		node.P.ClusterNetwork.LostReadings += lost
+	}
 
 	node.StoredNodes = []*NodeImpl{}
 	node.StoredReadings = []*Reading{}
@@ -610,32 +616,64 @@ func (node *NodeImpl) GetBatteryPercentage() float64 {
 
 // decreases battery level of a node for when a sample is taken
 func (node *NodeImpl) DrainBatterySample() {
-	node.P.Server.TotalSamplesTaken++
+	node.P.Server.SamplesCounter++
 	node.CurrentBatteryLevel -= node.P.SampleLossAmount()
+	node.UpdateAliveStatus()
 }
 
 // decreases battery level of a node for when bluetooth communication occurs
 func (node *NodeImpl) DrainBatteryBluetooth() {
 	// add counter for this later
+	node.P.Server.BluetoothCounter++
 	node.CurrentBatteryLevel -= node.P.BluetoothLossAmount()
+	node.UpdateAliveStatus()
 }
 
 // decrease battery level of a node for when wifi communication occurs
 func (node *NodeImpl) DrainBatteryWifi() {
 	// add counter for this later
+	node.P.Server.WifiCounter++
 	node.CurrentBatteryLevel -= node.P.WifiLossAmount()
+	node.UpdateAliveStatus()
+}
+
+func (node *NodeImpl) IsAlive() bool {
+	return node.GetBatteryPercentage() > node.P.BatteryDeadThreshold
+}
+
+func (node *NodeImpl) UpdateAliveStatus() {
+	if !node.IsAlive() {
+		if node.P.ClusteringOn && node.CurTree != nil {
+			node.CurTree.RemoveAndClean(node)
+			if node.IsClusterHead && node.P.LocalRecluster > 0 && node.P.CurrentTime >= node.P.InitClusterTime {
+				members := make([]*NodeImpl, len(node.NodeClusterParams.CurrentCluster.ClusterMembers))
+				copy(members, node.NodeClusterParams.CurrentCluster.ClusterMembers)
+				if node.P.LocalRecluster < 3 {
+					node.P.ClusterNetwork.LocalRecluster(node, members, node.P)
+				} else {
+					node.P.ClusterNetwork.ExpansiveLocalRecluster(node, members, node.P)
+				}
+			} else {
+				node.P.ClusterNetwork.ClearClusterParams(node)
+			}
+		}
+		for i := 0; i < len(node.P.AliveList); i++ {
+			if !node.P.AliveList[i].IsAlive() {
+				node.P.AliveList = append(node.P.AliveList[:i], node.P.AliveList[i+1:]...)
+				i--
+			}
+		}
+	}
 }
 
 
 func (node *NodeImpl) ScheduleNextSense() {
-	if node.GetBatteryPercentage() > node.P.BatteryDeadThreshold {
+	if node.IsAlive() {
 		node.AdaptiveSampling()
 		if node.SamplingPeriod==0{
 			node.SamplingPeriod=node.P.SamplingPeriodMS
 		}
 		node.P.Events.Push(&Event{node, SENSE, node.P.CurrentTime + node.SamplingPeriod, 0})
-	} else {
-		node.Alive = false
 	}
 }
 
@@ -654,7 +692,7 @@ func (node *NodeImpl) ScheduleNextSense() {
 		if metersPerSecond < node.P.MaxMoveMeters/4 {
 			node.LowSpeedCounter++
 			if node.LowSpeedCounter >= node.P.CounterThreshold {
-				if node.SamplingPeriod < int(node.P.SamplingPeriodMS/2) {   //Gradual increase back to normal speed (delay)
+				if node.SamplingPeriod < node.P.SamplingPeriodMS/2 {   //Gradual increase back to normal speed (delay)
 					node.SamplingPeriod *= 2
 					node.P.TotalAdaptations++
 				} else {
@@ -1059,6 +1097,7 @@ func (node *NodeImpl) MoveCSV(p *Params) {
 	intTime := int(floatTemp/1000)
 	portion := (floatTemp / 1000) - float32(intTime)
 	id := node.GetID()
+
 	if node.Valid {
 		p.BoolGrid[int(node.OldX)][int(node.OldY)] = false //set the old spot false since the node will now move away
 		node.X = interpolate(p.NodeMovements[id][intTime-p.MovementOffset].X, p.NodeMovements[id][intTime-p.MovementOffset+1].X, portion)
@@ -1090,6 +1129,7 @@ func (node *NodeImpl) MoveCSV(p *Params) {
 			node.OldX, node.OldY = 0, 0
 		}
 		if node.Valid {
+			node.P.Events.Push(&Event{node, SENSE, node.P.CurrentTime, 0})
 			if p.DriftExplorer {
 				node.NodeTime = RandomInt(-7000, 0)
 			} else {

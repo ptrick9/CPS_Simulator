@@ -424,7 +424,7 @@ func InitializeNodeParameters(p *Params, nodeNum int) *NodeImpl{
 	curNode.Sensitivity = curNode.InitialSensitivity
 
 	// Initialize New Battery Model Variables
-	curNode.CurrentBatteryLevel = 1000000
+	curNode.CurrentBatteryLevel = int(float64(p.BatteryCapacity) * RandomBatteryLevel(p.AverageBatteryLevel))
 	curNode.InitialBatteryLevel = curNode.CurrentBatteryLevel
 	curNode.SamplingPeriod		= p.SamplingPeriodMS
 	return &curNode
@@ -445,8 +445,6 @@ func SetupCSVNodes(p *Params) {
 			newNode.Valid = false
 		}
 
-		newNode.Alive = true
-
 		p.NodeList = append(p.NodeList, newNode)
 		p.CurrentNodes += 1
 
@@ -466,9 +464,7 @@ func SetupCSVNodes(p *Params) {
 		//newNode.TimeLastAccel = p.CurrentTime
 		//newNode.LastMoveTime = p.CurrentTime
 
-		p.Events.Push(&Event{newNode, SENSE, 0, 0})
 		p.Events.Push(&Event{newNode, MOVE, 0, 0})
-
 	}
 
 }
@@ -814,19 +810,19 @@ func SetupFiles(p *Params) {
 	p.Files = append(p.Files, p.OutputFileNameCM+"-distance.txt")
 
 	if p.ClusteringOn {
-		p.ClusterFile, err = os.Create(p.OutputFileNameCM + "-clusters.txt")
-		if err != nil {
-			log.Fatal("Cannot create file", err)
-		}
-		p.Files = append(p.Files, p.OutputFileNameCM+"-clusters.txt")
-
 		p.ClusterStatsFile, err = os.Create(p.OutputFileNameCM + "-clusterStats.txt")
 		if err != nil {
 			log.Fatal("Cannot create file", err)
 		}
 		p.Files = append(p.Files, p.OutputFileNameCM+"-clusterStats.txt")
 
-		p.ClusterDebug, err = os.Create(p.OutputFileNameCM + "-clusterDebug.txt")
+		p.ClusterFile, err = os.Create(p.OutputFileNameCM + "-clusters.txt")
+		if err != nil {
+			log.Fatal("Cannot create file", err)
+		}
+		p.Files = append(p.Files, p.OutputFileNameCM+"-clusters.txt")
+
+		p.ClusterDebugFile, err = os.Create(p.OutputFileNameCM + "-clusterDebug.txt")
 		if err != nil {
 			log.Fatal("Cannot create file", err)
 		}
@@ -1546,6 +1542,8 @@ func GetFlags(p *Params) {
 
 	flag.BoolVar(&p.ClusterPrint, "logClusters", false, "Whether you want to write cluster statistics to a log file")
 
+	flag.BoolVar(&p.ClusterDebug, "clusterDebug", false, "Whether you want to write cluster debug information to log files")
+
 	flag.BoolVar(&p.ReportBTAverages, "reportBTAverages", false, "Whether you want to write avg number of nodes in bluetooth range to cluster log file")
 
 	flag.IntVar(&p.SquareRowCM, "SquareRowCM", 50, "Number of rows of p.Grid squares, 1 through p.MaxX")
@@ -1573,8 +1571,17 @@ func GetFlags(p *Params) {
 	flag.Float64Var(&p.DegreeWeight, "degreeWeight", 0.6, "The weight constant applied to the number of neighboring nodes when calculating a node's score")
 	flag.Float64Var(&p.BatteryWeight, "batteryWeight", 0.4, "The weight constant applied to a node's battery when calculating a node's score")
 	flag.Float64Var(&p.Penalty, "penalty", 0.8, "The penalty multiplied to a node's score when it is not already a cluster head")
+	flag.BoolVar(&p.GlobalRecluster, "globalRecluster", true, "Enables or disables global reclustering")
+	/* Local Reclustering
+	0 - off
+	1 - minimal (nodes check for nearby head first)
+	2 - standard
+	3 - expansive (nearby clusters also recluster)
+	*/
+	flag.IntVar(&p.LocalRecluster, "localRecluster", 1, "Enables or disables local reclustering")
 	flag.Float64Var(&p.ReclusterThreshold, "reclusterThreshold", 0.1, "The maximum percent of clusters made up only of cluster heads before the network should fully recluster")
 	flag.IntVar(&p.ReclusterPeriod, "reclusterPeriod", 30, "The period of time in seconds before the network checks if it should fully reclusters")
+	flag.IntVar(&p.InitClusterTime, "initClusterTime", 0, "The number of seconds to wait before clustering")
 
 	flag.StringVar(&p.WindRegionPath, "windRegionPath", "hull_testing.txt", "File containing regions formed by wind")
 
@@ -1597,10 +1604,10 @@ func GetFlags(p *Params) {
 	flag.Float64Var(&p.BatteryLowThreshold, "batteryLowThreshold", .15, "battery percentage to mark a node as low power")
 	flag.Float64Var(&p.BatteryMediumThreshold, "batteryMediumThreshold", .25, "battery percentage to mark a node as medium power")
 	flag.Float64Var(&p.BatteryHighThreshold, "batteryHighThreshold", .40, "battery percentage to mark a node as high power")
-	flag.Float64Var(&p.AverageBatteryLevel, "averageBatteryLevel", 0.70, "average initial battery level to set nodes to")
-	flag.Float64Var(&p.BluetoothLossPercentage, "bluetoothLossPercentage", 0.002, "amount of battery drained each time a node uses bluetooth")
-	flag.Float64Var(&p.SampleLossPercentage, "sampleLossPercentage", 0.002, "amount of battery drained each time a node takes a sample")
-	flag.Float64Var(&p.WifiLossPercentage, "wifiLossPercentage", 0.002, "amount of battery drained each time a node uses wifi")
+	flag.Float64Var(&p.AverageBatteryLevel, "averageBatteryLevel", 0.75, "average initial battery level to set nodes to")
+	flag.Float64Var(&p.BluetoothLossPercentage, "bluetoothLossPercentage", 0.0001, "amount of battery drained each time a node uses bluetooth")
+	flag.Float64Var(&p.SampleLossPercentage, "sampleLossPercentage", 0.0002, "amount of battery drained each time a node takes a sample")
+	flag.Float64Var(&p.WifiLossPercentage, "wifiLossPercentage", 0.0002, "amount of battery drained each time a node uses wifi")
 
 	flag.Parse()
 	fmt.Println("Maximum size of buffer posible: ", p.MaxBufferCapacityCM)
@@ -1665,8 +1672,11 @@ func WriteFlags(p * Params){
 	buf.WriteString(fmt.Sprintf("degreeWeight=%v\n",p.DegreeWeight))
 	buf.WriteString(fmt.Sprintf("batteryWeight=%v\n",p.BatteryWeight))
 	buf.WriteString(fmt.Sprintf("penalty=%v\n",p.Penalty))
+	buf.WriteString(fmt.Sprintf("globalRecluster=%v\n",p.GlobalRecluster))
+	buf.WriteString(fmt.Sprintf("localRecluster=%v\n",p.LocalRecluster))
 	buf.WriteString(fmt.Sprintf("reclusterPeriod=%v\n",p.ReclusterPeriod))
 	buf.WriteString(fmt.Sprintf("reclusterThreshold=%v\n",p.ReclusterThreshold))
+	buf.WriteString(fmt.Sprintf("initClusterTime=%v\n",p.InitClusterTime))
 	buf.WriteString(fmt.Sprintf("batteryCapacity=%v\n",p.BatteryCapacity))
 	buf.WriteString(fmt.Sprintf("bluetoothLossPercentage=%v\n",p.BluetoothLossPercentage))
 	buf.WriteString(fmt.Sprintf("sampleLossPercentage=%v\n",p.SampleLossPercentage))

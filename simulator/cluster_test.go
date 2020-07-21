@@ -379,25 +379,25 @@ func main() {
 						totalHeads--
 					}
 				}
-				fmt.Fprintln(p.ClusterFile, "Amount:", totalHeads)
+				fmt.Fprintln(p.ClusterStatsFile, "Amount:", totalHeads)
 				for i := 0; i < len(p.ClusterNetwork.ClusterHeads); i++ {
 					if p.ClusterNetwork.ClusterHeads[i].NodeClusterParams.CurrentCluster.Total > 0 {
-						fmt.Fprintf(p.ClusterFile, "%d: [", p.ClusterNetwork.ClusterHeads[i].Id)
+						fmt.Fprintf(p.ClusterStatsFile, "%d: [", p.ClusterNetwork.ClusterHeads[i].Id)
 						for j := 0; j < len(p.ClusterNetwork.ClusterHeads[i].NodeClusterParams.CurrentCluster.ClusterMembers); j++ {
-							fmt.Fprintf(p.ClusterFile, "%d", p.ClusterNetwork.ClusterHeads[i].NodeClusterParams.CurrentCluster.ClusterMembers[j].Id)
+							fmt.Fprintf(p.ClusterStatsFile, "%d", p.ClusterNetwork.ClusterHeads[i].NodeClusterParams.CurrentCluster.ClusterMembers[j].Id)
 							if j+1 != len(p.ClusterNetwork.ClusterHeads[i].NodeClusterParams.CurrentCluster.ClusterMembers) {
-								fmt.Fprintf(p.ClusterFile, ", ")
+								fmt.Fprintf(p.ClusterStatsFile, ", ")
 							}
 						}
-						fmt.Fprintf(p.ClusterFile, "]\n")
+						fmt.Fprintf(p.ClusterStatsFile, "]\n")
 					}
 
-					fmt.Fprintf(p.ClusterStatsFile, "%d", p.ClusterNetwork.ClusterHeads[i].NodeClusterParams.CurrentCluster.Total)
+					fmt.Fprintf(p.ClusterFile, "%d", p.ClusterNetwork.ClusterHeads[i].NodeClusterParams.CurrentCluster.Total)
 					if i+1 != len(p.ClusterNetwork.ClusterHeads) {
-						fmt.Fprintf(p.ClusterStatsFile, ",")
+						fmt.Fprintf(p.ClusterFile, ",")
 					}
 				}
-				fmt.Fprintln(p.ClusterStatsFile, "")
+				fmt.Fprintln(p.ClusterFile, "")
 
 				clusterHeadCount := 0
 				clusterMemberCount := 0

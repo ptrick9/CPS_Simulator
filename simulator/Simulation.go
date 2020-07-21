@@ -383,15 +383,19 @@ func main() {
 	}
 	p.Server.MakeNodeData()
 
-
-	p.ClusteringOn=false    //TURNS OFF CLUSTERING
 	testMove:=true			//USES REGULAR MOVEMENT FOR ADAPTIVE SAMPLING
 
 	//p.Events.Push(&cps.Event{&p.NodeList[0], "sense", 0, 0})
 	p.Events.Push(&cps.Event{nil, cps.POSITION, 999, 0})
 	if p.EnergyPrint {
 		p.Events.Push(&cps.Event{nil, cps.ENERGYPRINT, 999, 0})
+		fmt.Fprintln(p.EnergyFile,
+			"Capacity:", p.BatteryCapacity,
+			"SamplesLoss:", p.SampleLossAmount(),
+			"WifiLoss:", p.WifiLossAmount(),
+			"BluetoothLoss:", p.BluetoothLossAmount())
 	}
+
 	p.Events.Push(&cps.Event{nil, cps.SERVER, 999, 0})
 	p.Events.Push(&cps.Event{nil, cps.GRID, 999, 0})
 	p.Events.Push(&cps.Event{nil, cps.TIME, -1, 0})
@@ -403,12 +407,17 @@ func main() {
 	p.Events.Push(&cps.Event{nil, cps.CLEANUPREADINGS, (p.ReadingHistorySize + 1) * 1000, 0})
 	p.Events.Push(&cps.Event{nil, cps.SERVERSTATS, 1000, 0})
 	if p.ClusteringOn {
-		p.Events.Push(&cps.Event{nil, cps.FULLRECLUSTER, 5000, 0})
+		p.InitClusterTime *= 1000
+		if p.InitClusterTime > 0 {
+			p.Events.Push(&cps.Event{nil, cps.INITCLUSTER, p.InitClusterTime, 0})
+		} else if p.GlobalRecluster {
+			p.Events.Push(&cps.Event{nil, cps.FULLRECLUSTER, 5000, 0})
+		}
 		if p.ClusterPrint {
 			p.Events.Push(&cps.Event{nil, cps.CLUSTERPRINT, 999, 0})
 		}
 	}
-	p.Events.Push(&cps.Event{nil, cps.UPDATEALIVELIST, 5000, 0})
+	p.Events.Push(&cps.Event{nil, cps.BATTERYPRINT, 5000, 0})
 	p.CurrentTime = 0
 	for len(p.Events) > 0 && p.CurrentTime < 1000*p.Iterations_of_event && !p.FoundBomb {
 		event := heap.Pop(&p.Events).(*cps.Event)
@@ -454,12 +463,17 @@ func main() {
 			} else {
 				event.Node.MoveNormal(p)
 			}
-			if p.ClusteringOn && event.Node.Valid && event.Node.Alive {
+			if p.ClusteringOn && event.Node.Valid && event.Node.IsAlive() {
 				p.NodeTree.NodeMovement(event.Node)
 				event.Node.UpdateOutOfRange(p)
 			}
 			if p.CurrentTime/1000 < p.NumNodeMovements-5 {
 				p.Events.Push(&cps.Event{event.Node, cps.MOVE, p.CurrentTime + 100, 0})
+			}
+		case cps.INITCLUSTER:
+			p.ClusterNetwork.FullRecluster(p)
+			if p.GlobalRecluster {
+				p.Events.Push(&cps.Event{nil, cps.FULLRECLUSTER, p.CurrentTime + p.ReclusterPeriod*1000, 0})
 			}
 		case cps.FULLRECLUSTER:
 			empty := 0
@@ -537,10 +551,14 @@ func main() {
 			}
 			//fmt.Printf("\nSetting timestep to %v at %v next event at %v\n", p.SensorTimes[p.TimeStep], p.CurrentTime, p.SensorTimes[p.TimeStep+1]*1000)
 		case cps.ENERGYPRINT:
-			fmt.Fprintln(p.EnergyFile, "Amount:", len(p.NodeList)) //big time waster
+			fmt.Fprintln(p.EnergyFile,
+				"Amount:", len(p.NodeList),
+				"Samples:", p.Server.SamplesCounter,
+				"Wifi:", p.Server.WifiCounter,
+				"Bluetooth:", p.Server.BluetoothCounter)
 			if p.EnergyPrint {
 				var buffer bytes.Buffer
-				for i := 0; i < p.CurrentNodes; i++ {
+				for i := 0; i < len(p.NodeList); i++ {
 					//p.NodeList[i].BatteryOverTime[p.CurrentTime/1000] = p.NodeList[i].Battery
 					buffer.WriteString(fmt.Sprintf("%v\n", p.NodeList[i]))
 				}
@@ -589,8 +607,8 @@ func main() {
 			cps.PartialReadMovementCSV(p)
 			p.Events.Push(&cps.Event{nil, cps.LOADMOVE, (p.MovementOffset + p.MovementSize - 2) * 1000, 0})
 		case cps.CLUSTERPRINT:
-			var clusterBuffer bytes.Buffer
 			var clusterStatsBuffer bytes.Buffer
+			var clusterBuffer bytes.Buffer
 			var clusterDebugBuffer bytes.Buffer
 
 			clustersAboveThresh := len(p.ClusterNetwork.ClusterHeads)
@@ -610,151 +628,155 @@ func main() {
 			if float64(clustersBelowThresh)/float64(len(p.ClusterNetwork.ClusterHeads)) > p.ReclusterThreshold {
 				p.ClusterNetwork.PotentialReclusters++
 			}
-			aliveValidNodes := 0
-			countedCHs := 0
-			countedCMs := 0
-			unaccounted := 0
-			numWithinDist := 0
-			for _, node := range p.AliveList {
-				if node.Valid {
-					if node.IsClusterHead {
-						countedCHs++
-					} else if node.IsClusterMember {
-						countedCMs++
-					} else {
-						unaccounted++
-					}
-					aliveValidNodes++
-					if p.ReportBTAverages {
-						numWithinDist += len(p.NodeTree.WithinRadius(p.NodeBTRange, node, []*cps.NodeImpl{}))
-					}
-				}
-			}
-			clusterBuffer.WriteString(fmt.Sprintf("Iteration: %v\n", p.CurrentTime/1000))
-			clusterBuffer.WriteString(fmt.Sprintf("Clusters above member threshold: %v\n", clustersAboveThresh))
-			clusterBuffer.WriteString(fmt.Sprintf("Clusters below member threshold: %v\n", clustersBelowThresh))
-			clusterBuffer.WriteString(fmt.Sprintf("Alive, valid nodes: %v\n", aliveValidNodes))
-			clusterBuffer.WriteString(fmt.Sprintf("Total clustered nodes: %v\n", nodesInClusters))
-			clusterBuffer.WriteString(fmt.Sprintf("Counted heads: %v\n", countedCHs))
-			clusterBuffer.WriteString(fmt.Sprintf("Counted members: %v\n", countedCMs))
-			clusterBuffer.WriteString(fmt.Sprintf("Unaccounted nodes: %v\n", unaccounted))
+			average := 0
 			if len(p.ClusterNetwork.ClusterHeads) > 0 {
-				average := nodesInClusters/len(p.ClusterNetwork.ClusterHeads)
+				average := nodesInClusters / len(p.ClusterNetwork.ClusterHeads)
 				p.ClusterNetwork.AverageClusterSize += average
-				clusterBuffer.WriteString(fmt.Sprintf("Average cluster size: %v\n", average))
-			} else {
-				clusterBuffer.WriteString(fmt.Sprintf("Average cluster size: 0\n"))
 			}
-			if p.ReportBTAverages {
-				if aliveValidNodes > 0 {
-					clusterBuffer.WriteString(fmt.Sprintf("Average number of nodes in BT range: %v\n", numWithinDist/aliveValidNodes))
-				} else {
-					clusterBuffer.WriteString(fmt.Sprintf("Average number of nodes in BT range: 0\n"))
+			if p.ClusterDebug {
+				aliveValidNodes := 0
+				countedCHs := 0
+				countedCMs := 0
+				unaccounted := 0
+				numWithinDist := 0
+				for _, node := range p.AliveList {
+					if node.Valid {
+						if node.IsClusterHead {
+							countedCHs++
+						} else if node.IsClusterMember {
+							countedCMs++
+						} else {
+							unaccounted++
+						}
+						aliveValidNodes++
+						if p.ReportBTAverages {
+							numWithinDist += len(p.NodeTree.WithinRadius(p.NodeBTRange, node, []*cps.NodeImpl{}))
+						}
+					}
 				}
-				if clustersBelowThresh > 0 {
-					clusterBuffer.WriteString(fmt.Sprintf("Average number of nodes in BT range of small cluster heads: %v\n", smallClustersNumWithinDist/clustersBelowThresh))
-				} else {
-					clusterBuffer.WriteString(fmt.Sprintf("Average number of nodes in BT range of small cluster heads: 0\n"))
+				clusterStatsBuffer.WriteString(fmt.Sprintf("Iteration: %v\n", p.CurrentTime/1000))
+				clusterStatsBuffer.WriteString(fmt.Sprintf("Clusters above member threshold: %v\n", clustersAboveThresh))
+				clusterStatsBuffer.WriteString(fmt.Sprintf("Clusters below member threshold: %v\n", clustersBelowThresh))
+				clusterStatsBuffer.WriteString(fmt.Sprintf("Alive, valid nodes: %v\n", aliveValidNodes))
+				clusterStatsBuffer.WriteString(fmt.Sprintf("Total clustered nodes: %v\n", nodesInClusters))
+				clusterStatsBuffer.WriteString(fmt.Sprintf("Counted heads: %v\n", countedCHs))
+				clusterStatsBuffer.WriteString(fmt.Sprintf("Counted members: %v\n", countedCMs))
+				clusterStatsBuffer.WriteString(fmt.Sprintf("Unaccounted nodes: %v\n", unaccounted))
+				clusterStatsBuffer.WriteString(fmt.Sprintf("Average cluster size: %v\n", average))
+				if p.ReportBTAverages {
+					if aliveValidNodes > 0 {
+						clusterStatsBuffer.WriteString(fmt.Sprintf("Average number of nodes in BT range: %v\n", numWithinDist/aliveValidNodes))
+					} else {
+						clusterStatsBuffer.WriteString(fmt.Sprintf("Average number of nodes in BT range: 0\n"))
+					}
+					if clustersBelowThresh > 0 {
+						clusterStatsBuffer.WriteString(fmt.Sprintf("Average number of nodes in BT range of small cluster heads: %v\n", smallClustersNumWithinDist/clustersBelowThresh))
+					} else {
+						clusterStatsBuffer.WriteString(fmt.Sprintf("Average number of nodes in BT range of small cluster heads: 0\n"))
+					}
 				}
+
+				clusterHeadCount := 0
+				clusterMemberCount := 0
+				clusterDebugBuffer.WriteString(fmt.Sprint(""))
+				for i := 0; i < len(p.AliveList); i++ {
+					if p.AliveList[i].IsClusterHead {
+						clusterHeadCount++
+					} else if p.AliveList[i].IsClusterMember {
+						clusterMemberCount++
+					}
+				}
+				clusterDebugBuffer.WriteString(fmt.Sprintf("Iteration: %v\tlen(p.ClusterNetwork.ClusterHeads): %v\tClusterHeads: %v\tClusterMembers: %v\n", p.CurrentTime/1000, len(p.ClusterNetwork.ClusterHeads), clusterHeadCount, clusterMemberCount))
+
+				outOfRange := 0
+				outOfRangeAndSensed := 0
+				for i := 0; i < len(p.AliveList); i++ {
+					if p.AliveList[i].IsClusterHead {
+						for j := 0; j < len(p.AliveList[i].NodeClusterParams.CurrentCluster.ClusterMembers); j++ {
+							if !(p.AliveList[i].IsWithinRange(p.AliveList[i].NodeClusterParams.CurrentCluster.ClusterMembers[j], p.NodeBTRange)) {
+								if p.AliveList[i].NodeClusterParams.CurrentCluster.ClusterMembers[j].TimeLastSensed > p.AliveList[i].NodeClusterParams.CurrentCluster.ClusterMembers[j].TimeMovedOutOfRange {
+									xDist := p.AliveList[i].X - p.AliveList[i].NodeClusterParams.CurrentCluster.ClusterMembers[j].X
+									yDist := p.AliveList[i].Y - p.AliveList[i].NodeClusterParams.CurrentCluster.ClusterMembers[j].Y
+									radDist := math.Sqrt(float64(xDist*xDist) + float64(yDist*yDist))
+									clusterDebugBuffer.WriteString(fmt.Sprintf("\tCluster Member Out of Range: Member:{ID=%v, Coord(%v,%v)} Cluster:{CH_ID=%v, Coord(%v,%v),Size=%v} Dist: %.4f, Valid: %v\n",
+										p.AliveList[i].NodeClusterParams.CurrentCluster.ClusterMembers[j].Id, p.AliveList[i].NodeClusterParams.CurrentCluster.ClusterMembers[j].X, p.AliveList[i].NodeClusterParams.CurrentCluster.ClusterMembers[j].Y,
+										p.AliveList[i].Id, p.AliveList[i].X, p.AliveList[i].Y, len(p.AliveList[i].NodeClusterParams.CurrentCluster.ClusterMembers), radDist, p.AliveList[i].Valid))
+									outOfRangeAndSensed++
+								}
+								outOfRange++
+							}
+						}
+
+						for j := 0; j < len(p.ClusterNetwork.ClusterHeads); j++ {
+							for k := 0; k < len(p.ClusterNetwork.ClusterHeads[j].NodeClusterParams.CurrentCluster.ClusterMembers); k++ {
+								if p.AliveList[i] == p.ClusterNetwork.ClusterHeads[j].NodeClusterParams.CurrentCluster.ClusterMembers[k] {
+									clusterDebugBuffer.WriteString(fmt.Sprintf("\tCluster Head {CH_ID: %v, Size=%v} is cluster member of {CH_ID: %v, Size=%v}\n", p.AliveList[i].Id, len(p.AliveList[i].NodeClusterParams.CurrentCluster.ClusterMembers), p.ClusterNetwork.ClusterHeads[j].Id, len(p.ClusterNetwork.ClusterHeads[j].NodeClusterParams.CurrentCluster.ClusterMembers)))
+								}
+							}
+						}
+					} else if p.AliveList[i].IsClusterMember {
+						clusterCount := 0
+						clusterHeadIsHead := p.AliveList[i].NodeClusterParams.CurrentCluster.ClusterHead.IsClusterHead
+						clusterHeadInHeads := false
+						for j := 0; j < len(p.ClusterNetwork.ClusterHeads); j++ {
+							if p.ClusterNetwork.ClusterHeads[j] == p.AliveList[i].NodeClusterParams.CurrentCluster.ClusterHead {
+								clusterHeadInHeads = true
+							}
+							for k := 0; k < len(p.ClusterNetwork.ClusterHeads[j].NodeClusterParams.CurrentCluster.ClusterMembers); k++ {
+								if p.AliveList[i] == p.ClusterNetwork.ClusterHeads[j].NodeClusterParams.CurrentCluster.ClusterMembers[k] {
+									clusterCount++
+								}
+							}
+						}
+						if clusterCount != 1 {
+							clusterDebugBuffer.WriteString(fmt.Sprintf("\tNode ID=%v is cluster member of %v clusters. Cluster head in ClusterHeads: %v. Cluster head is head: %v\n", p.AliveList[i].Id, clusterCount, clusterHeadInHeads, clusterHeadIsHead))
+						}
+					} else {
+						if p.AliveList[i].Valid {
+							clusterDebugBuffer.WriteString(fmt.Sprintf("\tNode ID=%v is niether member nor head.\n", p.AliveList[i].Id))
+						}
+					}
+				}
+				clusterStatsBuffer.WriteString(fmt.Sprintf("Out of range and sensed: %v/%v\n", outOfRangeAndSensed, outOfRange))
+				clusterStatsBuffer.WriteString("\n")
+
+				fmt.Fprintf(p.ClusterStatsFile, clusterStatsBuffer.String())
+				fmt.Fprintf(p.ClusterDebugFile, clusterDebugBuffer.String())
 			}
+
 			for i := 0; i < len(p.ClusterNetwork.ClusterHeads); i++ {
 				//if len(p.ClusterNetwork.ClusterHeads[i].NodeClusterParams.CurrentCluster.ClusterMembers) > 0 {
-				//	clusterBuffer.WriteString(fmt.Sprintf("%v: [", p.ClusterNetwork.ClusterHeads[i].Id))
+				//	clusterStatsBuffer.WriteString(fmt.Sprintf("%v: [", p.ClusterNetwork.ClusterHeads[i].Id))
 				//	for j := 0; j < len(p.ClusterNetwork.ClusterHeads[i].NodeClusterParams.CurrentCluster.ClusterMembers); j++ {
-				//		clusterBuffer.WriteString(fmt.Sprintf("%v", p.ClusterNetwork.ClusterHeads[i].NodeClusterParams.CurrentCluster.ClusterMembers[j].Id))
+				//		clusterStatsBuffer.WriteString(fmt.Sprintf("%v", p.ClusterNetwork.ClusterHeads[i].NodeClusterParams.CurrentCluster.ClusterMembers[j].Id))
 				//		if j+1 != len(p.ClusterNetwork.ClusterHeads[i].NodeClusterParams.CurrentCluster.ClusterMembers) {
-				//			clusterBuffer.WriteString(fmt.Sprintf(", "))
+				//			clusterStatsBuffer.WriteString(fmt.Sprintf(", "))
 				//		}
 				//	}
-				//	clusterBuffer.WriteString(fmt.Sprintf("]\n"))
+				//	clusterStatsBuffer.WriteString(fmt.Sprintf("]\n"))
 				//}
 
-				clusterStatsBuffer.WriteString(fmt.Sprintf("%v", len(p.ClusterNetwork.ClusterHeads[i].NodeClusterParams.CurrentCluster.ClusterMembers)))
+				clusterBuffer.WriteString(fmt.Sprintf("%v", len(p.ClusterNetwork.ClusterHeads[i].NodeClusterParams.CurrentCluster.ClusterMembers)))
 				if i+1 != len(p.ClusterNetwork.ClusterHeads) {
-					clusterStatsBuffer.WriteString(fmt.Sprintf(","))
+					clusterBuffer.WriteString(fmt.Sprintf(","))
 				}
 			}
-			clusterStatsBuffer.WriteString(fmt.Sprintln(""))
-
-			clusterHeadCount := 0
-			clusterMemberCount := 0
-			clusterDebugBuffer.WriteString(fmt.Sprint(""))
-			for i := 0; i < len(p.AliveList); i++ {
-				if p.AliveList[i].IsClusterHead {
-					clusterHeadCount++
-				} else if p.AliveList[i].IsClusterMember {
-					clusterMemberCount++
-				}
-			}
-			clusterDebugBuffer.WriteString(fmt.Sprintf("Iteration: %v\tlen(p.ClusterNetwork.ClusterHeads): %v\tClusterHeads: %v\tClusterMembers: %v\n", p.CurrentTime/1000, len(p.ClusterNetwork.ClusterHeads), clusterHeadCount, clusterMemberCount))
-
-			outOfRange := 0
-			outOfRangeAndSensed := 0
-			for i := 0; i < len(p.AliveList); i++ {
-				if p.AliveList[i].IsClusterHead {
-					for j := 0; j < len(p.AliveList[i].NodeClusterParams.CurrentCluster.ClusterMembers); j++ {
-						if !(p.AliveList[i].IsWithinRange(p.AliveList[i].NodeClusterParams.CurrentCluster.ClusterMembers[j], p.NodeBTRange)) {
-							if p.AliveList[i].NodeClusterParams.CurrentCluster.ClusterMembers[j].TimeLastSensed > p.AliveList[i].NodeClusterParams.CurrentCluster.ClusterMembers[j].TimeMovedOutOfRange {
-								xDist := p.AliveList[i].X - p.AliveList[i].NodeClusterParams.CurrentCluster.ClusterMembers[j].X
-								yDist := p.AliveList[i].Y - p.AliveList[i].NodeClusterParams.CurrentCluster.ClusterMembers[j].Y
-								radDist := math.Sqrt(float64(xDist*xDist) + float64(yDist*yDist))
-								clusterDebugBuffer.WriteString(fmt.Sprintf("\tCluster Member Out of Range: Member:{ID=%v, Coord(%v,%v)} Cluster:{CH_ID=%v, Coord(%v,%v),Size=%v} Dist: %.4f, Valid: %v\n",
-									p.AliveList[i].NodeClusterParams.CurrentCluster.ClusterMembers[j].Id, p.AliveList[i].NodeClusterParams.CurrentCluster.ClusterMembers[j].X, p.AliveList[i].NodeClusterParams.CurrentCluster.ClusterMembers[j].Y,
-									p.AliveList[i].Id, p.AliveList[i].X, p.AliveList[i].Y, len(p.AliveList[i].NodeClusterParams.CurrentCluster.ClusterMembers), radDist, p.AliveList[i].Valid))
-								outOfRangeAndSensed++
-							}
-							outOfRange++
-						}
-					}
-
-					for j := 0; j < len(p.ClusterNetwork.ClusterHeads); j++ {
-						for k := 0; k < len(p.ClusterNetwork.ClusterHeads[j].NodeClusterParams.CurrentCluster.ClusterMembers); k++ {
-							if p.AliveList[i] == p.ClusterNetwork.ClusterHeads[j].NodeClusterParams.CurrentCluster.ClusterMembers[k] {
-								clusterDebugBuffer.WriteString(fmt.Sprintf("\tCluster Head {CH_ID: %v, Size=%v} is cluster member of {CH_ID: %v, Size=%v}\n", p.AliveList[i].Id, len(p.AliveList[i].NodeClusterParams.CurrentCluster.ClusterMembers), p.ClusterNetwork.ClusterHeads[j].Id, len(p.ClusterNetwork.ClusterHeads[j].NodeClusterParams.CurrentCluster.ClusterMembers)))
-							}
-						}
-					}
-				} else if p.AliveList[i].IsClusterMember {
-					clusterCount := 0
-					clusterHeadIsHead := p.AliveList[i].NodeClusterParams.CurrentCluster.ClusterHead.IsClusterHead
-					clusterHeadInHeads := false
-					for j := 0; j < len(p.ClusterNetwork.ClusterHeads); j++ {
-						if p.ClusterNetwork.ClusterHeads[j] == p.AliveList[i].NodeClusterParams.CurrentCluster.ClusterHead {
-							clusterHeadInHeads = true
-						}
-						for k := 0; k < len(p.ClusterNetwork.ClusterHeads[j].NodeClusterParams.CurrentCluster.ClusterMembers); k++ {
-							if p.AliveList[i] == p.ClusterNetwork.ClusterHeads[j].NodeClusterParams.CurrentCluster.ClusterMembers[k] {
-								clusterCount++
-							}
-						}
-					}
-					if clusterCount != 1 {
-						clusterDebugBuffer.WriteString(fmt.Sprintf("\tNode ID=%v is cluster member of %v clusters. Cluster head in ClusterHeads: %v. Cluster head is head: %v\n", p.AliveList[i].Id, clusterCount, clusterHeadInHeads, clusterHeadIsHead))
-					}
-				} else {
-					if p.AliveList[i].Valid {
-						clusterDebugBuffer.WriteString(fmt.Sprintf("\tNode ID=%v is niether member nor head.\n", p.AliveList[i].Id))
-					}
-				}
-			}
-			clusterBuffer.WriteString(fmt.Sprintf("Out of range and sensed: %v/%v\n", outOfRangeAndSensed, outOfRange))
-			clusterBuffer.WriteString("\n")
+			clusterBuffer.WriteString(fmt.Sprintln(""))
 
 			fmt.Fprintf(p.ClusterFile, clusterBuffer.String())
-			fmt.Fprintf(p.ClusterStatsFile, clusterStatsBuffer.String())
-			fmt.Fprintf(p.ClusterDebug, clusterDebugBuffer.String())
 
 			p.ClusterNetwork.AverageNumClusters += len(p.ClusterNetwork.ClusterHeads)
 
 			p.Events.Push(&cps.Event{nil, cps.CLUSTERPRINT, p.CurrentTime + 1000, 0})
-		case cps.UPDATEALIVELIST:
-			for i := 0; i < len(p.AliveList); i++ {
-				if !p.AliveList[i].Alive {
-					p.AliveList = append(p.AliveList[:i], p.AliveList[i+1:]...)
-					i--
+		case cps.BATTERYPRINT:
+			lowBattery := p.NodeList[0].GetBatteryPercentage()
+			for i := 1; i < len(p.NodeList); i++ {
+				if p.NodeList[i].GetBatteryPercentage() < lowBattery {
+					lowBattery = p.NodeList[i].GetBatteryPercentage()
 				}
 			}
-			p.Events.Push(&cps.Event{nil, cps.UPDATEALIVELIST, p.CurrentTime + 1000, 0})
+			fmt.Fprintf(p.BatteryFile, "Iteration: %v, %v, %v\n", p.CurrentTime/1000, float64(len(p.AliveList))/float64(p.TotalNodes), lowBattery)
+			p.Events.Push(&cps.Event{nil, cps.BATTERYPRINT, p.CurrentTime + 1000, 0})
 		}
 	}
 
@@ -810,10 +832,15 @@ func main() {
 	}
 
 	if p.ClusteringOn && p.ClusterPrint {
-		fmt.Fprintln(p.ClusterFile, "Average number of clusters: ", p.ClusterNetwork.AverageNumClusters / (p.CurrentTime / 1000))
-		fmt.Fprintln(p.ClusterFile, "Overall average cluster size: ", p.ClusterNetwork.AverageClusterSize / (p.CurrentTime / 1000))
-		fmt.Fprintln(p.ClusterFile, "Potential Reclusters: ", p.ClusterNetwork.PotentialReclusters)
-		fmt.Fprintln(p.ClusterFile, "Actual Reclusters: ", p.ClusterNetwork.FullReclusters)
+		fmt.Fprintln(p.ClusterStatsFile, "New nodes joining existing clusters:", p.ClusterNetwork.NNHJoins)
+		fmt.Fprintln(p.ClusterStatsFile, "New nodes creating a new cluster:", p.ClusterNetwork.NNHSolos)
+		fmt.Fprintln(p.ClusterStatsFile, "Average number of clusters:", p.ClusterNetwork.AverageNumClusters / (p.CurrentTime / 1000))
+		fmt.Fprintln(p.ClusterStatsFile, "Overall average cluster size:", p.ClusterNetwork.AverageClusterSize / (p.CurrentTime / 1000))
+		fmt.Fprintln(p.ClusterStatsFile, "Local Reclusters:", p.ClusterNetwork.LocalReclusters)
+		fmt.Fprintln(p.ClusterStatsFile, "Cluster heads created by local reclusters:", p.ClusterNetwork.LRHeads)
+		fmt.Fprintln(p.ClusterStatsFile, "Potential Full Reclusters:", p.ClusterNetwork.PotentialReclusters)
+		fmt.Fprintln(p.ClusterStatsFile, "Actual Full Reclusters:", p.ClusterNetwork.FullReclusters)
+		fmt.Fprintln(p.ClusterStatsFile, "Lost Readings:", p.ClusterNetwork.LostReadings, "/", p.Server.SamplesCounter)
 	}
 
 	p.PositionFile.Seek(0, 0)
