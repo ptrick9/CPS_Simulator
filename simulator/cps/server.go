@@ -1027,18 +1027,15 @@ func (s *FusionCenter) ClearServerClusterInfo(node *NodeImpl) {
 	delete(s.Clusters, node)
 }
 
-func (s *FusionCenter) CheckGlobalRecluster() {
-	nodesAccountedFor := len(s.Clusters) + len(s.ClusterHeadsOf) + len(s.AloneNodes)
-	if float64(nodesAccountedFor) / float64(len(s.P.AliveNodes)) > s.P.ServerReadyThreshold {
-		aloneRatio := float64(len(s.AloneNodes)) / float64(nodesAccountedFor)
-		if (s.P.GlobalRecluster == 1 && aloneRatio > s.P.ReclusterThreshold) || (s.P.GlobalRecluster == 2 && s.P.CurrentTime > s.NextReclusterTime) {
-			s.RatioBeforeRecluster = aloneRatio
-			s.AloneNodes = make(map[*NodeImpl]int)
-			s.Clusters = make(map[*NodeImpl]*Cluster)
-			s.ClusterHeadsOf = make(map[*NodeImpl][]*NodeImpl)
-			s.Waiting = true
-			s.P.ClusterNetwork.FullRecluster(s.P)
-		}
+func (s *FusionCenter) CheckGlobalRecluster(nodesAccountedFor int) {
+	aloneRatio := float64(len(s.AloneNodes)) / float64(nodesAccountedFor)
+	if (s.P.GlobalRecluster == 1 && aloneRatio > s.P.ReclusterThreshold) || (s.P.GlobalRecluster == 2 && s.P.CurrentTime > s.NextReclusterTime) {
+		s.RatioBeforeRecluster = aloneRatio
+		s.AloneNodes = make(map[*NodeImpl]int)
+		s.Clusters = make(map[*NodeImpl]*Cluster)
+		s.ClusterHeadsOf = make(map[*NodeImpl][]*NodeImpl)
+		s.Waiting = true
+		s.P.ClusterNetwork.FullRecluster(s.P)
 	}
 }
 

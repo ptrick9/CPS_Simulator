@@ -691,12 +691,14 @@ func SetupFiles(p *Params) {
 	p.Files = append(p.Files, p.OutputFileNameCM + "-simulatorOutput.txt")
 
 	//Print parameters to position file
-	fmt.Fprintln(p.PositionFile, "Image:", p.ImageFileNameCM)
-	fmt.Fprintln(p.PositionFile, "Width:", p.MaxX)
-	fmt.Fprintln(p.PositionFile, "Height:", p.MaxY)
-	fmt.Fprintf(p.PositionFile, "Amount: %-8v\n", p.Iterations_of_event)
-	fmt.Fprintf(p.PositionFile, "Bomb x: %v\n", p.BombX)
-	fmt.Fprintf(p.PositionFile, "Bomb y: %v\n", p.BombY)
+	if p.PositionPrint {
+		fmt.Fprintln(p.PositionFile, "Image:", p.ImageFileNameCM)
+		fmt.Fprintln(p.PositionFile, "Width:", p.MaxX)
+		fmt.Fprintln(p.PositionFile, "Height:", p.MaxY)
+		fmt.Fprintf(p.PositionFile, "Amount: %-8v\n", p.Iterations_of_event)
+		fmt.Fprintf(p.PositionFile, "Bomb x: %v\n", p.BombX)
+		fmt.Fprintf(p.PositionFile, "Bomb y: %v\n", p.BombY)
+	}
 
 	p.DriftFile, err = os.Create(p.OutputFileNameCM + "-drift.txt")
 	if err != nil {

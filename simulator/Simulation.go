@@ -679,26 +679,25 @@ func main() {
 
 
 				//fmt.Fprintf(p.ClusterFile, clusterStatsBuffer.String())
-			}
+				for i := 0; i < len(p.ClusterNetwork.ClusterHeads); i++ {
+					//if len(p.ClusterNetwork.ClusterHeads[i].ClusterMembers) > 0 {
+					//	clusterStatsBuffer.WriteString(fmt.Sprintf("%v: [", p.ClusterNetwork.ClusterHeads[i].Id))
+					//	for j := 0; j < len(p.ClusterNetwork.ClusterHeads[i].ClusterMembers); j++ {
+					//		clusterStatsBuffer.WriteString(fmt.Sprintf("%v", p.ClusterNetwork.ClusterHeads[i].ClusterMembers[j].Id))
+					//		if j+1 != len(p.ClusterNetwork.ClusterHeads[i].ClusterMembers) {
+					//			clusterStatsBuffer.WriteString(fmt.Sprintf(", "))
+					//		}
+					//	}
+					//	clusterStatsBuffer.WriteString(fmt.Sprintf("]\n"))
+					//}
 
-			for i := 0; i < len(p.ClusterNetwork.ClusterHeads); i++ {
-				//if len(p.ClusterNetwork.ClusterHeads[i].ClusterMembers) > 0 {
-				//	clusterStatsBuffer.WriteString(fmt.Sprintf("%v: [", p.ClusterNetwork.ClusterHeads[i].Id))
-				//	for j := 0; j < len(p.ClusterNetwork.ClusterHeads[i].ClusterMembers); j++ {
-				//		clusterStatsBuffer.WriteString(fmt.Sprintf("%v", p.ClusterNetwork.ClusterHeads[i].ClusterMembers[j].Id))
-				//		if j+1 != len(p.ClusterNetwork.ClusterHeads[i].ClusterMembers) {
-				//			clusterStatsBuffer.WriteString(fmt.Sprintf(", "))
-				//		}
-				//	}
-				//	clusterStatsBuffer.WriteString(fmt.Sprintf("]\n"))
-				//}
-
-				clusterStatsBuffer.WriteString(fmt.Sprintf("%v", len(p.ClusterNetwork.ClusterHeads[i].ClusterMembers)))
-				if i+1 != len(p.ClusterNetwork.ClusterHeads) {
-					clusterStatsBuffer.WriteString(fmt.Sprintf(","))
+					clusterStatsBuffer.WriteString(fmt.Sprintf("%v", len(p.ClusterNetwork.ClusterHeads[i].ClusterMembers)))
+					if i+1 != len(p.ClusterNetwork.ClusterHeads) {
+						clusterStatsBuffer.WriteString(fmt.Sprintf(","))
+					}
 				}
+				clusterStatsBuffer.WriteString(fmt.Sprintln(""))
 			}
-			clusterStatsBuffer.WriteString(fmt.Sprintln(""))
 
 			fmt.Fprintf(p.ClusterStatsFile, clusterStatsBuffer.String())
 			fmt.Fprintf(p.ClusterDebugFile, clusterDebugBuffer.String())
@@ -870,11 +869,13 @@ func main() {
 		fmt.Fprintln(p.ClusterStatsFile, "Lost Readings:", p.ClusterNetwork.LostReadings, "/", p.Server.SamplesCounter)
 	}
 
-	p.PositionFile.Seek(0, 0)
-	fmt.Fprintln(p.PositionFile, "Image:", p.ImageFileNameCM)
-	fmt.Fprintln(p.PositionFile, "Width:", p.MaxX)
-	fmt.Fprintln(p.PositionFile, "Height:", p.MaxY)
-	fmt.Fprintf(p.PositionFile, "Amount: %-8v\n", int(p.CurrentTime/1000)+1)
+	if p.PositionPrint {
+		p.PositionFile.Seek(0, 0)
+		fmt.Fprintln(p.PositionFile, "Image:", p.ImageFileNameCM)
+		fmt.Fprintln(p.PositionFile, "Width:", p.MaxX)
+		fmt.Fprintln(p.PositionFile, "Height:", p.MaxY)
+		fmt.Fprintf(p.PositionFile, "Amount: %-8v\n", int(p.CurrentTime/1000)+1)
+	}
 
 	if p.Iterations_used < p.Iterations_of_event-1 {
 		fmt.Printf("\nFound bomb at iteration: %v \nSimulation Complete\n", int(p.CurrentTime/1000))
