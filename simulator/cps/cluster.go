@@ -173,7 +173,7 @@ func (adhoc *AdHocNetwork) ClusterSearch(node *NodeImpl, rd *Reading, tp bool, p
 			node.Join(toJoin[0])
 			adhoc.CSJoins++
 			if rd != nil {
-				node.DrainBatteryBluetooth(&node.P.Server.ReadingBTCounter) //node sends reading to new head
+				node.DrainBatteryBluetooth(&p.Server.ReadingBTCounter) //node sends reading to new head
 				node.SendToClusterHead(rd, tp, toJoin[0])
 			}
 		} else {
@@ -620,7 +620,7 @@ func (adhoc *AdHocNetwork) ExpansiveLocalRecluster(head *NodeImpl, members []*No
 
 			var memArr []*NodeImpl
 			if _, ok := withinDist[i].P.Server.Clusters[withinDist[i]]; ok {
-				memArr := make([]*NodeImpl, len(withinDist[i].P.Server.Clusters[withinDist[i]].Members))
+				memArr = make([]*NodeImpl, 0, len(withinDist[i].P.Server.Clusters[withinDist[i]].Members))
 				for member := range withinDist[i].P.Server.Clusters[withinDist[i]].Members {
 					memArr = append(memArr, member)
 				}
@@ -708,7 +708,7 @@ func (node *NodeImpl) InitLocalRecluster() {
 	var members []*NodeImpl
 
 	if _, ok := node.P.Server.Clusters[node]; ok {
-		members := make([]*NodeImpl, len(node.P.Server.Clusters[node].Members))
+		members = make([]*NodeImpl, 0, len(node.P.Server.Clusters[node].Members))
 		for member := range node.P.Server.Clusters[node].Members {
 			members = append(members, member)
 		}

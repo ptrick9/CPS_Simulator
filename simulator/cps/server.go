@@ -967,49 +967,57 @@ func (s *FusionCenter) CheckFalsePosWind(n *NodeImpl) int {
 }
 
 func (s *FusionCenter) UpdateClusterInfo(node *NodeImpl, rd *Reading) {
-	if node.IsClusterHead {
-		if len(node.StoredReadings) > 0 {
-			if _, ok := s.Clusters[node]; !ok {
-				s.ClearServerClusterInfo(node)
-				s.Clusters[node] = &Cluster{Members: make(map[*NodeImpl]int), TimeFormed: rd.Time}
-			}
-			for _, reading := range node.StoredReadings {
-				member := node.P.NodeList[reading.Id]
-				if _, ok := s.Clusters[node].Members[member]; !ok {
-					time, ok1 := s.AloneNodes[member]
-					_, ok2 := s.Clusters[member]
-					if (!ok1 || time < reading.Time) && (!ok2 || s.Clusters[member].TimeFormed < reading.Time) {
-						delete(s.AloneNodes, member)
-						if ok2 {
-							for mem := range s.ClusterHeadsOf {
-								s.ClusterHeadsOf[mem], _ = SearchRemove(s.ClusterHeadsOf[mem], member)
-							}
-							delete(s.Clusters, member)
-						}
-						s.Clusters[node].Members[member] = reading.Time
-						s.ClusterHeadsOf[member] = append(s.ClusterHeadsOf[member], node)
-						if len(s.ClusterHeadsOf[member]) > node.P.MaxClusterHeads {
-							//Sort heads by oldest reading first
-							sort.Slice(s.ClusterHeadsOf[member], func(i, j int) bool {
-								head1 := s.ClusterHeadsOf[member][i]
-								head2 := s.ClusterHeadsOf[member][j]
-								time1 := s.Clusters[head1].Members[member]
-								time2 := s.Clusters[head2].Members[member]
-								return time1 < time2
-							})
-							oldestHead := s.ClusterHeadsOf[member][0]
-							delete(s.Clusters[oldestHead].Members, member)
-							s.ClusterHeadsOf[member] = s.ClusterHeadsOf[member][1:]
-						}
-					}
-				} else if reading.Time > s.Clusters[node].Members[member] {
-					s.Clusters[node].Members[member] = reading.Time
+	if node.IsAlive() {
+		if node.IsClusterHead {
+			if len(node.StoredReadings) > 0 {
+				if _, ok := s.Clusters[node]; !ok {
+					s.ClearServerClusterInfo(node)
+					s.Clusters[node] = &Cluster{Members: make(map[*NodeImpl]int), TimeFormed: rd.Time}
 				}
+				for _, reading := range node.StoredReadings {
+					member := node.P.NodeList[reading.Id]
+					if member.IsAlive() {
+						if _, ok := s.Clusters[node].Members[member]; !ok {
+							time, ok1 := s.AloneNodes[member]
+							_, ok2 := s.Clusters[member]
+							if (!ok1 || time < reading.Time) && (!ok2 || s.Clusters[member].TimeFormed < reading.Time) {
+								delete(s.AloneNodes, member)
+								if ok2 {
+									for mem := range s.ClusterHeadsOf {
+										s.ClusterHeadsOf[mem], _ = SearchRemove(s.ClusterHeadsOf[mem], member)
+									}
+									delete(s.Clusters, member)
+								}
+								s.Clusters[node].Members[member] = reading.Time
+								s.ClusterHeadsOf[member] = append(s.ClusterHeadsOf[member], node)
+								if len(s.ClusterHeadsOf[member]) > node.P.MaxClusterHeads {
+									//Sort heads by oldest reading first
+									sort.Slice(s.ClusterHeadsOf[member], func(i, j int) bool {
+										head1 := s.ClusterHeadsOf[member][i]
+										head2 := s.ClusterHeadsOf[member][j]
+										time1 := s.Clusters[head1].Members[member]
+										time2 := s.Clusters[head2].Members[member]
+										return time1 < time2
+									})
+									oldestHead := s.ClusterHeadsOf[member][0]
+									delete(s.Clusters[oldestHead].Members, member)
+									s.ClusterHeadsOf[member] = s.ClusterHeadsOf[member][1:]
+								}
+							}
+						} else if reading.Time > s.Clusters[node].Members[member] {
+							s.Clusters[node].Members[member] = reading.Time
+						}
+					} else {
+						s.ClearServerClusterInfo(member)
+					}
+				}
+			} else {
+				s.ClearServerClusterInfo(node)
+				s.AloneNodes[node] = rd.Time
 			}
-		} else {
-			s.ClearServerClusterInfo(node)
-			s.AloneNodes[node] = rd.Time
 		}
+	} else {
+		s.ClearServerClusterInfo(node)
 	}
 }
 
