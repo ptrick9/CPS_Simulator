@@ -156,12 +156,13 @@ func (adhoc *AdHocNetwork) UpdateClusterStatus(node *NodeImpl, rd *Reading, tp b
 			adhoc.ClusterSearch(node, rd, tp, p)
 		} else {
 			node.Wait = 0
+			node.WaitThresh = 1
 		}
 	//}
 }
 
 func (adhoc *AdHocNetwork) ClusterSearch(node *NodeImpl, rd *Reading, tp bool, p *Params) {
-	if node.Wait < p.ClusterSearchThreshold {
+	if (!p.AdaptiveClusterSearch && node.Wait < p.ClusterSearchThreshold) || (p.AdaptiveClusterSearch && node.Wait < node.WaitThresh) {
 		node.Wait++
 		adhoc.TotalWaits++
 	} else {
@@ -176,10 +177,12 @@ func (adhoc *AdHocNetwork) ClusterSearch(node *NodeImpl, rd *Reading, tp bool, p
 				node.DrainBatteryBluetooth(&p.Server.ReadingBTCounter) //node sends reading to new head
 				node.SendToClusterHead(rd, tp, toJoin[0])
 			}
+			node.WaitThresh = 1
 		} else {
 			adhoc.ClearClusterParams(node)
 			adhoc.FormCluster(node)
 			adhoc.CSSolos++
+			node.WaitThresh *= 2
 		}
 	}
 }

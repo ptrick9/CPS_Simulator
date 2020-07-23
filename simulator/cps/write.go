@@ -427,6 +427,8 @@ func InitializeNodeParameters(p *Params, nodeNum int) *NodeImpl{
 	curNode.CurrentBatteryLevel = int(float64(p.BatteryCapacity) * RandomBatteryLevel(p.AverageBatteryLevel))
 	curNode.InitialBatteryLevel = curNode.CurrentBatteryLevel
 	curNode.SamplingPeriod		= p.SamplingPeriodMS
+
+	curNode.WaitThresh = 1
 	return &curNode
 }
 
@@ -1613,6 +1615,7 @@ func GetFlags(p *Params) {
 	flag.IntVar(&p.ClusterSearchThreshold, "clusterSearchThresh", 0, "The number of senses in a row required to trigger cluster search that a node either has no cluster head or is out of range of its cluster head.")
 	flag.IntVar(&p.ClusterHeadTimeThreshold, "CHTimeThresh", 300, "The maximum time a can be cluster head without triggering local recluster.")
 	flag.Float64Var(&p.ClusterHeadBatteryDropThreshold, "CHBatteryDropThresh", 0.3, "The maximum percent a cluster head's battery can drop before triggering a local recluster.")
+	flag.BoolVar(&p.AdaptiveClusterSearch, "adaptiveClusterSearch", false, "How many times a node will wait before performing a cluster search adapts based on how many times it tries unsuccessfully.")
 
 	flag.StringVar(&p.WindRegionPath, "windRegionPath", "hull_testing.txt", "File containing regions formed by wind")
 
@@ -1721,6 +1724,7 @@ func WriteFlags(p * Params){
 	buf.WriteString(fmt.Sprintf("clusterSearchThresh=%v\n",p.ClusterSearchThreshold))
 	buf.WriteString(fmt.Sprintf("CHTimeThresh=%v\n", p.ClusterHeadTimeThreshold))
 	buf.WriteString(fmt.Sprintf("CHBatteryDropThresh=%v\n", p.ClusterHeadBatteryDropThreshold))
+	buf.WriteString(fmt.Sprintf("AdaptiveClusterSearch=%v\n", p.AdaptiveClusterSearch))
 	buf.WriteString(fmt.Sprintf("batteryCapacity=%v\n",p.BatteryCapacity))
 	buf.WriteString(fmt.Sprintf("bluetoothLossPercentage=%v\n",p.BluetoothLossPercentage))
 	buf.WriteString(fmt.Sprintf("sampleLossPercentage=%v\n",p.SampleLossPercentage))

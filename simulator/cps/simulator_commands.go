@@ -212,6 +212,7 @@ type Params struct {
 	ClusterSearchThreshold          int
 	ClusterHeadTimeThreshold        int
 	ClusterHeadBatteryDropThreshold float64
+	AdaptiveClusterSearch			bool
 
 
 	DriftExplorer 	bool

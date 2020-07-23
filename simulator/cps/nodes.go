@@ -102,6 +102,7 @@ type NodeImpl struct {
 	LowSpeedCounter      			int
 	SamplingPeriod					int
 	Wait							int
+	WaitThresh						int
 }
 
 //NodeMovement controls the movement of all the normal nodes
@@ -387,6 +388,7 @@ func (node *NodeImpl) SendToClusterHead(rd *Reading, tp bool, head *NodeImpl){
 	node.IsClusterMember = true
 	head.ClusterMembers[node] = node.P.CurrentTime
 	node.Wait = 0
+	node.WaitThresh = 1
 	head.StoredNodes = append(head.StoredNodes, node)
 	head.StoredReadings = append(head.StoredReadings, rd)
 	head.StoredTPs = append(head.StoredTPs, tp)
@@ -1143,7 +1145,7 @@ func (node *NodeImpl) report(rawConc float64) {
 			node.P.ClusterNetwork.UpdateClusterStatus(node, rd, tp, node.P)
 			node.OutOfRange = false
 		}
-		if !node.P.ClusteringOn || len(node.StoredReadings) > 0 || node.IsClusterHead || node.ClusterHead == nil || highSensor {
+		if !node.P.ClusteringOn || len(node.StoredReadings) > 0 || node.IsClusterHead || node.ClusterHead == nil || highSensor || node.Wait > 0 {
 			node.SendToServer(rd, tp)
 		}
 	}
