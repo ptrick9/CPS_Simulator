@@ -158,6 +158,7 @@ type Params struct {
 	WallNodeList []WallNodes
 	NodeList     []*NodeImpl
 	AliveNodes   map[*NodeImpl]bool
+	AliveValNodes   map[*NodeImpl]bool
 
 	NumAtt      int
 	Attractions []*Attraction

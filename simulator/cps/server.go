@@ -81,6 +81,8 @@ func (s *FusionCenter) Init(){
 	s.NodeSquares = make(map[int]Tuple)
 	s.SquarePop = make(map[Tuple][]int)
 	s.SquareTime = make(map[Tuple]TimeTrack)
+
+	s.NextReclusterTime = int(s.P.ReclusterPeriod)
 }
 
 func (s *FusionCenter) MakeNodeData() {
@@ -1037,7 +1039,7 @@ func (s *FusionCenter) ClearServerClusterInfo(node *NodeImpl) {
 
 func (s *FusionCenter) CheckGlobalRecluster(nodesAccountedFor int) {
 	aloneRatio := float64(len(s.AloneNodes)) / float64(nodesAccountedFor)
-	if (s.P.GlobalRecluster == 1 && aloneRatio > s.P.ReclusterThreshold) || (s.P.GlobalRecluster == 2 && s.P.CurrentTime > s.NextReclusterTime) {
+	if (s.P.GlobalRecluster == 1 && aloneRatio > s.P.ReclusterThreshold) || (s.P.GlobalRecluster == 2 && s.P.CurrentTime/1000 > s.NextReclusterTime) {
 		s.RatioBeforeRecluster = aloneRatio
 		s.AloneNodes = make(map[*NodeImpl]int)
 		s.Clusters = make(map[*NodeImpl]*Cluster)

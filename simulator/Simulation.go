@@ -377,6 +377,7 @@ func main() {
 	cps.WriteFlags(p)
 
 	p.AliveNodes = make(map[*cps.NodeImpl]bool)
+	p.AliveValNodes = make(map[*cps.NodeImpl]bool)
 	p.Server.Clusters = make(map[*cps.NodeImpl]*cps.Cluster)
 	p.Server.ClusterHeadsOf = make(map[*cps.NodeImpl][]*cps.NodeImpl)
 	p.Server.AloneNodes = make(map[*cps.NodeImpl]int)
@@ -468,6 +469,11 @@ func main() {
 			}
 			if p.CurrentTime/1000 < p.NumNodeMovements-5 {
 				p.Events.Push(&cps.Event{event.Node, cps.MOVE, p.CurrentTime + 100, 0})
+			}
+			if event.Node.IsAlive() && event.Node.Valid {
+				p.AliveValNodes[event.Node] = true
+			} else {
+				delete(p.AliveValNodes, event.Node)
 			}
 		//case cps.INITCLUSTER:
 		//	p.ClusterNetwork.FullRecluster(p)

@@ -420,19 +420,22 @@ func (node *NodeImpl) SendToServer(rd *Reading, tp bool){
 		server.Send(node, rd, tp)
 	}
 
-	server.UpdateClusterInfo(node, rd)
 	node.DrainBatteryWifi() //The node receives confirmation from the server, including how many readings it received
 	//and updates about the cluster, such as if any members have left to join other clusters.
-	node.UpdateClusterInfo(server)
 
-	if server.P.GlobalRecluster > 0 {
-		nodesAccountedFor := len(server.Clusters) + len(server.ClusterHeadsOf) + len(server.AloneNodes)
-		if float64(nodesAccountedFor)/float64(len(server.P.AliveNodes)) > server.P.ServerReadyThreshold {
-			if server.Waiting {
-				server.Waiting = false
-				server.UpdateReclusterThresholds(nodesAccountedFor)
-			} else {
-				server.CheckGlobalRecluster(nodesAccountedFor)
+	if server.P.ClusteringOn {
+		server.UpdateClusterInfo(node, rd)
+		node.UpdateClusterInfo(server)
+
+		if server.P.GlobalRecluster > 0 {
+			nodesAccountedFor := len(server.Clusters) + len(server.ClusterHeadsOf) + len(server.AloneNodes)
+			if float64(nodesAccountedFor)/float64(len(server.P.AliveValNodes)) > server.P.ServerReadyThreshold {
+				if server.Waiting {
+					server.Waiting = false
+					server.UpdateReclusterThresholds(nodesAccountedFor)
+				} else {
+					server.CheckGlobalRecluster(nodesAccountedFor)
+				}
 			}
 		}
 	}
