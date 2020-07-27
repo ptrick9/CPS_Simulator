@@ -18,6 +18,7 @@ type AdHocNetwork struct {
 	LostReadings        int //Counts the number of readings that were lost because the cluster head died before sending
 	NextClusterNum      int //For testing, may remove later
 	TotalWaits          int //Counts the number of times a node waited instead of initiating a cluster search
+	ExpansiveExtras		int //Counts the number of clusters added to an expansive recluster
 }
 
 type HelloMsg struct {
@@ -152,7 +153,7 @@ func (adhoc *AdHocNetwork) UpdateClusterStatus(node *NodeImpl, rd *Reading, tp b
 					adhoc.ClusterSearch(node, rd, tp, p)
 				}
 			}
-		} else if p.GlobalRecluster == 0 && node.IsClusterHead && len(node.ClusterMembers) <= p.ClusterMinThreshold {
+		} else if p.AloneClusterSearch && node.IsClusterHead && len(node.ClusterMembers) <= p.ClusterMinThreshold {
 			adhoc.ClusterSearch(node, rd, tp, p)
 		} else {
 			node.Wait = 0
@@ -617,7 +618,8 @@ func (adhoc *AdHocNetwork) ExpansiveLocalRecluster(head *NodeImpl, members []*No
 	head.DrainBatteryBluetooth(&p.Server.LocalReclusterBTCounter) //Sends message to all in bluetooth range
 	for i := 0; i < len(withinDist); i++ {
 		withinDist[i].DrainBatteryBluetooth(&p.Server.LocalReclusterBTCounter) //All nodes in range receive message
-		if withinDist[i].IsClusterHead && (p.CurrentTime - withinDist[i].TimeBecameClusterHead) / 1000 > (p.LocalRecluster-3) {
+		if withinDist[i].IsClusterHead && (p.CurrentTime - withinDist[i].TimeBecameClusterHead) / 1000 > int(float64(p.ClusterHeadTimeThreshold) * p.ExpansiveRatio) {
+			adhoc.ExpansiveExtras++
 			withinDist[i].DrainBatteryWifi() //This cluster head informs the server that it is within range of the dying cluster head
 			adhoc.ClearClusterParams(withinDist[i])
 
@@ -703,7 +705,7 @@ func (node *NodeImpl) FindNearbyHeads(p *Params, counter *int) []*NodeImpl {
 func (node *NodeImpl) ShouldLocalRecluster() bool {
 	return (node.P.CurrentTime - node.TimeBecameClusterHead)/1000 > node.P.ClusterHeadTimeThreshold ||
 		node.BatteryBecameClusterHead - node.GetBatteryPercentage() > node.P.ClusterHeadBatteryDropThreshold ||
-		node.GetBatteryPercentage() < node.P.BatteryLowThreshold
+		!node.IsAlive()
 }
 
 func (node *NodeImpl) InitLocalRecluster() {

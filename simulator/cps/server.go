@@ -50,6 +50,8 @@ type FusionCenter struct {
 	ClusterHeadsOf	map[*NodeImpl][]*NodeImpl
 	AloneNodes		map[*NodeImpl]int
 	RatioBeforeRecluster	float64
+	Increments	int
+	Decrements	int
 
 	Waiting		bool	//true after a global recluster until nodes accounted for is greater than server ready threshold
 	NextReclusterTime	int //The next time a global recluster is scheduled
@@ -82,7 +84,9 @@ func (s *FusionCenter) Init(){
 	s.SquarePop = make(map[Tuple][]int)
 	s.SquareTime = make(map[Tuple]TimeTrack)
 
-	s.NextReclusterTime = int(s.P.ReclusterPeriod)
+	if s.P.GlobalRecluster == 2 {
+		s.NextReclusterTime = int(s.P.ReclusterPeriod)
+	}
 }
 
 func (s *FusionCenter) MakeNodeData() {
@@ -1038,32 +1042,48 @@ func (s *FusionCenter) ClearServerClusterInfo(node *NodeImpl) {
 }
 
 func (s *FusionCenter) CheckGlobalRecluster(nodesAccountedFor int) {
-	aloneRatio := float64(len(s.AloneNodes)) / float64(nodesAccountedFor)
-	if (s.P.GlobalRecluster == 1 && aloneRatio > s.P.ReclusterThreshold) || (s.P.GlobalRecluster == 2 && s.P.CurrentTime/1000 > s.NextReclusterTime) {
-		s.RatioBeforeRecluster = aloneRatio
+	ratio := 0.0
+	if s.P.AloneOrClusterRatio {
+		ratio = float64(len(s.AloneNodes)) / float64(nodesAccountedFor)
+	} else {
+		ratio = (float64(len(s.Clusters)) + float64(len(s.AloneNodes))) / float64(nodesAccountedFor)
+	}
+	if (s.P.GlobalRecluster == 1 && ratio > s.P.AloneThreshold) || (s.P.GlobalRecluster == 2 && s.P.CurrentTime/1000 > s.NextReclusterTime) || (s.P.GlobalRecluster == 3 && s.P.CurrentTime/1000 > s.NextReclusterTime && ratio > s.P.AloneThreshold) {
+		s.RatioBeforeRecluster = ratio
 		s.AloneNodes = make(map[*NodeImpl]int)
 		s.Clusters = make(map[*NodeImpl]*Cluster)
 		s.ClusterHeadsOf = make(map[*NodeImpl][]*NodeImpl)
 		s.Waiting = true
 		s.P.ClusterNetwork.FullRecluster(s.P)
+		if s.P.GlobalRecluster == 3 {
+			s.NextReclusterTime = s.P.CurrentTime/1000 + int(s.P.ReclusterPeriod)
+		}
 	}
 }
 
 func (s *FusionCenter) UpdateReclusterThresholds(nodesAccountedFor int) {
-	aloneRatio := float64(len(s.AloneNodes))/float64(nodesAccountedFor)
-	if (s.RatioBeforeRecluster - aloneRatio) / s.RatioBeforeRecluster < s.P.SmallImprovement {
-		if s.P.GlobalRecluster == 1 {
-			s.P.ReclusterThreshold *= s.P.GlobalReclusterIncrement
-		} else {
+	ratio := 0.0
+	if s.P.AloneOrClusterRatio {
+		ratio = float64(len(s.AloneNodes)) / float64(nodesAccountedFor)
+	} else {
+		ratio = (float64(len(s.Clusters)) + float64(len(s.AloneNodes))) / float64(nodesAccountedFor)
+	}
+	improvement := (s.RatioBeforeRecluster - ratio) / s.RatioBeforeRecluster
+	if improvement < s.P.SmallImprovement {
+		s.Increments++
+		if s.P.GlobalRecluster == 2 {
 			s.P.ReclusterPeriod *= s.P.GlobalReclusterIncrement
 			s.NextReclusterTime += int(s.P.ReclusterPeriod)
-		}
-	} else if (s.RatioBeforeRecluster - aloneRatio) / s.RatioBeforeRecluster > s.P.LargeImprovement {
-		if s.P.GlobalRecluster == 1 {
-			s.P.ReclusterThreshold *= s.P.GlobalReclusterDecrement
 		} else {
+			s.P.AloneThreshold *= s.P.GlobalReclusterIncrement
+		}
+	} else if improvement > s.P.LargeImprovement {
+		s.Decrements++
+		if s.P.GlobalRecluster == 2 {
 			s.P.ReclusterPeriod *= s.P.GlobalReclusterDecrement
 			s.NextReclusterTime += int(s.P.ReclusterPeriod)
+		} else {
+			s.P.AloneThreshold *= s.P.GlobalReclusterDecrement
 		}
 	}
 }

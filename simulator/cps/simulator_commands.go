@@ -190,30 +190,34 @@ type Params struct {
 	NodeTree            * Quadtree
 	ClusterNetwork      * AdHocNetwork
 	NodeBTRange         float64
-	ClusterMaxThreshold int
-	ClusterMinThreshold	int
-	MaxClusterHeads		int
-	ClusteringOn        bool
-	RedundantClustering bool
-	DegreeWeight                    float64
-	BatteryWeight                   float64
-	Penalty                         float64
-	GlobalRecluster                 int
-	LocalRecluster                  int
-	ReclusterThreshold              float64
-	ReclusterPeriod                 float64
-	SmallImprovement				float64
-	LargeImprovement				float64
-	GlobalReclusterIncrement		float64
-	GlobalReclusterDecrement		float64
-	DisableGRThreshold				float64
-	DisableCSThreshold				float64
-	ServerReadyThreshold			float64
-	InitClusterTime                 int
-	ClusterSearchThreshold          int
+	ClusterMaxThreshold      int
+	ClusterMinThreshold      int
+	MaxClusterHeads          int
+	ClusteringOn             bool
+	RedundantClustering      bool
+	DegreeWeight             float64
+	BatteryWeight            float64
+	Penalty                  float64
+	GlobalRecluster          int
+	AloneOrClusterRatio		 bool
+	LocalRecluster           int
+	ExpansiveRatio			 float64
+	AloneThreshold           float64
+	ReclusterPeriod          float64
+	SmallImprovement         float64
+	SmallImprovementRatio	 float64
+	LargeImprovement         float64
+	GlobalReclusterIncrement float64
+	GlobalReclusterDecrement float64
+	DisableGRThreshold       float64
+	DisableCSThreshold       float64
+	ServerReadyThreshold     float64
+	InitClusterTime          int
+	ClusterSearchThreshold   int
 	ClusterHeadTimeThreshold        int
 	ClusterHeadBatteryDropThreshold float64
 	AdaptiveClusterSearch			bool
+	AloneClusterSearch				bool
 
 
 	DriftExplorer 	bool

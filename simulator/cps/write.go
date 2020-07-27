@@ -1591,20 +1591,22 @@ func GetFlags(p *Params) {
 	/* Global Reclustering
 	0 - off
 	1 - threshold-based
-	2 - time-based */
+	2 - time-based
+	3 * threshold + time */
 	flag.IntVar(&p.GlobalRecluster, "globalRecluster", 1, "Enables or disables global reclustering")
+
+	flag.BoolVar(&p.AloneOrClusterRatio, "aloneOrClusterRatio", true, "ratio of (true: alone nodes; false: total clusters) to total nodes is used to check for global recluster.")
 
 	/* Local Reclustering
 	0 - off
 	1 - minimal (nodes check for nearby head first)
 	2 - standard
-	3 or higher - expansive (nearby clusters also recluster)
-	When expansive is chosen, (p.LocalRecluster - 3) will be the time in seconds that a node has been a cluster head for its cluster to join the expansive recluster
-	For example, if p.LocalRecluster is set to 63, only nodes that have been cluster head for over 60 seconds will join the expansive recluster */
+	3 or higher - expansive (nearby clusters also recluster) */
 	flag.IntVar(&p.LocalRecluster, "localRecluster", 1, "Enables or disables local reclustering")
-	flag.Float64Var(&p.ReclusterThreshold, "reclusterThreshold", 0.1, "The maximum percent of clusters made up only of cluster heads before the network should fully recluster")
+	flag.Float64Var(&p.ExpansiveRatio, "expansiveRatio", 0.66, "Percentage of CHTimeThreshold required for a cluster head to join an expansive recluster")
+	flag.Float64Var(&p.AloneThreshold, "aloneThreshold", 0.1, "The maximum percent of clusters made up only of cluster heads before the network should fully recluster")
 	flag.Float64Var(&p.ReclusterPeriod, "reclusterPeriod", 300.0, "The period of time in seconds between global reclusters when tome-based global reclusters are enabled")
-	flag.Float64Var(&p.SmallImprovement, "smallImprovement", 0.2, "The threshold improvement in alone nodes after a global recluster that will lead to an increased recluster threshold or period")
+	flag.Float64Var(&p.SmallImprovementRatio, "smallImprovementRatio", 0.33, "The number multiplied to large improvement to create the threshold improvement in alone nodes after a global recluster that will lead to an increased recluster threshold or period")
 	flag.Float64Var(&p.LargeImprovement, "largeImprovement", 0.6, "The threshold improvement in alone nodes after a global recluster that will lead to a decreased recluster threshold or period")
 	flag.Float64Var(&p.GlobalReclusterIncrement, "GRIncrement", 1.5, "The number that the recluster threshold or period will be multiplied by when it needs to be increased.")
 	flag.Float64Var(&p.GlobalReclusterDecrement, "GRDecrement", 0.75, "The number that the recluster threshold or period will be multiplied by when it needs to be decreased.")
@@ -1616,6 +1618,7 @@ func GetFlags(p *Params) {
 	flag.IntVar(&p.ClusterHeadTimeThreshold, "CHTimeThresh", 300, "The maximum time a can be cluster head without triggering local recluster.")
 	flag.Float64Var(&p.ClusterHeadBatteryDropThreshold, "CHBatteryDropThresh", 0.3, "The maximum percent a cluster head's battery can drop before triggering a local recluster.")
 	flag.BoolVar(&p.AdaptiveClusterSearch, "adaptiveClusterSearch", false, "How many times a node will wait before performing a cluster search adapts based on how many times it tries unsuccessfully.")
+	flag.BoolVar(&p.AloneClusterSearch, "aloneClusterSearch", false, "Whether alone nodes will continue to look for cluster heads.")
 
 	flag.StringVar(&p.WindRegionPath, "windRegionPath", "hull_testing.txt", "File containing regions formed by wind")
 
@@ -1710,21 +1713,24 @@ func WriteFlags(p * Params){
 	buf.WriteString(fmt.Sprintf("batteryWeight=%v\n",p.BatteryWeight))
 	buf.WriteString(fmt.Sprintf("penalty=%v\n",p.Penalty))
 	buf.WriteString(fmt.Sprintf("globalRecluster=%v\n",p.GlobalRecluster))
+	buf.WriteString(fmt.Sprintf("aloneOrClusterRatio=%v\n",p.AloneOrClusterRatio))
 	buf.WriteString(fmt.Sprintf("localRecluster=%v\n",p.LocalRecluster))
+	buf.WriteString(fmt.Sprintf("expansiveRatio=%v\n",p.ExpansiveRatio))
 	buf.WriteString(fmt.Sprintf("reclusterPeriod=%v\n",p.ReclusterPeriod))
-	buf.WriteString(fmt.Sprintf("smallImprovement=%v\n", p.SmallImprovement))
+	buf.WriteString(fmt.Sprintf("smallImprovementRatio=%v\n", p.SmallImprovementRatio))
 	buf.WriteString(fmt.Sprintf("largeImprovement=%v\n", p.LargeImprovement))
 	buf.WriteString(fmt.Sprintf("GRIncrement=%v\n", p.GlobalReclusterIncrement))
 	buf.WriteString(fmt.Sprintf("GRDecrement=%v\n", p.GlobalReclusterDecrement))
 	buf.WriteString(fmt.Sprintf("disableGRThresh=%v\n", p.DisableGRThreshold))
 	buf.WriteString(fmt.Sprintf("disableCSThresh=%v\n", p.DisableCSThreshold))
 	buf.WriteString(fmt.Sprintf("serverReadyThresh=%v\n", p.ServerReadyThreshold))
-	buf.WriteString(fmt.Sprintf("reclusterThreshold=%v\n",p.ReclusterThreshold))
+	buf.WriteString(fmt.Sprintf("aloneThreshold=%v\n",p.AloneThreshold))
 	buf.WriteString(fmt.Sprintf("initClusterTime=%v\n",p.InitClusterTime))
 	buf.WriteString(fmt.Sprintf("clusterSearchThresh=%v\n",p.ClusterSearchThreshold))
 	buf.WriteString(fmt.Sprintf("CHTimeThresh=%v\n", p.ClusterHeadTimeThreshold))
 	buf.WriteString(fmt.Sprintf("CHBatteryDropThresh=%v\n", p.ClusterHeadBatteryDropThreshold))
-	buf.WriteString(fmt.Sprintf("AdaptiveClusterSearch=%v\n", p.AdaptiveClusterSearch))
+	buf.WriteString(fmt.Sprintf("adaptiveClusterSearch=%v\n", p.AdaptiveClusterSearch))
+	buf.WriteString(fmt.Sprintf("aloneClusterSearch=%v\n", p.AloneClusterSearch))
 	buf.WriteString(fmt.Sprintf("batteryCapacity=%v\n",p.BatteryCapacity))
 	buf.WriteString(fmt.Sprintf("bluetoothLossPercentage=%v\n",p.BluetoothLossPercentage))
 	buf.WriteString(fmt.Sprintf("sampleLossPercentage=%v\n",p.SampleLossPercentage))
