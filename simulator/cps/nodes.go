@@ -94,7 +94,7 @@ type NodeImpl struct {
 	StoredNodes						[]*NodeImpl
 	StoredReadings					[]*Reading
 	StoredTPs						[]bool
-	LowSpeedCounter      			int
+	SlowDownCounter      			int
 	SamplingPeriod					int
 	HighDensityCounter				int
 }
@@ -631,9 +631,10 @@ func (node *NodeImpl) ScheduleNextSense() {
 	if node.GetBatteryPercentage() > node.P.BatteryDeadThreshold {
 		node.AdaptiveSampling()
 		if node.SamplingPeriod==0{
-			node.SamplingPeriod=node.P.SamplingPeriodMS
+			node.SamplingPeriod=node.P.SamplingPeriodDS
 		}
-		node.P.Events.Push(&Event{node, SENSE, node.P.CurrentTime + node.SamplingPeriod, 0})
+		node.P.Events.Push(&Event{node, SENSE, node.P.CurrentTime + node.SamplingPeriod*100, 0})
+		//Changed to cetiseconds have to times by 10 since simulation is in miliseconds
 	} else {
 		node.Alive = false
 	}
@@ -674,8 +675,110 @@ func (node *NodeImpl) ScheduleNextSense() {
 	}
 }*/
 
+func (node *NodeImpl) AdaptiveSampling(){
+	if node.P.AdaptationFlag ==0 {
+		return
+	}
+	var distance float64=0
+	if node.OldX!=0 && node.OldY!=0 {
+		distance = math.Sqrt((math.Pow(float64(node.SX-node.OldX), 2)) + (math.Pow(float64(node.SY-node.OldY), 2)))/2
+		//If not multiply by .5 we get the distance in half meters which is not correct
+	} else {
+		return
+	}
+	//Speed based Adaptation
+	if node.P.AdaptationFlag%2==1{
+		nodeSpeed := distance / (float64(node.SamplingPeriod) / 10)
+		if nodeSpeed > node.P.MaxMoveMeters{           // too fast, increase sampling rate
+			node.SamplingPeriod = int(float64(node.SamplingPeriod) * float64(node.P.MaxMoveMeters) / nodeSpeed)  // an integer
+			node.P.TotalAdaptations++
+			return
+		} else if nodeSpeed < node.P.MaxMoveMeters/2 {
+			node.SlowDownCounter++
+		}
+	}
+	TargetSamplingPeriod:=0
+	if node.P.AdaptationFlag/2==1{
+		NodesinSquare := len(node.P.Server.SquarePop[Tuple{int(node.X / float32(node.P.XDiv)), int(node.Y / float32(node.P.YDiv))}]) //Nodes in curr node square
+		TargetSamplingPeriod= node.P.SamplingPeriodDS*NodesinSquare/node.P.DensityThreshold  // an integer
+		if TargetSamplingPeriod < node.SamplingPeriod    {  //a sparse area increase sampling rate
+			if TargetSamplingPeriod > node.P.SamplingPeriodDS {
+				node.SamplingPeriod = TargetSamplingPeriod
+				node.P.TotalAdaptations++
+			} else if node.SamplingPeriod > node.P.SamplingPeriodDS {
+				node.SamplingPeriod = node.P.SamplingPeriodDS
+				node.P.TotalAdaptations++
+				return
+			}
+		} else if TargetSamplingPeriod > node.SamplingPeriod{
+			node.SlowDownCounter++
+		}
+	}
+	if node.SlowDownCounter > node.P.CounterThreshold  {  //has been slow for a while, can reduce sampling rate
+		node.SlowDownCounter = 0
+		if TargetSamplingPeriod > node.P.SamplingPeriodDS { // in a dense area, use distance driven
+			node.SamplingPeriod = TargetSamplingPeriod
+			node.P.TotalAdaptations++
+		} else if node.SamplingPeriod < node.P.SamplingPeriodDS {
+			node.SamplingPeriod = node.P.SamplingPeriodDS
+			node.P.TotalAdaptations++
+		}
+	}
 
-func (node *NodeImpl)AdaptiveSampling(){
+}
+
+/*func (node *NodeImpl) AdaptiveSampling() {
+	var distance float64=0
+	if node.OldX!=0 && node.OldY!=0 {
+		distance = math.Sqrt((math.Pow(.5*float64(node.SX-node.OldX), 2)) + (math.Pow(.5*float64(node.SY-node.OldY), 2)))
+		//multiple by 1 half to convert from half meters to meters
+	} else {
+		return
+	}
+	//Distance is in half meters so have to divide by half to get meters
+	metersPerSecond := distance / (float64(node.SamplingPeriod)/1000)
+	if metersPerSecond < node.P.MaxMoveMeters * .25 || metersPerSecond > node.P.MaxMoveMeters*.75{
+		if metersPerSecond < node.P.MaxMoveMeters/4 {
+			node.LowSpeedCounter++
+			if node.LowSpeedCounter >= node.P.CounterThreshold {
+				if node.SamplingPeriod < int(node.P.SamplingPeriodMS/2) {   //Gradual increase back to normal speed (delay)
+					node.SamplingPeriod *= 2
+					node.P.TotalAdaptations++
+				} else {
+					node.SamplingPeriod = node.P.SamplingPeriodMS
+				}
+			}
+		} else {
+			node.LowSpeedCounter = 0
+			if metersPerSecond > node.P.MaxMoveMeters {                     //Speed up sampling
+				node.SamplingPeriod /= 2
+				node.P.TotalAdaptations++
+			} else if metersPerSecond > node.P.MaxMoveMeters*.75 {
+				node.SamplingPeriod = node.SamplingPeriod * 2 / 3
+				node.P.TotalAdaptations++
+			}
+		}
+	} else {
+		node.LowSpeedCounter=0 //sets LowSpeedCounter=0 since it wouldn't be otherwise
+		NodesinSquare := len(node.P.Server.SquarePop[Tuple{int(node.X / float32(node.P.XDiv)), int(node.Y / float32(node.P.YDiv))}]) //Nodes in curr node square
+		TargetSamplingPeriod:= NodesinSquare/node.P.DensityThreshold*node.P.SamplingPeriodMS
+		if TargetSamplingPeriod < node.SamplingPeriod{  //increase sampling rate
+			node.SamplingPeriod=TargetSamplingPeriod
+			node.HighDensityCounter=0
+		} else if TargetSamplingPeriod > node.SamplingPeriod {  //decrease sampling rate
+			node.HighDensityCounter++
+		} else {
+			node.HighDensityCounter=0
+		}
+		if node.HighDensityCounter > node.P.CounterThreshold{
+			node.SamplingPeriod=TargetSamplingPeriod
+			node.P.TotalAdaptations++
+		}
+	}
+}*/
+
+
+/*func (node *NodeImpl)AdaptiveSampling(){
 	NodesinSquare := len(node.P.Server.SquarePop[Tuple{int(node.X / float32(node.P.XDiv)), int(node.Y / float32(node.P.YDiv))}]) //Nodes in curr node square
 	TargetSamplingPeriod:= NodesinSquare/node.P.DensityThreshold*node.P.SamplingPeriodMS
 	if TargetSamplingPeriod < node.SamplingPeriod{  //increase sampling rate
@@ -690,7 +793,7 @@ func (node *NodeImpl)AdaptiveSampling(){
 		node.SamplingPeriod=TargetSamplingPeriod
 		node.P.TotalAdaptations++
 	}
-}
+}*/
 
 
 

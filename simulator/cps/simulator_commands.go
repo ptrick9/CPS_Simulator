@@ -209,7 +209,7 @@ type Params struct {
 	ValidationType string
 	RecalReject 	bool
 	DensityThreshold int  // number of nodes that must be in a square for it to be considered dense and have the sampling rate decreased
-	SamplingPeriodMS	 int
+	SamplingPeriodDS	 int
 
 	BatteryCapacity				int
 	AverageBatteryLevel			float64
@@ -222,6 +222,7 @@ type Params struct {
 	WifiLossPercentage			float64
 	TotalAdaptations            int
 	TotalSamples				int
+	AdaptationFlag				int
 }
 
 // returns the amount of battery drained when a sampling event occurs

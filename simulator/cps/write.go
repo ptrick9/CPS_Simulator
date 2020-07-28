@@ -426,7 +426,7 @@ func InitializeNodeParameters(p *Params, nodeNum int) *NodeImpl{
 	// Initialize New Battery Model Variables
 	curNode.CurrentBatteryLevel = 1000000
 	curNode.InitialBatteryLevel = curNode.CurrentBatteryLevel
-	curNode.SamplingPeriod		= p.SamplingPeriodMS
+	curNode.SamplingPeriod		= p.SamplingPeriodDS
 	return &curNode
 }
 
@@ -1455,6 +1455,8 @@ func GetFlags(p *Params) {
 
 	flag.StringVar(&p.MovementPath, "movementPath", "Circle_2D.csv", "Movement Inputs")
 
+	flag.IntVar(&p.AdaptationFlag,"AdaptationFlag",0,"Flag for which mode of adaptation to use")
+
 	flag.StringVar(&p.OutputFileNameCM, "OutputFileName", "Log",
 		"Name of the output text file prefix")
 
@@ -1590,7 +1592,7 @@ func GetFlags(p *Params) {
 	flag.BoolVar(&p.RandomBomb, "randomBomb", false, "Toggles random bomb placement")
 	flag.BoolVar(&p.ZipFiles, "zipFiles", false, "Toggles Zipping of output files")
 	flag.IntVar(&p.DensityThreshold, "densityThreshold", 10, "Number of nodes to make a square considered dense")
-	flag.IntVar(&p.SamplingPeriodMS,"SamplingPeriodMS",500,"period at which nodes sense")
+	flag.IntVar(&p.SamplingPeriodDS,"SamplingPeriodDS",10,"period at which nodes sense")
 	// New Battery Level Flags
 	flag.IntVar(&p.BatteryCapacity, "batteryCapacity", 10000, "Max battery capacity of all nodes")
 	flag.Float64Var(&p.BatteryDeadThreshold, "batteryDeadThreshold", .10, "minimum battery percentage before a node is considered dead")

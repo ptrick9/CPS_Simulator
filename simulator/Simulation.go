@@ -448,7 +448,6 @@ func main() {
 			}
 		case cps.MOVE:
             p.IsSense = false
-
 			if p.CSVMovement {
 				event.Node.MoveCSV(p)
 			} else {
