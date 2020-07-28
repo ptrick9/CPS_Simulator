@@ -226,6 +226,13 @@ type Params struct {
 	WifiLossPercentage			float64
 	TotalAdaptations            int
 	TotalSamples				int
+
+	// covid flags
+	InfectionOn					bool
+	InfectionHostPercentage		float64
+	InfectionChance				float64
+	InfectionDistance			int
+
 }
 
 // returns the amount of battery drained when a sampling event occurs

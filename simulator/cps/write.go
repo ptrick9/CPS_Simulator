@@ -460,6 +460,15 @@ func SetupCSVNodes(p *Params) {
 			//newNode.ReadingsBuffer = []Reading{}
 		}
 
+		if p.InfectionOn {
+			chance := rand.Float64()
+			if chance < p.InfectionHostPercentage {
+				newNode.Infection = Host
+			} else {
+				newNode.Infection = None
+			}
+		}
+
 		newNode.AccelerometerSpeed = []float32{}
 		//newNode.TimeLastAccel = p.CurrentTime
 		//newNode.LastMoveTime = p.CurrentTime
@@ -1608,6 +1617,12 @@ func GetFlags(p *Params) {
 	flag.Float64Var(&p.BluetoothLossPercentage, "bluetoothLossPercentage", 0.0001, "amount of battery drained each time a node uses bluetooth")
 	flag.Float64Var(&p.SampleLossPercentage, "sampleLossPercentage", 0.0002, "amount of battery drained each time a node takes a sample")
 	flag.Float64Var(&p.WifiLossPercentage, "wifiLossPercentage", 0.0002, "amount of battery drained each time a node uses wifi")
+
+	// covid flags
+	flag.BoolVar(&p.InfectionOn, "infectionOn", true, "Toggles nodes spreading infections")
+	flag.Float64Var(&p.InfectionHostPercentage, "infectionHostPercentage", .20, "percent of nodes to make hosts")
+	flag.Float64Var(&p.InfectionChance, "infectionChance", .20, "chance for nodes to spread infection")
+	flag.IntVar(&p.InfectionDistance, "infectionDistance", 5, "distance between nodes to be at risk for infection")
 
 	flag.Parse()
 	fmt.Println("Maximum size of buffer posible: ", p.MaxBufferCapacityCM)

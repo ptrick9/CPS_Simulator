@@ -7,6 +7,13 @@ import (
 	"sort"
 )
 
+type Infection int
+const (
+	None Infection = iota
+	Host
+	Infected
+)
+
 //The NodeParent interface is inherited by all node types
 type NodeParent interface {
 	Distance(b Bomb) float32        //distance to bomb in the form of the node's reading
@@ -97,6 +104,9 @@ type NodeImpl struct {
 	LowSpeedCounter      			int
 	SamplingPeriod					int
 	HighDensityCounter				int
+
+	// covid stuff
+	Infection Infection
 }
 
 //NodeMovement controls the movement of all the normal nodes
