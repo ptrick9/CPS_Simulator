@@ -1592,7 +1592,8 @@ func GetFlags(p *Params) {
 	0 - off
 	1 - threshold-based
 	2 - time-based
-	3 * threshold + time */
+	3 - threshold + time (time not adaptive)
+	4 - threshold + time (time adaptive) */
 	flag.IntVar(&p.GlobalRecluster, "globalRecluster", 1, "Enables or disables global reclustering")
 
 	flag.BoolVar(&p.AloneOrClusterRatio, "aloneOrClusterRatio", true, "ratio of (true: alone nodes; false: total clusters) to total nodes is used to check for global recluster.")

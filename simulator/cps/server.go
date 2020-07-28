@@ -1048,14 +1048,14 @@ func (s *FusionCenter) CheckGlobalRecluster(nodesAccountedFor int) {
 	} else {
 		ratio = (float64(len(s.Clusters)) + float64(len(s.AloneNodes))) / float64(nodesAccountedFor)
 	}
-	if (s.P.GlobalRecluster == 1 && ratio > s.P.AloneThreshold) || (s.P.GlobalRecluster == 2 && s.P.CurrentTime/1000 > s.NextReclusterTime) || (s.P.GlobalRecluster == 3 && s.P.CurrentTime/1000 > s.NextReclusterTime && ratio > s.P.AloneThreshold) {
+	if (s.P.GlobalRecluster == 1 && ratio > s.P.AloneThreshold) || (s.P.GlobalRecluster == 2 && s.P.CurrentTime/1000 > s.NextReclusterTime) || (s.P.GlobalRecluster >= 3 && s.P.CurrentTime/1000 > s.NextReclusterTime && ratio > s.P.AloneThreshold) {
 		s.RatioBeforeRecluster = ratio
 		s.AloneNodes = make(map[*NodeImpl]int)
 		s.Clusters = make(map[*NodeImpl]*Cluster)
 		s.ClusterHeadsOf = make(map[*NodeImpl][]*NodeImpl)
 		s.Waiting = true
 		s.P.ClusterNetwork.FullRecluster(s.P)
-		if s.P.GlobalRecluster == 3 {
+		if s.P.GlobalRecluster >= 3 {
 			s.NextReclusterTime = s.P.CurrentTime/1000 + int(s.P.ReclusterPeriod)
 		}
 	}
@@ -1071,19 +1071,31 @@ func (s *FusionCenter) UpdateReclusterThresholds(nodesAccountedFor int) {
 	improvement := (s.RatioBeforeRecluster - ratio) / s.RatioBeforeRecluster
 	if improvement < s.P.SmallImprovement {
 		s.Increments++
-		if s.P.GlobalRecluster == 2 {
+		switch s.P.GlobalRecluster {
+		case 1:
+			fallthrough
+		case 3:
+			s.P.AloneThreshold *= s.P.GlobalReclusterIncrement
+		case 2:
 			s.P.ReclusterPeriod *= s.P.GlobalReclusterIncrement
 			s.NextReclusterTime += int(s.P.ReclusterPeriod)
-		} else {
+		case 4:
 			s.P.AloneThreshold *= s.P.GlobalReclusterIncrement
+			s.P.ReclusterPeriod *= s.P.GlobalReclusterIncrement
 		}
 	} else if improvement > s.P.LargeImprovement {
 		s.Decrements++
-		if s.P.GlobalRecluster == 2 {
+		switch s.P.GlobalRecluster {
+		case 1:
+			fallthrough
+		case 3:
+			s.P.AloneThreshold *= s.P.GlobalReclusterDecrement
+		case 2:
 			s.P.ReclusterPeriod *= s.P.GlobalReclusterDecrement
 			s.NextReclusterTime += int(s.P.ReclusterPeriod)
-		} else {
+		case 4:
 			s.P.AloneThreshold *= s.P.GlobalReclusterDecrement
+			s.P.ReclusterPeriod *= s.P.GlobalReclusterDecrement
 		}
 	}
 }
