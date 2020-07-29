@@ -388,7 +388,7 @@ func (node *NodeImpl) SendToClusterHead(rd *Reading, tp bool, head *NodeImpl){
 	node.IsClusterMember = true
 	head.ClusterMembers[node] = node.P.CurrentTime
 	node.Wait = 0
-	node.WaitThresh = 1
+	node.WaitThresh = node.P.ClusterSearchThreshold
 	head.StoredNodes = append(head.StoredNodes, node)
 	head.StoredReadings = append(head.StoredReadings, rd)
 	head.StoredTPs = append(head.StoredTPs, tp)

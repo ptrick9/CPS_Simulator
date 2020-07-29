@@ -428,7 +428,7 @@ func InitializeNodeParameters(p *Params, nodeNum int) *NodeImpl{
 	curNode.InitialBatteryLevel = curNode.CurrentBatteryLevel
 	curNode.SamplingPeriod		= p.SamplingPeriodMS
 
-	curNode.WaitThresh = 1
+	curNode.WaitThresh = p.ClusterSearchThreshold
 	return &curNode
 }
 
