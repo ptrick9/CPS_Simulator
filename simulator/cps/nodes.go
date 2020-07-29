@@ -689,9 +689,10 @@ func (node *NodeImpl) UpdateAliveStatus() {
 			}
 			if node.P.GlobalRecluster > 0 && float64(len(node.P.AliveNodes)) / float64(node.P.TotalNodes) < node.P.DisableGRThreshold {
 				node.P.GlobalRecluster = 0
+				node.P.AloneClusterSearch = true
 			}
-			if node.P.GlobalRecluster >= 0 && float64(len(node.P.AliveNodes)) / float64(node.P.TotalNodes) < node.P.DisableCSThreshold {
-				node.P.GlobalRecluster = -1
+			if float64(len(node.P.AliveNodes)) / float64(node.P.TotalNodes) < node.P.DisableCSThreshold {
+				node.P.AloneClusterSearch = false
 			}
 		}
 		delete(node.P.AliveNodes, node)
