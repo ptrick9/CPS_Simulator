@@ -267,7 +267,7 @@ func (adhoc *AdHocNetwork) DissolveCluster(node *NodeImpl) {
 		adhoc.ClearClusterParams(member)
 		/*	Assuming local reclustering is enabled, the members will know that this cluster has dissolved because
 			they will be told so by the server */
-		member.DrainBatteryWifi()
+		member.DrainBatteryWifi(1)
 	}
 	adhoc.ClearClusterParams(node)
 }
@@ -295,7 +295,6 @@ func (adhoc *AdHocNetwork) ResetClusters(p *Params) {
 		distances = append(distances, dist)
 	}
 
-	//TODO efficient sorting?
 	for i := 0; i < len(msgs); i++ {
 		for j := 0; j < len(msgs)-i-1; j++ {
 			if distances[j] > distances[j+1] {
@@ -463,7 +462,6 @@ func (adhoc *AdHocNetwork) FormCluster(node *NodeImpl) {
 }*/
 
 /*func (adhoc *AdHocNetwork) FinalizeClusters(p *Params) {
-	//TODO clean this up. This code block should not be needed
 	for i := 0; i < len(p.NodeList); i++ {
 		//Nodes marked as members but not in a cluster added to SingularNodes
 		if p.NodeList[i].IsClusterMember && !p.NodeList[i].IsClusterHead {
@@ -568,7 +566,7 @@ func (adhoc *AdHocNetwork) FullRecluster(p *Params) {
 	adhoc.FullReclusters++
 	adhoc.ResetClusters(p)
 	for node := range p.AliveNodes {
-		node.DrainBatteryWifi()	//Server sends message to all nodes that reclustering is happening
+		node.DrainBatteryWifi(1)	//Server sends message to all nodes that reclustering is happening
 		if node.Valid {
 			adhoc.SendHello(node, nil, &p.Server.GlobalReclusterBTCounter, p)
 		}
@@ -582,8 +580,7 @@ func (adhoc *AdHocNetwork) FullRecluster(p *Params) {
 
 func (adhoc *AdHocNetwork) LocalRecluster(head *NodeImpl, members []*NodeImpl, p *Params) {
 	adhoc.LocalReclusters++
-	head.DrainBatteryWifi() //Head informs the server it is initiating local recluster
-	//members =
+	head.DrainBatteryWifi(1) //Head informs the server it is initiating local recluster
 	for i := 0; i < len(members); i++ {
 		adhoc.ClearClusterParams(members[i])
 		if members[i].IsAlive() {
@@ -620,7 +617,7 @@ func (adhoc *AdHocNetwork) ExpansiveLocalRecluster(head *NodeImpl, members []*No
 		withinDist[i].DrainBatteryBluetooth(&p.Server.LocalReclusterBTCounter) //All nodes in range receive message
 		if withinDist[i].IsClusterHead && (p.CurrentTime - withinDist[i].TimeBecameClusterHead) / 1000 > int(float64(p.ClusterHeadTimeThreshold) * p.ExpansiveRatio) {
 			adhoc.ExpansiveExtras++
-			withinDist[i].DrainBatteryWifi() //This cluster head informs the server that it is within range of the dying cluster head
+			withinDist[i].DrainBatteryWifi(1) //This cluster head informs the server that it is within range of the dying cluster head
 			adhoc.ClearClusterParams(withinDist[i])
 
 			var memArr []*NodeImpl

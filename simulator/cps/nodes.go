@@ -401,26 +401,20 @@ Currently the extra cost of sending multiple readings at once is simulated by dr
 communication for every multiple of 8 readings sent. It may be worth looking into making this more realistic. */
 func (node *NodeImpl) SendToServer(rd *Reading, tp bool){
 	server := node.P.Server
-	numSent := 0
-    for ; numSent < len(node.StoredReadings)/8 + 1 && node.IsAlive(); numSent++ {
-        node.DrainBatteryWifi()
-    }
+	numSent := float64(len(node.StoredReadings))/8 + 1
+	node.DrainBatteryWifi(numSent)
+
     numSent = numSent * 8 - 1
-	for i := 0; i < len(node.StoredReadings) && i < numSent; i++ { //Some readings will be lost if cluster head dies while sending
+	for i := 0; i < len(node.StoredReadings); i++ {
 		server.Send(node.StoredNodes[i], node.StoredReadings[i], node.StoredTPs[i])
 		delete(server.AloneNodes, node.StoredNodes[i])
-	}
-
-	lost := len(node.StoredReadings) - numSent
-	if lost > 0 {
-		node.P.ClusterNetwork.LostReadings += lost
 	}
 
 	if rd != nil {
 		server.Send(node, rd, tp)
 	}
 
-	node.DrainBatteryWifi() //The node receives confirmation from the server, including how many readings it received
+	node.DrainBatteryWifi(1) //The node receives confirmation from the server, including how many readings it received
 	//and updates about the cluster, such as if any members have left to join other clusters.
 
 	if server.P.ClusteringOn {
@@ -669,10 +663,10 @@ func (node *NodeImpl) DrainBatteryBluetooth(counter *int) {
 }
 
 // decrease battery level of a node for when wifi communication occurs
-func (node *NodeImpl) DrainBatteryWifi() {
+func (node *NodeImpl) DrainBatteryWifi(num float64) {
 	// add counter for this later
-	node.P.Server.WifiCounter++
-	node.CurrentBatteryLevel -= node.P.WifiLossAmount()
+	node.P.Server.WifiCounter += int(num)
+	node.CurrentBatteryLevel -= int(float64(node.P.WifiLossAmount()) * num)
 	node.UpdateAliveStatus()
 }
 
@@ -697,8 +691,7 @@ func (node *NodeImpl) UpdateAliveStatus() {
 		}
 		delete(node.P.AliveNodes, node)
 		node.P.Server.ClearServerClusterInfo(node)
-		node.DrainBatteryWifi() // Node informs the server it is dying.
-
+		node.DrainBatteryWifi(1) // Node informs the server it is dying.
 	}
 
 	if node.P.ClusteringOn && node.P.CurrentTime >= node.P.InitClusterTime && node.IsClusterHead && node.ShouldLocalRecluster() {
