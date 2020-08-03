@@ -37,6 +37,11 @@ type FusionCenter struct {
 	BluetoothCounter	int // counter keeps track when bluetooth communication occurs
 	WifiCounter			int // counter keeps track when wifi communication occurs
 
+	RiskCounter     int // counter keeps track of how many nodes are in range of a host node
+	InfectedCounter int // counter keeps track of how many nodes are infected
+	RiskSet			map[int]bool
+	InfectedSet		map[int]bool
+
 
 	NodeTree		*Quadtree //stores node locations in quadtree format
 	ClusterNetwork	* AdHocNetwork //stores cluster information

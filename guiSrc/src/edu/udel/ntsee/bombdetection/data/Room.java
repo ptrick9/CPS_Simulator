@@ -30,6 +30,7 @@ public class Room {
     private List<Sample> samples;
     private List<SuperNode> superNodes;
     private List<AdHoc> adhocs;
+    private List<Infection> infections;
     private Grid sensorReadings;
     private Road road;
 
@@ -40,9 +41,8 @@ public class Room {
         room.index = new SimpleIntegerProperty(0);
 
         String imagePath = Util.parseString(reader.readLine());
-        BufferedImage image = ImageIO.read(new File(file.getParent() + "/" + imagePath));
+        BufferedImage image = ImageIO.read(new File(imagePath));
         room.walls = Util.createWallsFromImage(image);
-
 
         room.width = Util.parseAmount(reader.readLine());
         room.height = Util.parseAmount(reader.readLine());
@@ -60,50 +60,40 @@ public class Room {
     }
 
     public FileManager getFileManager() {
-
         return fileManager;
     }
     public int getIndex() {
-
         return index.get();
     }
 
     public void setIndex(int index) {
-
         this.index.set(index);
     }
 
     public IntegerProperty indexProperty() {
-
         return index;
     }
 
     public int getWidth() {
-
         return width;
     }
 
     public int getHeight() {
-
         return height;
     }
 
     public int getMaxRuns() {
-
         return runs;
     }
 
     public List<Wall> getWalls() {
-
         return walls;
     }
     public List<Node> getPositions() {
-
         return positions;
     }
 
     public Node getNodeByID(int id) {
-
         for (Node node : positions) {
             if (node.getID() == id) {
                 return node;
@@ -157,6 +147,10 @@ public class Room {
         return grid;
     }
 
+    public List<Infection> getInfections() {
+        return infections;
+    }
+
     public void updateData() throws IOException, LogFormatException {
 
         this.positions = fileManager.getPositions() != null ? fileManager.getPositions().getData(getIndex()) : null;
@@ -164,7 +158,7 @@ public class Room {
         this.superNodes = fileManager.getRoutes() != null ? fileManager.getRoutes().getData(getIndex()) : null;
         this.adhocs = fileManager.getAdHocs() != null ? fileManager.getAdHocs().getData(getIndex()) : null;
         this.sensorReadings = fileManager.getSensorReadings() != null ? fileManager.getSensorReadings().getGrid(getIndex()) : null;
-
+        this.infections = fileManager.getInfections() != null ? fileManager.getInfections().getData(getIndex()) : null;
     }
 
     public void close() throws IOException {
@@ -188,6 +182,10 @@ public class Room {
 
         if (fileManager.getSensorReadings() != null) {
             fileManager.getSensorReadings().close();
+        }
+
+        if (fileManager.getInfections() != null) {
+            fileManager.getInfections().close();
         }
 
     }

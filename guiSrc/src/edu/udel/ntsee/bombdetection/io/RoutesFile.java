@@ -15,13 +15,11 @@ public class RoutesFile extends LogFile<SuperNode> {
     private static final Pattern DATA = Pattern.compile("^x: (\\d+) y: (\\d+) RoutePoints: \\[((\\{\\d+ \\d+ \\d+\\} ?)*+)\\] Path: \\[((\\{\\d+ \\d+ \\d+\\} ?)*+)\\] UnvisitedPoints: \\[((\\{\\d+ \\d+ \\d+\\} ?)*)\\].*$");
 
     public RoutesFile(String path) throws IOException {
-
         super(path, HEADER, DATA);
     }
 
     @Override
     protected SuperNode parseData(Matcher m) {
-
         int x = Integer.parseInt(m.group(1));
         int y = Integer.parseInt(m.group(2));
         List<TimedNode> points = parseList(m.group(3));

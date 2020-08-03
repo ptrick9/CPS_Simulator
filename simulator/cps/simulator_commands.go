@@ -80,6 +80,8 @@ type Params struct {
 	AliveValidNodes  *os.File
 	SamplingData     *os.File
 	SampleRates      *os.File
+	InfectionFile    *os.File
+	InfectionStatsFile *os.File
 
 	SensorPath  string
 	FineSensorPath  string
@@ -227,11 +229,12 @@ type Params struct {
 	TotalAdaptations            int
 	TotalSamples				int
 
-	// covid flags
+	// covid
 	InfectionOn					bool
 	InfectionHostPercentage		float64
 	InfectionChance				float64
-	InfectionDistance			int
+	InfectionDistance			float64
+	InfectionHostList			[]*NodeImpl
 
 }
 

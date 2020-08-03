@@ -23,7 +23,9 @@ import java.io.File;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class SimulatorController implements Drawable {
 
@@ -290,6 +292,22 @@ public class SimulatorController implements Drawable {
             for (AdHoc adHoc : room.getAdHocs()) {
                 Node leader = room.getNodeByID(adHoc.getLeaderID());
                 canvas.drawBlock(Color.DARKGREEN, true, leader.getX(), room.getHeight() - leader.getY() - 1);
+            }
+        }
+
+
+
+        if (room.getInfections() != null) {
+            for (Infection infection : room.getInfections()) {
+                Node node = room.getNodeByID(infection.getID());
+                switch (infection.getType()) {
+                    case HOST:
+                        canvas.drawBlock(Color.RED, true, node.getX(), room.getHeight() - node.getY() - 1);
+                        break;
+                    case INFECTED:
+                        canvas.drawBlock(Color.YELLOW, true, node.getX(), room.getHeight() - node.getY() - 1);
+                        break;
+                }
             }
         }
 

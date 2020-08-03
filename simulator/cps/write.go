@@ -460,15 +460,6 @@ func SetupCSVNodes(p *Params) {
 			//newNode.ReadingsBuffer = []Reading{}
 		}
 
-		if p.InfectionOn {
-			chance := rand.Float64()
-			if chance < p.InfectionHostPercentage {
-				newNode.Infection = Host
-			} else {
-				newNode.Infection = None
-			}
-		}
-
 		newNode.AccelerometerSpeed = []float32{}
 		//newNode.TimeLastAccel = p.CurrentTime
 		//newNode.LastMoveTime = p.CurrentTime
@@ -504,6 +495,18 @@ func SetupRandomNodes(p *Params) {
 	}
 }
 
+func SetupInfection(p* Params) {
+	for i := 0; i < len(p.NodeList); i++ {
+		newNode := p.NodeList[i]
+		chance := rand.Float64()
+		if chance < p.InfectionHostPercentage {
+			newNode.Infection = Host
+			p.InfectionHostList = append(p.InfectionHostList, newNode)
+		} else {
+			newNode.Infection = None
+		}
+	}
+}
 
 // Fills the walls into the board based on the wall positions extrapolated from the file
 func FillInWallsToBoard(p *Params) {
@@ -836,6 +839,20 @@ func SetupFiles(p *Params) {
 			log.Fatal("Cannot create file", err)
 		}
 		p.Files = append(p.Files, p.OutputFileNameCM+"-clusterDebug.txt")
+	}
+
+	if p.InfectionOn {
+		p.InfectionFile, err = os.Create(p.OutputFileNameCM + "-infection.txt")
+		if err != nil {
+			log.Fatal("Cannot create file", err)
+		}
+		p.Files = append(p.Files, p.OutputFileNameCM + "-infection.txt")
+
+		p.InfectionStatsFile, err = os.Create(p.OutputFileNameCM + "-infection-stats.txt")
+		if err != nil {
+			log.Fatal("Cannot create file", err)
+		}
+		p.Files = append(p.Files, p.OutputFileNameCM + "-infection-stats.txt")
 	}
 
 	fmt.Println(p.Files)
@@ -1620,9 +1637,9 @@ func GetFlags(p *Params) {
 
 	// covid flags
 	flag.BoolVar(&p.InfectionOn, "infectionOn", true, "Toggles nodes spreading infections")
-	flag.Float64Var(&p.InfectionHostPercentage, "infectionHostPercentage", .20, "percent of nodes to make hosts")
-	flag.Float64Var(&p.InfectionChance, "infectionChance", .20, "chance for nodes to spread infection")
-	flag.IntVar(&p.InfectionDistance, "infectionDistance", 5, "distance between nodes to be at risk for infection")
+	flag.Float64Var(&p.InfectionHostPercentage, "infectionHostPercentage", .01, "percent of nodes to make hosts")
+	flag.Float64Var(&p.InfectionChance, "infectionChance", .01, "chance for nodes to spread infection")
+	flag.Float64Var(&p.InfectionDistance, "infectionDistance", 3, "distance between nodes to be at risk for infection")
 
 	flag.Parse()
 	fmt.Println("Maximum size of buffer posible: ", p.MaxBufferCapacityCM)

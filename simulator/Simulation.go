@@ -224,6 +224,8 @@ func main() {
 
 	p.Events = Events
 	p.Server = cps.FusionCenter{P: p, R: r}
+	p.Server.InfectedSet = make(map[int]bool)
+	p.Server.RiskSet = make(map[int]bool)
 
 	p.Tau1 = 3500
 	p.Tau2 = 9000
@@ -383,6 +385,12 @@ func main() {
 	}
 	p.Server.MakeNodeData()
 
+	if p.InfectionOn {
+		p.InfectionHostList = make([]*cps.NodeImpl, 0)
+		cps.SetupInfection(p)
+	}
+
+
 	testMove:=true			//USES REGULAR MOVEMENT FOR ADAPTIVE SAMPLING
 
 	//p.Events.Push(&cps.Event{&p.NodeList[0], "sense", 0, 0})
@@ -417,6 +425,11 @@ func main() {
 			p.Events.Push(&cps.Event{nil, cps.CLUSTERPRINT, 999, 0})
 		}
 	}
+
+	if p.InfectionOn {
+		p.Events.Push(&cps.Event{nil, cps.SPREADINFECTION, 999, 0})
+	}
+
 	p.Events.Push(&cps.Event{nil, cps.BATTERYPRINT, 5000, 0})
 	p.CurrentTime = 0
 	for len(p.Events) > 0 && p.CurrentTime < 1000*p.Iterations_of_event && !p.FoundBomb {
@@ -777,7 +790,24 @@ func main() {
 			}
 			fmt.Fprintf(p.BatteryFile, "Iteration: %v, %v, %v\n", p.CurrentTime/1000, float64(len(p.AliveList))/float64(p.TotalNodes), lowBattery)
 			p.Events.Push(&cps.Event{nil, cps.BATTERYPRINT, p.CurrentTime + 1000, 0})
+
+		case cps.SPREADINFECTION:
+			SpreadNodeInfection(p)
+			count := 0
+			var buffer bytes.Buffer
+			for i := 0; i < len(p.NodeList); i++ {
+				node := p.NodeList[i]
+				if node.Valid {
+					buffer.WriteString(fmt.Sprintln("id:", node.Id, "infection:", node.Infection))
+					count++
+				}
+			}
+			fmt.Fprintln(p.InfectionFile, "Amount:", count)
+			fmt.Fprintf(p.InfectionFile, buffer.String())
+			fmt.Fprintln(p.InfectionStatsFile, "Risk:", len(p.Server.RiskSet), "Infected:", len(p.Server.InfectedSet))
+			p.Events.Push(&cps.Event{nil, cps.SPREADINFECTION, p.CurrentTime + 1000, 0})
 		}
+
 	}
 
 	if p.MemProfile != "" {
@@ -990,6 +1020,25 @@ func PrintAllGridSpaceMaxDeltas(){
 				val.BeenReported=true
 			} else {
 				fmt.Fprintln(p.OutputLog, "Square and max", v, p.CurrentTime)
+			}
+		}
+	}
+}
+
+func SpreadNodeInfection(p *cps.Params) {
+	for i:=0; i<len(p.InfectionHostList); i++ {
+		host := p.InfectionHostList[i]
+		if host.Valid {
+			for j := 0; j < len(p.NodeList); j++ {
+				victim := p.NodeList[j]
+				if victim.Valid && victim.Infection == cps.None && victim.NodeDistance(host) <= p.InfectionDistance {
+					p.Server.RiskSet[victim.Id] = true
+					chance := rand.Float64()
+					if chance < p.InfectionChance {
+						victim.Infection = cps.Infected
+						p.Server.InfectedSet[victim.Id] = true
+					}
+				}
 			}
 		}
 	}

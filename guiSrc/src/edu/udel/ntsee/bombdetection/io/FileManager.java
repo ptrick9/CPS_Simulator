@@ -25,6 +25,7 @@ public class FileManager {
     private AdHocFile adhocs;
     private GridFile sensorReadings;
     private Map<Integer, Grid> nodePath;
+    private InfectionFile infections;
 
     public FileManager(Room room, File file) {
 
@@ -54,6 +55,14 @@ public class FileManager {
             this.loadNodePaths(base + "-pathgrid.txt");
         } catch (IOException e) {
             this.nodePath = null;
+        }
+
+        try {
+            this.infections = new InfectionFile(base + "-infection.txt");
+            System.out.println("loaded infections");
+        } catch (IOException e) {
+            this.infections = null;
+            System.out.println("infection load failed");
         }
     }
 
@@ -119,6 +128,10 @@ public class FileManager {
 
     public GridFile getSensorReadings() {
         return sensorReadings;
+    }
+
+    public InfectionFile getInfections() {
+        return infections;
     }
 
     public Map<Integer, Grid> getNodePath() {

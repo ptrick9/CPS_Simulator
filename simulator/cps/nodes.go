@@ -619,6 +619,10 @@ func (node *NodeImpl) Distance(b Bomb) float32 {
 	return float32(math.Sqrt(math.Pow(float64(math.Abs(float64(node.X)-float64(b.X))),2) + math.Pow(float64(math.Abs(float64(node.Y)-float64(b.Y))),2)))
 }
 
+func (node *NodeImpl) NodeDistance (other *NodeImpl) float64 {
+	return math.Sqrt(math.Pow(math.Abs(float64(node.X)-float64(other.X)),2) + math.Pow(math.Abs(float64(node.Y)-float64(other.Y)),2))
+}
+
 //calculates battery level percentage
 func (node *NodeImpl) GetBatteryPercentage() float64 {
 	return float64(node.CurrentBatteryLevel) / float64(node.P.BatteryCapacity)
