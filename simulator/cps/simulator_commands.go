@@ -223,6 +223,12 @@ type Params struct {
 	TotalAdaptations            int
 	TotalSamples				int
 	AdaptationFlag				int
+	SpeedIncrease				int
+	SpeedDecrease				int
+	DensityIncrease				int
+	DensityDecrease				int
+	WifiCounter					int
+	BluetoothCounter			int
 }
 
 // returns the amount of battery drained when a sampling event occurs

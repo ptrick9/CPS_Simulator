@@ -386,6 +386,7 @@ func main() {
 
 	p.ClusteringOn=false    //TURNS OFF CLUSTERING
 	testMove:=true			//USES REGULAR MOVEMENT FOR ADAPTIVE SAMPLING
+	p.EnergyPrint=true
 
 	//p.Events.Push(&cps.Event{&p.NodeList[0], "sense", 0, 0})
 	p.Events.Push(&cps.Event{nil, cps.POSITION, 999, 0})
@@ -536,10 +537,14 @@ func main() {
 			}
 			//fmt.Printf("\nSetting timestep to %v at %v next event at %v\n", p.SensorTimes[p.TimeStep], p.CurrentTime, p.SensorTimes[p.TimeStep+1]*1000)
 		case cps.ENERGYPRINT:
-			fmt.Fprintln(p.EnergyFile, "Amount:", len(p.NodeList)) //big time waster
+			fmt.Fprintln(p.EnergyFile,
+				"Amount:", len(p.NodeList),
+				"Samples:", p.TotalSamples,
+				"Wifi:", p.WifiCounter,
+				"Bluetooth:", p.BluetoothCounter)
 			if p.EnergyPrint {
 				var buffer bytes.Buffer
-				for i := 0; i < p.CurrentNodes; i++ {
+				for i := 0; i < len(p.NodeList); i++ {
 					//p.NodeList[i].BatteryOverTime[p.CurrentTime/1000] = p.NodeList[i].Battery
 					buffer.WriteString(fmt.Sprintf("%v\n", p.NodeList[i]))
 				}
@@ -549,10 +554,10 @@ func main() {
 		case cps.GRID:
 			if p.GridPrint {
 				//x := printGrid(p.Grid)
-				printGrid(p, p.Grid)
+				//printGrid(p, p.Grid)
 
 				p.Events.Push(&cps.Event{nil, cps.GRID, p.CurrentTime + 1000, 0})
-				fmt.Fprint(p.GridFile, "----------------\n")
+				//fmt.Fprint(p.GridFile, "----------------\n")
 
 			}
 		case cps.GARBAGECOLLECT:
@@ -834,9 +839,10 @@ func main() {
 	//PrintAllGridSpaceMaxDeltas()
 
 
-	//p.Server.PrintBatteryStats()
+	p.Server.PrintBatteryStats()
 	fmt.Println("Total Samples",p.TotalSamples)
 	fmt.Println("Total Adaptations",p.TotalAdaptations)
+	//fmt.Println("Speed Increase ",p.SpeedIncrease,"\nSpeed Decrease ",p.SpeedDecrease,"\nDensity Increase ",p.DensityIncrease,"\nDensity Decrease ",p.DensityDecrease)
 
 	if p.ZipFiles {
 		p.MoveReadingsFile.Close()

@@ -424,7 +424,7 @@ func InitializeNodeParameters(p *Params, nodeNum int) *NodeImpl{
 	curNode.Sensitivity = curNode.InitialSensitivity
 
 	// Initialize New Battery Model Variables
-	curNode.CurrentBatteryLevel = 1000000
+	curNode.CurrentBatteryLevel = 13000
 	curNode.InitialBatteryLevel = curNode.CurrentBatteryLevel
 	curNode.SamplingPeriod		= p.SamplingPeriodDS
 	return &curNode

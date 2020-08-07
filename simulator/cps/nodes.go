@@ -611,30 +611,43 @@ func (node *NodeImpl) GetBatteryPercentage() float64 {
 // decreases battery level of a node for when a sample is taken
 func (node *NodeImpl) DrainBatterySample() {
 	node.P.Server.TotalSamplesTaken++
-	node.CurrentBatteryLevel -= node.P.SampleLossAmount()
+	//node.CurrentBatteryLevel -= node.P.SampleLossAmount()
+	node.CurrentBatteryLevel-=4  //Using 4 instead of 1 since it is an int and we want bluetooth at 1/4th the energy
 }
 
 // decreases battery level of a node for when bluetooth communication occurs
 func (node *NodeImpl) DrainBatteryBluetooth() {
 	// add counter for this later
+	node.P.BluetoothCounter++
 	node.CurrentBatteryLevel -= node.P.BluetoothLossAmount()
 }
 
 // decrease battery level of a node for when wifi communication occurs
 func (node *NodeImpl) DrainBatteryWifi() {
 	// add counter for this later
-	node.CurrentBatteryLevel -= node.P.WifiLossAmount()
+	//node.CurrentBatteryLevel -= node.P.WifiLossAmount()
+	node.P.WifiCounter++
+	node.CurrentBatteryLevel-=4
 }
 
 
 func (node *NodeImpl) ScheduleNextSense() {
 	if node.GetBatteryPercentage() > node.P.BatteryDeadThreshold {
 		node.AdaptiveSampling()
+		if node.Id==49{
+			fmt.Println(node.CurrentBatteryLevel,node.GetBatteryPercentage())
+		}
 		if node.SamplingPeriod==0{
 			node.SamplingPeriod=node.P.SamplingPeriodDS
 		}
-		node.P.Events.Push(&Event{node, SENSE, node.P.CurrentTime + node.SamplingPeriod*100, 0})
-		//Changed to cetiseconds have to times by 10 since simulation is in miliseconds
+		if node.GetBatteryPercentage() <= .25{
+			node.P.Events.Push(&Event{node, SENSE, node.P.CurrentTime + node.SamplingPeriod*100*4, 0})
+		} else if node.GetBatteryPercentage() <= .4{
+			node.P.Events.Push(&Event{node, SENSE, node.P.CurrentTime + node.SamplingPeriod*100*2, 0})
+		} else {
+			node.P.Events.Push(&Event{node, SENSE, node.P.CurrentTime + node.SamplingPeriod*100, 0})
+		}
+		//Changed to deciseconds have to times by 100 since simulation is in miliseconds
 	} else {
 		node.Alive = false
 	}
@@ -691,6 +704,7 @@ func (node *NodeImpl) AdaptiveSampling(){
 		nodeSpeed := distance / (float64(node.SamplingPeriod) / 10)
 		if nodeSpeed > node.P.MaxMoveMeters{           // too fast, increase sampling rate
 			node.SamplingPeriod = int(float64(node.SamplingPeriod) * float64(node.P.MaxMoveMeters) / nodeSpeed)  // an integer
+			node.P.SpeedIncrease++
 			node.P.TotalAdaptations++
 			return
 		} else if nodeSpeed < node.P.MaxMoveMeters/2 {
@@ -703,13 +717,15 @@ func (node *NodeImpl) AdaptiveSampling(){
 		TargetSamplingPeriod= node.P.SamplingPeriodDS*NodesinSquare/node.P.DensityThreshold  // an integer
 		if TargetSamplingPeriod < node.SamplingPeriod    {  //a sparse area increase sampling rate
 			if TargetSamplingPeriod > node.P.SamplingPeriodDS {
+				node.P.DensityIncrease++
 				node.SamplingPeriod = TargetSamplingPeriod
 				node.P.TotalAdaptations++
 			} else if node.SamplingPeriod > node.P.SamplingPeriodDS {
+				node.P.DensityIncrease++
 				node.SamplingPeriod = node.P.SamplingPeriodDS
 				node.P.TotalAdaptations++
-				return
 			}
+			return
 		} else if TargetSamplingPeriod > node.SamplingPeriod{
 			node.SlowDownCounter++
 		}
@@ -718,9 +734,11 @@ func (node *NodeImpl) AdaptiveSampling(){
 		node.SlowDownCounter = 0
 		if TargetSamplingPeriod > node.P.SamplingPeriodDS { // in a dense area, use distance driven
 			node.SamplingPeriod = TargetSamplingPeriod
+			node.P.DensityDecrease++
 			node.P.TotalAdaptations++
 		} else if node.SamplingPeriod < node.P.SamplingPeriodDS {
 			node.SamplingPeriod = node.P.SamplingPeriodDS
+			node.P.SpeedDecrease++
 			node.P.TotalAdaptations++
 		}
 	}
