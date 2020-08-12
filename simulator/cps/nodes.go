@@ -370,6 +370,16 @@ func (node *NodeImpl) LogBatteryPower(t int){
 	//}
 }
 
+/*
+Sends a reading from a cluster member to the cluster head. If the head does not already consider the node one of its
+members and it already has the maximum number of members or is itself a cluster member, it will ignore the message and
+the sender will perform a cluster search. If the receiving node did not already consider itself a cluster head, it will
+form a new cluster.
+
+rd		- the reading
+tp		- whether the reading was a true positive
+head	- the node being sent the reading
+ */
 func (node *NodeImpl) SendToClusterHead(rd *Reading, tp bool, head *NodeImpl){
 
 	head.DrainBatteryBluetooth(&node.P.Server.ReadingBTCounter)	//Head receives reading over bluetooth
@@ -394,11 +404,16 @@ func (node *NodeImpl) SendToClusterHead(rd *Reading, tp bool, head *NodeImpl){
 	head.StoredTPs = append(head.StoredTPs, tp)
 }
 
-/*	SendToServer
-Node sends its reading as well as any stored readings directly to server over wifi. If clustering is enabled,
-its message to the server will also include information about its cluster, such as which nodes are members.
-Currently the extra cost of sending multiple readings at once is simulated by draining battery for wifi
-communication for every multiple of 8 readings sent. It may be worth looking into making this more realistic. */
+/*
+Node sends its reading as well as any stored readings directly to server over wifi. Currently the
+extra cost of sending multiple readings at once is simulated by draining battery for wifi communication for every
+multiple of 8 readings sent. It may be worth looking into making this more realistic. If clustering is enabled, the
+server will update its cluster topology information based on the message it receives and then check perform any needed
+global recluster actions.
+
+rd - the reading taken by the node
+tp - whether the reading was a true positive
+*/
 func (node *NodeImpl) SendToServer(rd *Reading, tp bool){
 	server := node.P.Server
 	numSent := float64(len(node.StoredReadings))/8 + 1
@@ -674,6 +689,11 @@ func (node *NodeImpl) IsAlive() bool {
 	return node.GetBatteryPercentage() > node.P.BatteryDeadThreshold
 }
 
+/*
+Called whenever a node's battery is decreased. Checks if a node is still considered "alive" and will perform the
+necessary actions if not. If clustering is enabled and the node is a cluster head, also checks if the node should
+relinquish its role as cluster head, potentially initiating a local recluster.
+ */
 func (node *NodeImpl) UpdateAliveStatus() {
 	if !node.IsAlive() && node.P.AliveNodes[node] {
 		if node.P.ClusteringOn {

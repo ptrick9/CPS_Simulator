@@ -972,6 +972,13 @@ func (s *FusionCenter) CheckFalsePosWind(n *NodeImpl) int {
 	return 0
 }
 
+/*
+Based on the readings received from a cluster head, the server updates its cluster topology information. Nodes can be
+categorized as cluster heads, cluster members, or alone nodes.
+
+node	- the node that sent a message to the server
+rd		- the reading of the node
+ */
 func (s *FusionCenter) UpdateClusterInfo(node *NodeImpl, rd *Reading) {
 	if node.IsAlive() {
 		if node.IsClusterHead {
@@ -1027,6 +1034,11 @@ func (s *FusionCenter) UpdateClusterInfo(node *NodeImpl, rd *Reading) {
 	}
 }
 
+/*
+Resets any information the server has about a particular node.
+
+node - the node for which all information should be reset
+ */
 func (s *FusionCenter) ClearServerClusterInfo(node *NodeImpl) {
 	for _, head := range s.ClusterHeadsOf[node] {
 		delete(s.Clusters[head].Members, node)
@@ -1041,6 +1053,13 @@ func (s *FusionCenter) ClearServerClusterInfo(node *NodeImpl) {
 	delete(s.Clusters, node)
 }
 
+/*
+Based on either the ratio of alone nodes to all nodes accounted for by the server or the ratio of total clusters to all
+nodes accounted for by the server, the server determines if a global recluster should take place. If so, it records the
+current ratio, sets its Waiting parameter to true, and initiates the recluster.
+
+nodesAccountedFor - the number of nodes for which the server has cluster information
+ */
 func (s *FusionCenter) CheckGlobalRecluster(nodesAccountedFor int) {
 	ratio := 0.0
 	if s.P.AloneOrClusterRatio {
@@ -1048,7 +1067,9 @@ func (s *FusionCenter) CheckGlobalRecluster(nodesAccountedFor int) {
 	} else {
 		ratio = (float64(len(s.Clusters)) + float64(len(s.AloneNodes))) / float64(nodesAccountedFor)
 	}
-	if (s.P.GlobalRecluster == 1 && ratio > s.P.AloneThreshold) || (s.P.GlobalRecluster == 2 && s.P.CurrentTime/1000 > s.NextReclusterTime) || (s.P.GlobalRecluster >= 3 && s.P.CurrentTime/1000 > s.NextReclusterTime && ratio > s.P.AloneThreshold) {
+	if (s.P.GlobalRecluster == 1 && ratio > s.P.AloneThreshold) ||
+		(s.P.GlobalRecluster == 2 && s.P.CurrentTime/1000 > s.NextReclusterTime) ||
+		(s.P.GlobalRecluster >= 3 && s.P.CurrentTime/1000 > s.NextReclusterTime && ratio > s.P.AloneThreshold) {
 		s.RatioBeforeRecluster = ratio
 		s.AloneNodes = make(map[*NodeImpl]int)
 		s.Clusters = make(map[*NodeImpl]*Cluster)
@@ -1061,6 +1082,11 @@ func (s *FusionCenter) CheckGlobalRecluster(nodesAccountedFor int) {
 	}
 }
 
+/*
+Updates global recluster thresholds and/or periods after recluster takes place based on effectiveness.
+
+nodesAccountedFor - the number of nodes for which the server has cluster information
+ */
 func (s *FusionCenter) UpdateReclusterThresholds(nodesAccountedFor int) {
 	ratio := 0.0
 	if s.P.AloneOrClusterRatio {
