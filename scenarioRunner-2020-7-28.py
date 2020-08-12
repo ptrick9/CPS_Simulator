@@ -22,10 +22,10 @@ if __name__ == '__main__':
 
     #switches = ["-logNodes=false -logPosition=false -logGrid=false -logEnergy=false -regionRouting=true -noEnergy=true -csvSensor=false -csvMove=true -zipFiles=true"]
     switches = ["-logNodes=false -logPosition=false -logGrid=false -logOutput=false -logEnergy=false -logClusters=true -logBattery=true -regionRouting=true -csvMove=true -zipFiles=true -windRegionPath=hull_fine_bomb_fixWind_9x9.txt"]
-    scenarios = ["-inputFileName=%s -imageFileName=%s -stimFileName=circle_0.txt -outRoutingStatsName=routingStats.txt -iterations=4500 -superNodes=false -doOptimize=false" % (s[0], s[1]) for s in [['Scenario_Stadium.txt', 'DelawareStadiumWalls.png']]]#,['Scenario_3.txt', 'marathon_street_map.png']]]
+    scenarios = ["-inputFileName=%s -imageFileName=%s -stimFileName=circle_0.txt -outRoutingStatsName=routingStats.txt -iterations=10000 -superNodes=false -doOptimize=false" % (s[0], s[1]) for s in [['Scenario_Stadium.txt', 'DelawareStadiumWalls.png']]]
 
     paths = []
-    for pop in [[500, 10000], [1000, 1000], [2000, 1000], [3500, 500]]: #[[200, 10000], [500, 4000], [1000, 2000], [2000, 1000], [5000, 400], [10000, 200]]:
+    for pop in [[2000, 1000]]: #[[500, 10000], [1000, 1000], [2000, 1000], [3500, 500]]: #[[200, 10000], [500, 4000], [1000, 2000], [2000, 1000], [5000, 400], [10000, 200]]:
         for it in [1, 2, 3, 4]:
             paths.append((pop[0], it, pop[1]))
 
@@ -61,60 +61,54 @@ if __name__ == '__main__':
 
     clusteringOn = ["-clusteringOn=%s" % s for s in ['true']]
     clusterMax = ["-clusterMaxThresh=%d" % d for d in [40]]
-    clusterMin = ["-clusterMinThresh=%d" % d for d in [0,1,2]]
+    clusterMin = ["-clusterMinThresh=%d" % d for d in [0]]
     nodeBTRange = ["-nodeBTRange=%d" % d for d in [20]]
     degreeWeight = ["-degreeWeight=%f" % f for f in [0.6]]
     batteryWeight = ["-batteryWeight=%f" % f for f in [0.4]]
-    aloneRCThreshold = ["-aloneThreshold=%f -aloneOrClusterRatio=true" % f for f in [0.03, 0.05, 0.07]]
-    clusterRCThreshold = ["-aloneThreshold=%f -aloneOrClusterRatio=false" % f for f in []]
+    aloneRCThreshold = ["-aloneThreshold=%f -aloneOrClusterRatio=true" % f for f in [0.025, 0.05]]
+    clusterRCThreshold = ["-aloneThreshold=%f -aloneOrClusterRatio=false" % f for f in [0.225]]
     aloneThreshold = aloneRCThreshold + clusterRCThreshold
-    aloneClusterSearchOptions = (list(itertools.product(*[['-aloneClusterSearch=true'], clusterMin])))
-    for i in range(len(aloneClusterSearchOptions)):
-        aloneClusterSearchOptions[i] = ' '.join(aloneClusterSearchOptions[i])
-    aloneClusterSearchOptions += ['-aloneClusterSearch=false']
-    reclusterPeriod = ["-reclusterPeriod=%d" % d for d in [100, 200, 300]]
-    localRecluster = ["-localRecluster=%d -expansiveRatio=%f" % (d, f) for (d, f) in [(0,0), (1,0), (2,0)]]
+    aloneClusterSearch = ["-aloneClusterSearch=%s" % s for s in ['true', 'false']]
+    reclusterPeriod = ["-reclusterPeriod=%d" % d for d in [150]]
+    localRecluster = ["-localRecluster=%d -expansiveRatio=%f" % (d, f) for (d, f) in [(0,0)]]
     batteryCap = ["-batteryCapacity=%d" % d for d in [100000000]]
-    losses = ["-bluetoothLossPercentage=%f -wifiLossPercentage=%f -sampleLossPercentage=%f" % (f[0],f[1],f[2]) for f in [(0.00001,0.0001,0.00002)]]
-    clusterSearchOptions = ["-clusterSearchThresh=%d -adaptiveClusterSearch=%s" % (d,s) for (d,s) in [(0, 'false'), (4, 'false'), (4, 'true')]]
+    BTLoss = ["-bluetoothLossPercentage=%f" % f for f in [0.000005]]
+    SampleLoss = ["-sampleLossPercentage=%f" % f for f in [0.00002]]
+    wifiLoss = ["-wifiLossPercentage=%f" % f for f in [0.00002]]
+    clusterSearchOptions = ["-clusterSearchThresh=%d -adaptiveClusterSearch=%s" % (d,s) for (d,s) in [(0, 'true')]]
     #initClusterTime = ["-initClusterTime=%d" % d for d in [0, 200, 600]]
-    CHTimeThresh = ["-CHTimeThresh=%d" % d for d in [450,600,900]]#600
-    CHBatteryDropThresh = ["-CHBatteryDropThresh=%f" % f for f in [0.2,0.3,0.4]]
+    CHTimeThresh = ["-CHTimeThresh=%d" % d for d in [600]]
+    CHBatteryDropThresh = ["-CHBatteryDropThresh=%f" % f for f in [0.35]]
     smallImprovementRatio = ["-smallImprovementRatio=%f" % f for f in [0.33]]
-    largeImprovement = ["-largeImprovement=%f" % f for f in [0.8]]
-    GRIncrementDecrement = ["-GRIncrement=%f -GRDecrement=%f" % (f[0],f[1]) for f in [(1.25,0.8), (1.5,0.7), (1.75,0.6)]]
+    largeImprovement = ["-largeImprovement=%f" % f for f in [0.7]]
+    GRIncrement = ["-GRIncrement=%f" % f for f in [1.25]]
+    GRDecrement = ["-GRDecrement=%f" % f for f in [0.75]]
     disableGRThresh = ["-disableGRThresh=%f" % f for f in [0.9]]
     disableCSThresh = ["-disableCSThresh=%f" % f for f in [0]]
     maxClusterHeads = ["-maxClusterHeads=%d" % d for d in [1]]
-    serverReadyThresh = ["-serverReadyThresh=%f" % f for f in [0.98]]
+    serverReadyThresh = ["-serverReadyThresh=%f" % f for f in [0.95, 0.99]]
 
-    globalReclusterOnOptions = (list(itertools.product(*[smallImprovementRatio, largeImprovement, GRIncrementDecrement,
-                                                        serverReadyThresh, disableGRThresh])))
+    globalReclusterOnOptions = (list(itertools.product(*[smallImprovementRatio, largeImprovement, GRIncrement,
+                                                        GRDecrement, serverReadyThresh, disableGRThresh])))
 
     for i in range(len(globalReclusterOnOptions)):
         globalReclusterOnOptions[i] = ' '.join(globalReclusterOnOptions[i])
 
-    globalRecluster0 = (list(itertools.product(*[["-globalRecluster=0"], aloneClusterSearchOptions])))
-    for i in range(len(globalRecluster0)):
-        globalRecluster0[i] = ' '.join(globalRecluster0[i])
+    globalRecluster0 = ["-globalRecluster=0"]
 
-    globalRecluster1 = (list(itertools.product(*[["-globalRecluster=1 -aloneClusterSearch=false"], aloneThreshold, globalReclusterOnOptions])))
+    globalRecluster1 = (list(itertools.product(*[["-globalRecluster=1"], aloneThreshold, globalReclusterOnOptions])))
     for i in range(len(globalRecluster1)):
         globalRecluster1[i] = ' '.join(globalRecluster1[i])
 
-    globalRecluster2 = (list(itertools.product(*[["-globalRecluster=2"], aloneClusterSearchOptions, reclusterPeriod, globalReclusterOnOptions])))
+    globalRecluster2 = (list(itertools.product(*[["-globalRecluster=2"], reclusterPeriod, globalReclusterOnOptions])))
     for i in range(len(globalRecluster2)):
         globalRecluster2[i] = ' '.join(globalRecluster2[i])
 
-    globalRecluster3 = (list(itertools.product(*[["-globalRecluster=3 -aloneClusterSearch=false"], aloneThreshold, reclusterPeriod, globalReclusterOnOptions])))
-    for i in range(len(globalRecluster3)):
-        globalRecluster3[i] = ' '.join(globalRecluster3[i])
+    globalRecluster34 = (list(itertools.product(*[["-globalRecluster=3", "-globalRecluster=4"], aloneThreshold, reclusterPeriod, globalReclusterOnOptions])))
+    for i in range(len(globalRecluster34)):
+        globalRecluster34[i] = ' '.join(globalRecluster34[i])
 
-    globalRecluster4 = (list(itertools.product(*[["-globalRecluster=4 -aloneClusterSearch=false"], aloneThreshold, reclusterPeriod, globalReclusterOnOptions])))
-    for i in range(len(globalRecluster4)):
-        globalRecluster4[i] = ' '.join(globalRecluster4[i])
-
-    globalReclusterOptions = globalRecluster0 + globalRecluster1 + globalRecluster2 + globalRecluster3
+    globalReclusterOptions = globalRecluster0 + globalRecluster1 + globalRecluster34
 
     #globalReclusterOptions += ["-globalRecluster=0 -aloneThreshold=0.05 -reclusterPeriod=300.0"]
     #globalReclusterOptions += ["-globalRecluster=2 -aloneThreshold=0.05 -reclusterPeriod=25.0 -GRIncrement=1 -GRDecrement=1 -disableGRThresh=0.7 -serverReadyThresh=0.995"]
@@ -125,8 +119,8 @@ if __name__ == '__main__':
         localReclusterOptions[i] = ' '.join(localReclusterOptions[i])
 
     clusteringOptions = (list(itertools.product(*[clusteringOn, clusterMax, clusterMin, degreeWeight, batteryWeight,
-                                                globalReclusterOptions, localReclusterOptions, clusterSearchOptions,
-                                                maxClusterHeads, disableCSThresh])))
+                                                globalReclusterOptions, localReclusterOptions, BTLoss, clusterSearchOptions,
+                                                maxClusterHeads, disableCSThresh, aloneClusterSearch])))
     for i in range(len(clusteringOptions)):
         clusteringOptions[i] = ' '.join(clusteringOptions[i])
     clusteringOptions += ["-clusteringOn=false"]
@@ -136,7 +130,7 @@ if __name__ == '__main__':
                                     detectionDistance, sittingStopThreshold, batteryCap,
                                     nodeStoredSamples,errorMultiplier,numSuperNodes,recalibThresh,StandardDeviationThreshold,
                                     superNodes,serverRecal, driftExplore, commBomb, helper, validTypes, recalReject,
-                                    nodeBTRange, losses, clusteringOptions])))
+                                    nodeBTRange, SampleLoss, wifiLoss, clusteringOptions])))
     print(len(runs))
 
     factor = 1
@@ -144,13 +138,13 @@ if __name__ == '__main__':
     for r in runs:
         for i in range(factor):
             j = [zz for zz in r]
-            j.append("-OutputFileName=/home/simulator/git-simulator/CPS_Simulator/simData/MultiScenario_2020-7-31/Log_%d" % x)
+            j.append("-OutputFileName=/home/simulator/git-simulator/CPS_Simulator/simData/More_2020-7-28/Log_%d" % x)
             
             v = j
             q.put([v, x, len(runs)*factor])
             x+= 1
 
        
-    #p = multiprocessing.Pool(22, runner, (q,))
+    p = multiprocessing.Pool(25, runner, (q,))
 
-    #q.join()
+    q.join()

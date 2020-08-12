@@ -25,7 +25,7 @@ if __name__ == '__main__':
     scenarios = ["-inputFileName=%s -imageFileName=%s -stimFileName=circle_0.txt -outRoutingStatsName=routingStats.txt -iterations=10000 -superNodes=false -doOptimize=false" % (s[0], s[1]) for s in [['Scenario_Stadium.txt', 'DelawareStadiumWalls.png']]]
 
     paths = []
-    for pop in [[500, 20000], [1000, 2000], [2000, 1000], [3500, 500]]: #[[200, 10000], [500, 4000], [1000, 2000], [2000, 1000], [5000, 400], [10000, 200]]:
+    for pop in [[500, 10000], [1000, 1000], [2000, 1000], [3500, 500]]: #[[200, 10000], [500, 4000], [1000, 2000], [2000, 1000], [5000, 400], [10000, 200]]:
         for it in [1, 2, 3, 4]:
             paths.append((pop[0], it, pop[1]))
 
@@ -36,8 +36,8 @@ if __name__ == '__main__':
     sensorPath = ["-sensorPath=%s" %s for s in ["smooth_marathon.csv"]]
     detectionDistance = ["-detectionDistance=%d" % d for d in [6]]
     detectionThreshold = ["-detectionThreshold=%d" % d for d in[5]]
-    #sittingStopThreshold = ["-sittingStopThreshold=%d" % d for d in [5]]
-    #negativeSittingStopThreshold = ["-negativeSittingStopThreshold=%d" % d for d in [-10]]
+    sittingStopThreshold = ["-sittingStopThreshold=%d" % d for d in [5]]
+    negativeSittingStopThreshold = ["-negativeSittingStopThreshold=%d" % d for d in [-10]]
     GridCapacityPercentage = ["-GridCapacityPercentage=%f" % f for f in [0.9]]
     naturalLoss = ["-naturalLoss=%f" % f for f in [0.005]]
     sensorSamplingLoss = ["-sensorSamplingLoss=%f" % f for f in [0.001]]
@@ -56,7 +56,6 @@ if __name__ == '__main__':
     GPSSamplingPeriod = ["-GPSSamplingPeriod=%d" % d for d in [1000]]
     serverSamplingPeriod = ["-serverSamplingPeriod=%d" % d for d in [1000]]
     nodeStoredSamples = ["-nodeStoredSamples=%d" % d for d in [10]]
-    gridStoredSample = ["-GridStoredSamples=%d" % d for d in [10]]
     errorMultiplier = ["-errorMultiplier=%f" % f for f in [1.76]]
     numSuperNodes = ["-numSuperNodes=%d" %d for d in [4]]
     recalibThresh = ["-RecalibrationThreshold=%d" % d for d in [3]]
@@ -72,17 +71,17 @@ if __name__ == '__main__':
 
     #detectionWindow = ["-detectionWindow=%d" % d for d in [100]]
 
-    validTypes = ["-validationType=validators -SquareRowCM=3 -SquareColCM=3 -validationThreshold=0 -detectionWindow=100", "-validationType=validators -SquareRowCM=3 -SquareColCM=3 -validationThreshold=0 -detectionWindow=500", "-validationType=validators -SquareRowCM=3 -SquareColCM=3 -validationThreshold=1 -detectionWindow=100", "-validationType=validators -SquareRowCM=3 -SquareColCM=3 -validationThreshold=1 -detectionWindow=500", "-validationType=validators -SquareRowCM=3 -SquareColCM=3 -validationThreshold=2 -detectionWindow=100", "-validationType=validators -SquareRowCM=3 -SquareColCM=3 -validationThreshold=2 -detectionWindow=500", "-validationType=validators -SquareRowCM=3 -SquareColCM=3 -validationThreshold=3 -detectionWindow=100", "-validationType=validators -SquareRowCM=3 -SquareColCM=3 -validationThreshold=3 -detectionWindow=500", "-validationType=validators -SquareRowCM=3 -SquareColCM=3 -validationThreshold=4 -detectionWindow=100", "-validationType=validators -SquareRowCM=3 -SquareColCM=3 -validationThreshold=4 -detectionWindow=500", "-validationType=square -SquareRowCM=3 -SquareColCM=3", "-validationType=square -SquareRowCM=4 -SquareColCM=4", "-validationType=square -SquareRowCM=5 -SquareColCM=5"]
-
-    recalReject = ["-recalReject=%s" % s for s in ['true', 'false']]
+    #validTypes = ['-validationType=validators -SquareRowCM=3 -SquareColCM=3 -validationThreshold=0 -detectionWindow=50', '-validationType=validators -SquareRowCM=3 -SquareColCM=3 -validationThreshold=0 -detectionWindow=100', '-validationType=validators -SquareRowCM=3 -SquareColCM=3 -validationThreshold=0 -detectionWindow=200', '-validationType=validators -SquareRowCM=3 -SquareColCM=3 -validationThreshold=1 -detectionWindow=50', '-validationType=validators -SquareRowCM=3 -SquareColCM=3 -validationThreshold=1 -detectionWindow=100', '-validationType=validators -SquareRowCM=3 -SquareColCM=3 -validationThreshold=1 -detectionWindow=200', '-validationType=validators -SquareRowCM=3 -SquareColCM=3 -validationThreshold=2 -detectionWindow=50', '-validationType=validators -SquareRowCM=3 -SquareColCM=3 -validationThreshold=2 -detectionWindow=100', '-validationType=validators -SquareRowCM=3 -SquareColCM=3 -validationThreshold=2 -detectionWindow=200', '-validationType=validators -SquareRowCM=3 -SquareColCM=3 -validationThreshold=3 -detectionWindow=50', '-validationType=validators -SquareRowCM=3 -SquareColCM=3 -validationThreshold=3 -detectionWindow=100', '-validationType=validators -SquareRowCM=3 -SquareColCM=3 -validationThreshold=3 -detectionWindow=200', '-validationType=validators -SquareRowCM=3 -SquareColCM=3 -validationThreshold=4 -detectionWindow=50', '-validationType=validators -SquareRowCM=3 -SquareColCM=3 -validationThreshold=4 -detectionWindow=100', '-validationType=validators -SquareRowCM=3 -SquareColCM=3 -validationThreshold=4 -detectionWindow=200', '-validationType=square -SquareRowCM=2 -SquareColCM=2 -GridStoredSamples=5', '-validationType=square -SquareRowCM=2 -SquareColCM=2 -GridStoredSamples=10', '-validationType=square -SquareRowCM=2 -SquareColCM=2 -GridStoredSamples=20', '-validationType=square -SquareRowCM=4 -SquareColCM=4 -GridStoredSamples=5', '-validationType=square -SquareRowCM=4 -SquareColCM=4 -GridStoredSamples=10', '-validationType=square -SquareRowCM=4 -SquareColCM=4 -GridStoredSamples=20', '-validationType=square -SquareRowCM=6 -SquareColCM=6 -GridStoredSamples=5', '-validationType=square -SquareRowCM=6 -SquareColCM=6 -GridStoredSamples=10', '-validationType=square -SquareRowCM=6 -SquareColCM=6 -GridStoredSamples=20', '-validationType=square -SquareRowCM=8 -SquareColCM=8 -GridStoredSamples=5', '-validationType=square -SquareRowCM=8 -SquareColCM=8 -GridStoredSamples=10', '-validationType=square -SquareRowCM=8 -SquareColCM=8 -GridStoredSamples=20', '-validationType=square -SquareRowCM=10 -SquareColCM=10 -GridStoredSamples=5', '-validationType=square -SquareRowCM=10 -SquareColCM=10 -GridStoredSamples=10', '-validationType=square -SquareRowCM=10 -SquareColCM=10 -GridStoredSamples=20', '-validationType=square -SquareRowCM=12 -SquareColCM=12 -GridStoredSamples=5', '-validationType=square -SquareRowCM=12 -SquareColCM=12 -GridStoredSamples=10', '-validationType=square -SquareRowCM=12 -SquareColCM=12 -GridStoredSamples=20', '-validationType=square -SquareRowCM=14 -SquareColCM=14 -GridStoredSamples=5', '-validationType=square -SquareRowCM=14 -SquareColCM=14 -GridStoredSamples=10', '-validationType=square -SquareRowCM=14 -SquareColCM=14 -GridStoredSamples=20', '-validationType=square -SquareRowCM=16 -SquareColCM=16 -GridStoredSamples=5', '-validationType=square -SquareRowCM=16 -SquareColCM=16 -GridStoredSamples=10', '-validationType=square -SquareRowCM=16 -SquareColCM=16 -GridStoredSamples=20']
+    validTypes = ['-validationType=validators -SquareRowCM=3 -SquareColCM=3 -validationThreshold=0 -detectionWindow=60', '-validationType=validators -SquareRowCM=3 -SquareColCM=3 -validationThreshold=0 -detectionWindow=120', '-validationType=validators -SquareRowCM=3 -SquareColCM=3 -validationThreshold=0 -detectionWindow=240', '-validationType=validators -SquareRowCM=3 -SquareColCM=3 -validationThreshold=1 -detectionWindow=60', '-validationType=validators -SquareRowCM=3 -SquareColCM=3 -validationThreshold=1 -detectionWindow=120', '-validationType=validators -SquareRowCM=3 -SquareColCM=3 -validationThreshold=1 -detectionWindow=240', '-validationType=validators -SquareRowCM=3 -SquareColCM=3 -validationThreshold=2 -detectionWindow=60', '-validationType=validators -SquareRowCM=3 -SquareColCM=3 -validationThreshold=2 -detectionWindow=120', '-validationType=validators -SquareRowCM=3 -SquareColCM=3 -validationThreshold=2 -detectionWindow=240', '-validationType=validators -SquareRowCM=3 -SquareColCM=3 -validationThreshold=3 -detectionWindow=60', '-validationType=validators -SquareRowCM=3 -SquareColCM=3 -validationThreshold=3 -detectionWindow=120', '-validationType=validators -SquareRowCM=3 -SquareColCM=3 -validationThreshold=3 -detectionWindow=240', '-validationType=validators -SquareRowCM=3 -SquareColCM=3 -validationThreshold=4 -detectionWindow=60', '-validationType=validators -SquareRowCM=3 -SquareColCM=3 -validationThreshold=4 -detectionWindow=120', '-validationType=validators -SquareRowCM=3 -SquareColCM=3 -validationThreshold=4 -detectionWindow=240', '-validationType=square -SquareRowCM=1 -SquareColCM=1 -GridStoredSamples=5', '-validationType=square -SquareRowCM=1 -SquareColCM=1 -GridStoredSamples=10', '-validationType=square -SquareRowCM=1 -SquareColCM=1 -GridStoredSamples=20', '-validationType=square -SquareRowCM=2 -SquareColCM=2 -GridStoredSamples=5', '-validationType=square -SquareRowCM=2 -SquareColCM=2 -GridStoredSamples=10', '-validationType=square -SquareRowCM=2 -SquareColCM=2 -GridStoredSamples=20', '-validationType=square -SquareRowCM=3 -SquareColCM=3 -GridStoredSamples=5', '-validationType=square -SquareRowCM=3 -SquareColCM=3 -GridStoredSamples=10', '-validationType=square -SquareRowCM=3 -SquareColCM=3 -GridStoredSamples=20', '-validationType=square -SquareRowCM=4 -SquareColCM=4 -GridStoredSamples=5', '-validationType=square -SquareRowCM=4 -SquareColCM=4 -GridStoredSamples=10', '-validationType=square -SquareRowCM=4 -SquareColCM=4 -GridStoredSamples=20', '-validationType=square -SquareRowCM=5 -SquareColCM=5 -GridStoredSamples=5', '-validationType=square -SquareRowCM=5 -SquareColCM=5 -GridStoredSamples=10', '-validationType=square -SquareRowCM=5 -SquareColCM=5 -GridStoredSamples=20', '-validationType=square -SquareRowCM=6 -SquareColCM=6 -GridStoredSamples=5', '-validationType=square -SquareRowCM=6 -SquareColCM=6 -GridStoredSamples=10', '-validationType=square -SquareRowCM=6 -SquareColCM=6 -GridStoredSamples=20', '-validationType=square -SquareRowCM=7 -SquareColCM=7 -GridStoredSamples=5', '-validationType=square -SquareRowCM=7 -SquareColCM=7 -GridStoredSamples=10', '-validationType=square -SquareRowCM=7 -SquareColCM=7 -GridStoredSamples=20', '-validationType=square -SquareRowCM=8 -SquareColCM=8 -GridStoredSamples=5', '-validationType=square -SquareRowCM=8 -SquareColCM=8 -GridStoredSamples=10', '-validationType=square -SquareRowCM=8 -SquareColCM=8 -GridStoredSamples=20']
+    recalReject = ["-recalReject=%s" % s for s in ['false']]
 
     #sensorPath, fineSensorPath
     runs = (list(itertools.product(*[switches, scenarios, movementPath, detectionThreshold,
-                                     detectionDistance, GridCapacityPercentage,
+                                     detectionDistance, sittingStopThreshold, negativeSittingStopThreshold, GridCapacityPercentage,
                                      naturalLoss,sensorSamplingLoss,GPSSamplingLoss,serverSamplingLoss,SamplingLossBTCM,SamplingLossWifiCM,
                                      SamplingLoss4GCM,SamplingLossAccelCM,thresholdBatteryToHave,thresholdBatteryToUse,movementSamplingSpeed,
                                      movementSamplingPeriod,maxBufferCapacity,sensorSamplingPeriod,GPSSamplingPeriod,serverSamplingPeriod,
-                                     nodeStoredSamples,gridStoredSample,errorMultiplier,numSuperNodes,recalibThresh,StandardDeviationThreshold,
+                                     nodeStoredSamples,errorMultiplier,numSuperNodes,recalibThresh,StandardDeviationThreshold,
                                      SuperNodeSpeed,serverRecal, driftExplore, commBomb, helper, validTypes, recalReject])))
     print(len(runs))
 
@@ -91,7 +90,7 @@ if __name__ == '__main__':
     for r in runs:
         for i in range(factor):
             j = [zz for zz in r]
-            j.append("-OutputFileName=/home/simulator/simData/noBomb_stadium/Log_%d" % x)
+            j.append("-OutputFileName=/home/simulator/simData/noBomb_stadiumExtend/Log_%d" % x)
 
             
             v = j
@@ -99,6 +98,6 @@ if __name__ == '__main__':
             x+= 1
 
        
-    p = multiprocessing.Pool(15, runner, (q,))
+    p = multiprocessing.Pool(20, runner, (q,))
 
     q.join()

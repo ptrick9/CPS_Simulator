@@ -18,8 +18,8 @@ from zipfile import *
 #basePath = "C:/Users/patrick/Downloads/driftExplorerBombFinalGridSize2/"
 
 #basePath = "D:/Downloads/stadiumClusteringTests/"
-basePath = "/home/simulator/git-simulator/CPS_Simulator/simData/clusteringTest2020-7-8/"
-pickleName = "NewLRTests"
+basePath = "/home/simulator/git-simulator/CPS_Simulator/simData/ReportLocalReclusterNoBattery/"
+pickleName = "ReportLocalReclusterNoBattery"
 
 #basePath = "C:/Users/patrick/Downloads/driftTest/"
 #figurePath = "D:/Downloads/TestResults/"
@@ -27,7 +27,7 @@ pickleName = "NewLRTests"
 X_VAL = ['detectionThreshold', 'detectionDistance']
 X_VAL = ['validationThreshold', 'errorMultiplier', 'serverRecal']
 
-IGNORE = ['movementPath', 'bombX', 'bombY', 'clusterMaxThresh', 'reclusterPeriod']
+IGNORE = ['movementPath', 'bombX', 'bombY', 'clusterMaxThresh', 'maxClusterHeads', 'disableGRThresh', 'expansiveRatio', 'serverReadyThresh']
 ZIP = True
 
 data = {}
@@ -62,7 +62,7 @@ def determineDifferences(basePath, runs):
         i += 1
         #print(p['serverRecal'])
         for k in p.keys():
-            if 'file' not in k and 'File' not in k and k not in IGNORE:
+            if 'inputFileName' in k or ('file' not in k and 'File' not in k and k not in IGNORE):
                 if k in params:
                     params[k].add(p[k])
                 else:
@@ -119,32 +119,46 @@ def generateData(rq, wq):
         run['# Total False Positives'] = sum([1 if x.FP() else 0 for x in det])
         run['True Positive Readings'] = [x.errorADC for x in det if x.TP() and x.time < firstDet]
         run['True Positive Findings'] = [x.errorADC for x in det if x.TPConf() and x.time == firstDet]
+
         batteryStats = getBatteryStats(basePath, file)
-        run['Percent Alive'] = batteryStats[0]
-        run['Average Battery'] = batteryStats[1]
-        run['Min Battery'] = batteryStats[2]
-        run['Max Battery'] = batteryStats[3]
-        run['Samples'] = batteryStats[4]
-        run['Wifi'] = batteryStats[5]
-        run['Bluetooth'] = batteryStats[6]
-        run['BTRecluster'] = batteryStats[7]
-        run['BTClusterSearch'] = batteryStats[8]
-        run['BTReadings'] = batteryStats[9]
+        stats = ['Percent Alive',
+        'Average Battery',
+        'Min Battery',
+        'Max Battery',
+        'Samples',
+        'Wifi',
+        'Bluetooth',
+        'BTGlobalRecluster',
+        'BTLocalRecluster',
+        'BTClusterSearch',
+        'BTReadings']
+
+        for i in range(len(stats)):
+            run[stats[i]] = batteryStats[i]
+
         if p['clusteringOn'] == 'true':
             clusterStats = getClusterStats(basePath, file)
-            run['Number of clusters'] = clusterStats[0]
-            run['Avg cluster size'] = clusterStats[1]
-            run['Global reclusters'] = clusterStats[2]
-            run['Potential global reclusters'] = clusterStats[3]
-            run['Local Reclusters'] = clusterStats[4]
-            run['Clusters above thresh'] = clusterStats[5]
-            run['Clusters below thresh'] = clusterStats[6]
-            run['Alive valid nodes'] = clusterStats[7]
-            run['Cluster searches'] = clusterStats[8]
-            run['CS Joins'] = clusterStats[9]
-            run['CS Solos'] = clusterStats[10]
-            run['Waits'] = clusterStats[11]
-            run['Lost readings'] = clusterStats[12]
+            stats = ['Number of clusters',
+            'Avg cluster size',
+            'Global reclusters',
+            'Local reclusters',
+            'Expansive extras',
+            'Clusters above thresh',
+            'Clusters below thresh',
+            'Alive valid nodes',
+            'Alone nodes',
+            'Cluster searches',
+            'CS joins',
+            'CS solos',
+            'Waits',
+            'Lost readings',
+            'Alone threshold',
+            'Recluster period',
+            'Increments',
+            'Decrements']
+
+            for i in range(len(stats)):
+                run[stats[i]] = clusterStats[i]
 
         #if p['validaitonType'] == 'square':
         #    run['False Positive Confirmation Timing'] = [x.time for x in det if x.FPConf()]
@@ -324,18 +338,11 @@ def generateGraphs(order, xx):
 def getBatteryStats(zipPath, zipName):
     zf = ZipFile(zipPath + zipName)
     f = zf.open("%s%s" % (zipName.split(".zip")[0], "-batteryusage.txt"))
-    alive = []
-    avg = []
-    minimum = []
-    maximum = []
-    samples = []
-    wifi = []
-    BT = []
-    BTRecluster = []
-    BTClusterSearch = []
-    BTReadings = []
 
-    batteryStats = [alive, avg, minimum, maximum, samples, wifi, BT, BTRecluster, BTClusterSearch, BTReadings]
+    batteryStats = []
+
+    for i in range(15):
+        batteryStats += [[]]
 
     success = 0
     failed = 0
@@ -352,7 +359,7 @@ def getBatteryStats(zipPath, zipName):
             success += 1
         except:
             failed += 1
-    if success < 9950:
+    if success < 4450:
         print('\n\n\nsuccess ' + str(success))
         print(zipName)
     if failed > 10:
@@ -365,7 +372,10 @@ def getBatteryStats(zipPath, zipName):
 def getClusterStats(zipPath, zipName):
     zf = ZipFile(zipPath + zipName)
     f = zf.open("%s%s" % (zipName.split(".zip")[0], "-clusters.txt"))
-    clusterStats = [[], [], [], [], [], [], [], [], [] ,[], [], [], []]
+    clusterStats = []
+
+    for i in range(18):
+        clusterStats += [[]]
 
     success = 0
     failed = 0
@@ -377,12 +387,12 @@ def getClusterStats(zipPath, zipName):
             l = line.split(",")
             i = 0
             for stat in l:
-                clusterStats[i] += [int(stat)]
+                clusterStats[i] += [float(stat)]
                 i += 1
             success += 1
         except:
             failed += 1
-    if success < 9950:
+    if success < 4450:
         print('\n\n\nsuccess ' + str(success))
         print(zipName)
     if failed > 10:

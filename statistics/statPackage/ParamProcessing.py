@@ -39,14 +39,12 @@ def getParameters(basename):
                 val = True
             else:
                 val = False
+        elif(isInt(l[1])):
+            val = int(l[1])
+        elif(isFloat(l[1])):
+            val = float(l[1])
         else:
-            if(isInt(l[1])):
-                val = int(l[1])
-            else:
-                if(isFloat(l[1])):
-                    val = float(l[1])
-                else:
-                    val = l[1].split("\n")[0]
+            val = l[1].split("\n")[0]
         params[key] = val
     return params
 
