@@ -38,7 +38,7 @@ func (node *NodeImpl) ComputeClusterScore(p *Params, numWithinDist int, ) float6
 	degree := math.Min(float64(numWithinDist), float64(p.ClusterMaxThreshold))
 	//battery := node.GetBatteryPercentage() * float64(p.ClusterMaxThreshold) //Multiplying by threshold ensures that battery and degree have the same maximum value
 
-	score := degree * node.GetBatteryPercentage()
+	score := math.Pow(degree, p.DegreeWeight) * math.Pow(node.GetBatteryPercentage(), p.BatteryWeight)
 	return score
 }
 

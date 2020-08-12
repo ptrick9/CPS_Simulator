@@ -1584,8 +1584,8 @@ func GetFlags(p *Params) {
 	flag.IntVar(&p.ClusterMinThreshold, "clusterMinThresh", 0, "max number of members in a node cluster for it to be considered 'empty'")
 	flag.IntVar(&p.MaxClusterHeads, "maxClusterHeads", 1, "max number of cluster heads a cluster member can have. Must be > 0.")
 	flag.Float64Var(&p.NodeBTRange, "nodeBTRange",20.0,"bluetooth range of each node")
-	flag.Float64Var(&p.DegreeWeight, "degreeWeight", 0.6, "The weight constant applied to the number of neighboring nodes when calculating a node's score")
-	flag.Float64Var(&p.BatteryWeight, "batteryWeight", 0.4, "The weight constant applied to a node's battery when calculating a node's score")
+	flag.Float64Var(&p.DegreeWeight, "degreeWeight", 1, "The weight constant applied to the number of neighboring nodes when calculating a node's score")
+	flag.Float64Var(&p.BatteryWeight, "batteryWeight", 1, "The weight constant applied to a node's battery when calculating a node's score")
 	flag.Float64Var(&p.Penalty, "penalty", 0.8, "The penalty multiplied to a node's score when it is not already a cluster head")
 
 	/* Global Reclustering
