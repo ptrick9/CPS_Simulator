@@ -217,7 +217,8 @@ type Params struct {
 	ClusterHeadTimeThreshold        int
 	ClusterHeadBatteryDropThreshold float64
 	AdaptiveClusterSearch			bool
-	AloneClusterSearch				bool
+	ACSReset							bool
+	AloneNodeClusterSearch bool
 
 
 	DriftExplorer 	bool

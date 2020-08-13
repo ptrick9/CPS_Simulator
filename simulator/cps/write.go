@@ -1619,7 +1619,8 @@ func GetFlags(p *Params) {
 	flag.IntVar(&p.ClusterHeadTimeThreshold, "CHTimeThresh", 300, "The maximum time a can be cluster head without triggering local recluster.")
 	flag.Float64Var(&p.ClusterHeadBatteryDropThreshold, "CHBatteryDropThresh", 0.3, "The maximum percent a cluster head's battery can drop before triggering a local recluster.")
 	flag.BoolVar(&p.AdaptiveClusterSearch, "adaptiveClusterSearch", false, "How many times a node will wait before performing a cluster search adapts based on how many times it tries unsuccessfully.")
-	flag.BoolVar(&p.AloneClusterSearch, "aloneClusterSearch", false, "Whether alone nodes will continue to look for cluster heads.")
+	flag.BoolVar(&p.ACSReset, "ACSReset", false, "Only matters when adaptive cluster search is enabled. If true, an alone node's wait threshold can be reset to cluster search threshold if it is moving at a fast enough speed.")
+	flag.BoolVar(&p.AloneNodeClusterSearch, "aloneClusterSearch", false, "Whether alone nodes will continue to look for cluster heads.")
 
 	flag.StringVar(&p.WindRegionPath, "windRegionPath", "hull_testing.txt", "File containing regions formed by wind")
 
@@ -1731,7 +1732,8 @@ func WriteFlags(p * Params){
 	buf.WriteString(fmt.Sprintf("CHTimeThresh=%v\n", p.ClusterHeadTimeThreshold))
 	buf.WriteString(fmt.Sprintf("CHBatteryDropThresh=%v\n", p.ClusterHeadBatteryDropThreshold))
 	buf.WriteString(fmt.Sprintf("adaptiveClusterSearch=%v\n", p.AdaptiveClusterSearch))
-	buf.WriteString(fmt.Sprintf("aloneClusterSearch=%v\n", p.AloneClusterSearch))
+	buf.WriteString(fmt.Sprintf("ACSReset=%v\n", p.ACSReset))
+	buf.WriteString(fmt.Sprintf("aloneClusterSearch=%v\n", p.AloneNodeClusterSearch))
 	buf.WriteString(fmt.Sprintf("batteryCapacity=%v\n",p.BatteryCapacity))
 	buf.WriteString(fmt.Sprintf("bluetoothLossPercentage=%v\n",p.BluetoothLossPercentage))
 	buf.WriteString(fmt.Sprintf("sampleLossPercentage=%v\n",p.SampleLossPercentage))

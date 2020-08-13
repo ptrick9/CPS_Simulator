@@ -18,6 +18,7 @@ type AdHocNetwork struct {
 	NextClusterNum      int //For testing, may remove later
 	TotalWaits          int //Counts the number of times a node waited instead of initiating a cluster search
 	ExpansiveExtras		int //Counts the number of clusters added to an expansive recluster
+	ACSResets			int //Counts the number of time an alone node reset its wait threshold based on its movement speed
 }
 
 type HelloMsg struct {
@@ -111,7 +112,16 @@ func (adhoc *AdHocNetwork) UpdateClusterStatus(node *NodeImpl, rd *Reading, tp b
 					adhoc.ClusterSearch(node, rd, tp, p)
 				}
 			}
-		} else if p.AloneClusterSearch && node.IsClusterHead && len(node.ClusterMembers) <= p.ClusterMinThreshold {
+		} else if p.AloneNodeClusterSearch && node.IsClusterHead && len(node.ClusterMembers) <= p.ClusterMinThreshold {
+			 if p.AdaptiveClusterSearch && p.ACSReset && node.OldX!=0 && node.OldY!=0 {
+				 distance := math.Sqrt((math.Pow(.5*float64(node.SX-node.OldX), 2)) + (math.Pow(.5*float64(node.SY-node.OldY), 2)))
+				 //Distance is in half meters so have to divide by half to get meters
+				 metersPerSecond := distance / (float64(node.SamplingPeriod)/1000)
+				 if metersPerSecond > p.MaxMoveMeters {
+				 	adhoc.ACSResets++
+				 	node.WaitThresh = p.ClusterSearchThreshold
+				 }
+			 }
 			adhoc.ClusterSearch(node, rd, tp, p)
 		} else {
 			node.Wait = 0
@@ -312,6 +322,21 @@ members	- an array of the members that will participate in the recluster
 p		- the Params object of the simulation
  */
 func (adhoc *AdHocNetwork) LocalRecluster(head *NodeImpl, members []*NodeImpl, p *Params) {
+	//This adds any alone nodes with range of any members to be included in members. This is a simulation implementation
+	//in reality this alone nodes would simply join the recluster once they received one of the hello messages.
+	nearbyAlone := make(map[*NodeImpl]bool)
+	for i := 0; i < len(members); i++ {
+		nearby := p.NodeTree.WithinRadius(p.NodeBTRange, members[i], []*NodeImpl{})
+		for _, node := range nearby {
+			if node.IsClusterHead && len(node.ClusterMembers) <= 0 {
+				nearbyAlone[node] = true
+			}
+		}
+	}
+	for alone := range nearbyAlone {
+		members = append(members, alone)
+	}
+	//Local recluster starts in earnest
 	adhoc.LocalReclusters++
 	head.DrainBatteryWifi(1) //Head informs the server it is initiating local recluster
 	for i := 0; i < len(members); i++ {
