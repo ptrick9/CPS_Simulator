@@ -392,6 +392,11 @@ func main() {
 	p.Events.Push(&cps.Event{nil, cps.POSITION, 999, 0})
 	if p.EnergyPrint {
 		p.Events.Push(&cps.Event{nil, cps.ENERGYPRINT, 999, 0})
+		fmt.Fprintln(p.EnergyFile,
+			"Capacity:", p.BatteryCapacity,
+			"SamplesLoss:", 4,
+			"WifiLoss:", 4,
+			"BluetoothLoss:", 1)
 	}
 	p.Events.Push(&cps.Event{nil, cps.SERVER, 999, 0})
 	p.Events.Push(&cps.Event{nil, cps.GRID, 999, 0})
@@ -834,7 +839,7 @@ func main() {
 
 	p.Server.GoThroughSquares()
 	for k, v := range p.Server.SquareTime { //k= key v=value
-		fmt.Fprintln(p.OutputLog, "Square and max", k, v.MaxDelta)
+		fmt.Fprintln(p.OutputLog, "Square and max", k, v.MaxDelta, v.SamplesTaken)
 	}
 	//PrintAllGridSpaceMaxDeltas()
 
@@ -958,17 +963,3 @@ func PrintNodeBatteryOverTimeFast(p *cps.Params) {
 	fmt.Fprintf(p.BatteryFile, buffer.String())
 }
 
-func PrintAllGridSpaceMaxDeltas(){
-	for i:=0; i<p.MaxX/p.SquareColCM; i++{
-		for j:=0; j<p.MaxY/p.SquareRowCM;j++{
-			v:=p.TestHere
-			v.X=i
-			v.Y=j
-			if val,ok := p.Server.SquareTime[v]; ok{
-				val.BeenReported=true
-			} else {
-				fmt.Fprintln(p.OutputLog, "Square and max", v, p.CurrentTime)
-			}
-		}
-	}
-}

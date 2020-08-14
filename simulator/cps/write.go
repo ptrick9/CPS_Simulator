@@ -1592,6 +1592,7 @@ func GetFlags(p *Params) {
 	flag.BoolVar(&p.RandomBomb, "randomBomb", false, "Toggles random bomb placement")
 	flag.BoolVar(&p.ZipFiles, "zipFiles", false, "Toggles Zipping of output files")
 	flag.IntVar(&p.DensityThreshold, "densityThreshold", 10, "Number of nodes to make a square considered dense")
+	flag.BoolVar(&p.BatteryFlag, "batteryFlag", true, "Turn on or off battery adaptation")
 	flag.IntVar(&p.SamplingPeriodDS,"SamplingPeriodDS",10,"period at which nodes sense")
 	// New Battery Level Flags
 	flag.IntVar(&p.BatteryCapacity, "batteryCapacity", 10000, "Max battery capacity of all nodes")

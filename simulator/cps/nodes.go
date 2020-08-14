@@ -634,16 +634,17 @@ func (node *NodeImpl) DrainBatteryWifi() {
 func (node *NodeImpl) ScheduleNextSense() {
 	if node.GetBatteryPercentage() > node.P.BatteryDeadThreshold {
 		node.AdaptiveSampling()
-		if node.Id==49{
-			fmt.Println(node.CurrentBatteryLevel,node.GetBatteryPercentage())
-		}
 		if node.SamplingPeriod==0{
 			node.SamplingPeriod=node.P.SamplingPeriodDS
 		}
-		if node.GetBatteryPercentage() <= .25{
-			node.P.Events.Push(&Event{node, SENSE, node.P.CurrentTime + node.SamplingPeriod*100*4, 0})
-		} else if node.GetBatteryPercentage() <= .4{
-			node.P.Events.Push(&Event{node, SENSE, node.P.CurrentTime + node.SamplingPeriod*100*2, 0})
+		if node.P.BatteryFlag==true {
+			if node.GetBatteryPercentage() <= .25 {
+				node.P.Events.Push(&Event{node, SENSE, node.P.CurrentTime + node.SamplingPeriod*100*4, 0})
+			} else if node.GetBatteryPercentage() <= .4 {
+				node.P.Events.Push(&Event{node, SENSE, node.P.CurrentTime + node.SamplingPeriod*100*2, 0})
+			} else {
+				node.P.Events.Push(&Event{node, SENSE, node.P.CurrentTime + node.SamplingPeriod*100, 0})
+			}
 		} else {
 			node.P.Events.Push(&Event{node, SENSE, node.P.CurrentTime + node.SamplingPeriod*100, 0})
 		}

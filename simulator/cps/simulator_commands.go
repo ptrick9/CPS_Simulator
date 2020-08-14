@@ -229,6 +229,7 @@ type Params struct {
 	DensityDecrease				int
 	WifiCounter					int
 	BluetoothCounter			int
+	BatteryFlag					bool
 }
 
 // returns the amount of battery drained when a sampling event occurs
