@@ -404,16 +404,20 @@ func main() {
 			"BluetoothLoss:", p.BluetoothLossAmount())
 	}
 
-	p.Events.Push(&cps.Event{nil, cps.SERVER, 999, 0})
-	p.Events.Push(&cps.Event{nil, cps.GRID, 999, 0})
+	if !p.InfectionOn {
+		p.Events.Push(&cps.Event{nil, cps.SERVER, 999, 0})
+		p.Events.Push(&cps.Event{nil, cps.GRID, 999, 0})
+	}
 	p.Events.Push(&cps.Event{nil, cps.TIME, -1, 0})
 	p.Events.Push(&cps.Event{nil, cps.GARBAGECOLLECT, 999, 0})
-	p.Events.Push(&cps.Event{nil, cps.DRIFTLOG, 999, 0})
-	p.Events.Push(&cps.Event{nil, cps.CLEANUPREADINGS, (p.ReadingHistorySize + 1) * 1000, 0})
-	//p.Events.Push(&cps.Event{nil, cps.VALIDNODES, 999, 0})
+	if !p.InfectionOn {
+		p.Events.Push(&cps.Event{nil, cps.DRIFTLOG, 999, 0})
+		p.Events.Push(&cps.Event{nil, cps.CLEANUPREADINGS, (p.ReadingHistorySize + 1) * 1000, 0})
+		//p.Events.Push(&cps.Event{nil, cps.VALIDNODES, 999, 0})
+	}
 	p.Events.Push(&cps.Event{nil, cps.LOADMOVE, (p.MovementSize - 2) * 1000, 0})
 	p.Events.Push(&cps.Event{nil, cps.CLEANUPREADINGS, (p.ReadingHistorySize + 1) * 1000, 0})
-	p.Events.Push(&cps.Event{nil, cps.SERVERSTATS, 1000, 0})
+	//p.Events.Push(&cps.Event{nil, cps.SERVERSTATS, 1000, 0})
 	if p.ClusteringOn {
 		p.InitClusterTime *= 1000
 		if p.InitClusterTime > 0 {
@@ -428,6 +432,7 @@ func main() {
 
 	if p.InfectionOn {
 		p.Events.Push(&cps.Event{nil, cps.SPREADINFECTION, 999, 0})
+		p.Events.Push(&cps.Event{nil, cps.INFECTIONPRINT,  999, 0})
 	}
 
 	p.Events.Push(&cps.Event{nil, cps.BATTERYPRINT, 5000, 0})
@@ -793,19 +798,22 @@ func main() {
 
 		case cps.SPREADINFECTION:
 			SpreadNodeInfection(p)
+			p.Events.Push(&cps.Event{nil, cps.SPREADINFECTION, p.CurrentTime + p.InfectionFrequency, 0})
+
+		case cps.INFECTIONPRINT:
 			count := 0
 			var buffer bytes.Buffer
 			for i := 0; i < len(p.NodeList); i++ {
 				node := p.NodeList[i]
 				if node.Valid {
-					buffer.WriteString(fmt.Sprintln("id:", node.Id, "infection:", node.Infection))
+					buffer.WriteString(fmt.Sprintln("id:", node.Id, "infection:", node.Infection, "mask:", node.Mask))
 					count++
 				}
 			}
 			fmt.Fprintln(p.InfectionFile, "Amount:", count)
 			fmt.Fprintf(p.InfectionFile, buffer.String())
 			fmt.Fprintln(p.InfectionStatsFile, "Risk:", len(p.Server.RiskSet), "Infected:", len(p.Server.InfectedSet))
-			p.Events.Push(&cps.Event{nil, cps.SPREADINFECTION, p.CurrentTime + 1000, 0})
+			p.Events.Push(&cps.Event{nil, cps.INFECTIONPRINT, p.CurrentTime + 1000, 0})
 		}
 
 	}
@@ -1029,15 +1037,25 @@ func SpreadNodeInfection(p *cps.Params) {
 	for i:=0; i<len(p.InfectionHostList); i++ {
 		host := p.InfectionHostList[i]
 		if host.Valid {
-			for j := 0; j < len(p.NodeList); j++ {
-				victim := p.NodeList[j]
+			infectionChance := host.GetInfectionSpreadChance()
+			for j:=0; j<len(host.Nearby); j++ {
+				victim := host.Nearby[j]
 				if victim.Valid && victim.Infection == cps.None && victim.NodeDistance(host) <= p.InfectionDistance {
 					p.Server.RiskSet[victim.Id] = true
+					infectionChance *= victim.GetInfectionChance()
 					chance := rand.Float64()
-					if chance < p.InfectionChance {
+					if chance < infectionChance {
 						victim.Infection = cps.Infected
 						p.Server.InfectedSet[victim.Id] = true
 					}
+				}
+			}
+
+			host.Nearby = nil
+			for j:=0; j<len(p.NodeList); j++ {
+				node := p.NodeList[j]
+				if node.Valid && node.Infection == cps.None && node.NodeDistance(host) <= p.InfectionDistance {
+					host.Nearby = append(host.Nearby, node)
 				}
 			}
 		}

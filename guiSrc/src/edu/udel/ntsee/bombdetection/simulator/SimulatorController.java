@@ -301,8 +301,14 @@ public class SimulatorController implements Drawable {
             for (Infection infection : room.getInfections()) {
                 Node node = room.getNodeByID(infection.getID());
                 switch (infection.getType()) {
+                    case NONE:
+                        if (infection.hasMask()) {
+                            canvas.drawBlock(Color.LIGHTBLUE, true, node.getX(), room.getHeight() - node.getY() - 1);
+                        }
+                        break;
                     case HOST:
-                        canvas.drawBlock(Color.RED, true, node.getX(), room.getHeight() - node.getY() - 1);
+                        Color hc = infection.hasMask() ? Color.PINK : Color.RED;
+                        canvas.drawBlock(hc, true, node.getX(), room.getHeight() - node.getY() - 1);
                         break;
                     case INFECTED:
                         canvas.drawBlock(Color.YELLOW, true, node.getX(), room.getHeight() - node.getY() - 1);

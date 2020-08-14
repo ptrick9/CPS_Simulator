@@ -230,11 +230,15 @@ type Params struct {
 	TotalSamples				int
 
 	// covid
-	InfectionOn					bool
-	InfectionHostPercentage		float64
-	InfectionChance				float64
-	InfectionDistance			float64
-	InfectionHostList			[]*NodeImpl
+	InfectionOn             	bool
+	InfectionHostPercentage 	float64 // percent of total nodes to make into host nodes
+	InfectionHostMaskPercentage	float64 // percent of host nodes to put masks on
+	InfectionMaskPercentage		float64 // percentage of regular nodes to put masks on
+	InfectionSpreadChance   	float64 // chance for a node to spread infection
+	InfectionGetChance      	float64 // chance for a victim to get infected
+	InfectionDistance       	float64 // distance a node must be within to get infected
+	InfectionFrequency			int		// total number of ms to wait between infection spread event
+	InfectionHostList       	[]*NodeImpl // tracks all the host nodes in the simulator
 
 }
 

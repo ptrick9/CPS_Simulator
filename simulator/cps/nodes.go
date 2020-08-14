@@ -106,7 +106,9 @@ type NodeImpl struct {
 	HighDensityCounter				int
 
 	// covid stuff
-	Infection Infection
+	Infection	Infection
+	Mask		bool
+	Nearby 		[]*NodeImpl
 }
 
 //NodeMovement controls the movement of all the normal nodes
@@ -1177,4 +1179,21 @@ func (node *NodeImpl) MoveNormal(p *Params) {
 
 func rangeInt(min, max int) int { //returns a random number between max and min
 	return rand.Intn(max-min) + min
+}
+
+func (node *NodeImpl) GetInfectionSpreadChance() float64{
+	chance := node.P.InfectionSpreadChance
+	if node.Mask {
+		chance /= 10
+	}
+	return chance
+}
+
+
+func (node *NodeImpl) GetInfectionChance() float64 {
+	chance := node.P.InfectionGetChance
+	if node.Mask {
+		chance /= 10
+	}
+	return chance
 }

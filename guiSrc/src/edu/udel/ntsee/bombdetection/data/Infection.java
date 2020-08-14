@@ -4,10 +4,12 @@ public class Infection {
 
     private int id;
     private Type type;
+    private boolean mask;
 
-    public Infection(int id, Type type) {
+    public Infection(int id, Type type, boolean mask) {
         this.id = id;
         this.type = type;
+        this.mask = mask;
     }
 
     public int getID() {
@@ -16,6 +18,10 @@ public class Infection {
 
     public Type getType() {
         return this.type;
+    }
+
+    public boolean hasMask() {
+        return this.mask;
     }
 
     public enum Type {

@@ -502,8 +502,16 @@ func SetupInfection(p* Params) {
 		if chance < p.InfectionHostPercentage {
 			newNode.Infection = Host
 			p.InfectionHostList = append(p.InfectionHostList, newNode)
+			chance := rand.Float64()
+			if chance < p.InfectionHostMaskPercentage {
+				newNode.Mask = true
+			}
 		} else {
 			newNode.Infection = None
+			chance := rand.Float64()
+			if chance < p.InfectionMaskPercentage {
+				newNode.Mask = true
+			}
 		}
 	}
 }
@@ -1637,9 +1645,13 @@ func GetFlags(p *Params) {
 
 	// covid flags
 	flag.BoolVar(&p.InfectionOn, "infectionOn", true, "Toggles nodes spreading infections")
-	flag.Float64Var(&p.InfectionHostPercentage, "infectionHostPercentage", .01, "percent of nodes to make hosts")
-	flag.Float64Var(&p.InfectionChance, "infectionChance", .01, "chance for nodes to spread infection")
+	flag.Float64Var(&p.InfectionHostPercentage, "infectionHostPercentage", .02, "percent of nodes to make hosts")
+	flag.Float64Var(&p.InfectionHostMaskPercentage, "infectionHostMaskPercentage", 0.1, "percentage of hosts to put masks on")
+	flag.Float64Var(&p.InfectionMaskPercentage, "infectionMaskPercentage", 0.1, "percentage of normal nodes to put masks on")
+	flag.Float64Var(&p.InfectionSpreadChance, "infectionSpreadChance", .70, "chance for a node to spread infection")
+	flag.Float64Var(&p.InfectionGetChance, "infectionGetChance", .70, "chance for a node to get infected")
 	flag.Float64Var(&p.InfectionDistance, "infectionDistance", 3, "distance between nodes to be at risk for infection")
+	flag.IntVar(&p.InfectionFrequency, "infectionFrequency", 5000, "ms to wait between inspection spread events")
 
 	flag.Parse()
 	fmt.Println("Maximum size of buffer posible: ", p.MaxBufferCapacityCM)

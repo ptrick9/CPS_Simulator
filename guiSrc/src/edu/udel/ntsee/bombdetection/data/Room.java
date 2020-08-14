@@ -154,10 +154,10 @@ public class Room {
     public void updateData() throws IOException, LogFormatException {
 
         this.positions = fileManager.getPositions() != null ? fileManager.getPositions().getData(getIndex()) : null;
-        this.samples = fileManager.getSamples() != null ? fileManager.getSamples().getData(getIndex()) : null;
-        this.superNodes = fileManager.getRoutes() != null ? fileManager.getRoutes().getData(getIndex()) : null;
-        this.adhocs = fileManager.getAdHocs() != null ? fileManager.getAdHocs().getData(getIndex()) : null;
-        this.sensorReadings = fileManager.getSensorReadings() != null ? fileManager.getSensorReadings().getGrid(getIndex()) : null;
+        //this.samples = fileManager.getSamples() != null ? fileManager.getSamples().getData(getIndex()) : null;
+        //this.superNodes = fileManager.getRoutes() != null ? fileManager.getRoutes().getData(getIndex()) : null;
+        //this.adhocs = fileManager.getAdHocs() != null ? fileManager.getAdHocs().getData(getIndex()) : null;
+        //this.sensorReadings = fileManager.getSensorReadings() != null ? fileManager.getSensorReadings().getGrid(getIndex()) : null;
         this.infections = fileManager.getInfections() != null ? fileManager.getInfections().getData(getIndex()) : null;
     }
 
