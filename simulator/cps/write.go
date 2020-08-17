@@ -653,6 +653,8 @@ func ReadMap(p *Params, r *RegionParams) {
 
 	p.Width = imgCfg.Width
 	p.Height = imgCfg.Height
+	p.MaxX = p.Width + 1
+	p.MaxY = p.Height + 1
 
 	fmt.Println("Width : ", p.Width)
 	fmt.Println("Height : ", p.Height)
@@ -884,23 +886,13 @@ func SetupParameters(p *Params, r *RegionParams) {
 
 	p.Attractions = make([]*Attraction, p.NumAtt)
 
-	if p.CSVSensor {
-		readSensorCSV(p, r)
-		readFineSensorCSV(p)
-	} else {
-
-		readFineSensorCSV(p)
-
-		/*
-		p.MaxRaw = 1000
-		//p.EdgeRaw = 36
-		p.EdgeRaw = RawConcentration(float32(p.DetectionDistance/2))
-		fmt.Println("Raw:", p.EdgeRaw)
-		p.MaxADC = 4095
-		p.EdgeADC = 3
-		p.ADCWidth = p.MaxRaw/p.MaxADC
-		p.ADCOffset = p.EdgeRaw - p.EdgeADC * p.ADCWidth
-		fmt.Printf("%v %v\n", p.ADCWidth, p.ADCOffset)*/
+	if !p.InfectionOn {
+		if p.CSVSensor {
+			readSensorCSV(p, r)
+			readFineSensorCSV(p)
+		} else {
+			readFineSensorCSV(p)
+		}
 	}
 
 	if p.CSVMovement {
@@ -1506,7 +1498,7 @@ func GetFlags(p *Params) {
 	flag.Float64Var(&p.ErrorModifierCM, "errorMultiplier", 1.0,
 		"Multiplier for error values in system")
 
-	flag.BoolVar(&p.CSVSensor, "csvSensor", true, "Read Sensor Values from CSV")
+	flag.BoolVar(&p.CSVSensor, "csvSensor", false, "Read Sensor Values from CSV")
 
 	flag.BoolVar(&p.CSVMovement, "csvMove", true, "Read Movements from CSV")
 
@@ -1566,7 +1558,7 @@ func GetFlags(p *Params) {
 	//Only used for super nodes of type 1
 	//flag.IntVar(&p.SuperNodeVariation, "p.SuperNodeVariation", 3, "super nodes of type 1 have different variations")
 
-	flag.BoolVar(&p.PositionPrint, "logPosition", false, "Whether you want to write position info to a log file")
+	flag.BoolVar(&p.PositionPrint, "logPosition", true, "Whether you want to write position info to a log file")
 
 	flag.BoolVar(&p.GridPrint, "logGrid", false, "Whether you want to write p.Grid info to a log file")
 
@@ -1595,9 +1587,9 @@ func GetFlags(p *Params) {
 	flag.StringVar(&p.OutRoutingStatsNameCM, "outRoutingStatsName", "routingStats.txt", "Name of the output file for stats")
 
 
-	flag.BoolVar(&p.RegionRouting, "regionRouting", true, "True if you want to use the new routing algorithm with regions and cutting")
+	flag.BoolVar(&p.RegionRouting, "regionRouting", false, "True if you want to use the new routing algorithm with regions and cutting")
 
-	flag.BoolVar(&p.ClusteringOn,"clusteringOn",true,"True: nodes will form clusters, False: no clusters will form")
+	flag.BoolVar(&p.ClusteringOn,"clusteringOn",false,"True: nodes will form clusters, False: no clusters will form")
 	flag.BoolVar(&p.RedundantClustering,"redundantClustering",false,"If clusteringOn is set to true, True: nodes will join two clusters, False: clusters will form normally")
 	flag.IntVar(&p.ClusterMaxThreshold, "clusterMaxThresh",8, "max number of members in a node cluster")
 	flag.IntVar(&p.ClusterMinThreshold, "clusterMinThresh", 2, "max number of members in a node cluster for it to be considered 'empty'")

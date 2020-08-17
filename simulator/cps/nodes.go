@@ -877,7 +877,9 @@ func trueInterpolate(x , y float32, time, timeStep int, fine bool, p *Params) fl
 
 //Takes cares of taking a node's readings and printing detections and stuff
 func (node *NodeImpl) GetReadings() {
-
+	if node.P.InfectionOn {
+		return
+	}
 
 	if node.Valid { //Check if node should actually take readings or if it hasn't shown up yet
 		newX, newY := node.GetLoc()

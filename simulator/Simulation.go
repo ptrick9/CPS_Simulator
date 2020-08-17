@@ -238,7 +238,7 @@ func main() {
 	cps.GetFlags(p)
 
 	fmt.Println("Getting Wind regions...")
-	cps.ReadWindRegion(p)
+	//cps.ReadWindRegion(p)
 	fmt.Println("Done!")
 
 	if p.CPUProfile != "" {
