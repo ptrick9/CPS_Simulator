@@ -836,6 +836,18 @@ func SetupFiles(p *Params) {
 			log.Fatal("Cannot create file", err)
 		}
 		p.Files = append(p.Files, p.OutputFileNameCM+"-serverClusterDebug.txt")
+
+		p.AdaptiveClusterFile, err = os.Create(p.OutputFileNameCM + "-adaptiveCluster.txt")
+		if err != nil {
+			log.Fatal("Cannot create file", err)
+		}
+		p.Files = append(p.Files, p.OutputFileNameCM + "adaptiveCluster.txt")
+
+		p.LocalClusterFile, err = os.Create(p.OutputFileNameCM + "-localCluster.txt")
+		if err != nil {
+			log.Fatal("Cannot create file", err)
+		}
+		p.Files = append(p.Files, p.OutputFileNameCM+"-localCluster.txt")
 	}
 
 	fmt.Println(p.Files)
@@ -1580,7 +1592,7 @@ func GetFlags(p *Params) {
 
 	flag.BoolVar(&p.ClusteringOn,"clusteringOn",true,"True: nodes will form clusters, False: no clusters will form")
 	flag.BoolVar(&p.RedundantClustering,"redundantClustering",false,"If clusteringOn is set to true, True: nodes will join two clusters, False: clusters will form normally")
-	flag.IntVar(&p.ClusterMaxThreshold, "clusterMaxThresh",8, "max number of members in a node cluster")
+	flag.IntVar(&p.ClusterMaxThreshold, "clusterMaxThresh",40, "max number of members in a node cluster")
 	flag.IntVar(&p.ClusterMinThreshold, "clusterMinThresh", 0, "max number of members in a node cluster for it to be considered 'empty'")
 	flag.IntVar(&p.MaxClusterHeads, "maxClusterHeads", 1, "max number of cluster heads a cluster member can have. Must be > 0.")
 	flag.Float64Var(&p.NodeBTRange, "nodeBTRange",20.0,"bluetooth range of each node")
@@ -1621,6 +1633,7 @@ func GetFlags(p *Params) {
 	flag.BoolVar(&p.AdaptiveClusterSearch, "adaptiveClusterSearch", false, "How many times a node will wait before performing a cluster search adapts based on how many times it tries unsuccessfully.")
 	flag.BoolVar(&p.ACSReset, "ACSReset", false, "Only matters when adaptive cluster search is enabled. If true, an alone node's wait threshold can be reset to cluster search threshold if it is moving at a fast enough speed.")
 	flag.BoolVar(&p.AloneNodeClusterSearch, "aloneClusterSearch", false, "Whether alone nodes will continue to look for cluster heads.")
+	flag.Float64Var(&p.LRMemberLostThreshold, "LRMemberLostThreshold", .8, "percentage of members a local cluster needs to lose in order to local recluster");
 
 	flag.StringVar(&p.WindRegionPath, "windRegionPath", "hull_testing.txt", "File containing regions formed by wind")
 
@@ -1640,7 +1653,7 @@ func GetFlags(p *Params) {
 	// New Battery Level Flags
 	flag.IntVar(&p.BatteryCapacity, "batteryCapacity", 10000, "Max battery capacity of all nodes")
 	flag.Float64Var(&p.BatteryDeadThreshold, "batteryDeadThreshold", .10, "minimum battery percentage before a node is considered dead")
-	flag.Float64Var(&p.BatteryLowThreshold, "batteryLowThreshold", .15, "battery percentage to mark a node as low power")
+	flag.Float64Var(&p.BatteryLowThreshold, "batteryLowThreshold", .2, "battery percentage to mark a node as low power")
 	flag.Float64Var(&p.BatteryMediumThreshold, "batteryMediumThreshold", .25, "battery percentage to mark a node as medium power")
 	flag.Float64Var(&p.BatteryHighThreshold, "batteryHighThreshold", .40, "battery percentage to mark a node as high power")
 	flag.Float64Var(&p.AverageBatteryLevel, "averageBatteryLevel", 0.75, "average initial battery level to set nodes to")
@@ -1734,6 +1747,7 @@ func WriteFlags(p * Params){
 	buf.WriteString(fmt.Sprintf("adaptiveClusterSearch=%v\n", p.AdaptiveClusterSearch))
 	buf.WriteString(fmt.Sprintf("ACSReset=%v\n", p.ACSReset))
 	buf.WriteString(fmt.Sprintf("aloneClusterSearch=%v\n", p.AloneNodeClusterSearch))
+	buf.WriteString(fmt.Sprintf("LRMemberLostThreshold=%v\n", p.LRMemberLostThreshold))
 	buf.WriteString(fmt.Sprintf("batteryCapacity=%v\n",p.BatteryCapacity))
 	buf.WriteString(fmt.Sprintf("bluetoothLossPercentage=%v\n",p.BluetoothLossPercentage))
 	buf.WriteString(fmt.Sprintf("sampleLossPercentage=%v\n",p.SampleLossPercentage))

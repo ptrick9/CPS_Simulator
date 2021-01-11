@@ -85,6 +85,9 @@ type Params struct {
 	SamplingData     *os.File
 	SampleRates      *os.File
 
+	AdaptiveClusterFile	*os.File
+	LocalClusterFile	*os.File
+
 	SensorPath  string
 	FineSensorPath  string
 	MovementPath  string
@@ -219,6 +222,7 @@ type Params struct {
 	AdaptiveClusterSearch			bool
 	ACSReset							bool
 	AloneNodeClusterSearch bool
+	LRMemberLostThreshold	float64
 
 
 	DriftExplorer 	bool

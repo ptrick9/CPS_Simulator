@@ -19,6 +19,12 @@ type AdHocNetwork struct {
 	TotalWaits          int //Counts the number of times a node waited instead of initiating a cluster search
 	ExpansiveExtras		int //Counts the number of clusters added to an expansive recluster
 	ACSResets			int //Counts the number of time an alone node reset its wait threshold based on its movement speed
+
+	MovingLocalReclusters	int //Counts the number of times a local recluster is triggered by a moving head node
+	DyingLocalReclusters	int //Counts the number of times a local recluster is triggered by a head node dying
+	TimeLocalReclusters	int //Counts the number of times a local recluster is triggered by a head node lasting too long
+	LBatteryLocalReclusters	int //Counts the number of times a local recluster is triggered by a low battery head
+	BTAloneNode				int //Counts the number of messages sent by alone nodes searching for a cluster head
 }
 
 type HelloMsg struct {
@@ -273,6 +279,7 @@ func (adhoc *AdHocNetwork) FormCluster(node *NodeImpl) {
 	node.TimeBecameClusterHead = node.P.CurrentTime
 	node.BatteryBecameClusterHead = node.GetBatteryPercentage()
 	node.IsClusterMember = false
+	node.InitialClusterSize = len(node.RecvMsgs)
 	adhoc.ClusterHeads = append(adhoc.ClusterHeads, node)
 	node.ClusterHead = nil
 	node.ClusterMembers = make(map[*NodeImpl]int)
@@ -455,7 +462,7 @@ Broadcasts a bluetooth message looking for nearby cluster heads and returns a li
  */
 func (node *NodeImpl) FindNearbyHeads(p *Params, counter *int) []*NodeImpl {
 	node.DrainBatteryBluetooth(counter)	//Broadcasting hello message
-
+	node.P.ClusterNetwork.BTAloneNode++// stat tracking cluster search overhead
 	withinDist := p.NodeTree.WithinRadius(p.NodeBTRange, node, []*NodeImpl{})
 	headsInDist := []*NodeImpl{}
 
@@ -464,8 +471,10 @@ func (node *NodeImpl) FindNearbyHeads(p *Params, counter *int) []*NodeImpl {
 		if withinDist[i].IsClusterHead && len(withinDist[i].ClusterMembers) < p.ClusterMaxThreshold && withinDist[i].IsAlive() {
 			headsInDist = append(headsInDist, withinDist[i])
 			withinDist[i].DrainBatteryBluetooth(counter) //Every cluster head with room for this node sends a reply
+			node.P.ClusterNetwork.BTAloneNode++// stat tracking cluster search overhead
 			if node.IsAlive() {
 				node.DrainBatteryBluetooth(counter) //The node receives messages from every cluster head with room (unless it died)
+				node.P.ClusterNetwork.BTAloneNode++// stat tracking cluster search overhead
 			}
 		}
 	}
@@ -477,12 +486,46 @@ func (node *NodeImpl) FindNearbyHeads(p *Params, counter *int) []*NodeImpl {
 
 /*
 Determines if a cluster head should initiate a local recluster based on how long the node has been a head, how much
-battery it has lost as a head, and its current battery level.
+battery it has lost as a head, and its current battery level. This is only called when battery is drained.
+See
  */
 func (node *NodeImpl) ShouldLocalRecluster() bool {
-	return (node.P.CurrentTime - node.TimeBecameClusterHead)/1000 > node.P.ClusterHeadTimeThreshold ||
-		node.BatteryBecameClusterHead - node.GetBatteryPercentage() > node.P.ClusterHeadBatteryDropThreshold ||
-		!node.IsAlive()
+	if (node.BatteryBecameClusterHead - node.GetBatteryPercentage()) > node.P.ClusterHeadBatteryDropThreshold {
+		node.P.ClusterNetwork.LBatteryLocalReclusters++
+		return true
+	} else if (node.P.CurrentTime - node.TimeBecameClusterHead)/1000 > node.P.ClusterHeadTimeThreshold {
+		node.P.ClusterNetwork.TimeLocalReclusters++
+		return true
+	} else if !node.IsAlive() {
+		node.P.ClusterNetwork.DyingLocalReclusters++
+		return true
+	} else if node.LostMostMembers() {
+		node.P.ClusterNetwork.MovingLocalReclusters++
+		return true
+	} else {
+		return false
+	}
+}
+
+/*
+Determines if a node has lost more than {LRMemberLostThreshold} of its members. This check is only done
+for the cluster head
+ */
+func (node *NodeImpl) LostMostMembers() bool {
+	if node.IsClusterHead {
+		lost := 0.0
+		for member := range node.ClusterMembers {
+			if member.ClusterHead == node && member.Wait >= node.P.ClusterSearchThreshold {
+				lost += 1
+				if lost >= node.P.LRMemberLostThreshold * float64(node.InitialClusterSize) {
+					return true
+				}
+			}
+		}
+
+	}
+
+	return false
 }
 
 /*

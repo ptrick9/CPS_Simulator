@@ -425,7 +425,9 @@ func main() {
 		p.Events.Push(&cps.Event{nil, cps.BATTERYPRINT, 1000, 0})
 	}
 	p.CurrentTime = 0
-	for len(p.Events) > 0 && p.CurrentTime < 1000*p.Iterations_of_event && !p.FoundBomb {
+	fmt.Fprintln(p.AdaptiveClusterFile, "alone,", "overhead")
+	fmt.Fprintln(p.LocalClusterFile, "moving,", "dying,", "timeOut,", "batteryLow,", "reclusters,", "dead")
+	for len(p.Events) > 0 && p.CurrentTime < 1000*p.Iterations_of_event /*&& !p.FoundBomb*/ {
 		event := heap.Pop(&p.Events).(*cps.Event)
 		//fmt.Println(event)
 		//fmt.Println(p.CurrentNodes)
@@ -476,6 +478,7 @@ func main() {
 			} else {
 				delete(p.AliveValNodes, event.Node)
 			}
+
 		//case cps.INITCLUSTER:
 		//	p.ClusterNetwork.FullRecluster(p)
 		//	if p.GlobalRecluster > 0 {
@@ -516,10 +519,11 @@ func main() {
 				}
 				fmt.Fprint(p.PositionFile, buffer.String())
 			}
+			printLocalRecluster(p)
+			printAdaptiveCluster(p)
 			fmt.Printf("\rRunning Simulator iteration %d\\%v", int(p.CurrentTime/1000), p.Iterations_of_event)
 			p.Iterations_used += 1
 			p.Events.Push(&cps.Event{nil, cps.POSITION, p.CurrentTime + 1000, 0})
-
 		case cps.CLEANUPREADINGS:
 			p.Server.CleanupReadings()
 			p.Events.Push(&cps.Event{nil, cps.CLEANUPREADINGS, p.CurrentTime + 1000, 0})
@@ -974,4 +978,28 @@ func printSuperStats(SNodeList []cps.SuperNodeParent) bytes.Buffer {
 		buffer.WriteString(fmt.Sprintf("AvgResponseTime: %.2f\t", i.GetAvgResponseTime()))
 	}
 	return buffer
+}
+
+func printLocalRecluster(p *cps.Params) {
+	dead := 0
+	for i:=0; i<len(p.NodeList); i++ {
+		node := p.NodeList[i]
+		if node.Valid && !node.IsAlive() {
+			dead += 1
+		}
+	}
+
+	fmt.Fprintf(p.LocalClusterFile, "%v, %v, %v, %v, %v, %v\n",
+		p.ClusterNetwork.MovingLocalReclusters,
+		p.ClusterNetwork.DyingLocalReclusters,
+		p.ClusterNetwork.TimeLocalReclusters,
+		p.ClusterNetwork.LBatteryLocalReclusters,
+		p.ClusterNetwork.LocalReclusters,
+		dead)
+}
+
+func printAdaptiveCluster(p *cps.Params) {
+	fmt.Fprintf(p.AdaptiveClusterFile, "%v, %v\n",
+		len(p.Server.AloneNodes),
+		p.ClusterNetwork.BTAloneNode)
 }

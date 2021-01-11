@@ -86,6 +86,7 @@ type NodeImpl struct {
 	IsClusterHead					bool
 	IsClusterMember					bool
 	TimeBecameClusterHead			int
+	InitialClusterSize				int
 	BatteryBecameClusterHead		float64
 	ClusterAverageBattery			float64
 	ClusterHead    					*NodeImpl
