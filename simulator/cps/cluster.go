@@ -202,6 +202,7 @@ func (adhoc *AdHocNetwork) ClearClusterParams(node *NodeImpl) {
 	}
 
 	node.ClusterHead = nil
+	node.LargestClusterSize = 0
 	node.ClusterMembers = make(map[*NodeImpl]int)
 
 	node.RecvMsgs = []*HelloMsg{}
@@ -282,6 +283,7 @@ func (adhoc *AdHocNetwork) FormCluster(node *NodeImpl) {
 	node.InitialClusterSize = len(node.RecvMsgs)
 	adhoc.ClusterHeads = append(adhoc.ClusterHeads, node)
 	node.ClusterHead = nil
+	node.LargestClusterSize = 0
 	node.ClusterMembers = make(map[*NodeImpl]int)
 	adhoc.NextClusterNum++
 }
@@ -513,15 +515,16 @@ for the cluster head
  */
 func (node *NodeImpl) LostMostMembers() bool {
 	if node.IsClusterHead {
-		lost := 0.0
-		for member := range node.ClusterMembers {
-			if member.ClusterHead == node && member.Wait >= node.P.ClusterSearchThreshold {
-				lost += 1
-				if lost >= node.P.LRMemberLostThreshold * float64(node.InitialClusterSize) {
-					return true
-				}
-			}
-		}
+		return 1 - float64(len(node.ClusterMembers))/float64(node.LargestClusterSize) >= node.P.LRMemberLostThreshold
+		//lost := 0.0
+		//for member := range node.ClusterMembers {
+		//	if member.ClusterHead == node && member.Wait >= node.P.ClusterSearchThreshold {
+		//		lost += 1
+		//		if lost >= node.P.LRMemberLostThreshold * float64(node.InitialClusterSize) {
+		//			return true
+		//		}
+		//	}
+		//}
 
 	}
 
@@ -563,4 +566,5 @@ func (node *NodeImpl) UpdateClusterInfo(server *FusionCenter) {
 			node.ClusterMembers[k] = v
 		}
 	}
+	node.LargestClusterSize = max(node.LargestClusterSize, len(node.ClusterMembers))
 }
