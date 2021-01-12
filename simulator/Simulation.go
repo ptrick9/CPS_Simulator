@@ -425,8 +425,10 @@ func main() {
 		p.Events.Push(&cps.Event{nil, cps.BATTERYPRINT, 1000, 0})
 	}
 	p.CurrentTime = 0
-	fmt.Fprintln(p.AdaptiveClusterFile, "alone,", "overhead")
-	fmt.Fprintln(p.LocalClusterFile, "moving,", "dying,", "timeOut,", "batteryLow,", "reclusters,", "dead")
+	if p.ClusterPrint {
+		fmt.Fprintln(p.AdaptiveClusterFile, "alone,", "overhead")
+		fmt.Fprintln(p.LocalClusterFile, "moving,", "dying,", "timeOut,", "batteryLow,", "reclusters,", "dead")
+	}
 	for len(p.Events) > 0 && p.CurrentTime < 1000*p.Iterations_of_event /*&& !p.FoundBomb*/ {
 		event := heap.Pop(&p.Events).(*cps.Event)
 		//fmt.Println(event)
@@ -519,8 +521,10 @@ func main() {
 				}
 				fmt.Fprint(p.PositionFile, buffer.String())
 			}
-			printLocalRecluster(p)
-			printAdaptiveCluster(p)
+			if p.ClusterPrint {
+				printLocalRecluster(p)
+				printAdaptiveCluster(p)
+			}
 			fmt.Printf("\rRunning Simulator iteration %d\\%v", int(p.CurrentTime/1000), p.Iterations_of_event)
 			p.Iterations_used += 1
 			p.Events.Push(&cps.Event{nil, cps.POSITION, p.CurrentTime + 1000, 0})
