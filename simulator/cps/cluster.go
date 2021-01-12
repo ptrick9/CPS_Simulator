@@ -517,7 +517,7 @@ func (node *NodeImpl) LostMostMembers() bool {
 		for member := range node.ClusterMembers {
 			if member.ClusterHead == node && member.Wait >= node.P.ClusterSearchThreshold {
 				lost += 1
-				if lost >= node.P.LRMemberLostThreshold * float64(node.InitialClusterSize) {
+				if lost >= node.P.LRMemberLostThreshold * float64(len(node.ClusterMembers)) {
 					return true
 				}
 			}
