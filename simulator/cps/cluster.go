@@ -128,17 +128,21 @@ func (adhoc *AdHocNetwork) UpdateClusterStatus(node *NodeImpl, rd *Reading, tp b
 					adhoc.ClusterSearch(node, rd, tp, p)
 				}
 			}
-		} else if p.AloneNodeClusterSearch && node.IsClusterHead && len(node.ClusterMembers) <= p.ClusterMinThreshold {
-			 if p.AdaptiveClusterSearch && p.ACSReset && node.OldX!=0 && node.OldY!=0 {
+		} else if node.IsClusterHead {
+			if p.AloneNodeClusterSearch && len(node.ClusterMembers) <= p.ClusterMinThreshold{
+			 if p.AdaptiveClusterSearch && p.ACSReset && node.OldX!=0 && node.OldY!=0{
 				 distance := math.Sqrt((math.Pow(.5*float64(node.SX-node.OldX), 2)) + (math.Pow(.5*float64(node.SY-node.OldY), 2)))
 				 //Distance is in half meters so have to divide by half to get meters
 				 metersPerSecond := distance / (float64(node.SamplingPeriod)/1000)
-				 if metersPerSecond > p.MaxMoveMeters {
-				 	adhoc.ACSResets++
-				 	node.WaitThresh = p.ClusterSearchThreshold
+				 if metersPerSecond > p.MaxMoveMeters{
+					 adhoc.ACSResets++
+					 node.WaitThresh = p.ClusterSearchThreshold
 				 }
 			 }
-			adhoc.ClusterSearch(node, rd, tp, p)
+			 adhoc.ClusterSearch(node, rd, tp, p)
+		 }
+		 node.LostMostMembers = len(node.StoredReadings) < int(float64(node.LastNumStoredReadings) * p.LRMemberLostThreshold)
+		 node.LastNumStoredReadings = len(node.StoredReadings)
 		} else {
 			node.Wait = 0
 			node.WaitThresh = p.ClusterSearchThreshold
@@ -207,13 +211,17 @@ func (adhoc *AdHocNetwork) ClearClusterParams(node *NodeImpl) {
 			adhoc.DissolveCluster(node)
 			return
 		}
-	} else if node.ClusterHead != nil {
-		delete(node.ClusterHead.ClusterMembers, node)
 	}
+	//else if node.ClusterHead != nil {
+	//	delete(node.ClusterHead.ClusterMembers, node)
+	//}
 
 	node.ClusterHead = nil
 	node.LargestClusterSize = 0
 	node.ClusterMembers = make(map[*NodeImpl]int)
+
+	node.LastNumStoredReadings = 0
+	node.LostMostMembers = false
 
 	node.RecvMsgs = []*HelloMsg{}
 	node.ThisNodeHello = &HelloMsg{Sender: node}
@@ -296,6 +304,8 @@ func (adhoc *AdHocNetwork) FormCluster(node *NodeImpl) {
 	node.BatteryBecameClusterHead = node.GetBatteryPercentage()
 	node.IsClusterMember = false
 	node.InitialClusterSize = len(node.RecvMsgs)
+	node.LastNumStoredReadings = 0
+	node.LostMostMembers = false
 	adhoc.ClusterHeads = append(adhoc.ClusterHeads, node)
 	node.ClusterHead = nil
 	node.LargestClusterSize = 0
@@ -519,7 +529,7 @@ func (node *NodeImpl) ShouldLocalRecluster() bool {
 	} else if !node.IsAlive() {
 		node.P.ClusterNetwork.DyingLocalReclusters++
 		return true
-	} else if node.LostMostMembers() {
+	} else if node.LostMostMembers {
 		node.P.ClusterNetwork.MovingLocalReclusters++
 		return true
 	} else {
@@ -531,23 +541,24 @@ func (node *NodeImpl) ShouldLocalRecluster() bool {
 Determines if a node has lost more than {LRMemberLostThreshold} of its members. This check is only done
 for the cluster head
  */
-func (node *NodeImpl) LostMostMembers() bool {
-	if node.IsClusterHead {
-		return 1 - float64(len(node.ClusterMembers))/float64(node.LargestClusterSize) >= node.P.LRMemberLostThreshold
-		//lost := 0.0
-		//for member := range node.ClusterMembers {
-		//	if member.ClusterHead == node && member.Wait >= node.P.ClusterSearchThreshold {
-		//		lost += 1
-		//		if lost >= node.P.LRMemberLostThreshold * float64(node.InitialClusterSize) {
-		//			return true
-		//		}
-		//	}
-		//}
-
-	}
-
-	return false
-}
+//func (node *NodeImpl) LostMostMembers() bool {
+//	if node.IsClusterHead {
+//		return
+//		//return 1 - float64(len(node.ClusterMembers))/float64(node.LargestClusterSize) >= node.P.LRMemberLostThreshold
+//		//lost := 0.0
+//		//for member := range node.ClusterMembers {
+//		//	if member.ClusterHead == node && member.Wait >= node.P.ClusterSearchThreshold {
+//		//		lost += 1
+//		//		if lost >= node.P.LRMemberLostThreshold * float64(node.InitialClusterSize) {
+//		//			return true
+//		//		}
+//		//	}
+//		//}
+//
+//	}
+//
+//	return false
+//}
 
 /*
 Initiates a local recluster by creating the initial members array and either calling the LocalRecluster or

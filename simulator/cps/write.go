@@ -1633,7 +1633,7 @@ func GetFlags(p *Params) {
 	flag.BoolVar(&p.AdaptiveClusterSearch, "adaptiveClusterSearch", false, "How many times a node will wait before performing a cluster search adapts based on how many times it tries unsuccessfully.")
 	flag.BoolVar(&p.ACSReset, "ACSReset", false, "Only matters when adaptive cluster search is enabled. If true, an alone node's wait threshold can be reset to cluster search threshold if it is moving at a fast enough speed.")
 	flag.BoolVar(&p.AloneNodeClusterSearch, "aloneClusterSearch", false, "Whether alone nodes will continue to look for cluster heads.")
-	flag.Float64Var(&p.LRMemberLostThreshold, "LRMemberLostThreshold", .8, "percentage of members a local cluster needs to lose in order to local recluster");
+	flag.Float64Var(&p.LRMemberLostThreshold, "LRMemberLostThreshold", .5, "percentage of members a local cluster needs to lose in order to local recluster");
 
 	flag.StringVar(&p.WindRegionPath, "windRegionPath", "hull_testing.txt", "File containing regions formed by wind")
 

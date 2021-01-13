@@ -101,6 +101,8 @@ type NodeImpl struct {
 	StoredNodes						[]*NodeImpl
 	StoredReadings					[]*Reading
 	StoredTPs						[]bool
+	LastNumStoredReadings			int
+	LostMostMembers					bool
 	LowSpeedCounter      			int
 	SamplingPeriod					int
 	Wait							int
