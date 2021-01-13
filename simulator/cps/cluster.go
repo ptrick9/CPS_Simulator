@@ -173,7 +173,7 @@ func (adhoc *AdHocNetwork) ClusterSearch(node *NodeImpl, rd *Reading, tp bool, p
 			adhoc.ClearClusterParams(node)
 			adhoc.FormCluster(node)
 			adhoc.CSSolos++
-			node.WaitThresh *= 2
+			node.WaitThresh = min(node.WaitThresh * 2, p.MaxWaitThresh)
 		}
 	}
 }
