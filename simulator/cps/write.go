@@ -1628,7 +1628,7 @@ func GetFlags(p *Params) {
 	flag.Float64Var(&p.ServerReadyThreshold, "serverReadyThresh", 0.9, "The ratio of accounted nodes to alive nodes at which point a recluster is possible and at which point after a recluster the improvement will be calculated.")
 	flag.IntVar(&p.InitClusterTime, "initClusterTime", 0, "The number of seconds to wait before clustering")
 	flag.IntVar(&p.ClusterSearchThreshold, "clusterSearchThresh", 0, "The number of senses in a row required to trigger cluster search that a node either has no cluster head or is out of range of its cluster head.")
-	flag.IntVar(&p.MaxWaitThresh, "maxWaitThresh", 100, "The maximum number waitThresh can grow to.")
+	flag.IntVar(&p.MaxWaitThresh, "maxWaitThresh", 0, "The maximum number waitThresh can grow to. If set to 0, will be ClusterSearchThreshold * 32")
 	flag.IntVar(&p.ClusterHeadTimeThreshold, "CHTimeThresh", 300, "The maximum time a can be cluster head without triggering local recluster.")
 	flag.Float64Var(&p.ClusterHeadBatteryDropThreshold, "CHBatteryDropThresh", 0.3, "The maximum percent a cluster head's battery can drop before triggering a local recluster.")
 	flag.BoolVar(&p.AdaptiveClusterSearch, "adaptiveClusterSearch", false, "How many times a node will wait before performing a cluster search adapts based on how many times it tries unsuccessfully.")
