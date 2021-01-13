@@ -104,40 +104,41 @@ tp		- whether the reading was a true positive
 p		- the Params object of the simulation
  */
 func (adhoc *AdHocNetwork) UpdateClusterStatus(node *NodeImpl, rd *Reading, tp bool, p *Params) {
-	//if node.Valid && node.IsAlive() {
-		 if !node.IsClusterHead && p.CurrentTime >= p.InitClusterTime {
-			if node.ClusterHead == nil {
+	if !node.IsClusterHead && p.CurrentTime >= p.InitClusterTime {
+		if node.ClusterHead == nil {
+			adhoc.ClusterSearch(node, rd, tp, p)
+		} else {
+			head := node.ClusterHead
+			node.DrainBatteryBluetooth(&node.P.Server.ReadingBTCounter) //node sends reading to node, whether or not the head is in range
+			if node.IsWithinRange(head, p.NodeBTRange) {
+				node.SendToClusterHead(rd, tp , head)
+			} else if node.IsAlive()  {//If the node survived sending the message to the out-of-range cluster head
+				node.IsClusterMember = false
+				adhoc.ClusterSearch(node, rd, tp, p)
+			}
+		}
+	} else if node.IsClusterHead {
+		if p.AloneNodeClusterSearch {
+			if len(node.ClusterMembers) <= p.ClusterMinThreshold {
 				adhoc.ClusterSearch(node, rd, tp, p)
 			} else {
-				head := node.ClusterHead
-				node.DrainBatteryBluetooth(&node.P.Server.ReadingBTCounter) //node sends reading to node, whether or not the head is in range
-				if node.IsWithinRange(head, p.NodeBTRange) {
-					node.SendToClusterHead(rd, tp , head)
-				} else if node.IsAlive()  {//If the node survived sending the message to the out-of-range cluster head
-					node.IsClusterMember = false
-					adhoc.ClusterSearch(node, rd, tp, p)
+				node.Wait = 0
+				node.WaitThresh = p.ClusterSearchThreshold
+			}
+
+			if p.AdaptiveClusterSearch && p.ACSReset && node.OldX!=0 && node.OldY!=0 {
+				distance := math.Sqrt((math.Pow(.5*float64(node.SX-node.OldX), 2)) + (math.Pow(.5*float64(node.SY-node.OldY), 2)))
+				//Distance is in half meters so have to divide by half to get meters
+				metersPerSecond := distance / (float64(node.SamplingPeriod) / 1000)
+				if metersPerSecond > p.MaxMoveMeters {
+					adhoc.ACSResets++
+					node.WaitThresh = p.ClusterSearchThreshold
 				}
 			}
-		} else if node.IsClusterHead {
-			if p.AloneNodeClusterSearch && len(node.ClusterMembers) <= p.ClusterMinThreshold{
-			 if p.AdaptiveClusterSearch && p.ACSReset && node.OldX!=0 && node.OldY!=0{
-				 distance := math.Sqrt((math.Pow(.5*float64(node.SX-node.OldX), 2)) + (math.Pow(.5*float64(node.SY-node.OldY), 2)))
-				 //Distance is in half meters so have to divide by half to get meters
-				 metersPerSecond := distance / (float64(node.SamplingPeriod)/1000)
-				 if metersPerSecond > p.MaxMoveMeters{
-					 adhoc.ACSResets++
-					 node.WaitThresh = p.ClusterSearchThreshold
-				 }
-			 }
-			 adhoc.ClusterSearch(node, rd, tp, p)
-		 }
-		 node.LostMostMembers = len(node.StoredReadings) < int(float64(node.LastNumStoredReadings) * p.LRMemberLostThreshold)
-		 node.LastNumStoredReadings = len(node.StoredReadings)
-		} else {
-			node.Wait = 0
-			node.WaitThresh = p.ClusterSearchThreshold
 		}
-	//}
+	 	node.LostMostMembers = len(node.StoredReadings) < int(float64(node.LastNumStoredReadings) * p.LRMemberLostThreshold)
+	 	node.LastNumStoredReadings = len(node.StoredReadings)
+	}
 }
 
 /*
