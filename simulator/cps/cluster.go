@@ -20,6 +20,16 @@ type AdHocNetwork struct {
 	ExpansiveExtras		int //Counts the number of clusters added to an expansive recluster
 	ACSResets			int //Counts the number of time an alone node reset its wait threshold based on its movement speed
 
+	TotalClustersFormed		int // total clusters formed in the simulation
+	TotalClustersDissolved	int	// total clusters dissolved in the simulation
+	MaxOriginalClusterSize	int // max initial cluster size for all formed clusters
+	MaxMaxClusterSize		int // max max cluster size for all formed clusters
+	MaxEndClusterSize		int // max end cluster size before a cluster is dissolved
+	TotalOriginalClusterSize	int //sum of original cluster sizes for all original
+	TotalMaxClusterSize			int //sum of max cluster sizes for all clusters formed
+	TotalEndClusterSize			int //sum of end cluster sizes before dissolved
+	// totals used to compute average at end of simulation
+
 	MovingLocalReclusters	int //Counts the number of times a local recluster is triggered by a moving head node
 	DyingLocalReclusters	int //Counts the number of times a local recluster is triggered by a head node dying
 	TimeLocalReclusters	int //Counts the number of times a local recluster is triggered by a head node lasting too long
@@ -219,6 +229,11 @@ node - the cluster head of the cluster
  */
 func (adhoc *AdHocNetwork) DissolveCluster(node *NodeImpl) {
 	//Assume node is cluster head
+	adhoc.TotalClustersDissolved++
+	adhoc.MaxMaxClusterSize = int(math.Max(float64(adhoc.MaxMaxClusterSize), float64(node.LargestClusterSize)))
+	adhoc.MaxEndClusterSize = int(math.Max(float64(adhoc.MaxEndClusterSize), float64(len(node.ClusterMembers))))
+	adhoc.TotalEndClusterSize += len(node.ClusterMembers)
+	adhoc.TotalMaxClusterSize += node.LargestClusterSize
 	for member := range node.ClusterMembers {
 		adhoc.ClearClusterParams(member)
 		/*	Assuming local reclustering is enabled, the members will know that this cluster has dissolved because
@@ -286,6 +301,9 @@ func (adhoc *AdHocNetwork) FormCluster(node *NodeImpl) {
 	node.LargestClusterSize = 0
 	node.ClusterMembers = make(map[*NodeImpl]int)
 	adhoc.NextClusterNum++
+	adhoc.TotalClustersFormed++
+	adhoc.MaxOriginalClusterSize = int(math.Max(float64(adhoc.MaxOriginalClusterSize), float64(node.InitialClusterSize)))
+	adhoc.TotalOriginalClusterSize += node.InitialClusterSize
 }
 
 /*

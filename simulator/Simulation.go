@@ -943,6 +943,7 @@ func main() {
 		}
 
 	}
+	printClusterStats(p)
 
 	//p.Server.PrintStatsFile()
 
@@ -1006,4 +1007,22 @@ func printAdaptiveCluster(p *cps.Params) {
 	fmt.Fprintf(p.AdaptiveClusterFile, "%v, %v\n",
 		len(p.Server.AloneNodes),
 		p.ClusterNetwork.BTAloneNode)
+}
+
+func printClusterStats(p *cps.Params) {
+
+	// take into account existing clusters that may not be dissolved yet
+	for head, _ := range p.Server.Clusters {
+		p.ClusterNetwork.MaxMaxClusterSize = int(math.Max(float64(p.ClusterNetwork.MaxMaxClusterSize), float64(head.LargestClusterSize)))
+		p.ClusterNetwork.TotalMaxClusterSize += head.LargestClusterSize
+	}
+
+	fmt.Println("Max Max Cluster Size", p.ClusterNetwork.MaxMaxClusterSize)
+	fmt.Println("Average Max Cluster Size", p.ClusterNetwork.TotalMaxClusterSize / (p.ClusterNetwork.TotalClustersFormed))
+
+	fmt.Println("Max Original Cluster Size", p.ClusterNetwork.MaxOriginalClusterSize)
+	fmt.Println("Average Original Cluster Size", p.ClusterNetwork.TotalOriginalClusterSize / p.ClusterNetwork.TotalClustersFormed)
+
+	fmt.Println("Max End Cluster Size", p.ClusterNetwork.MaxEndClusterSize)
+	fmt.Println("Average End Cluster Size", p.ClusterNetwork.TotalEndClusterSize / p.ClusterNetwork.TotalClustersDissolved)
 }
