@@ -87,6 +87,7 @@ type NodeImpl struct {
 	IsClusterMember					bool
 	TimeBecameClusterHead			int
 	InitialClusterSize				int
+	LargestClusterSize				int
 	BatteryBecameClusterHead		float64
 	ClusterAverageBattery			float64
 	ClusterHead    					*NodeImpl
@@ -398,6 +399,7 @@ func (node *NodeImpl) SendToClusterHead(rd *Reading, tp bool, head *NodeImpl){
 	node.DrainBatteryBluetooth(&node.P.Server.ReadingBTCounter)	//Node receives confirmation over bluetooth
 	node.IsClusterMember = true
 	head.ClusterMembers[node] = node.P.CurrentTime
+	head.LargestClusterSize = max(head.LargestClusterSize, len(head.ClusterMembers))
 	node.Wait = 0
 	node.WaitThresh = node.P.ClusterSearchThreshold
 	head.StoredNodes = append(head.StoredNodes, node)
