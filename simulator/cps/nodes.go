@@ -43,6 +43,8 @@ type NodeImpl struct {
 	Id                              int      //Id of node
 	OldX                            float32      // for movement
 	OldY                            float32      // for movement
+	XLastSense                            float32      // for movement
+	YLastSense                            float32      // for movement
 	Sitting                         int      // for movement
 	X                               float32      //x pos of node
 	Y                               float32      //y pos of node

@@ -1513,7 +1513,7 @@ func GetFlags(p *Params) {
 
 	flag.IntVar(&p.CounterThreshold,"CounterThreshold",3,"Threshold to decrease sampling rate")
 
-	flag.Float64Var(&p.MaxMoveMeters,"MaxMoveMeters",2,"maxMoveMeters")
+	flag.Float64Var(&p.MaxMoveMeters,"MaxMoveMeters",0.7,"maxMoveMeters")
 
 
 

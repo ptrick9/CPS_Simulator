@@ -126,11 +126,11 @@ func (adhoc *AdHocNetwork) UpdateClusterStatus(node *NodeImpl, rd *Reading, tp b
 				node.WaitThresh = p.ClusterSearchThreshold
 			}
 
-			if p.AdaptiveClusterSearch && p.ACSReset && node.OldX!=0 && node.OldY!=0 {
-				distance := math.Sqrt((math.Pow(.5*float64(node.SX-node.OldX), 2)) + (math.Pow(.5*float64(node.SY-node.OldY), 2)))
-				//Distance is in half meters so have to divide by half to get meters
-				metersPerSecond := distance / (float64(node.SamplingPeriod) / 1000)
-				if metersPerSecond > p.MaxMoveMeters {
+			if p.AdaptiveClusterSearch && p.ACSReset  {
+				distance := math.Sqrt((math.Pow(float64(node.X-node.XLastSense), 2)) + (math.Pow(float64(node.Y-node.YLastSense), 2))) /2
+				node.XLastSense = node.X
+				node.YLastSense = node.Y
+				if distance > p.MaxMoveMeters {
 					adhoc.ACSResets++
 					node.WaitThresh = p.ClusterSearchThreshold
 				}
