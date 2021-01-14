@@ -1513,7 +1513,7 @@ func GetFlags(p *Params) {
 
 	flag.IntVar(&p.CounterThreshold,"CounterThreshold",3,"Threshold to decrease sampling rate")
 
-	flag.Float64Var(&p.MaxMoveMeters,"MaxMoveMeters",2,"maxMoveMeters")
+	flag.Float64Var(&p.MaxMoveMeters,"MaxMoveMeters",0.7,"maxMoveMeters")
 
 
 
@@ -1628,12 +1628,13 @@ func GetFlags(p *Params) {
 	flag.Float64Var(&p.ServerReadyThreshold, "serverReadyThresh", 0.9, "The ratio of accounted nodes to alive nodes at which point a recluster is possible and at which point after a recluster the improvement will be calculated.")
 	flag.IntVar(&p.InitClusterTime, "initClusterTime", 0, "The number of seconds to wait before clustering")
 	flag.IntVar(&p.ClusterSearchThreshold, "clusterSearchThresh", 0, "The number of senses in a row required to trigger cluster search that a node either has no cluster head or is out of range of its cluster head.")
+	flag.IntVar(&p.MaxWaitThresh, "maxWaitThresh", 0, "The maximum number waitThresh can grow to. If set to 0, will be ClusterSearchThreshold * 32")
 	flag.IntVar(&p.ClusterHeadTimeThreshold, "CHTimeThresh", 300, "The maximum time a can be cluster head without triggering local recluster.")
 	flag.Float64Var(&p.ClusterHeadBatteryDropThreshold, "CHBatteryDropThresh", 0.3, "The maximum percent a cluster head's battery can drop before triggering a local recluster.")
 	flag.BoolVar(&p.AdaptiveClusterSearch, "adaptiveClusterSearch", false, "How many times a node will wait before performing a cluster search adapts based on how many times it tries unsuccessfully.")
 	flag.BoolVar(&p.ACSReset, "ACSReset", false, "Only matters when adaptive cluster search is enabled. If true, an alone node's wait threshold can be reset to cluster search threshold if it is moving at a fast enough speed.")
 	flag.BoolVar(&p.AloneNodeClusterSearch, "aloneClusterSearch", false, "Whether alone nodes will continue to look for cluster heads.")
-	flag.Float64Var(&p.LRMemberLostThreshold, "LRMemberLostThreshold", .5, "percentage of members a local cluster needs to lose in order to local recluster");
+	flag.Float64Var(&p.LRMemberLostThreshold, "LRMemberLostThreshold", .5, "percentage of members a local cluster needs to lose in order to local recluster")
 
 	flag.StringVar(&p.WindRegionPath, "windRegionPath", "hull_testing.txt", "File containing regions formed by wind")
 
@@ -1742,6 +1743,7 @@ func WriteFlags(p * Params){
 	buf.WriteString(fmt.Sprintf("aloneThreshold=%v\n",p.AloneThreshold))
 	buf.WriteString(fmt.Sprintf("initClusterTime=%v\n",p.InitClusterTime))
 	buf.WriteString(fmt.Sprintf("clusterSearchThresh=%v\n",p.ClusterSearchThreshold))
+	buf.WriteString(fmt.Sprintf("maxWaitThresh=%v\n",p.MaxWaitThresh))
 	buf.WriteString(fmt.Sprintf("CHTimeThresh=%v\n", p.ClusterHeadTimeThreshold))
 	buf.WriteString(fmt.Sprintf("CHBatteryDropThresh=%v\n", p.ClusterHeadBatteryDropThreshold))
 	buf.WriteString(fmt.Sprintf("adaptiveClusterSearch=%v\n", p.AdaptiveClusterSearch))

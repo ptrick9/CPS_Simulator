@@ -217,6 +217,7 @@ type Params struct {
 	ServerReadyThreshold     float64
 	InitClusterTime          int
 	ClusterSearchThreshold   int
+	MaxWaitThresh			int
 	ClusterHeadTimeThreshold        int
 	ClusterHeadBatteryDropThreshold float64
 	AdaptiveClusterSearch			bool

@@ -419,6 +419,9 @@ func main() {
 			fmt.Fprintf(p.ClusterFile, "Number of clusters, average cluster size, global reclusters, local reclusters, expansive extras, clusters above member threshold, clusters below member threshold, aliveValidNodes, aloneNodes, Cluster Searches, CSJoins, CSSolos, Waits, Lost Readings, global recluster threshold, global recluster period, increments, decrements, ACSResets\n")
 			p.Events.Push(&cps.Event{nil, cps.CLUSTERPRINT, 999, 0})
 		}
+		if p.MaxWaitThresh == 0 {
+			p.MaxWaitThresh = 32 * p.ClusterSearchThreshold
+		}
 	}
 	if p.BatteryPrint {
 		fmt.Fprintf(p.BatteryFile, "percent alive, average battery level, min, max, samples, wifi, bluetooth, BTGlobalRecluster, BTLocalRecluster, BTClusterSearch, BTReadings\n")
