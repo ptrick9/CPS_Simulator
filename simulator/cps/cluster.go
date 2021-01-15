@@ -130,20 +130,19 @@ func (adhoc *AdHocNetwork) UpdateClusterStatus(node *NodeImpl, rd *Reading, tp b
 	} else if node.IsClusterHead {
 		if p.AloneNodeClusterSearch {
 			if len(node.ClusterMembers) <= p.ClusterMinThreshold {
+				if p.AdaptiveClusterSearch && p.ACSReset  {
+					distance := math.Sqrt((math.Pow(float64(node.X-node.XLastSense), 2)) + (math.Pow(float64(node.Y-node.YLastSense), 2))) /2
+					node.XLastSense = node.X
+					node.YLastSense = node.Y
+					if distance > p.MaxMoveMeters {
+						adhoc.ACSResets++
+						node.WaitThresh = p.ClusterSearchThreshold
+					}
+				}
 				adhoc.ClusterSearch(node, rd, tp, p)
 			} else {
 				node.Wait = 0
 				node.WaitThresh = p.ClusterSearchThreshold
-			}
-
-			if p.AdaptiveClusterSearch && p.ACSReset  {
-				distance := math.Sqrt((math.Pow(float64(node.X-node.XLastSense), 2)) + (math.Pow(float64(node.Y-node.YLastSense), 2))) /2
-				node.XLastSense = node.X
-				node.YLastSense = node.Y
-				if distance > p.MaxMoveMeters {
-					adhoc.ACSResets++
-					node.WaitThresh = p.ClusterSearchThreshold
-				}
 			}
 		}
 	 	node.LostMostMembers = len(node.StoredReadings) < int(float64(node.LastNumStoredReadings) * p.LRMemberLostThreshold)
