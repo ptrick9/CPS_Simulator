@@ -826,7 +826,9 @@ func main() {
 				}
 			}
 			averageBattery = averageBattery / float64(len(p.NodeList))
-			averageCHBattery = averageCHBattery / float64(len(p.ClusterNetwork.ClusterHeads))
+			if len(p.ClusterNetwork.ClusterHeads) > 0 {
+				averageCHBattery = averageCHBattery / float64(len(p.ClusterNetwork.ClusterHeads))
+			} else {averageCHBattery = 0}
 			//percent alive, average battery level, min, max, samples, wifi, bluetooth, BTGlobalRecluster, BTLocalRecluster, BTClusterSearch, BTReadings, average cluster head battery level
 			fmt.Fprintf(p.BatteryFile, "%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v\n", float64(len(p.AliveNodes))/float64(p.TotalNodes), averageBattery, lowBattery, highBattery, p.Server.SamplesCounter, p.Server.WifiCounter, p.Server.BluetoothCounter, p.Server.GlobalReclusterBTCounter, p.Server.LocalReclusterBTCounter, p.Server.ClusterSearchBTCounter, p.Server.ReadingBTCounter, averageCHBattery)
 			p.Events.Push(&cps.Event{nil, cps.BATTERYPRINT, p.CurrentTime + 1000, 0})
@@ -951,7 +953,7 @@ func main() {
 		}
 
 	}
-	printClusterStats(p)
+	//printClusterStats(p)
 
 	//p.Server.PrintStatsFile()
 
