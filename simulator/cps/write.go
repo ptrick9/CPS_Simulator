@@ -841,7 +841,7 @@ func SetupFiles(p *Params) {
 		if err != nil {
 			log.Fatal("Cannot create file", err)
 		}
-		p.Files = append(p.Files, p.OutputFileNameCM + "adaptiveCluster.txt")
+		p.Files = append(p.Files, p.OutputFileNameCM + "-adaptiveCluster.txt")
 
 		p.LocalClusterFile, err = os.Create(p.OutputFileNameCM + "-localCluster.txt")
 		if err != nil {

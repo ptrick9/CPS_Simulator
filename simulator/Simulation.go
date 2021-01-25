@@ -424,7 +424,7 @@ func main() {
 		}
 	}
 	if p.BatteryPrint {
-		fmt.Fprintf(p.BatteryFile, "percent alive, average battery level, min, max, samples, wifi, bluetooth, BTGlobalRecluster, BTLocalRecluster, BTClusterSearch, BTReadings\n")
+		fmt.Fprintf(p.BatteryFile, "percent alive, average battery level, min, max, samples, wifi, bluetooth, BTGlobalRecluster, BTLocalRecluster, BTClusterSearch, BTReadings, average cluster head battery level\n")
 		p.Events.Push(&cps.Event{nil, cps.BATTERYPRINT, 1000, 0})
 	}
 	p.CurrentTime = 0
@@ -811,10 +811,14 @@ func main() {
 			p.Events.Push(&cps.Event{nil, cps.CLUSTERPRINT, p.CurrentTime + 1000, 0})
 		case cps.BATTERYPRINT:
 			averageBattery := 0.0
+			averageCHBattery := 0.0
 			lowBattery := p.NodeList[0].GetBatteryPercentage()
 			highBattery := lowBattery
 			for i := 1; i < len(p.NodeList); i++ {
 				averageBattery += p.NodeList[i].GetBatteryPercentage()
+				if p.NodeList[i].IsClusterHead {
+					averageCHBattery += p.NodeList[i].GetBatteryPercentage()
+				}
 				if p.NodeList[i].GetBatteryPercentage() < lowBattery {
 					lowBattery = p.NodeList[i].GetBatteryPercentage()
 				} else if p.NodeList[i].GetBatteryPercentage() > highBattery {
@@ -822,8 +826,9 @@ func main() {
 				}
 			}
 			averageBattery = averageBattery / float64(len(p.NodeList))
-			//percent alive, average battery level, min, max, samples, wifi, bluetooth, BTGlobalRecluster, BTLocalRecluster, BTClusterSearch, BTReadings
-			fmt.Fprintf(p.BatteryFile, "%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v\n", float64(len(p.AliveNodes))/float64(p.TotalNodes), averageBattery, lowBattery, highBattery, p.Server.SamplesCounter, p.Server.WifiCounter, p.Server.BluetoothCounter, p.Server.GlobalReclusterBTCounter, p.Server.LocalReclusterBTCounter, p.Server.ClusterSearchBTCounter, p.Server.ReadingBTCounter)
+			averageCHBattery = averageCHBattery / float64(len(p.ClusterNetwork.ClusterHeads))
+			//percent alive, average battery level, min, max, samples, wifi, bluetooth, BTGlobalRecluster, BTLocalRecluster, BTClusterSearch, BTReadings, average cluster head battery level
+			fmt.Fprintf(p.BatteryFile, "%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v\n", float64(len(p.AliveNodes))/float64(p.TotalNodes), averageBattery, lowBattery, highBattery, p.Server.SamplesCounter, p.Server.WifiCounter, p.Server.BluetoothCounter, p.Server.GlobalReclusterBTCounter, p.Server.LocalReclusterBTCounter, p.Server.ClusterSearchBTCounter, p.Server.ReadingBTCounter, averageCHBattery)
 			p.Events.Push(&cps.Event{nil, cps.BATTERYPRINT, p.CurrentTime + 1000, 0})
 		}
 	}
