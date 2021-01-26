@@ -1076,7 +1076,7 @@ func (s *FusionCenter) CheckGlobalRecluster(nodesAccountedFor int) {
 		s.ClusterHeadsOf = make(map[*NodeImpl][]*NodeImpl)
 		s.Waiting = true
 		s.P.ClusterNetwork.FullRecluster(s.P)
-		if s.P.GlobalRecluster >= 3 {
+		if s.P.GlobalRecluster >= 2 {
 			s.NextReclusterTime = s.P.CurrentTime/1000 + int(s.P.ReclusterPeriod)
 		}
 	}
@@ -1104,7 +1104,6 @@ func (s *FusionCenter) UpdateReclusterThresholds(nodesAccountedFor int) {
 			s.P.AloneThreshold *= s.P.GlobalReclusterIncrement
 		case 2:
 			s.P.ReclusterPeriod *= s.P.GlobalReclusterIncrement
-			s.NextReclusterTime += int(s.P.ReclusterPeriod)
 		case 4:
 			s.P.AloneThreshold *= s.P.GlobalReclusterIncrement
 			s.P.ReclusterPeriod *= s.P.GlobalReclusterIncrement
@@ -1118,7 +1117,6 @@ func (s *FusionCenter) UpdateReclusterThresholds(nodesAccountedFor int) {
 			s.P.AloneThreshold *= s.P.GlobalReclusterDecrement
 		case 2:
 			s.P.ReclusterPeriod *= s.P.GlobalReclusterDecrement
-			s.NextReclusterTime += int(s.P.ReclusterPeriod)
 		case 4:
 			s.P.AloneThreshold *= s.P.GlobalReclusterDecrement
 			s.P.ReclusterPeriod *= s.P.GlobalReclusterDecrement
