@@ -466,7 +466,7 @@ func (node *NodeImpl) SendToServer(rd *Reading, tp bool){
 
 		if server.P.GlobalRecluster > 0 {
 			nodesAccountedFor := len(server.Clusters) + len(server.ClusterHeadsOf) + len(server.AloneNodes)
-			if float64(nodesAccountedFor)/float64(len(server.P.AliveValNodes)) > server.P.ServerReadyThreshold {
+			if server.P.GlobalRecluster > 1 || float64(nodesAccountedFor)/float64(len(server.P.AliveValNodes)) > server.P.ServerReadyThreshold {
 				if server.Waiting {
 					server.Waiting = false
 					server.UpdateReclusterThresholds(nodesAccountedFor)
