@@ -166,6 +166,10 @@ func (adhoc *AdHocNetwork) ClusterSearch(node *NodeImpl, rd *Reading, tp bool, p
 	if (!p.AdaptiveClusterSearch && node.Wait < p.ClusterSearchThreshold) || (p.AdaptiveClusterSearch && node.Wait < node.WaitThresh) {
 		node.Wait++
 		adhoc.TotalWaits++
+		if !node.IsClusterHead {
+			node.BufferedReadings = append(node.BufferedReadings, rd)
+			node.BufferedTPs = append(node.BufferedTPs, tp)
+		}
 	} else {
 		node.Wait = 0
 		toJoin := node.FindNearbyHeads(p, &p.Server.ClusterSearchBTCounter)

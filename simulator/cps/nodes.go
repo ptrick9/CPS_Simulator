@@ -100,6 +100,8 @@ type NodeImpl struct {
 	OutOfRange						bool
 	TimeMovedOutOfRange				int
 	TimeLastSensed					int
+	BufferedReadings				[]*Reading
+	BufferedTPs						[]bool
 	StoredNodes						[]*NodeImpl
 	StoredReadings					[]*Reading
 	StoredTPs						[]bool
@@ -406,6 +408,17 @@ func (node *NodeImpl) SendToClusterHead(rd *Reading, tp bool, head *NodeImpl){
 	head.LargestClusterSize = max(head.LargestClusterSize, len(head.ClusterMembers))
 	node.Wait = 0
 	node.WaitThresh = node.P.ClusterSearchThreshold
+	for i := range node.BufferedReadings {
+		node.DrainBatteryBluetooth(&node.P.Server.ReadingBTCounter)	// Node sends reading over bluetooth
+		head.DrainBatteryBluetooth(&node.P.Server.ReadingBTCounter) // Head receives reading over bluetooth
+		head.DrainBatteryBluetooth(&node.P.Server.ReadingBTCounter) // Head sends confirmation over bluetooth
+		node.DrainBatteryBluetooth(&node.P.Server.ReadingBTCounter)	// Node receives confirmation over bluetooth
+		head.StoredNodes = append(head.StoredNodes, node)
+		head.StoredReadings = append(head.StoredReadings, node.BufferedReadings[i])
+		head.StoredTPs = append(head.StoredTPs, node.BufferedTPs[i])
+	}
+	node.BufferedReadings = nil
+	node.BufferedTPs = nil
 	head.StoredNodes = append(head.StoredNodes, node)
 	head.StoredReadings = append(head.StoredReadings, rd)
 	head.StoredTPs = append(head.StoredTPs, tp)
@@ -423,14 +436,22 @@ tp - whether the reading was a true positive
 */
 func (node *NodeImpl) SendToServer(rd *Reading, tp bool){
 	server := node.P.Server
-	numSent := float64(len(node.StoredReadings))/8 + 1
+	numSent := float64(len(node.StoredReadings))/8 + float64(len(node.BufferedReadings)) + 1
 	node.DrainBatteryWifi(numSent)
 
-    numSent = numSent * 8 - 1
 	for i := 0; i < len(node.StoredReadings); i++ {
 		server.Send(node.StoredNodes[i], node.StoredReadings[i], node.StoredTPs[i])
 		delete(server.AloneNodes, node.StoredNodes[i])
 	}
+	node.StoredNodes = nil
+	node.StoredReadings = nil
+	node.StoredTPs = nil
+
+	for i := 0; i < len(node.BufferedReadings); i++ {
+		server.Send(node, node.BufferedReadings[i], node.BufferedTPs[i])
+	}
+	node.BufferedReadings = nil
+	node.BufferedTPs = nil
 
 	if rd != nil {
 		server.Send(node, rd, tp)
@@ -455,10 +476,6 @@ func (node *NodeImpl) SendToServer(rd *Reading, tp bool){
 			}
 		}
 	}
-
-	node.StoredNodes = []*NodeImpl{}
-	node.StoredReadings = []*Reading{}
-	node.StoredTPs = []bool{}
 }
 
 /* updateHistory shifts all values in the sample history slice to the right and adds the Value at the beginning
@@ -1169,7 +1186,7 @@ func (node *NodeImpl) report(rawConc float64) {
 			node.P.ClusterNetwork.UpdateClusterStatus(node, rd, tp, node.P)
 			node.OutOfRange = false
 		}
-		if !node.P.ClusteringOn || len(node.StoredReadings) > 0 || node.IsClusterHead || node.ClusterHead == nil || highSensor || node.Wait > 0 {
+		if !node.P.ClusteringOn || len(node.StoredReadings) > 0 || node.IsClusterHead || highSensor {
 			node.SendToServer(rd, tp)
 		}
 	}
