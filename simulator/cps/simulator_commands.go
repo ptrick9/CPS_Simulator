@@ -210,6 +210,7 @@ type Params struct {
 	SmallImprovement         float64
 	SmallImprovementRatio	 float64
 	LargeImprovement         float64
+	AdaptiveGlobalRecluster	 bool
 	GlobalReclusterIncrement float64
 	GlobalReclusterDecrement float64
 	DisableGRThreshold       float64

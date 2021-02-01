@@ -1621,6 +1621,7 @@ func GetFlags(p *Params) {
 	flag.Float64Var(&p.ReclusterPeriod, "reclusterPeriod", 300.0, "The period of time in seconds between global reclusters when tome-based global reclusters are enabled")
 	flag.Float64Var(&p.SmallImprovementRatio, "smallImprovementRatio", 0.33, "The number multiplied to large improvement to create the threshold improvement in alone nodes after a global recluster that will lead to an increased recluster threshold or period")
 	flag.Float64Var(&p.LargeImprovement, "largeImprovement", 0.6, "The threshold improvement in alone nodes after a global recluster that will lead to a decreased recluster threshold or period")
+	flag.BoolVar(&p.AdaptiveGlobalRecluster, "adaptiveGlobalRecluster", true, "Determines whether the threshold/period that triggers recluster should change based on the previous recluster's performance.")
 	flag.Float64Var(&p.GlobalReclusterIncrement, "GRIncrement", 1.5, "The number that the recluster threshold or period will be multiplied by when it needs to be increased.")
 	flag.Float64Var(&p.GlobalReclusterDecrement, "GRDecrement", 0.75, "The number that the recluster threshold or period will be multiplied by when it needs to be decreased.")
 	flag.Float64Var(&p.DisableGRThreshold, "disableGRThresh", 0.0, "When aliveNodes/totalNodes is less than this threshold, global recluster is disabled.")
