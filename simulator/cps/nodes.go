@@ -443,15 +443,10 @@ func (node *NodeImpl) SendToServer(rd *Reading, tp bool){
 		server.Send(node.StoredNodes[i], node.StoredReadings[i], node.StoredTPs[i])
 		delete(server.AloneNodes, node.StoredNodes[i])
 	}
-	node.StoredNodes = nil
-	node.StoredReadings = nil
-	node.StoredTPs = nil
 
 	for i := 0; i < len(node.BufferedReadings); i++ {
 		server.Send(node, node.BufferedReadings[i], node.BufferedTPs[i])
 	}
-	node.BufferedReadings = nil
-	node.BufferedTPs = nil
 
 	if rd != nil {
 		server.Send(node, rd, tp)
@@ -476,6 +471,13 @@ func (node *NodeImpl) SendToServer(rd *Reading, tp bool){
 			}
 		}
 	}
+
+	node.StoredNodes = nil
+	node.StoredReadings = nil
+	node.StoredTPs = nil
+
+	node.BufferedReadings = nil
+	node.BufferedTPs = nil
 }
 
 /* updateHistory shifts all values in the sample history slice to the right and adds the Value at the beginning
