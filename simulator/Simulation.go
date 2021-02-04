@@ -416,7 +416,7 @@ func main() {
 			p.Events.Push(&cps.Event{nil, cps.FULLRECLUSTER, 5000, 0})
 		}
 		if p.ClusterPrint {
-			fmt.Fprintf(p.ClusterFile, "Number of clusters, average cluster size, global reclusters, local reclusters, expansive extras, clusters above member threshold, clusters below member threshold, aliveValidNodes, aloneNodes, Cluster Searches, CSJoins, CSSolos, Waits, Lost Readings, global recluster threshold, global recluster period, increments, decrements, ACSResets\n")
+			fmt.Fprintf(p.ClusterFile, "Number of clusters, average cluster size, global reclusters, local reclusters, expansive extras, clusters above member threshold, clusters below member threshold, aliveValidNodes, aloneNodes, Cluster Searches, CSJoins, CSSolos, Waits, Lost Readings, global recluster threshold, global recluster period, increments, decrements, ACSResets, average without alone nodes\n")
 			p.Events.Push(&cps.Event{nil, cps.CLUSTERPRINT, 999, 0})
 		}
 		if p.MaxWaitThresh == 0 {
@@ -743,6 +743,11 @@ func main() {
 				p.ClusterNetwork.AverageClusterSize += average
 			}
 
+			averageWithoutAloneNodes := 0
+			if len(p.Server.Clusters) > 0 {
+				averageWithoutAloneNodes = len(p.Server.ClusterHeadsOf)/len(p.Server.Clusters)
+			}
+
 			aliveValidNodes := 0
 			//countedCHs := 0
 			//countedCMs := 0
@@ -785,8 +790,8 @@ func main() {
 			//	}
 			//}
 
-			//Number of clusters, average cluster size, global reclusters, local reclusters, expansive extras, clusters above member threshold, clusters below member threshold, aliveValidNodes, aloneNodes, Cluster Searches, CSJoins, CSSolos, Waits, Lost Readings, global recluster threshold, global recluster period, increments, decrements, ACSResets
-			fmt.Fprintf(p.ClusterFile, "%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v\n", len(p.ClusterNetwork.ClusterHeads), average, p.ClusterNetwork.FullReclusters, p.ClusterNetwork.LocalReclusters, p.ClusterNetwork.ExpansiveExtras, clustersAboveThresh, clustersBelowThresh, aliveValidNodes, len(p.Server.AloneNodes), p.ClusterNetwork.CSJoins + p.ClusterNetwork.CSSolos, p.ClusterNetwork.CSJoins, p.ClusterNetwork.CSSolos, p.ClusterNetwork.TotalWaits, p.ClusterNetwork.LostReadings, p.AloneThreshold, p.ReclusterPeriod, p.Server.Increments, p.Server.Decrements, p.ClusterNetwork.ACSResets)
+			//Number of clusters, average cluster size, global reclusters, local reclusters, expansive extras, clusters above member threshold, clusters below member threshold, aliveValidNodes, aloneNodes, Cluster Searches, CSJoins, CSSolos, Waits, Lost Readings, global recluster threshold, global recluster period, increments, decrements, ACSResets, average without alone nodes
+			fmt.Fprintf(p.ClusterFile, "%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v,%v\n", len(p.ClusterNetwork.ClusterHeads), average, p.ClusterNetwork.FullReclusters, p.ClusterNetwork.LocalReclusters, p.ClusterNetwork.ExpansiveExtras, clustersAboveThresh, clustersBelowThresh, aliveValidNodes, len(p.Server.AloneNodes), p.ClusterNetwork.CSJoins + p.ClusterNetwork.CSSolos, p.ClusterNetwork.CSJoins, p.ClusterNetwork.CSSolos, p.ClusterNetwork.TotalWaits, p.ClusterNetwork.LostReadings, p.AloneThreshold, p.ReclusterPeriod, p.Server.Increments, p.Server.Decrements, p.ClusterNetwork.ACSResets, averageWithoutAloneNodes)
 
 			p.ClusterNetwork.AverageNumClusters += len(p.ClusterNetwork.ClusterHeads)
 
