@@ -724,7 +724,7 @@ func (node *NodeImpl) UpdateAliveStatus() {
 	if !node.IsAlive() && node.P.AliveNodes[node] {
 		if node.P.ClusteringOn {
 			node.CurTree.RemoveAndClean(node)
-			if !node.IsClusterHead {
+			if !node.IsClusterHead || node.P.LocalRecluster < 0 {
 				node.P.ClusterNetwork.ClearClusterParams(node)
 			}
 			if node.P.GlobalRecluster > 0 && float64(len(node.P.AliveNodes)) / float64(node.P.TotalNodes) < node.P.DisableGRThreshold {
@@ -740,7 +740,7 @@ func (node *NodeImpl) UpdateAliveStatus() {
 		node.DrainBatteryWifi(1) // Node informs the server it is dying.
 	}
 
-	if node.P.ClusteringOn && node.P.CurrentTime >= node.P.InitClusterTime && node.IsClusterHead && node.ShouldLocalRecluster() {
+	if node.P.LocalRecluster >= 0 && node.P.ClusteringOn && node.P.CurrentTime >= node.P.InitClusterTime && node.IsClusterHead && node.ShouldLocalRecluster() {
 		if node.P.LocalRecluster > 0 {
 			node.InitLocalRecluster()
 		} else {

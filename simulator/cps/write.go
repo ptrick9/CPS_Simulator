@@ -1611,7 +1611,8 @@ func GetFlags(p *Params) {
 	flag.BoolVar(&p.AloneOrClusterRatio, "aloneOrClusterRatio", true, "ratio of (true: alone nodes; false: total clusters) to total nodes is used to check for global recluster.")
 
 	/* Local Reclustering
-	0 - off
+   -1 - off (heads only stop being head when they die or when global recluster occurs)
+	0 - haphazard (head stops being head, cluster search is responsible for nodes joining clusters or making new ones)
 	1 - minimal (nodes check for nearby head first)
 	2 - standard
 	3 or higher - expansive (nearby clusters also recluster) */

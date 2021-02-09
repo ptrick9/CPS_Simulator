@@ -817,16 +817,16 @@ func main() {
 		case cps.BATTERYPRINT:
 			averageBattery := 0.0
 			averageCHBattery := 0.0
-			minCHBattery := 100.0
+			minCHBattery := 1.0
 			maxCHBattery := 0.0
-			minCHBatteryNoAloneNodes := 100.0
+			minCHBatteryNoAloneNodes := 1.0
 			maxCHBatteryNoAloneNodes := 0.0
-			lowBattery := 100.0
+			lowBattery := 1.0
 			highBattery := 0.0
 			for i := 0; i < len(p.NodeList); i++ {
 				nodeBattery := p.NodeList[i].GetBatteryPercentage()
 				averageBattery += nodeBattery
-				if p.NodeList[i].IsClusterHead {
+				if p.NodeList[i].IsClusterHead && p.NodeList[i].IsAlive() {
 					averageCHBattery += nodeBattery
 					if nodeBattery < minCHBattery {
 						minCHBattery = nodeBattery
