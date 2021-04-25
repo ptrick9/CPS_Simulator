@@ -1117,7 +1117,7 @@ func (node *NodeImpl) MoveCSV(p *Params) {
 	id := node.GetID()
 
 	if node.Valid {
-		p.BoolGrid[int(node.OldX)][int(node.OldY)] = false //set the old spot false since the node will now move away
+		//p.BoolGrid[int(node.OldX)][int(node.OldY)] = false //set the old spot false since the node will now move away
 		node.X = interpolate(p.NodeMovements[id][intTime-p.MovementOffset].X, p.NodeMovements[id][intTime-p.MovementOffset+1].X, portion)
 		node.Y = interpolate(p.NodeMovements[id][intTime-p.MovementOffset].Y, p.NodeMovements[id][intTime-p.MovementOffset+1].Y, portion)
 		if p.IsSense{ //Checks to see if cps instruction is sensing currently
@@ -1136,7 +1136,7 @@ func (node *NodeImpl) MoveCSV(p *Params) {
 					fmt.Fprintf(p.DistanceFile, "ID: %v T: %v D: %v\n", node.Id, intTime, int(d))
 				}
 
-				p.BoolGrid[int(node.X)][int(node.Y)] = true
+				//p.BoolGrid[int(node.X)][int(node.Y)] = true
 			}
 		}
 	} else {
